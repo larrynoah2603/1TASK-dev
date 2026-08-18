@@ -1,0 +1,962 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+  PENDING_VALIDATION
+  PENDING_ASSIGNMENT
+}
+
+enum RoleCode {
+  REQUESTER
+  AGENT
+  QUEUE_MANAGER
+  FUNCTIONAL_ADMIN
+  TECHNICAL_ADMIN
+  REPORTING_READER
+}
+
+enum ScopeType {
+  GLOBAL
+  DEPARTMENT
+  QUEUE
+  TEAM
+  PORTFOLIO
+  USER_LIST
+}
+
+enum TicketType {
+  INCIDENT
+  SERVICE_REQUEST
+  QUESTION
+  ACCESS_REQUEST
+  OTHER
+  PRODUCTION_TASK
+  CHANGE_REQUEST
+}
+
+enum Impact {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum Urgency {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum TicketLinkType {
+  DUPLICATE
+  DEPENDS_ON
+  BLOCKS
+  PARENT
+  CHILD
+}
+
+enum TicketStatus {
+  NEW
+  TO_QUALIFY
+  TO_ASSIGN
+  ASSIGNED
+  IN_PROGRESS
+  BLOCKED
+  RESOLUTION_PENDING
+  REOPENED
+  CLOSED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum MessageVisibility {
+  REQUESTER
+  INTERNAL
+}
+
+enum TicketEventType {
+  CREATED
+  STATUS_CHANGED
+  ASSIGNED
+  QUEUE_CHANGED
+  MESSAGE_ADDED
+  RESOLUTION_SUBMITTED
+  REOPENED
+  CLOSED
+  SLA_ALERT
+  SLA_BREACH
+  CONFIDENTIAL_ACCESS_GRANTED
+  CONFIDENTIAL_ACCESS_REVOKED
+  QUALIFIED
+  LINK_CREATED
+  SLA_EXCEPTION_CREATED
+}
+
+enum NotificationType {
+  TICKET_CREATED
+  QUEUE_NEW_TICKET
+  TICKET_ASSIGNED
+  INFORMATION_REQUESTED
+  TICKET_RESOLVED
+  TICKET_REOPENED
+  SLA_ALERT
+  SLA_BREACH
+  CONFIDENTIAL_ACCESS
+  ADMINISTRATIVE_ACTION
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  READ
+}
+
+enum SlaCalculationMode {
+  ROLLING
+  ABSOLUTE
+  RELATIVE_MILESTONE
+}
+
+enum BlockReason {
+  REQUESTER_WAITING
+  SUPPLIER_WAITING
+  OTHER_TEAM_WAITING
+  VALIDATION_REQUIRED
+  EXTERNAL_PROBLEM
+  MISSING_INFORMATION
+}
+
+enum MissionStatus {
+  DRAFT
+  ACTIVE
+  BLOCKED
+  COMPLETED
+  ARCHIVED
+}
+
+enum AssetType {
+  COMPUTER
+  SCREEN
+  PHONE
+  LICENSE
+  OTHER
+}
+
+enum AssetStatus {
+  ACTIVE
+  IN_REPAIR
+  RETIRED
+  LOST
+}
+
+enum WorkflowEntityType {
+  TICKET
+  MISSION
+}
+
+enum WorkflowStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+model User {
+  id                             String      @id @default(cuid())
+  entraObjectId                  String?     @unique
+  // Nom d’identité fourni par Microsoft Entra ID. Il reste immuable depuis
+  // l’interface applicative et n’est jamais remplacé par le nom géré.
+  entraDisplayName               String?
+  // Nom visible dans 1TASK. Il est renseigné et modifiable uniquement par
+  // l’administrateur fonctionnel.
+  managedDisplayName             String?
+  name                           String
+  email                          String      @unique @db.VarChar(320)
+  emailVerified                  DateTime?
+  image                          String?
+  jobTitle                       String?
+  // Valeur brute fournie par Microsoft Entra ID. Elle est conservée pour
+  // permettre à un administrateur de créer la correspondance officielle.
+  entraDepartmentValue           String?     @db.VarChar(320)
+  entraDepartmentNormalizedValue String?     @db.VarChar(320)
+  departmentId                   String?
+  department                     Department? @relation("DepartmentUsers", fields: [departmentId], references: [id], onDelete: SetNull)
+  managerId                      String?
+  manager                        User?       @relation("ApplicationManager", fields: [managerId], references: [id], onDelete: SetNull)
+  directReports                  User[]      @relation("ApplicationManager")
+  // Manager hiérarchique éventuellement résolu depuis Microsoft Graph. Il
+  // est séparé du manager applicatif sélectionné par l’administrateur.
+  entraManagerId                 String?
+  entraManager                   User?       @relation("EntraManager", fields: [entraManagerId], references: [id], onDelete: SetNull)
+  entraDirectReports             User[]      @relation("EntraManager")
+  entraManagerObjectId           String?
+  entraManagerDisplayName        String?
+  entraManagerEmail              String?     @db.VarChar(320)
+  primaryRoleCode                RoleCode?
+  primaryTeamId                  String?
+  primaryTeam                    Team?       @relation("UserPrimaryTeam", fields: [primaryTeamId], references: [id], onDelete: SetNull)
+  authorizedQueueId              String?
+  authorizedQueue                Queue?      @relation("UserAuthorizedQueue", fields: [authorizedQueueId], references: [id], onDelete: SetNull)
+  status                         UserStatus  @default(PENDING_ASSIGNMENT)
+  // Distinct de l’état Entra : une désactivation décidée par l’administrateur
+  // ne doit pas être annulée silencieusement à la prochaine synchronisation.
+  administrativelyDisabled       Boolean     @default(false)
+  lastSyncedAt                   DateTime?
+  createdAt                      DateTime    @default(now())
+  updatedAt                      DateTime    @updatedAt
+
+  accounts                Account[]
+  sessions                Session[]
+  roleAssignments         UserRole[]               @relation("RoleSubject")
+  assignmentsMade         UserRole[]               @relation("RoleAssignmentActor")
+  teamMemberships         TeamMember[]
+  managedQueues           Queue[]                  @relation("QueueManager")
+  teamLeadFor             Team[]                   @relation("TeamLead")
+  requestedTickets        Ticket[]                 @relation("TicketRequester")
+  createdTickets          Ticket[]                 @relation("TicketCreator")
+  assignedTickets         Ticket[]                 @relation("TicketAssignee")
+  assignmentActions       TicketAssignment[]       @relation("AssignmentActor")
+  previousAssignments     TicketAssignment[]       @relation("AssignmentPrevious")
+  newAssignments          TicketAssignment[]       @relation("AssignmentNew")
+  messages                TicketMessage[]
+  events                  TicketEvent[]
+  auditLogs               AuditLog[]
+  notifications           Notification[]
+  uploadedAttachments     Attachment[]
+  assignedAssets          Asset[]                  @relation("AssetAssignee")
+  assetMovementsMade      AssetMovement[]          @relation("AssetMovementActor")
+  assetMovementsFrom      AssetMovement[]          @relation("AssetMovementFromUser")
+  assetMovementsTo        AssetMovement[]          @relation("AssetMovementToUser")
+  worklogs                Worklog[]
+  knowledgeArticlesOwned  KnowledgeArticle[]       @relation("KnowledgeArticleOwner")
+  notificationPreferences NotificationPreference[]
+
+  ticketLinksCreated   TicketLink[]        @relation("TicketLinkActor")
+  slaExceptionsCreated SlaException[]      @relation("SlaExceptionActor")
+  confidentialAccess   TicketAccess[]
+  scopeMembers         ScopeMember[]
+  profileChanges       UserProfileChange[] @relation("UserProfileChanges")
+  profileChangesMade   UserProfileChange[] @relation("UserProfileChangeActors")
+
+  @@index([departmentId, status])
+  @@index([status, entraDepartmentValue])
+  @@index([status, entraDepartmentNormalizedValue])
+  @@index([managerId])
+  @@index([entraManagerId])
+  @@index([entraManagerObjectId])
+  @@index([primaryTeamId])
+  @@index([authorizedQueueId])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  ext_expires_in    Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Department {
+  id                 String                   @id @default(cuid())
+  code               String                   @unique
+  name               String                   @unique
+  isActive           Boolean                  @default(true)
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+  users              User[]                   @relation("DepartmentUsers")
+  sourceTickets      Ticket[]                 @relation("TicketSourceDepartment")
+  queues             Queue[]                  @relation("DepartmentQueues")
+  permissionScopes   PermissionScope[]
+  entraMappings      EntraDepartmentMapping[]
+  notificationRules  NotificationRule[]
+  missions           Mission[]                @relation("MissionDepartment")
+  assets             Asset[]                  @relation("DepartmentAssets")
+  assetMovementsFrom AssetMovement[]          @relation("AssetMovementFromDepartment")
+  assetMovementsTo   AssetMovement[]          @relation("AssetMovementToDepartment")
+  knowledgeArticles  KnowledgeArticle[]
+
+  @@index([isActive])
+}
+
+model EntraDepartmentMapping {
+  id              String     @id @default(cuid())
+  externalValue   String     @db.VarChar(320)
+  normalizedValue String     @unique @db.VarChar(320)
+  departmentId    String
+  isActive        Boolean    @default(true)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  department      Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+
+  @@index([externalValue])
+  @@index([departmentId, isActive])
+}
+
+model Queue {
+  id                String               @id @default(cuid())
+  code              String               @unique
+  name              String
+  departmentId      String
+  managerId         String?
+  isActive          Boolean              @default(true)
+  autoAssignment    Boolean              @default(false)
+  department        Department           @relation("DepartmentQueues", fields: [departmentId], references: [id], onDelete: Restrict)
+  manager           User?                @relation("QueueManager", fields: [managerId], references: [id], onDelete: SetNull)
+  teams             Team[]
+  authorizedUsers   User[]               @relation("UserAuthorizedQueue")
+  tickets           Ticket[]
+  serviceItems      ServiceCatalogItem[]
+  assignments       TicketAssignment[]
+  events            TicketEvent[]
+  permissionScopes  PermissionScope[]
+  escalationRules   EscalationRule[]
+  notificationRules NotificationRule[]
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  @@unique([departmentId, name])
+  @@index([departmentId, isActive])
+  @@index([managerId, isActive])
+}
+
+model Team {
+  id           String            @id @default(cuid())
+  name         String
+  queueId      String
+  leadId       String?
+  isActive     Boolean           @default(true)
+  queue        Queue             @relation(fields: [queueId], references: [id], onDelete: Restrict)
+  lead         User?             @relation("TeamLead", fields: [leadId], references: [id], onDelete: SetNull)
+  members      TeamMember[]
+  primaryUsers User[]            @relation("UserPrimaryTeam")
+  scopes       PermissionScope[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@unique([queueId, name])
+  @@index([queueId, isActive])
+}
+
+model TeamMember {
+  id          String    @id @default(cuid())
+  teamId      String
+  userId      String
+  isActive    Boolean   @default(true)
+  isAvailable Boolean   @default(true)
+  skills      String[]  @default([])
+  joinedAt    DateTime  @default(now())
+  leftAt      DateTime?
+  team        Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([userId, isActive, isAvailable])
+}
+
+model Role {
+  id          String           @id @default(cuid())
+  code        RoleCode         @unique
+  name        String
+  description String?
+  assignments UserRole[]
+  permissions RolePermission[]
+}
+
+model Permission {
+  id          String           @id @default(cuid())
+  code        String           @unique
+  description String?
+  roles       RolePermission[]
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model UserRole {
+  id           String           @id @default(cuid())
+  userId       String
+  roleId       String
+  scopeId      String?
+  assignedById String?
+  createdAt    DateTime         @default(now())
+  user         User             @relation("RoleSubject", fields: [userId], references: [id], onDelete: Cascade)
+  role         Role             @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  scope        PermissionScope? @relation(fields: [scopeId], references: [id], onDelete: Cascade)
+  assignedBy   User?            @relation("RoleAssignmentActor", fields: [assignedById], references: [id], onDelete: SetNull)
+
+  @@unique([userId, roleId, scopeId])
+  @@index([roleId, scopeId])
+}
+
+model PermissionScope {
+  id           String        @id @default(cuid())
+  name         String
+  type         ScopeType
+  description  String?
+  departmentId String?
+  queueId      String?
+  teamId       String?
+  portfolioKey String?
+  department   Department?   @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  queue        Queue?        @relation(fields: [queueId], references: [id], onDelete: Cascade)
+  team         Team?         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  assignments  UserRole[]
+  members      ScopeMember[]
+
+  @@index([type, departmentId, queueId, teamId])
+}
+
+model ScopeMember {
+  scopeId String
+  userId  String
+  scope   PermissionScope @relation(fields: [scopeId], references: [id], onDelete: Cascade)
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([scopeId, userId])
+}
+
+model ServiceCatalogItem {
+  id              String           @id @default(cuid())
+  code            String           @unique
+  name            String
+  description     String?
+  ticketType      TicketType
+  category        String
+  keywords        String[]         @default([])
+  queueId         String
+  priorityDefault Priority         @default(MEDIUM)
+  slaId           String?
+  isActive        Boolean          @default(true)
+  queue           Queue            @relation(fields: [queueId], references: [id], onDelete: Restrict)
+  sla             SLA?             @relation(fields: [slaId], references: [id], onDelete: SetNull)
+  escalationRules EscalationRule[]
+  tickets         Ticket[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([queueId, isActive])
+  @@index([category, isActive])
+}
+
+model SLA {
+  id                   String               @id @default(cuid())
+  code                 String               @unique
+  name                 String
+  firstResponseMinutes Int
+  resolutionMinutes    Int
+  calendarId           String
+  calculationMode      SlaCalculationMode   @default(ROLLING)
+  alertThresholds      Int[]                @default([50, 80, 100])
+  isActive             Boolean              @default(true)
+  calendar             BusinessCalendar     @relation(fields: [calendarId], references: [id], onDelete: Restrict)
+  serviceItems         ServiceCatalogItem[]
+  tickets              Ticket[]
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+}
+
+model BusinessCalendar {
+  id                 String    @id @default(cuid())
+  code               String    @unique
+  name               String
+  timezone           String    @default("Indian/Antananarivo")
+  workingDays        Int[]     @default([1, 2, 3, 4, 5])
+  workdayStartMinute Int       @default(480)
+  workdayEndMinute   Int       @default(1020)
+  isActive           Boolean   @default(true)
+  holidays           Holiday[]
+  slas               SLA[]
+}
+
+model Holiday {
+  id         String           @id @default(cuid())
+  calendarId String
+  date       DateTime         @db.Date
+  name       String
+  calendar   BusinessCalendar @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+
+  @@unique([calendarId, date])
+  @@index([date])
+}
+
+model EscalationRule {
+  id               String              @id @default(cuid())
+  name             String
+  thresholdPercent Int
+  queueId          String?
+  serviceItemId    String?
+  targetRole       RoleCode            @default(QUEUE_MANAGER)
+  isActive         Boolean             @default(true)
+  queue            Queue?              @relation(fields: [queueId], references: [id], onDelete: Cascade)
+  serviceItem      ServiceCatalogItem? @relation(fields: [serviceItemId], references: [id], onDelete: Cascade)
+
+  @@index([queueId, thresholdPercent, isActive])
+  @@index([serviceItemId, thresholdPercent, isActive])
+}
+
+model ClientAccount {
+  id        String          @id @default(cuid())
+  code      String          @unique
+  name      String
+  isActive  Boolean         @default(true)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  dossiers  ClientDossier[]
+
+  @@index([isActive, name])
+}
+
+model ClientDossier {
+  id           String        @id @default(cuid())
+  clientId     String
+  code         String
+  name         String
+  confidential Boolean       @default(false)
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  client       ClientAccount @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  missions     Mission[]
+  tickets      Ticket[]
+
+  @@unique([clientId, code])
+  @@index([clientId, isActive])
+}
+
+model Mission {
+  id            String        @id @default(cuid())
+  dossierId     String
+  departmentId  String?
+  code          String
+  name          String
+  status        MissionStatus @default(ACTIVE)
+  dueAt         DateTime?
+  budgetMinutes Int?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  dossier       ClientDossier @relation(fields: [dossierId], references: [id], onDelete: Restrict)
+  department    Department?   @relation("MissionDepartment", fields: [departmentId], references: [id], onDelete: SetNull)
+  tickets       Ticket[]
+  worklogs      Worklog[]
+
+  @@unique([dossierId, code])
+  @@index([departmentId, status, dueAt])
+}
+
+model Asset {
+  id               String          @id @default(cuid())
+  assetTag         String          @unique
+  type             AssetType
+  status           AssetStatus     @default(ACTIVE)
+  name             String
+  serialNumber     String?
+  departmentId     String?
+  assignedToId     String?
+  licenseExpiresAt DateTime?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  department       Department?     @relation("DepartmentAssets", fields: [departmentId], references: [id], onDelete: SetNull)
+  assignedTo       User?           @relation("AssetAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  tickets          Ticket[]
+  movements        AssetMovement[]
+
+  @@index([departmentId, status])
+  @@index([assignedToId, status])
+}
+
+model AssetMovement {
+  id               String      @id @default(cuid())
+  assetId          String
+  fromUserId       String?
+  toUserId         String?
+  fromDepartmentId String?
+  toDepartmentId   String?
+  reason           String
+  movedAt          DateTime    @default(now())
+  createdById      String?
+  asset            Asset       @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  fromUser         User?       @relation("AssetMovementFromUser", fields: [fromUserId], references: [id], onDelete: SetNull)
+  toUser           User?       @relation("AssetMovementToUser", fields: [toUserId], references: [id], onDelete: SetNull)
+  fromDepartment   Department? @relation("AssetMovementFromDepartment", fields: [fromDepartmentId], references: [id], onDelete: SetNull)
+  toDepartment     Department? @relation("AssetMovementToDepartment", fields: [toDepartmentId], references: [id], onDelete: SetNull)
+  createdBy        User?       @relation("AssetMovementActor", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([assetId, movedAt])
+}
+
+model Worklog {
+  id        String   @id @default(cuid())
+  ticketId  String
+  missionId String?
+  userId    String
+  minutes   Int
+  note      String
+  startedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  mission   Mission? @relation(fields: [missionId], references: [id], onDelete: SetNull)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([ticketId, createdAt])
+  @@index([missionId, createdAt])
+  @@index([userId, startedAt])
+}
+
+model Ticket {
+  id                     String       @id @default(cuid())
+  reference              String       @unique
+  title                  String
+  description            String       @db.Text
+  type                   TicketType
+  category               String
+  priority               Priority
+  impact                 Impact       @default(MEDIUM)
+  urgency                Urgency      @default(MEDIUM)
+  priorityOverrideReason String?
+  legalDueAt             DateTime?
+  status                 TicketStatus @default(NEW)
+  requesterId            String
+  // Snapshot du département applicatif validé du demandeur au moment de la
+  // création. Le département opérationnel cible reste celui de la file issue
+  // du catalogue.
+  sourceDepartmentId     String?
+  createdById            String
+  assignedToId           String?
+  queueId                String
+  serviceCatalogItemId   String
+  dossierId              String?
+  missionId              String?
+  assetId                String?
+  slaId                  String?
+
+  confidential       Boolean            @default(false)
+  firstResponseDueAt DateTime?
+  resolutionDueAt    DateTime?
+  firstRespondedAt   DateTime?
+  resolvedAt         DateTime?
+  closedAt           DateTime?
+  slaPausedAt        DateTime?
+  totalPausedMinutes Int                @default(0)
+  blockReason        BlockReason?
+  blockDetails       String?
+  resolutionCause    String?
+  resolutionAction   String?
+  resolutionSolution String?
+  preventiveAction   String?
+  reopenedReason     String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  requester          User               @relation("TicketRequester", fields: [requesterId], references: [id], onDelete: Restrict)
+  sourceDepartment   Department?        @relation("TicketSourceDepartment", fields: [sourceDepartmentId], references: [id], onDelete: Restrict)
+  createdBy          User               @relation("TicketCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  assignedTo         User?              @relation("TicketAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  queue              Queue              @relation(fields: [queueId], references: [id], onDelete: Restrict)
+  serviceCatalogItem ServiceCatalogItem @relation(fields: [serviceCatalogItemId], references: [id], onDelete: Restrict)
+  dossier            ClientDossier?     @relation(fields: [dossierId], references: [id], onDelete: SetNull)
+  mission            Mission?           @relation(fields: [missionId], references: [id], onDelete: SetNull)
+  asset              Asset?             @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  sla                SLA?               @relation(fields: [slaId], references: [id], onDelete: SetNull)
+
+  messages      TicketMessage[]
+  assignments   TicketAssignment[]
+  events        TicketEvent[]
+  attachments   Attachment[]
+  accessList    TicketAccess[]
+  notifications Notification[]
+  linksFrom     TicketLink[]       @relation("TicketLinkFrom")
+  linksTo       TicketLink[]       @relation("TicketLinkTo")
+  slaExceptions SlaException[]
+  worklogs      Worklog[]
+
+  @@index([requesterId, status, updatedAt])
+  @@index([sourceDepartmentId, createdAt])
+  @@index([queueId, status, priority, updatedAt])
+  @@index([assignedToId, status, updatedAt])
+  @@index([status, resolutionDueAt])
+}
+
+model TicketMessage {
+  id          String            @id @default(cuid())
+  ticketId    String
+  authorId    String
+  body        String            @db.Text
+  visibility  MessageVisibility @default(REQUESTER)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  ticket      Ticket            @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author      User              @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  attachments Attachment[]
+
+  @@index([ticketId, visibility, createdAt])
+}
+
+model TicketAssignment {
+  id                 String   @id @default(cuid())
+  ticketId           String
+  queueId            String
+  previousAssigneeId String?
+  newAssigneeId      String?
+  assignedById       String?
+  reason             String?
+  assignedAt         DateTime @default(now())
+  ticket             Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  queue              Queue    @relation(fields: [queueId], references: [id], onDelete: Restrict)
+  previousAssignee   User?    @relation("AssignmentPrevious", fields: [previousAssigneeId], references: [id], onDelete: SetNull)
+  newAssignee        User?    @relation("AssignmentNew", fields: [newAssigneeId], references: [id], onDelete: SetNull)
+  assignedBy         User?    @relation("AssignmentActor", fields: [assignedById], references: [id], onDelete: SetNull)
+
+  @@index([ticketId, assignedAt])
+  @@index([queueId, assignedAt])
+}
+
+model TicketEvent {
+  id         String          @id @default(cuid())
+  ticketId   String
+  actorId    String?
+  queueId    String?
+  eventType  TicketEventType
+  fromStatus TicketStatus?
+  toStatus   TicketStatus?
+  metadata   Json?
+  createdAt  DateTime        @default(now())
+  ticket     Ticket          @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  actor      User?           @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  queue      Queue?          @relation(fields: [queueId], references: [id], onDelete: SetNull)
+
+  @@index([ticketId, createdAt])
+  @@index([queueId, eventType, createdAt])
+}
+
+model Notification {
+  id          String              @id @default(cuid())
+  recipientId String
+  ticketId    String?
+  type        NotificationType
+  channel     NotificationChannel @default(IN_APP)
+  status      NotificationStatus  @default(PENDING)
+  title       String
+  body        String              @db.Text
+  readAt      DateTime?
+  sentAt      DateTime?
+  createdAt   DateTime            @default(now())
+  recipient   User                @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  ticket      Ticket?             @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId, status, createdAt])
+  @@index([ticketId, type, createdAt])
+}
+
+model NotificationRule {
+  id            String              @id @default(cuid())
+  name          String
+  eventType     NotificationType
+  channel       NotificationChannel @default(IN_APP)
+  recipientRole RoleCode
+  departmentId  String?
+  queueId       String?
+  isActive      Boolean             @default(true)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  department    Department?         @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  queue         Queue?              @relation(fields: [queueId], references: [id], onDelete: Restrict)
+
+  @@index([eventType, isActive])
+  @@index([departmentId, isActive])
+  @@index([queueId, isActive])
+}
+
+model Attachment {
+  id           String         @id @default(cuid())
+  ticketId     String
+  messageId    String?
+  uploadedById String
+  fileName     String
+  storageKey   String         @unique
+  mimeType     String
+  sizeBytes    Int
+  createdAt    DateTime       @default(now())
+  ticket       Ticket         @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  message      TicketMessage? @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  uploadedBy   User           @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+
+  @@index([ticketId, createdAt])
+}
+
+model TicketAccess {
+  ticketId  String
+  userId    String
+  grantedBy String?
+  grantedAt DateTime @default(now())
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([ticketId, userId])
+  @@index([userId, grantedAt])
+}
+
+model TicketLink {
+  id           String         @id @default(cuid())
+  fromTicketId String
+  toTicketId   String
+  type         TicketLinkType
+  reason       String?
+  createdById  String?
+  createdAt    DateTime       @default(now())
+  fromTicket   Ticket         @relation("TicketLinkFrom", fields: [fromTicketId], references: [id], onDelete: Cascade)
+  toTicket     Ticket         @relation("TicketLinkTo", fields: [toTicketId], references: [id], onDelete: Cascade)
+  createdBy    User?          @relation("TicketLinkActor", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@unique([fromTicketId, toTicketId, type])
+  @@index([fromTicketId, type])
+  @@index([toTicketId, type])
+}
+
+model SlaException {
+  id                 String    @id @default(cuid())
+  ticketId           String
+  createdById        String
+  reason             String
+  addedMinutes       Int       @default(0)
+  firstResponseDueAt DateTime?
+  resolutionDueAt    DateTime?
+  createdAt          DateTime  @default(now())
+  ticket             Ticket    @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  createdBy          User      @relation("SlaExceptionActor", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([ticketId, createdAt])
+}
+
+model WorkflowDefinition {
+  id          String             @id @default(cuid())
+  code        String             @unique
+  name        String
+  entityType  WorkflowEntityType
+  status      WorkflowStatus     @default(DRAFT)
+  version     Int                @default(1)
+  steps       Json
+  transitions Json
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([entityType, status])
+}
+
+model KnowledgeArticle {
+  id           String      @id @default(cuid())
+  title        String
+  body         String      @db.Text
+  departmentId String?
+  ownerId      String
+  isPublished  Boolean     @default(false)
+  reviewAt     DateTime?
+  tags         String[]    @default([])
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  owner        User        @relation("KnowledgeArticleOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+
+  @@index([departmentId, isPublished, reviewAt])
+  @@index([ownerId, updatedAt])
+}
+
+model NotificationPreference {
+  id        String              @id @default(cuid())
+  userId    String
+  eventType NotificationType
+  channel   NotificationChannel
+  enabled   Boolean             @default(true)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventType, channel])
+}
+
+model UserProfileChange {
+  id        String   @id @default(cuid())
+  userId    String
+  actorId   String?
+  field     String
+  oldValue  Json?
+  newValue  Json?
+  reason    String
+  createdAt DateTime @default(now())
+  user      User     @relation("UserProfileChanges", fields: [userId], references: [id], onDelete: Restrict)
+  actor     User?    @relation("UserProfileChangeActors", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([actorId, createdAt])
+  @@index([field, createdAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  objectType String
+  objectId   String
+  oldValue   Json?
+  newValue   Json?
+  reason     String?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([objectType, objectId, createdAt])
+  @@index([actorId, createdAt])
+}

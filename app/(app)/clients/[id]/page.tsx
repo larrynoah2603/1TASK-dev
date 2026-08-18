@@ -1,0 +1,32 @@
+import Link from "next/link";
+import type { Route } from "next";
+import { notFound } from "next/navigation";
+import { PriorityBadge, StatusBadge } from "@/components/status-badge";
+import { getClientForViewer } from "@/lib/production-service";
+import { getSessionUserContext } from "@/lib/server-auth";
+
+const missionStatusLabels: Record<string, string> = { DRAFT: "Brouillon", ACTIVE: "Active", BLOCKED: "Bloquée", COMPLETED: "Terminée", ARCHIVED: "Archivée" };
+function formatDate(value: Date | null | undefined) { return value ? new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" }).format(value) : "Non définie"; }
+function formatMinutes(minutes: number) { const hours = Math.floor(minutes / 60); const remaining = minutes % 60; return hours ? `${hours} h ${remaining.toString().padStart(2, "0")}` : `${remaining} min`; }
+
+export default async function ClientDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const user = await getSessionUserContext();
+  if (!user) return null;
+  let result;
+  try { result = await getClientForViewer(user, (await params).id); } catch { notFound(); }
+  if (!result) notFound();
+  const { client, dossiers, tickets, worklogSummary } = result;
+  const missions = dossiers.flatMap((dossier) => dossier.missions.map((mission) => ({ ...mission, dossier })));
+  const activeMissions = missions.filter((mission) => mission.status === "ACTIVE").length;
+  const totalBudget = missions.reduce((total, mission) => total + (mission.budgetMinutes ?? 0), 0);
+
+  return <div className="space-y-5">
+    <div><Link href={"/clients" as Route} className="text-xs font-semibold text-[#4c4dba] hover:underline">← Retour aux clients</Link><header className="mt-4 flex flex-col justify-between gap-4 lg:flex-row lg:items-start"><div><p className="eyebrow">Référentiel client · {client.code}</p><h1 className="mt-1">{client.name}</h1><p className="page-header-description mt-1">Dossiers, missions et tickets visibles dans votre périmètre de production.</p></div><span className={`status-chip ${client.isActive ? "status-chip-active" : "status-chip-archived"}`}>{client.isActive ? "Client actif" : "Client inactif"}</span></header></div>
+
+    <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><div className="metric-card"><p className="text-[11px] text-slate-500">Dossiers visibles</p><p className="mt-1 text-2xl font-bold tracking-tight text-slate-900">{dossiers.length}</p></div><div className="metric-card"><p className="text-[11px] text-slate-500">Missions</p><p className="mt-1 text-2xl font-bold tracking-tight text-emerald-700">{missions.length}</p><p className="mt-1 text-[11px] text-slate-400">{activeMissions} active(s)</p></div><div className="metric-card"><p className="text-[11px] text-slate-500">Tickets liés</p><p className="mt-1 text-2xl font-bold tracking-tight text-slate-900">{tickets.length}</p><p className="mt-1 text-[11px] text-slate-400">50 derniers affichés</p></div><div className="metric-card"><p className="text-[11px] text-slate-500">Temps / budget</p><p className="mt-1 text-2xl font-bold tracking-tight text-slate-900">{formatMinutes(worklogSummary.minutes)}</p><p className="mt-1 text-[11px] text-slate-400">{totalBudget ? `budget : ${formatMinutes(totalBudget)}` : "Budget non défini"}</p></div></section>
+
+    <section className="panel overflow-hidden"><div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 sm:px-5"><div><p className="eyebrow">Portefeuille</p><h2 className="mt-1 text-base font-semibold text-slate-900">Dossiers et missions</h2></div><span className="text-[11px] text-slate-400">{missions.length} mission(s)</span></div><div className="overflow-x-auto"><table className="data-table min-w-[820px]"><thead><tr><th>Dossier</th><th>Mission</th><th>Statut</th><th>Département</th><th>Échéance</th><th>Tickets</th></tr></thead><tbody>{missions.map((mission) => <tr key={mission.id}><td><Link href={`/dossiers/${mission.dossier.id}` as Route} className="font-semibold text-[#4c4dba] hover:underline">{mission.dossier.code}</Link><p className="mt-0.5 max-w-[200px] truncate text-xs text-slate-500">{mission.dossier.name}</p></td><td><Link href={`/missions/${mission.id}` as Route} className="font-semibold text-[#4c4dba] hover:underline">{mission.code}</Link><p className="mt-0.5 max-w-[220px] truncate text-xs text-slate-500">{mission.name}</p></td><td><span className={`status-chip status-chip-${mission.status.toLowerCase()}`}>{missionStatusLabels[mission.status] ?? mission.status}</span></td><td className="text-xs text-slate-600">{mission.department?.name ?? "Non rattaché"}</td><td className="text-xs text-slate-500">{formatDate(mission.dueAt)}</td><td className="font-semibold text-slate-800">—</td></tr>)}{!missions.length ? <tr><td colSpan={6} className="py-10 text-center text-sm text-slate-500">Aucune mission visible pour ce client.</td></tr> : null}</tbody></table></div></section>
+
+    <section className="panel overflow-hidden"><div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 sm:px-5"><div><p className="eyebrow">Service desk</p><h2 className="mt-1 text-base font-semibold text-slate-900">Tickets liés</h2></div><Link href="/inbox" className="text-[11px] font-semibold text-[#4c4dba] hover:underline">Ouvrir la boîte agent</Link></div><div className="overflow-x-auto"><table className="data-table min-w-[760px]"><thead><tr><th>Ticket</th><th>Dossier / mission</th><th>État</th><th>Priorité</th><th>File</th><th>Créé le</th></tr></thead><tbody>{tickets.map((ticket) => <tr key={ticket.id}><td><Link href={`/tickets/${ticket.id}` as Route} className="font-semibold text-[#4c4dba] hover:underline">{ticket.reference}</Link><p className="mt-0.5 max-w-[210px] truncate text-xs text-slate-500">{ticket.title}</p></td><td className="text-xs text-slate-600"><p>{ticket.dossier?.code ?? "Sans dossier"}</p><p className="mt-0.5 text-[10px] text-slate-400">{ticket.mission?.code ?? "Sans mission"}</p></td><td><StatusBadge status={ticket.status} /></td><td><PriorityBadge priority={ticket.priority} /></td><td className="text-xs text-slate-600">{ticket.queue.name}</td><td className="text-xs text-slate-500">{formatDate(ticket.createdAt)}</td></tr>)}{!tickets.length ? <tr><td colSpan={6} className="py-10 text-center text-sm text-slate-500">Aucun ticket lié à ce client dans votre périmètre.</td></tr> : null}</tbody></table></div></section>
+  </div>;
+}
