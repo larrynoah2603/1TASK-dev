@@ -79,14 +79,31 @@ export function NewTicketForm({ onCancel }: { onCancel?: () => void } = {}) {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetch("/api/catalog")
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 10_000);
+
+    fetch("/api/catalog", { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error("catalog-error");
         return response.json() as Promise<CatalogItem[]>;
       })
       .then(setCatalog)
-      .catch(() => setError("Impossible de charger le catalogue de services."))
-      .finally(() => setLoadingCatalog(false));
+      .catch((requestError: unknown) => {
+        if (requestError instanceof DOMException && requestError.name === "AbortError") {
+          setError("Le catalogue met trop de temps à répondre. Réessayez après le redémarrage de l’application.");
+          return;
+        }
+        setError("Impossible de charger le catalogue de services.");
+      })
+      .finally(() => {
+        window.clearTimeout(timeoutId);
+        setLoadingCatalog(false);
+      });
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
   }, []);
 
   useEffect(() => {
@@ -187,7 +204,7 @@ export function NewTicketForm({ onCancel }: { onCancel?: () => void } = {}) {
       {canAttachProductionContext ? <section className="rounded-lg border border-slate-200 bg-slate-50/70 p-4"><div><p className="eyebrow">Contexte de production</p><h3 className="mt-1 text-sm font-semibold text-slate-900">Rattacher ce ticket à un dossier ou une mission</h3><p className="mt-1 text-xs leading-5 text-slate-500">Facultatif. Les options sont limitées à votre périmètre autorisé et contrôlées à nouveau lors de la création.</p></div><div className="mt-4 grid gap-4 sm:grid-cols-2"><label className="field-label">Dossier client<Combobox value={dossierId} onChange={(next) => { setDossierId(next); const selectedMission = missions.find((mission) => mission.id === missionId); if (selectedMission && next && selectedMission.dossier.id !== next) setMissionId(""); resetPreview(); }} placeholder="Aucun dossier" options={[{ value: "", label: "Aucun dossier" }, ...dossiers.map((dossier) => ({ value: dossier.id, label: `${dossier.client.name} · ${dossier.code} · ${dossier.name}` }))]} /></label><label className="field-label">Mission<Combobox value={missionId} onChange={(next) => { const selectedMission = missions.find((mission) => mission.id === next); setMissionId(next); if (selectedMission) setDossierId(selectedMission.dossier.id); resetPreview(); }} placeholder="Aucune mission" options={[{ value: "", label: "Aucune mission" }, ...availableMissions.map((mission) => ({ value: mission.id, label: `${mission.code} · ${mission.name}` }))]} /></label></div></section> : null}
       <label className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50/80 p-4 text-sm text-slate-700 transition hover:border-[#cfd0f0]"><input type="checkbox" checked={confidential} onChange={(event) => { setConfidential(event.target.checked); resetPreview(); }} className="mt-0.5 h-4 w-4 accent-[#5b5bd6]" /><span><span className="font-semibold">Dossier confidentiel</span><span className="mt-1 block text-xs leading-5 text-slate-500">L’accès sera limité aux personnes habilitées et nominativement autorisées.</span></span></label>
       {preview ? <section className="preview-panel" aria-labelledby="ticket-preview-title"><div className="flex items-start justify-between gap-3"><div><p className="eyebrow">Dernière vérification</p><h2 id="ticket-preview-title" className="mt-1 text-lg font-bold text-slate-900">Prévisualisation du ticket</h2></div><span className="rounded-md bg-emerald-50 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-emerald-700">Prêt à envoyer</span></div><dl className="mt-5 grid gap-4 text-sm sm:grid-cols-2"><div><dt className="text-xs text-slate-500">Service</dt><dd className="mt-1 font-semibold text-slate-900">{selectedService?.name}</dd></div><div><dt className="text-xs text-slate-500">Routage</dt><dd className="mt-1 font-semibold text-slate-900">{selectedService?.queue.department.name} · {selectedService?.queue.name}</dd></div><div className="sm:col-span-2"><dt className="text-xs text-slate-500">Objet</dt><dd className="mt-1 font-semibold text-slate-900">{title}</dd></div><div className="sm:col-span-2"><dt className="text-xs text-slate-500">Description</dt><dd className="mt-1 whitespace-pre-wrap text-slate-700">{description}</dd></div><div><dt className="text-xs text-slate-500">Impact / urgence</dt><dd className="mt-1 font-semibold text-slate-900">{impactLabels[impact]} · {urgencyLabels[urgency]}</dd></div><div><dt className="text-xs text-slate-500">SLA</dt><dd className="mt-1 font-semibold text-slate-900">{selectedService?.sla?.name ?? "Non configuré"}</dd></div><div><dt className="text-xs text-slate-500">Confidentialité</dt><dd className="mt-1 font-semibold text-slate-900">{confidential ? "Dossier confidentiel" : "Dossier standard"}</dd></div>{dossierId || missionId ? <div className="sm:col-span-2"><dt className="text-xs text-slate-500">Contexte de production</dt><dd className="mt-1 font-semibold text-slate-900">{missions.find((mission) => mission.id === missionId)?.code ?? dossiers.find((dossier) => dossier.id === dossierId)?.code ?? "Rattaché"}</dd></div> : null}</dl></section> : null}
-      <div className="form-actions flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end"><button type="button" onClick={() => onCancel ? onCancel() : router.back()} className="button-secondary">Annuler</button>{preview ? <><button type="button" onClick={() => setPreview(false)} className="button-secondary">Modifier</button><button type="submit" disabled={submitting || loadingCatalog} className="button-primary">{submitting ? "Création…" : "Confirmer et créer"}</button></> : <button type="button" disabled={submitting || loadingCatalog || !canPreview} onClick={() => setPreview(true)} className="button-primary">Prévisualiser le ticket</button>}</div>
+      <div className="form-actions flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end"><button type="button" onClick={() => onCancel ? onCancel() : router.back()} className="button-secondary">Annuler</button>{preview ? <><button type="button" onClick={() => setPreview(false)} className="button-secondary">Modifier</button><button type="submit" disabled={submitting || loadingCatalog} className="button-primary">{submitting ? "Création…" : "Confirmer et créer"}</button></> : <button type="button" disabled={submitting || loadingCatalog || !canPreview} onClick={() => setPreview(true)} className="button-primary">{loadingCatalog ? "Chargement du catalogue…" : !serviceId ? "Sélectionnez un service" : title.trim().length < 5 ? "Objet : 5 caractères minimum" : description.trim().length < 15 ? "Description : 15 caractères minimum" : "Prévisualiser le ticket"}</button>}</div>
     </form>
   );
 }
