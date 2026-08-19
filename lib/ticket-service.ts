@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { after } from "next/server";
 import {
   MessageVisibility,
   NotificationType,
@@ -522,37 +523,39 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
     timeout: 15_000,
   });
 
-  try {
-    await createInAppNotification(prisma, {
-      recipientId: actor.id,
-      ticketId: result.ticket.id,
-      type: NotificationType.TICKET_CREATED,
-      title: "Ticket créé",
-      body: `${result.ticket.reference} a été créé et routé vers ${result.ticket.queue.name}.`,
-    });
-
-    if (result.autoAssigned && result.autoAssignedUserId) {
+  after(async () => {
+    try {
       await createInAppNotification(prisma, {
-        recipientId: result.autoAssignedUserId,
+        recipientId: actor.id,
         ticketId: result.ticket.id,
-        type: NotificationType.TICKET_ASSIGNED,
-        title: "Nouveau ticket affecté",
-        body: `${result.ticket.reference} vous a été affecté automatiquement.`,
+        type: NotificationType.TICKET_CREATED,
+        title: "Ticket créé",
+        body: `${result.ticket.reference} a été créé et routé vers ${result.ticket.queue.name}.`,
       });
-    } else {
-      await notifyQueueWorkers(prisma, {
-        queueId: result.queueId,
-        managerId: result.managerId,
-        ticketId: result.ticket.id,
-        type: NotificationType.QUEUE_NEW_TICKET,
-        title: "Nouveau ticket dans votre file",
-        body: `${result.ticket.reference} attend une qualification ou une prise en charge.`,
-        excludeUserIds: [actor.id],
-      });
+
+      if (result.autoAssigned && result.autoAssignedUserId) {
+        await createInAppNotification(prisma, {
+          recipientId: result.autoAssignedUserId,
+          ticketId: result.ticket.id,
+          type: NotificationType.TICKET_ASSIGNED,
+          title: "Nouveau ticket affecté",
+          body: `${result.ticket.reference} vous a été affecté automatiquement.`,
+        });
+      } else {
+        await notifyQueueWorkers(prisma, {
+          queueId: result.queueId,
+          managerId: result.managerId,
+          ticketId: result.ticket.id,
+          type: NotificationType.QUEUE_NEW_TICKET,
+          title: "Nouveau ticket dans votre file",
+          body: `${result.ticket.reference} attend une qualification ou une prise en charge.`,
+          excludeUserIds: [actor.id],
+        });
+      }
+    } catch (notificationError) {
+      console.error("Ticket créé, mais la diffusion des notifications a échoué.", notificationError);
     }
-  } catch (notificationError) {
-    console.error("Ticket créé, mais la diffusion des notifications a échoué.", notificationError);
-  }
+  });
 
   return result.ticket;
 }
