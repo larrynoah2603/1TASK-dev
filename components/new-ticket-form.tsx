@@ -128,10 +128,13 @@ export function NewTicketForm({ onCancel }: { onCancel?: () => void } = {}) {
     event.preventDefault();
     setSubmitting(true);
     setError("");
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 30_000);
     try {
       const response = await fetch("/api/tickets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({ serviceCatalogItemId: serviceId, title, description, confidential, impact, urgency, legalDueAt: legalDueAt ? new Date(`${legalDueAt}T23:59:59`).toISOString() : null, dossierId: dossierId || null, missionId: missionId || null }),
       });
       const data = await response.json();
@@ -142,10 +145,14 @@ export function NewTicketForm({ onCancel }: { onCancel?: () => void } = {}) {
       }
       toast("Ticket créé avec succès.");
       router.push(`/tickets/${data.id}`);
-    } catch {
-      setError("La création n’a pas pu être envoyée.");
-      toast("La création n’a pas pu être envoyée.", "error");
+    } catch (requestError: unknown) {
+      const message = requestError instanceof DOMException && requestError.name === "AbortError"
+        ? "La création dépasse 30 secondes. Le ticket n’a pas été confirmé ; vérifiez la boîte agent avant de réessayer."
+        : "La création n’a pas pu être envoyée.";
+      setError(message);
+      toast(message, "error");
     } finally {
+      window.clearTimeout(timeoutId);
       setSubmitting(false);
     }
   }

@@ -31,7 +31,7 @@ import {
   makeTicketReference,
 } from "@/lib/domain";
 import { calculateSlaDeadlines, getTicketSlaState, SLA_RISK_WINDOW_MINUTES } from "@/lib/sla";
-import { createInAppNotification } from "@/lib/notifications";
+import { createInAppNotification, createInAppNotifications } from "@/lib/notifications";
 import { appendAuditLog } from "@/lib/audit";
 import {
   toAccessSubject,
@@ -207,7 +207,7 @@ function requireAdministrativeReason(actor: UserContext, reason: string | undefi
   }
 }
 
-async function queueWorkerIds(db: Prisma.TransactionClient, queueId: string): Promise<string[]> {
+async function queueWorkerIds(db: Prisma.TransactionClient | typeof prisma, queueId: string): Promise<string[]> {
   const members = await db.teamMember.findMany({
     where: {
       isActive: true,
@@ -220,7 +220,7 @@ async function queueWorkerIds(db: Prisma.TransactionClient, queueId: string): Pr
 }
 
 async function notifyQueueWorkers(
-  db: Prisma.TransactionClient,
+  db: Prisma.TransactionClient | typeof prisma,
   input: {
     queueId: string;
     managerId?: string | null;
@@ -236,15 +236,14 @@ async function notifyQueueWorkers(
     ...(await queueWorkerIds(db, input.queueId)),
   ].filter(Boolean) as string[]);
   for (const recipientId of input.excludeUserIds ?? []) recipients.delete(recipientId);
-  for (const recipientId of recipients) {
-    await createInAppNotification(db, {
-      recipientId,
-      ticketId: input.ticketId,
-      type: input.type,
-      title: input.title,
-      body: input.body,
-    });
-  }
+  await createInAppNotifications(db, [...recipients].map((recipientId) => ({
+    recipientId,
+    ticketId: input.ticketId,
+    type: input.type,
+    title: input.title,
+    body: input.body,
+  })));
+
 }
 
 async function chooseAutoAssignee(
@@ -420,7 +419,7 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
     holidays: activeSla.calendar.holidays.map((holiday) => holiday.date),
   });
 
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     let ticket = await tx.ticket.create({
       data: {
         reference: makeTicketReference(now),
@@ -484,15 +483,9 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
         queueId: ticket.queue.id,
       },
     });
-    await createInAppNotification(tx, {
-      recipientId: actor.id,
-      ticketId: ticket.id,
-      type: NotificationType.TICKET_CREATED,
-      title: "Ticket créé",
-      body: `${ticket.reference} a été créé et routé vers ${ticket.queue.name}.`,
-    });
 
     let autoAssigned = false;
+    let autoAssignedUserId: string | null = null;
     if (service.queue.autoAssignment) {
       const candidate = await chooseAutoAssignee(tx, routing.queueId, service.keywords);
       if (candidate) {
@@ -512,30 +505,56 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
           toStatus: TicketStatus.ASSIGNED,
           assignmentMode: "AUTO",
         });
-        await createInAppNotification(tx, {
-          recipientId: candidate.userId,
-          ticketId: ticket.id,
-          type: NotificationType.TICKET_ASSIGNED,
-          title: "Nouveau ticket affecté",
-          body: `${ticket.reference} vous a été affecté automatiquement.`,
-        });
         autoAssigned = true;
+        autoAssignedUserId = candidate.userId;
       }
     }
 
-    if (!autoAssigned) {
-      await notifyQueueWorkers(tx, {
-        queueId: ticket.queue.id,
-        managerId: ticket.queue.managerId,
-        ticketId: ticket.id,
+    return {
+      ticket,
+      autoAssigned,
+      autoAssignedUserId,
+      queueId: ticket.queue.id,
+      managerId: ticket.queue.managerId,
+    };
+  }, {
+    maxWait: 10_000,
+    timeout: 15_000,
+  });
+
+  try {
+    await createInAppNotification(prisma, {
+      recipientId: actor.id,
+      ticketId: result.ticket.id,
+      type: NotificationType.TICKET_CREATED,
+      title: "Ticket créé",
+      body: `${result.ticket.reference} a été créé et routé vers ${result.ticket.queue.name}.`,
+    });
+
+    if (result.autoAssigned && result.autoAssignedUserId) {
+      await createInAppNotification(prisma, {
+        recipientId: result.autoAssignedUserId,
+        ticketId: result.ticket.id,
+        type: NotificationType.TICKET_ASSIGNED,
+        title: "Nouveau ticket affecté",
+        body: `${result.ticket.reference} vous a été affecté automatiquement.`,
+      });
+    } else {
+      await notifyQueueWorkers(prisma, {
+        queueId: result.queueId,
+        managerId: result.managerId,
+        ticketId: result.ticket.id,
         type: NotificationType.QUEUE_NEW_TICKET,
         title: "Nouveau ticket dans votre file",
-        body: `${ticket.reference} attend une qualification ou une prise en charge.`,
+        body: `${result.ticket.reference} attend une qualification ou une prise en charge.`,
         excludeUserIds: [actor.id],
       });
     }
-    return ticket;
-  });
+  } catch (notificationError) {
+    console.error("Ticket créé, mais la diffusion des notifications a échoué.", notificationError);
+  }
+
+  return result.ticket;
 }
 
 type VisibilityOptions = {
