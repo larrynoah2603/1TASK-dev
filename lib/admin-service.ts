@@ -671,6 +671,9 @@ export async function updateManagedUserProfile(
       });
     }
     return updated;
+  }, {
+    maxWait: 10_000,
+    timeout: 15_000,
   });
 }
 
