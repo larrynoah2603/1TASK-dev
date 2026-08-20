@@ -141,13 +141,20 @@ export const worklogSchema = z.object({
   startedAt: z.coerce.date().optional(),
 }).strict();
 
+export const knowledgeArticleStatusSchema = z.object({
+  status: z.enum(["DRAFT", "REVIEW", "PUBLISHED", "ARCHIVED"]),
+  reason: z.string().trim().min(10).max(2_000),
+}).strict();
+
 export const knowledgeArticleSchema = z.object({
   title: z.string().trim().min(5).max(180),
   body: z.string().trim().min(20).max(50_000),
   departmentId: z.string().cuid().nullable().optional(),
   reviewAt: z.coerce.date().nullable().optional(),
   tags: z.array(z.string().trim().min(1).max(80)).max(30).default([]),
-  isPublished: z.boolean().default(false),
+  status: z.enum(["DRAFT", "REVIEW", "PUBLISHED", "ARCHIVED"]).default("DRAFT"),
+  // Kept as a compatibility input for existing clients; the service derives it from status.
+  isPublished: z.boolean().optional(),
 }).strict();
 
 export const notificationPreferenceSchema = z.object({
@@ -259,6 +266,7 @@ export type AssetInput = z.infer<typeof assetSchema>;
 export type AssetMovementInput = z.infer<typeof assetMovementSchema>;
 export type WorklogInput = z.infer<typeof worklogSchema>;
 export type KnowledgeArticleInput = z.infer<typeof knowledgeArticleSchema>;
+export type KnowledgeArticleStatusInput = z.infer<typeof knowledgeArticleStatusSchema>;
 export type NotificationPreferenceInput = z.infer<typeof notificationPreferenceSchema>;
 export type WorkflowDefinitionInput = z.infer<typeof workflowDefinitionSchema>;
 export type EntraDepartmentMappingInput = z.infer<typeof entraDepartmentMappingSchema>;

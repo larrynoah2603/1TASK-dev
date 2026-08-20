@@ -180,6 +180,13 @@ enum WorkflowStatus {
   ARCHIVED
 }
 
+enum KnowledgeArticleStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
 model User {
   id                             String      @id @default(cuid())
   entraObjectId                  String?     @unique
@@ -897,18 +904,19 @@ model WorkflowDefinition {
 }
 
 model KnowledgeArticle {
-  id           String      @id @default(cuid())
+  id           String                 @id @default(cuid())
   title        String
-  body         String      @db.Text
+  body         String                 @db.Text
   departmentId String?
   ownerId      String
-  isPublished  Boolean     @default(false)
+  status       KnowledgeArticleStatus @default(DRAFT)
+  isPublished  Boolean                @default(false)
   reviewAt     DateTime?
-  tags         String[]    @default([])
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  owner        User        @relation("KnowledgeArticleOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  tags         String[]               @default([])
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  department   Department?            @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  owner        User                   @relation("KnowledgeArticleOwner", fields: [ownerId], references: [id], onDelete: Restrict)
 
   @@index([departmentId, isPublished, reviewAt])
   @@index([ownerId, updatedAt])

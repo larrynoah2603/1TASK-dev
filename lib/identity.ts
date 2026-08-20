@@ -34,6 +34,7 @@ export const ROLE_DESCRIPTIONS: Record<RoleCode, string> = {
  */
 export const PERMISSION_CATALOG = {
   "ticket:create": "Créer un ticket",
+  "ticket:create:cross-department": "Créer un ticket vers une file d’un autre département",
   "ticket:read": "Lire les tickets autorisés",
   "ticket:update": "Modifier un ticket autorisé",
   "ticket:comment:public": "Ajouter un commentaire public",
@@ -50,6 +51,7 @@ export const PERMISSION_CATALOG = {
   "ticket:internal-comment": "Ajouter un commentaire interne",
   "ticket:export": "Exporter les tickets non confidentiels autorisés",
   "catalog:manage": "Administrer le catalogue",
+  "catalog:propose": "Proposer un nouveau service catalogue",
   "organization:manage": "Administrer l’organisation",
   "role:manage": "Administrer les rôles et les droits",
   "entra-department:manage": "Gérer les correspondances Entra-département",
@@ -75,6 +77,7 @@ type PermissionCode = keyof typeof PERMISSION_CATALOG;
 const ROLE_PERMISSION_CODES: Record<RoleCode, readonly PermissionCode[]> = {
   [RoleCode.REQUESTER]: [
     "ticket:create",
+    "ticket:create:cross-department",
     "ticket:read",
     "ticket:update",
     "ticket:comment:public",
@@ -82,6 +85,7 @@ const ROLE_PERMISSION_CODES: Record<RoleCode, readonly PermissionCode[]> = {
     "ticket:reopen",
   ],
   [RoleCode.AGENT]: [
+    "ticket:create:cross-department",
     "ticket:read",
     "ticket:update",
     "ticket:comment:public",
@@ -95,9 +99,11 @@ const ROLE_PERMISSION_CODES: Record<RoleCode, readonly PermissionCode[]> = {
     "asset:read",
     "worklog:create",
     "knowledge:read",
+    "catalog:propose",
     "notification:preferences",
   ],
   [RoleCode.QUEUE_MANAGER]: [
+    "ticket:create:cross-department",
     "ticket:read",
     "ticket:update",
     "ticket:comment:public",
@@ -116,6 +122,7 @@ const ROLE_PERMISSION_CODES: Record<RoleCode, readonly PermissionCode[]> = {
     "knowledge:read",
     "notification:preferences",
     "workflow:manage",
+    "catalog:propose",
   ],
   [RoleCode.FUNCTIONAL_ADMIN]: Object.keys(PERMISSION_CATALOG) as PermissionCode[],
   [RoleCode.TECHNICAL_ADMIN]: ["technical:manage", "asset:read", "asset:manage"],

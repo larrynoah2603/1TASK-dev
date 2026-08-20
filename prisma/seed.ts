@@ -6,6 +6,7 @@ const prisma = new PrismaClient();
 
 const permissionCatalog = [
   ["ticket:create", "Créer un ticket"],
+  ["ticket:create:cross-department", "Créer un ticket vers une file d’un autre département"],
   ["ticket:read", "Lire les tickets autorisés"],
   ["ticket:update", "Modifier un ticket autorisé"],
   ["ticket:comment:public", "Ajouter un commentaire public"],
@@ -22,6 +23,7 @@ const permissionCatalog = [
   ["ticket:internal-comment", "Ajouter un commentaire interne"],
   ["ticket:export", "Exporter les tickets non confidentiels autorisés"],
   ["catalog:manage", "Administrer le catalogue"],
+  ["catalog:propose", "Proposer un nouveau service catalogue"],
   ["organization:manage", "Administrer l’organisation"],
   ["role:manage", "Administrer les rôles et les droits"],
   ["entra-department:manage", "Gérer les correspondances Entra-département"],
@@ -40,9 +42,9 @@ async function main() {
 
   const permissionIds = Object.fromEntries((await prisma.permission.findMany()).map((permission) => [permission.code, permission.id]));
   const rolePermissions: Record<RoleCode, string[]> = {
-    REQUESTER: ["ticket:create", "ticket:read", "ticket:update", "ticket:comment:public", "ticket:confirm-resolution", "ticket:reopen"],
-    AGENT: ["ticket:read", "ticket:update", "ticket:comment:public", "ticket:comment:internal", "ticket:claim", "ticket:internal-comment", "ticket:process", "ticket:block", "ticket:resolve"],
-    QUEUE_MANAGER: ["ticket:read", "ticket:update", "ticket:comment:public", "ticket:comment:internal", "ticket:assign", "ticket:transfer", "ticket:confidential-access", "ticket:internal-comment", "ticket:block", "ticket:resolve", "ticket:export", "reporting:read"],
+    REQUESTER: ["ticket:create", "ticket:create:cross-department", "ticket:read", "ticket:update", "ticket:comment:public", "ticket:confirm-resolution", "ticket:reopen"],
+    AGENT: ["ticket:create:cross-department", "ticket:read", "ticket:update", "ticket:comment:public", "ticket:comment:internal", "ticket:claim", "ticket:internal-comment", "ticket:process", "ticket:block", "ticket:resolve", "catalog:propose"],
+    QUEUE_MANAGER: ["ticket:create:cross-department", "ticket:read", "ticket:update", "ticket:comment:public", "ticket:comment:internal", "ticket:assign", "ticket:transfer", "ticket:confidential-access", "ticket:internal-comment", "ticket:block", "ticket:resolve", "ticket:export", "reporting:read", "catalog:propose"],
     FUNCTIONAL_ADMIN: permissionCatalog.map(([code]) => code),
     TECHNICAL_ADMIN: ["technical:manage"],
     REPORTING_READER: ["reporting:read", "reporting:export"],

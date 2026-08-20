@@ -385,7 +385,15 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
   if (!service || !service.queue.isActive || !service.queue.department.isActive) {
     throw new DomainError("Le service sélectionné n’est pas disponible.", 422);
   }
-  if (actor.authorizedQueueId && service.queueId !== actor.authorizedQueueId) {
+  const canCreateCrossDepartment = hasPermission(
+    actor,
+    "ticket:create:cross-department",
+  );
+  if (
+    actor.authorizedQueueId &&
+    service.queueId !== actor.authorizedQueueId &&
+    !canCreateCrossDepartment
+  ) {
     throw new AuthorizationError("Ce service est routé vers une file qui ne fait pas partie de votre périmètre autorisé.");
   }
   const activeSla = service.sla;
