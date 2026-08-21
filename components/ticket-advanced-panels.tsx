@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Combobox } from "@/components/combobox";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useToast } from "@/components/toast-provider";
+import { TicketSidePanel } from "@/components/ticket-side-panel";
 
 const IMPACTS = [
   { value: "LOW", label: "Faible" },
@@ -242,7 +243,8 @@ export function TicketAdvancedPanels(props: Props) {
       {error ? <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">{error}</div> : null}
 
       {props.canQualify ? (
-        <section className="panel p-5">
+        <TicketSidePanel title="Qualification" subtitle="Impact, urgence et priorité" defaultOpen>
+          <section className="panel p-5">
           <p className="eyebrow">Qualification</p>
           <h2 className="mt-1 text-base font-semibold text-slate-900">Impact, urgence et priorité</h2>
           <form onSubmit={submitQualification} className="mt-4 space-y-3">
@@ -254,12 +256,14 @@ export function TicketAdvancedPanels(props: Props) {
             <label className="field-label">Échéance légale<input type="date" value={legalDueAt} onChange={(event) => setLegalDueAt(event.target.value)} className="field-control font-normal" /></label>
             <label className="field-label">Justification obligatoire<textarea required minLength={10} maxLength={2000} value={qualificationReason} onChange={(event) => setQualificationReason(event.target.value)} className="field-control min-h-20 font-normal" placeholder="Expliquez la qualification…" /></label>
             <button disabled={busy === "qualification"} className="button-primary w-full">{busy === "qualification" ? "Enregistrement…" : "Enregistrer la qualification"}</button>
-          </form>
-        </section>
+            </form>
+          </section>
+        </TicketSidePanel>
       ) : null}
 
       {props.canManageSla ? (
-        <section className="panel p-5">
+        <TicketSidePanel title="SLA" subtitle="Échéances et dérogation contrôlée">
+          <section className="panel p-5">
           <p className="eyebrow">SLA</p>
           <h2 className="mt-1 text-base font-semibold text-slate-900">Dérogation contrôlée</h2>
           <dl className="mt-3 grid gap-2 text-xs text-slate-600"><div className="flex justify-between gap-3"><dt>Première réponse</dt><dd className="font-semibold">{formatDate(props.firstResponseDueAt)}</dd></div><div className="flex justify-between gap-3"><dt>Résolution</dt><dd className="font-semibold">{formatDate(props.resolutionDueAt)}</dd></div></dl>
@@ -267,11 +271,13 @@ export function TicketAdvancedPanels(props: Props) {
             <label className="field-label">Minutes ajoutées<input required type="number" min={1} max={2000000} value={addedMinutes} onChange={(event) => setAddedMinutes(event.target.value)} className="field-control font-normal" /></label>
             <label className="field-label">Motif obligatoire<textarea required minLength={10} maxLength={2000} value={slaReason} onChange={(event) => setSlaReason(event.target.value)} className="field-control min-h-20 font-normal" placeholder="Motif de la dérogation…" /></label>
             <button disabled={busy === "sla"} className="button-secondary w-full">{busy === "sla" ? "Enregistrement…" : "Accorder la dérogation"}</button>
-          </form>
-        </section>
+            </form>
+          </section>
+        </TicketSidePanel>
       ) : null}
 
-      <section className="panel p-5">
+      <TicketSidePanel title="Relations" subtitle="Tickets liés">
+        <section className="panel p-5">
         <p className="eyebrow">Relations</p>
         <h2 className="mt-1 text-base font-semibold text-slate-900">Tickets liés</h2>
         {props.canLink ? <form onSubmit={submitLink} className="mt-4 space-y-3">
@@ -282,15 +288,18 @@ export function TicketAdvancedPanels(props: Props) {
           <label className="field-label">Motif facultatif<input value={linkReason} onChange={(event) => setLinkReason(event.target.value)} className="field-control font-normal" /></label>
           <button disabled={!selectedTicket || busy === "link"} className="button-secondary w-full">{busy === "link" ? "Création…" : "Créer le lien"}</button>
         </form> : null}
-        <div className="mt-4 space-y-2">{links.map((link) => { const other = link.fromTicket.id === props.ticketId ? link.toTicket : link.fromTicket; return <div key={link.id} className="rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 text-xs"><p className="font-semibold text-slate-800">{LINK_TYPES.find((item) => item.value === link.type)?.label ?? link.type} · {other.reference}</p><p className="mt-1 text-slate-500">{other.title} · {formatDate(link.createdAt)}</p>{link.reason ? <p className="mt-1 text-slate-500">Motif : {link.reason}</p> : null}</div>; })}{!links.length ? <p className="text-xs text-slate-500">Aucun lien visible.</p> : null}</div>
-      </section>
+          <div className="mt-4 space-y-2">{links.map((link) => { const other = link.fromTicket.id === props.ticketId ? link.toTicket : link.fromTicket; return <div key={link.id} className="rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 text-xs"><p className="font-semibold text-slate-800">{LINK_TYPES.find((item) => item.value === link.type)?.label ?? link.type} · {other.reference}</p><p className="mt-1 text-slate-500">{other.title} · {formatDate(link.createdAt)}</p>{link.reason ? <p className="mt-1 text-slate-500">Motif : {link.reason}</p> : null}</div>; })}{!links.length ? <p className="text-xs text-slate-500">Aucun lien visible.</p> : null}</div>
+        </section>
+      </TicketSidePanel>
 
-      <section className="panel p-5">
+      <TicketSidePanel title="Fichiers" subtitle="Pièces jointes">
+        <section className="panel p-5">
         <p className="eyebrow">Fichiers</p>
         <h2 className="mt-1 text-base font-semibold text-slate-900">Pièces jointes</h2>
         {props.canUpload ? <label className="mt-4 flex cursor-pointer items-center justify-center rounded-lg border border-dashed border-[#b9b9eb] bg-[#f7f7ff] px-3 py-4 text-xs font-semibold text-[#4c4dba] hover:bg-[#eeeeff]">{busy === "attachment" ? "Envoi…" : "Ajouter un fichier · 10 Mo maximum"}<input type="file" onChange={(event) => void uploadAttachment(event)} disabled={busy === "attachment"} className="sr-only" /></label> : null}
-        <div className="mt-4 space-y-2">{attachments.map((attachment) => <a key={attachment.id} href={`/api/tickets/${props.ticketId}/attachments/${attachment.id}`} className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 text-xs hover:bg-slate-100"><span className="min-w-0 truncate font-semibold text-slate-800">{attachment.fileName}<span className="ml-2 font-normal text-slate-400">{formatBytes(attachment.sizeBytes)}</span></span><span className="shrink-0 text-slate-500">{attachment.uploadedBy.name}</span></a>)}{!attachments.length ? <p className="text-xs text-slate-500">Aucune pièce jointe visible.</p> : null}</div>
-      </section>
+          <div className="mt-4 space-y-2">{attachments.map((attachment) => <a key={attachment.id} href={`/api/tickets/${props.ticketId}/attachments/${attachment.id}`} className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 text-xs hover:bg-slate-100"><span className="min-w-0 truncate font-semibold text-slate-800">{attachment.fileName}<span className="ml-2 font-normal text-slate-400">{formatBytes(attachment.sizeBytes)}</span></span><span className="shrink-0 text-slate-500">{attachment.uploadedBy.name}</span></a>)}{!attachments.length ? <p className="text-xs text-slate-500">Aucune pièce jointe visible.</p> : null}</div>
+        </section>
+      </TicketSidePanel>
 
       <ConfirmDialog open={Boolean(confirmAction)} title={confirmAction?.title ?? "Confirmer"} description={confirmAction?.description ?? ""} confirmLabel="Confirmer" busy={Boolean(busy)} onCancel={() => setConfirmAction(null)} onConfirm={() => { const action = confirmAction; setConfirmAction(null); action?.run(); }} />
     </div>

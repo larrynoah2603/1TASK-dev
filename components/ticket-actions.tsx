@@ -1,12 +1,13 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { BlockReason, MessageVisibility, TicketStatus } from "@prisma/client";
+import { BlockReason, TicketStatus } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { BLOCK_REASON_LABELS, STATUS_LABELS } from "@/lib/domain";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Combobox } from "@/components/combobox";
 import { useToast } from "@/components/toast-provider";
+import { TicketSidePanel } from "@/components/ticket-side-panel";
 
 type AgentOption = { id: string; name: string; email: string };
 type QueueOption = { id: string; name: string; departmentName: string };
@@ -18,8 +19,6 @@ export function TicketActions({
   canAssign,
   canTransfer,
   requiresAdministrativeReason,
-  canPostPublic,
-  canPostInternal,
   allowedStatuses,
   agents,
   transferableQueues,
@@ -30,8 +29,6 @@ export function TicketActions({
   canAssign: boolean;
   canTransfer: boolean;
   requiresAdministrativeReason: boolean;
-  canPostPublic: boolean;
-  canPostInternal: boolean;
   allowedStatuses: TicketStatus[];
   agents: AgentOption[];
   transferableQueues: QueueOption[];
@@ -39,8 +36,6 @@ export function TicketActions({
   const router = useRouter();
   const { toast } = useToast();
   const [nextStatus, setNextStatus] = useState<TicketStatus>(allowedStatuses[0] ?? status);
-  const [body, setBody] = useState("");
-  const [visibility, setVisibility] = useState<MessageVisibility>(MessageVisibility.REQUESTER);
   const [blockReason, setBlockReason] = useState<BlockReason>(BlockReason.MISSING_INFORMATION);
   const [blockDetails, setBlockDetails] = useState("");
   const [cause, setCause] = useState("");
@@ -94,13 +89,6 @@ export function TicketActions({
     setConfirmation({ title: "Confirmer l’évolution du ticket", description: `Le ticket sera déplacé vers « ${STATUS_LABELS[nextStatus]} ». Cette action sera enregistrée dans l’historique.`, confirmLabel: "Confirmer la transition", run: () => { void post("/api/tickets/" + ticketId + "/transition", payload, "Transition enregistrée."); } });
   }
 
-  async function message(event: FormEvent) {
-    event.preventDefault();
-    if (!body.trim()) return;
-    const sent = await post("/api/tickets/" + ticketId + "/messages", { body, visibility });
-    if (sent) setBody("");
-  }
-
   async function assign(event: FormEvent) {
     event.preventDefault();
     if (!assignedToId) return;
@@ -118,17 +106,20 @@ export function TicketActions({
       {error ? <div role="alert" aria-live="polite" className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
 
       {canClaim ? (
-        <section className="action-card border-[#dfe1f9] bg-[#f7f7ff]">
+        <TicketSidePanel title="Prise en charge" subtitle="Devenir responsable du traitement" defaultOpen>
+          <section className="action-card border-[#dfe1f9] bg-[#f7f7ff]">
           <p className="text-sm font-semibold text-slate-900">Ticket non affecté</p>
           <p className="mt-1 text-xs text-slate-600">Vous êtes un agent actif habilité dans l’équipe de cette file.</p>
           <button type="button" onClick={() => setConfirmation({ title: "Confirmer la prise en charge", description: "Vous deviendrez l’agent responsable de ce ticket. Cette action sera visible dans l’historique.", confirmLabel: "Prendre en charge", run: () => { void post("/api/tickets/" + ticketId + "/claim", {}, "Ticket pris en charge."); } })} disabled={busy} className="button-primary mt-4">
             {busy ? "Prise en charge…" : "Prendre en charge"}
           </button>
-        </section>
+          </section>
+        </TicketSidePanel>
       ) : null}
 
       {allowedStatuses.length ? (
-        <form onSubmit={transition} className="action-card space-y-4">
+        <TicketSidePanel title="Workflow" subtitle="Changer l’étape du ticket" defaultOpen={!canClaim}>
+          <form onSubmit={transition} className="action-card space-y-4">
           <div>
             <p className="text-sm font-semibold text-slate-900">Faire évoluer le workflow</p>
             <p className="mt-1 text-xs text-slate-500">Seules les transitions autorisées pour votre rôle et l’état actuel sont proposées.</p>
@@ -163,12 +154,14 @@ export function TicketActions({
               <textarea required minLength={10} value={transitionReason} onChange={(event) => setTransitionReason(event.target.value)} placeholder="Motif obligatoire, 10 caractères minimum." className="field-control min-h-24 border-amber-200 bg-amber-50/40 font-normal" />
             </label>
           ) : null}
-          <button disabled={busy || (requiresAdministrativeReason && transitionReason.trim().length < 10)} className="button-primary">Enregistrer la transition</button>
-        </form>
+            <button disabled={busy || (requiresAdministrativeReason && transitionReason.trim().length < 10)} className="button-primary">Enregistrer la transition</button>
+          </form>
+        </TicketSidePanel>
       ) : null}
 
       {canAssign && agents.length ? (
-        <form onSubmit={assign} className="action-card space-y-4">
+        <TicketSidePanel title="Affectation" subtitle="Choisir le responsable du traitement">
+          <form onSubmit={assign} className="action-card space-y-4">
           <div>
             <p className="text-sm font-semibold text-slate-900">Affecter ou réaffecter</p>
             <p className="mt-1 text-xs text-slate-500">Seuls les agents actifs membres d’une équipe de cette file sont proposés.</p>
@@ -179,12 +172,14 @@ export function TicketActions({
           <label className="field-label">Motif obligatoire
             <input required minLength={10} value={assignmentReason} onChange={(event) => setAssignmentReason(event.target.value)} placeholder="Expliquez l’affectation ou la réaffectation." className="field-control font-normal" />
           </label>
-          <button disabled={busy || assignmentReason.trim().length < 10} className="button-secondary">Affecter le ticket</button>
-        </form>
+            <button disabled={busy || assignmentReason.trim().length < 10} className="button-secondary">Affecter le ticket</button>
+          </form>
+        </TicketSidePanel>
       ) : null}
 
       {canTransfer && transferableQueues.length ? (
-        <form onSubmit={transfer} className="action-card space-y-4">
+        <TicketSidePanel title="Réorientation" subtitle="Transférer vers une autre file">
+          <form onSubmit={transfer} className="action-card space-y-4">
           <div>
             <p className="text-sm font-semibold text-slate-900">Réorienter vers une autre file</p>
             <p className="mt-1 text-xs text-slate-500">Le nouveau routage conserve le SLA, l’historique et le contexte du ticket.</p>
@@ -195,25 +190,11 @@ export function TicketActions({
           <label className="field-label">Motif du transfert
             <textarea required minLength={10} value={transferReason} onChange={(event) => setTransferReason(event.target.value)} placeholder="Expliquez pourquoi la file doit changer." className="field-control min-h-24 font-normal" />
           </label>
-          <button disabled={busy || transferReason.trim().length < 10} className="button-secondary">Réorienter le ticket</button>
-        </form>
+            <button disabled={busy || transferReason.trim().length < 10} className="button-secondary">Réorienter le ticket</button>
+          </form>
+        </TicketSidePanel>
       ) : null}
 
-      {canPostPublic ? (
-        <form onSubmit={message} className="action-card space-y-4">
-          <div>
-            <p className="text-sm font-semibold text-slate-900">Ajouter un commentaire</p>
-            <p className="mt-1 text-xs text-slate-500">Les commentaires publics sont visibles par le demandeur. Les commentaires internes restent réservés à l’équipe habilitée.</p>
-          </div>
-          <textarea required minLength={1} value={body} onChange={(event) => setBody(event.target.value)} placeholder="Écrivez votre message…" className="field-control min-h-28" />
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            {canPostInternal ? (
-              <Combobox value={visibility} onChange={(next) => setVisibility(next as MessageVisibility)} className="w-auto min-w-[12rem]" options={[{ value: MessageVisibility.REQUESTER, label: "Commentaire public" }, { value: MessageVisibility.INTERNAL, label: "Commentaire interne" }]} />
-            ) : <p className="text-xs text-slate-500">Votre message sera visible par le demandeur.</p>}
-            <button disabled={busy || !body.trim()} className="button-primary">Publier le commentaire</button>
-          </div>
-        </form>
-      ) : null}
       <ConfirmDialog open={Boolean(confirmation)} title={confirmation?.title ?? "Confirmer l’action"} description={confirmation?.description ?? ""} confirmLabel={confirmation?.confirmLabel} busy={busy} onCancel={() => setConfirmation(null)} onConfirm={() => { const action = confirmation; setConfirmation(null); action?.run(); }} />
     </div>
   );

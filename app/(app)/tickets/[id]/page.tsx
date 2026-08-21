@@ -2,12 +2,13 @@ import Link from "next/link";
 import type { Route } from "next";
 import { notFound } from "next/navigation";
 import { RoleCode } from "@prisma/client";
-import { PriorityBadge, StatusBadge } from "@/components/status-badge";
-import { SlaBadge } from "@/components/sla-badge";
 import { TicketActions } from "@/components/ticket-actions";
 import { TicketAdvancedPanels } from "@/components/ticket-advanced-panels";
+import { TicketCommentThread } from "@/components/ticket-comment-thread";
+import { TicketSidePanel } from "@/components/ticket-side-panel";
+import { TicketStatusStrip } from "@/components/ticket-status-strip";
 import { AutoRefresh } from "@/components/auto-refresh";
-import { BLOCK_REASON_LABELS, TYPE_LABELS } from "@/lib/domain";
+import { BLOCK_REASON_LABELS, STATUS_LABELS, TYPE_LABELS } from "@/lib/domain";
 import { getTicketSlaState } from "@/lib/sla";
 import { getTicketActionContext, getTicketForViewer } from "@/lib/ticket-service";
 import { getSessionUserContext, roleCodes } from "@/lib/server-auth";
@@ -67,67 +68,119 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
     ...ticket.assignments.map((assignment) => ({ kind: "assignment" as const, at: assignment.assignedAt, assignment })),
     ...ticket.messages.map((message) => ({ kind: "message" as const, at: message.createdAt, message })),
   ].sort((left, right) => left.at.getTime() - right.at.getTime());
+  const canResolve = actionContext.allowedStatuses.some((status) => String(status) === "RESOLUTION_PENDING");
 
   return (
-    <div className="space-y-6">
+    <div className="ticket-detail-shell space-y-4">
       <AutoRefresh intervalMs={5000} />
-      <div>
-        <Link href={operational ? "/inbox" : "/tickets"} className="text-xs font-semibold text-[#4c4dba] hover:underline">← {operational ? "Retour à la boîte agent" : "Retour à mes tickets"}</Link>
-        <div className="mt-5 flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
-          <div className="min-w-0">
-            <p className="eyebrow">{ticket.reference}</p>
-            <h1 className="mt-2 max-w-4xl text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{ticket.title}</h1>
-            <p className="mt-2 max-w-4xl text-xs leading-5 text-slate-500">Département source : {ticket.sourceDepartment?.name ?? "Non renseigné"} · Département cible : {ticket.queue.department.name} · File : {ticket.queue.name} · Service : {ticket.serviceCatalogItem.name}</p>
-          </div>
-          <div className="flex shrink-0 flex-wrap gap-1.5"><StatusBadge status={ticket.status} /><PriorityBadge priority={ticket.priority} /><SlaBadge state={sla.state} dueAt={sla.dueAt} /></div>
+      <Link href={operational ? "/inbox" : "/tickets"} className="ticket-back-link">
+        ← {operational ? "Retour à la boîte agent" : "Retour à mes tickets"}
+      </Link>
+
+      <header className="ticket-detail-header">
+        <div className="ticket-detail-heading">
+          <p className="eyebrow">{ticket.reference}</p>
+          <h1>{ticket.title}</h1>
+          <p>
+            {ticket.sourceDepartment?.name ?? "Département source non renseigné"} → {ticket.queue.department.name} · {ticket.queue.name} · {ticket.serviceCatalogItem.name}
+          </p>
         </div>
-      </div>
+        <TicketStatusStrip
+          reference={ticket.reference}
+          status={ticket.status}
+          priority={ticket.priority}
+          slaState={sla.state}
+          slaDueAt={sla.dueAt}
+          canClaim={actionContext.canClaim}
+          canResolve={canResolve}
+        />
+      </header>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.75fr)]">
-        <div className="space-y-5">
-          <section className="panel p-5 sm:p-6">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">Description</p>
-            <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-slate-700">{ticket.description}</p>
-          </section>
+      <div className="ticket-detail-layout">
+        <main className="ticket-detail-main">
+          <TicketCommentThread
+            ticketId={ticket.id}
+            messages={ticket.messages}
+            canPostPublic={actionContext.canPostPublic}
+            canPostInternal={actionContext.canPostInternal}
+          />
+        </main>
 
-          <section className="panel p-5 sm:p-6">
-            <div className="flex items-end justify-between gap-3">
-              <div><p className="eyebrow">Timeline</p><h2 className="mt-1 text-lg font-semibold text-slate-900">Historique chronologique</h2><p className="mt-1 text-xs leading-5 text-slate-500">Événements, affectations et commentaires dans l’ordre d’enregistrement.</p></div>
-              <span className="shrink-0 text-[11px] text-slate-400">{timeline.length} éléments</span>
+        <aside className="ticket-detail-sidebar" aria-label="Informations et actions du ticket">
+          <TicketSidePanel title="Description" subtitle="Demande initiale" defaultOpen>
+            <div className="ticket-side-panel-card">
+              <p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">{ticket.description}</p>
             </div>
-            <div className="mt-6 space-y-4">
+          </TicketSidePanel>
+
+          <TicketSidePanel title="Timeline" subtitle="Historique chronologique" count={timeline.length}>
+            <div className="ticket-side-panel-card ticket-timeline-list">
               {timeline.map((item) => {
                 if (item.kind === "event") {
                   const mode = assignmentMode(item.event.metadata);
-                  return <div key={"event-" + item.event.id} className="relative flex gap-3 pl-1"><div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#5b5bd6] ring-4 ring-[#f0f0ff]" /><div><p className="text-sm font-semibold text-slate-800">{eventLabels[item.event.eventType] ?? item.event.eventType.replaceAll("_", " ")}</p><p className="mt-1 text-[11px] text-slate-400">{item.event.actor?.name ?? "Système"} · {formatDate(item.event.createdAt)}</p>{mode ? <p className="mt-1 text-xs text-slate-500">Mode d’affectation : {mode}</p> : null}</div></div>;
+                  return (
+                    <div key={`event-${item.event.id}`} className="ticket-timeline-item">
+                      <span className="ticket-timeline-dot" aria-hidden="true" />
+                      <div>
+                        <p className="text-sm font-semibold text-slate-800">{eventLabels[item.event.eventType] ?? item.event.eventType.replaceAll("_", " ")}</p>
+                        <p className="mt-1 text-[11px] text-slate-400">{item.event.actor?.name ?? "Système"} · {formatDate(item.event.createdAt)}</p>
+                        {mode ? <p className="mt-1 text-xs text-slate-500">Mode d’affectation : {mode}</p> : null}
+                      </div>
+                    </div>
+                  );
                 }
                 if (item.kind === "assignment") {
-                  return <div key={"assignment-" + item.assignment.id} className="rounded-lg border border-[#dfe1f9] bg-[#f7f7ff] p-4"><p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#4c4dba]">Historique d’affectation</p><p className="mt-2 text-sm text-slate-700">{item.assignment.previousAssignee?.name ?? "Non affecté"} → {item.assignment.newAssignee?.name ?? "Non affecté"}</p><p className="mt-1 text-[11px] text-slate-500">Par {item.assignment.assignedBy?.name ?? "Système"} · {formatDate(item.assignment.assignedAt)}</p></div>;
+                  return (
+                    <div key={`assignment-${item.assignment.id}`} className="ticket-timeline-assignment">
+                      <p className="eyebrow">Historique d’affectation</p>
+                      <p className="mt-2 text-sm text-slate-700">{item.assignment.previousAssignee?.name ?? "Non affecté"} → {item.assignment.newAssignee?.name ?? "Non affecté"}</p>
+                      <p className="mt-1 text-[11px] text-slate-500">Par {item.assignment.assignedBy?.name ?? "Système"} · {formatDate(item.assignment.assignedAt)}</p>
+                    </div>
+                  );
                 }
-                return <div key={"message-" + item.message.id} className={`rounded-lg border p-4 ${item.message.visibility === "INTERNAL" ? "border-amber-200 bg-amber-50" : "border-slate-100 bg-slate-50/70"}`}><div className="flex justify-between gap-3"><p className="text-sm font-semibold text-slate-800">{item.message.author.name}</p><p className="text-[11px] font-semibold text-slate-500">{item.message.visibility === "INTERNAL" ? "Commentaire interne" : "Commentaire public"}</p></div><p className="mt-1 text-[11px] text-slate-400">{formatDate(item.message.createdAt)}</p><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">{item.message.body}</p></div>;
+                return (
+                  <div key={`message-${item.message.id}`} className={`ticket-timeline-message${item.message.visibility === "INTERNAL" ? " ticket-timeline-message-internal" : ""}`}>
+                    <div className="flex justify-between gap-3"><p className="text-sm font-semibold text-slate-800">{item.message.author.name}</p><p className="text-[11px] font-semibold text-slate-500">{item.message.visibility === "INTERNAL" ? "Interne" : "Public"}</p></div>
+                    <p className="mt-1 text-[11px] text-slate-400">{formatDate(item.message.createdAt)}</p>
+                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">{item.message.body}</p>
+                  </div>
+                );
               })}
-              {!timeline.length ? <p className="text-sm text-slate-500">Aucun événement ou échange enregistré.</p> : null}
+              {!timeline.length ? <p className="ticket-empty-state">Aucun événement enregistré.</p> : null}
             </div>
-          </section>
-        </div>
+          </TicketSidePanel>
 
-        <div className="space-y-5">
-          <section className="panel p-5">
-            <p className="eyebrow">Récapitulatif</p>
-            <dl className="mt-4 divide-y divide-slate-100 text-sm">
-              <div className="flex justify-between gap-3 py-2.5"><dt className="text-slate-500">Demandeur</dt><dd className="text-right font-semibold text-slate-800">{ticket.requester.name}</dd></div>
-              <div className="flex justify-between gap-3 py-2.5"><dt className="text-slate-500">Responsable de file</dt><dd className="text-right font-semibold text-slate-800">{ticket.queue.manager?.name ?? "Non désigné"}</dd></div>
-              <div className="flex justify-between gap-3 py-2.5"><dt className="text-slate-500">Agent</dt><dd className="text-right font-semibold text-slate-800">{ticket.assignedTo?.name ?? "Non affecté"}</dd></div>
-              <div className="flex justify-between gap-3 py-2.5"><dt className="text-slate-500">Nature</dt><dd className="text-right font-semibold text-slate-800">{TYPE_LABELS[ticket.type]}</dd></div>
-              <div className="flex justify-between gap-3 py-2.5"><dt className="text-slate-500">Créé le</dt><dd className="text-right font-semibold text-slate-800">{formatDate(ticket.createdAt)}</dd></div>
-              <div className="flex justify-between gap-3 py-2.5"><dt className="text-slate-500">Première réponse avant</dt><dd className="text-right font-semibold text-slate-800">{formatDate(ticket.firstResponseDueAt)}</dd></div>
-              <div className="flex justify-between gap-3 py-2.5"><dt className="text-slate-500">Première réponse</dt><dd className="text-right font-semibold text-slate-800">{formatDate(ticket.firstRespondedAt)}</dd></div>
-              <div className="flex justify-between gap-3 py-2.5"><dt className="text-slate-500">Résolution avant</dt><dd className="text-right font-semibold text-slate-800">{formatDate(ticket.resolutionDueAt)}</dd></div>
-              <div className="flex justify-between gap-3 py-2.5"><dt className="text-slate-500">Temps bloqué</dt><dd className="text-right font-semibold text-slate-800">{ticket.totalPausedMinutes} min</dd></div>
-              {ticket.blockReason ? <div className="flex justify-between gap-3 py-2.5"><dt className="text-slate-500">Blocage</dt><dd className="text-right font-semibold text-slate-800">{BLOCK_REASON_LABELS[ticket.blockReason]}</dd></div> : null}
-            </dl>
-          </section>
-          {ticket.dossier || ticket.mission ? <section className="panel p-5"><p className="eyebrow">Contexte de production</p><h2 className="mt-1 text-base font-semibold text-slate-900">Dossier et mission associés</h2><dl className="mt-4 divide-y divide-slate-100 text-sm"><div className="flex justify-between gap-3 py-2.5"><dt className="text-slate-500">Client</dt><dd className="text-right font-semibold text-slate-800">{ticket.dossier?.client.name ?? "Non renseigné"}</dd></div><div className="flex justify-between gap-3 py-2.5"><dt className="text-slate-500">Dossier</dt><dd className="text-right font-semibold text-[#4c4dba]">{ticket.dossier ? <Link href={`/dossiers/${ticket.dossier.id}` as Route}>{ticket.dossier.code}</Link> : "Non rattaché"}</dd></div><div className="flex justify-between gap-3 py-2.5"><dt className="text-slate-500">Mission</dt><dd className="text-right font-semibold text-[#4c4dba]">{ticket.mission ? <Link href={`/missions/${ticket.mission.id}` as Route}>{ticket.mission.code}</Link> : "Non rattachée"}</dd></div><div className="flex justify-between gap-3 py-2.5"><dt className="text-slate-500">Budget mission</dt><dd className="text-right font-semibold text-slate-800">{ticket.mission?.budgetMinutes ? formatMinutes(ticket.mission.budgetMinutes) : "Non défini"}</dd></div><div className="flex justify-between gap-3 py-2.5"><dt className="text-slate-500">Temps mission</dt><dd className="text-right font-semibold text-slate-800">{formatMinutes(ticket.missionWorklogMinutes)}</dd></div><div className="flex justify-between gap-3 py-2.5"><dt className="text-slate-500">Temps sur ce ticket</dt><dd className="text-right font-semibold text-slate-800">{formatMinutes(ticket.worklogSummary.minutes)} <span className="text-[10px] font-normal text-slate-400">· {ticket.worklogSummary.entries} saisie(s)</span></dd></div></dl></section> : null}
+          <TicketSidePanel title="Récapitulatif" subtitle="Qui fait quoi et quand" defaultOpen>
+            <div className="ticket-side-panel-card">
+              <dl className="ticket-summary-list">
+                <div><dt>Demandeur</dt><dd>{ticket.requester.name}</dd></div>
+                <div><dt>Responsable de file</dt><dd>{ticket.queue.manager?.name ?? "Non désigné"}</dd></div>
+                <div><dt>Agent</dt><dd>{ticket.assignedTo?.name ?? "Non affecté"}</dd></div>
+                <div><dt>Nature</dt><dd>{TYPE_LABELS[ticket.type]}</dd></div>
+                <div><dt>Créé le</dt><dd>{formatDate(ticket.createdAt)}</dd></div>
+                <div><dt>Première réponse avant</dt><dd>{formatDate(ticket.firstResponseDueAt)}</dd></div>
+                <div><dt>Résolution avant</dt><dd>{formatDate(ticket.resolutionDueAt)}</dd></div>
+                <div><dt>Temps bloqué</dt><dd>{ticket.totalPausedMinutes} min</dd></div>
+                {ticket.blockReason ? <div><dt>Blocage</dt><dd>{BLOCK_REASON_LABELS[ticket.blockReason]}</dd></div> : null}
+              </dl>
+            </div>
+          </TicketSidePanel>
+
+          {ticket.dossier || ticket.mission ? (
+            <TicketSidePanel title="Contexte de production" subtitle="Dossier, mission et temps">
+              <div className="ticket-side-panel-card">
+                <dl className="ticket-summary-list">
+                  <div><dt>Client</dt><dd>{ticket.dossier?.client.name ?? "Non renseigné"}</dd></div>
+                  <div><dt>Dossier</dt><dd>{ticket.dossier ? <Link href={`/dossiers/${ticket.dossier.id}` as Route}>{ticket.dossier.code}</Link> : "Non rattaché"}</dd></div>
+                  <div><dt>Mission</dt><dd>{ticket.mission ? <Link href={`/missions/${ticket.mission.id}` as Route}>{ticket.mission.code}</Link> : "Non rattachée"}</dd></div>
+                  <div><dt>Budget mission</dt><dd>{ticket.mission?.budgetMinutes ? formatMinutes(ticket.mission.budgetMinutes) : "Non défini"}</dd></div>
+                  <div><dt>Temps mission</dt><dd>{formatMinutes(ticket.missionWorklogMinutes)}</dd></div>
+                  <div><dt>Temps sur ticket</dt><dd>{formatMinutes(ticket.worklogSummary.minutes)} · {ticket.worklogSummary.entries} saisie(s)</dd></div>
+                </dl>
+              </div>
+            </TicketSidePanel>
+          ) : null}
+
           <TicketAdvancedPanels
             ticketId={ticket.id}
             impact={ticket.impact}
@@ -142,7 +195,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
             canLink={operational && ticket.status !== "CLOSED"}
           />
           <TicketActions ticketId={ticket.id} status={ticket.status} {...actionContext} />
-        </div>
+        </aside>
       </div>
     </div>
   );
