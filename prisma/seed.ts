@@ -70,12 +70,29 @@ async function main() {
   const calendar = await prisma.businessCalendar.upsert({ where: { code: "MADAGASCAR_STANDARD" }, update: {}, create: { code: "MADAGASCAR_STANDARD", name: "Calendrier Madagascar standard", timezone: "Indian/Antananarivo", workingDays: [1, 2, 3, 4, 5], workdayStartMinute: 480, workdayEndMinute: 1020 } });
   const standardSla = await prisma.sLA.upsert({ where: { code: "STANDARD_8H_2J" }, update: {}, create: { code: "STANDARD_8H_2J", name: "Standard – première réponse 8 h / résolution 2 jours", firstResponseMinutes: 480, resolutionMinutes: 960, calendarId: calendar.id, alertThresholds: [50, 80, 100] } });
 
-  const dsi = await prisma.department.upsert({ where: { code: "DSI" }, update: { name: "DSI", isActive: true }, create: { code: "DSI", name: "DSI" } });
-  const compta = await prisma.department.upsert({ where: { code: "EXPERTISE-COMPTABLE" }, update: { name: "Expertise comptable", isActive: true }, create: { code: "EXPERTISE-COMPTABLE", name: "Expertise comptable" } });
-  const rh = await prisma.department.upsert({ where: { code: "RH" }, update: { name: "Ressources humaines", isActive: true }, create: { code: "RH", name: "Ressources humaines" } });
+  const departmentSpecs = [
+    ["EXP", "Expertise comptable"],
+    ["SOCIAL", "Social et paie"],
+    ["JUR", "Juridique"],
+    ["AUDIT", "Audit"],
+    ["IT", "Informatique"],
+    ["RH", "Ressources humaines"],
+    ["ADM", "Administratif, facturation et recouvrement"],
+    ["ACCUEIL", "Accueil et services généraux"],
+    ["DIR", "Direction"],
+  ] as const;
+  const departmentMap = new Map<string, { id: string; code: string; name: string }>();
+  for (const [code, name] of departmentSpecs) {
+    const department = await prisma.department.upsert({ where: { code }, update: { name, isActive: true }, create: { code, name } });
+    departmentMap.set(code, department);
+  }
+  const it = departmentMap.get("IT")!;
+  const dsi = it;
+  const compta = departmentMap.get("EXP")!;
+  const rh = departmentMap.get("RH")!;
 
   for (const [externalValue, departmentId] of [
-    ["DSI", dsi.id],
+    ["Informatique", it.id],
     ["Expertise comptable", compta.id],
     ["Ressources humaines", rh.id],
   ] as const) {
@@ -103,8 +120,17 @@ async function main() {
   await grantRole(agent.id, RoleCode.AGENT);
   await grantRole(requester.id, RoleCode.REQUESTER);
 
-  const networkQueue = await prisma.queue.upsert({ where: { code: "DSI-RESEAU" }, update: { managerId: manager.id }, create: { code: "DSI-RESEAU", name: "Support réseau", departmentId: dsi.id, managerId: manager.id } });
-  const hardwareQueue = await prisma.queue.upsert({ where: { code: "DSI-MATERIEL" }, update: { managerId: manager.id }, create: { code: "DSI-MATERIEL", name: "Support matériel", departmentId: dsi.id, managerId: manager.id } });
+  for (const [code, department] of departmentMap) {
+    const triageQueue = await prisma.queue.upsert({ where: { code: `TRIAGE-${code}` }, update: { name: `Triage ${code}`, departmentId: department.id, isActive: true, autoAssignment: false }, create: { code: `TRIAGE-${code}`, name: `Triage ${code}`, departmentId: department.id, isActive: true, autoAssignment: false } });
+    const triageTeam = await prisma.team.upsert({ where: { queueId_name: { queueId: triageQueue.id, name: `Équipe triage ${code}` } }, update: { isActive: true }, create: { name: `Équipe triage ${code}`, queueId: triageQueue.id, isActive: true } });
+    if (code === "IT") {
+      await prisma.teamMember.upsert({ where: { teamId_userId: { teamId: triageTeam.id, userId: agent.id } }, update: { isActive: true, isAvailable: true, skills: ["triage", "support"] }, create: { teamId: triageTeam.id, userId: agent.id, skills: ["triage", "support"] } });
+    }
+    await prisma.serviceCatalogItem.upsert({ where: { code: `TRIAGE-${code}` }, update: { name: `Besoin spécifique à qualifier — ${department.name}`, queueId: triageQueue.id, slaId: standardSla.id, isActive: true }, create: { code: `TRIAGE-${code}`, name: `Besoin spécifique à qualifier — ${department.name}`, description: `Service technique de qualification pour les besoins libres du département ${department.name}.`, ticketType: TicketType.SERVICE_REQUEST, category: "À qualifier", keywords: ["triage", code.toLowerCase()], queueId: triageQueue.id, priorityDefault: Priority.MEDIUM, slaId: standardSla.id } });
+  }
+
+  const networkQueue = await prisma.queue.upsert({ where: { code: "IT-RESEAU" }, update: { managerId: manager.id }, create: { code: "IT-RESEAU", name: "Support réseau", departmentId: it.id, managerId: manager.id } });
+  const hardwareQueue = await prisma.queue.upsert({ where: { code: "IT-MATERIEL" }, update: { managerId: manager.id }, create: { code: "IT-MATERIEL", name: "Support matériel", departmentId: it.id, managerId: manager.id } });
   const networkTeam = await prisma.team.upsert({ where: { queueId_name: { queueId: networkQueue.id, name: "Équipe réseau" } }, update: { leadId: manager.id }, create: { name: "Équipe réseau", queueId: networkQueue.id, leadId: manager.id } });
   await prisma.teamMember.upsert({ where: { teamId_userId: { teamId: networkTeam.id, userId: agent.id } }, update: { isActive: true, isAvailable: true, skills: ["wifi", "réseau"] }, create: { teamId: networkTeam.id, userId: agent.id, skills: ["wifi", "réseau"] } });
 

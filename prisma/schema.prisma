@@ -669,6 +669,8 @@ model Ticket {
   reference              String       @unique
   title                  String
   description            String       @db.Text
+  // Besoin libre saisi par le demandeur avant qualification catalogue.
+  requestedService       String?
   type                   TicketType
   category               String
   priority               Priority

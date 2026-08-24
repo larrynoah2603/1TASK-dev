@@ -15,7 +15,10 @@ import {
 import { z } from "zod";
 
 export const createTicketSchema = z.object({
-  serviceCatalogItemId: z.string().cuid(),
+  serviceCatalogItemId: z.string().cuid().optional(),
+  requestedService: z.string().trim().min(3).max(180).optional(),
+  targetDepartmentId: z.string().cuid().optional(),
+  type: z.enum(TicketType).optional(),
   title: z.string().trim().min(5).max(180),
   description: z.string().trim().min(15).max(20_000),
   confidential: z.boolean().default(false),
@@ -24,7 +27,16 @@ export const createTicketSchema = z.object({
   legalDueAt: z.coerce.date().nullable().optional(),
   dossierId: z.string().cuid().nullable().optional(),
   missionId: z.string().cuid().nullable().optional(),
-}).strict();
+}).strict().superRefine((value, context) => {
+  const hasCatalog = Boolean(value.serviceCatalogItemId);
+  const hasFreeText = Boolean(value.requestedService && value.targetDepartmentId);
+  if (!hasCatalog && !hasFreeText) {
+    context.addIssue({ code: "custom", path: ["requestedService"], message: "Sélectionnez un service ou décrivez votre besoin." });
+  }
+  if (value.requestedService && !value.targetDepartmentId) {
+    context.addIssue({ code: "custom", path: ["targetDepartmentId"], message: "Le département cible est obligatoire pour une saisie libre." });
+  }
+});
 
 export const addMessageSchema = z.object({
   body: z.string().trim().min(1).max(20_000),

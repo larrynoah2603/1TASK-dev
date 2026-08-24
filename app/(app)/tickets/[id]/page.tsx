@@ -72,7 +72,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
 
   return (
     <div className="ticket-detail-shell space-y-4">
-      <AutoRefresh intervalMs={5000} />
+      <AutoRefresh intervalMs={15000} />
       <Link href={operational ? "/inbox" : "/tickets"} className="ticket-back-link">
         ← {operational ? "Retour à la boîte agent" : "Retour à mes tickets"}
       </Link>
@@ -109,6 +109,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
         <aside className="ticket-detail-sidebar" aria-label="Informations et actions du ticket">
           <TicketSidePanel title="Description" subtitle="Demande initiale" defaultOpen>
             <div className="ticket-side-panel-card">
+              {ticket.requestedService ? <div className="mb-3 border-b border-slate-100 pb-3"><p className="eyebrow">Besoin saisi par le demandeur</p><p className="mt-1 text-sm font-semibold text-slate-800">{ticket.requestedService}</p></div> : null}
               <p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">{ticket.description}</p>
             </div>
           </TicketSidePanel>

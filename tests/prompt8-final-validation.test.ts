@@ -96,7 +96,8 @@ describe("Prompt 8 — création, catalogue et département Entra", () => {
     });
 
     expect(result.success).toBe(true);
-    expect(ticketService).toContain("where: { id: parsed.serviceCatalogItemId, isActive: true }");
+    expect(ticketService).toContain("parsed.serviceCatalogItemId ?");
+    expect(ticketService).toContain("TRIAGE-${targetDepartment?.code}");
     expect(ticketService).toContain("sourceDepartmentId: actor.departmentId");
   });
 

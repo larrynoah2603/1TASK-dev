@@ -363,8 +363,19 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
   }
   ensureActorDepartment(actor);
   const parsed = createTicketSchema.parse(input);
+  const targetDepartment = parsed.targetDepartmentId
+    ? await prisma.department.findFirst({ where: { id: parsed.targetDepartmentId, isActive: true }, select: { id: true, code: true, name: true } })
+    : null;
+  if (!parsed.serviceCatalogItemId && (!targetDepartment || !parsed.requestedService)) {
+    throw new DomainError("Le besoin libre et le département cible sont obligatoires.", 422);
+  }
+  if (!parsed.serviceCatalogItemId && targetDepartment && targetDepartment.id !== actor.departmentId && !hasPermission(actor, "ticket:create:cross-department")) {
+    throw new AuthorizationError("Vous ne pouvez pas envoyer une demande libre vers ce département.");
+  }
   const service = await prisma.serviceCatalogItem.findFirst({
-    where: { id: parsed.serviceCatalogItemId, isActive: true },
+    where: parsed.serviceCatalogItemId
+      ? { id: parsed.serviceCatalogItemId, isActive: true }
+      : { code: `TRIAGE-${targetDepartment?.code}`, isActive: true, queue: { departmentId: targetDepartment?.id } },
     include: {
       queue: {
         include: {
@@ -404,13 +415,13 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
   const productionContext = await resolveTicketProductionContext(actor, parsed);
 
   const routing = routeTicketFromCatalog({
-    serviceCatalogItemId: parsed.serviceCatalogItemId,
+    serviceCatalogItemId: service.id,
     candidates: [
     {
       id: service.id,
       code: service.code,
       name: service.name,
-      ticketType: service.ticketType,
+      ticketType: parsed.type ?? service.ticketType,
       category: service.category,
       queueId: service.queueId,
       priorityDefault: service.priorityDefault,
@@ -419,6 +430,7 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
     ],
   });
   const now = new Date();
+  const initialStatus = parsed.serviceCatalogItemId ? TicketStatus.NEW : TicketStatus.TO_QUALIFY;
   const escalationRules = [
     ...service.queue.escalationRules,
     ...service.escalationRules,
@@ -434,6 +446,7 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
         reference: makeTicketReference(now),
         title: parsed.title,
         description: parsed.description,
+        requestedService: parsed.requestedService ?? null,
         confidential: parsed.confidential,
         type: routing.type,
         category: routing.category,
@@ -456,8 +469,10 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
             actorId: actor.id,
             queueId: routing.queueId,
             eventType: TicketEventType.CREATED,
-            toStatus: TicketStatus.NEW,
+            toStatus: initialStatus,
             metadata: {
+              routingMode: parsed.serviceCatalogItemId ? "CATALOG" : "TRIAGE",
+              requestedService: parsed.requestedService ?? null,
               matchedBy: routing.matchedBy,
               catalogItemId: service.id,
               catalogCode: service.code,
@@ -465,6 +480,7 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
               routedQueueId: service.queueId,
               ticketType: routing.type,
               category: routing.category,
+              initialStatus,
               priority: calculatePriorityFromImpactUrgency(parsed.impact, parsed.urgency),
               impact: parsed.impact,
               urgency: parsed.urgency,
@@ -495,7 +511,7 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
 
     let autoAssigned = false;
     let autoAssignedUserId: string | null = null;
-    if (service.queue.autoAssignment) {
+    if (parsed.serviceCatalogItemId && service.queue.autoAssignment) {
       const candidate = await chooseAutoAssignee(tx, routing.queueId, service.keywords);
       if (candidate) {
         ticket = await tx.ticket.update({
