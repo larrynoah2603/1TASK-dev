@@ -1,0 +1,166 @@
+flowchart TD
+    A[Microsoft Entra ID<br/>Identité, email, département brut] --> B[NextAuth<br/>Provider microsoft-entra-id]
+    B --> C[User synchronisé dans 1TASK]
+    C --> D{Statut applicatif}
+    D -->|PENDING_ASSIGNMENT| E[Validation administrative<br/>Accès au dashboard bloqué]
+    D -->|ACTIVE| F[Profil utilisateur actif]
+    D -->|DISABLED| G[Accès refusé]
+
+    subgraph ADMIN[Administration fonctionnelle]
+        FA[FUNCTIONAL_ADMIN<br/>Larry] --> FB[Organization manage]
+        FA --> FC[User validate / role manage]
+        FA --> FD[Catalog manage]
+        FA --> FE[SLA manage]
+        FA --> FF[Knowledge manage / audit read]
+        FB --> ORG[Référentiel organisationnel]
+        FC --> F
+    end
+
+    F --> H[Département interne]
+    H --> H1[EXP<br/>Expertise comptable]
+    H --> H2[SOCIAL<br/>Social et paie]
+    H --> H3[JUR<br/>Juridique]
+    H --> H4[AUDIT<br/>Audit]
+    H --> H5[IT<br/>Informatique]
+    H --> H6[RH<br/>Ressources humaines]
+    H --> H7[ADM<br/>Administratif / facturation]
+    H --> H8[ACCUEIL<br/>Accueil et services généraux]
+    H --> H9[DIR<br/>Direction]
+
+    H1 --> Q[File opérationnelle active]
+    H2 --> Q
+    H3 --> Q
+    H4 --> Q
+    H5 --> Q
+    H6 --> Q
+    H7 --> Q
+    H8 --> Q
+    H9 --> Q
+
+    Q --> T[Équipe active]
+    T --> TM[TeamMember<br/>isActive / isAvailable]
+    TM --> F
+
+    subgraph ACCESS[Identité applicative et accès]
+        R1[REQUESTER<br/>Demandeur]
+        R2[AGENT<br/>Agent / traitant]
+        R3[QUEUE_MANAGER<br/>Responsable de file]
+        R4[FUNCTIONAL_ADMIN<br/>Administrateur fonctionnel]
+        R5[TECHNICAL_ADMIN<br/>Administrateur technique]
+        R6[REPORTING_READER<br/>Lecteur reporting]
+        ROLE[Role / UserRole]
+        PERM[Permission<br/>catalogue runtime + DB]
+        SCOPE[PermissionScope<br/>GLOBAL / DEPARTMENT / QUEUE / TEAM]
+        QUEUEAUTH[authorizedQueueId]
+        PRIMARY[primaryRoleCode + primaryTeamId]
+        R1 --> ROLE
+        R2 --> ROLE
+        R3 --> ROLE
+        R4 --> ROLE
+        R5 --> ROLE
+        R6 --> ROLE
+        ROLE --> PERM
+        ROLE --> SCOPE
+        F --> PRIMARY
+        F --> QUEUEAUTH
+    end
+
+    subgraph CATALOG[Catalogue et routage]
+        CAT[ServiceCatalogItem actif]
+        CAT --> CATQ[Queue destinataire]
+        CAT --> NATURE[Nature<br/>INCIDENT / SERVICE_REQUEST / PRODUCTION_TASK / CHANGE_REQUEST]
+        CAT --> SLA[SLA actif + calendrier]
+        CAT --> ESC[Escalade]
+    end
+
+    subgraph TICKETING[Cycle de vie du ticket]
+        CREATE[Création par REQUESTER<br/>ticket:create]
+        CROSS[Destination autre département<br/>ticket:create:cross-department]
+        TICKET[Ticket créé<br/>sourceDepartmentId + queueId]
+        NEW[NEW]
+        QUALIFY[TO_QUALIFY]
+        ASSIGN[TO_ASSIGN / ASSIGNED]
+        PROGRESS[IN_PROGRESS]
+        BLOCKED[BLOCKED]
+        RESOLVE[RESOLUTION_PENDING]
+        CLOSED[CLOSED]
+        REOPENED[REOPENED]
+        CREATE --> CROSS
+        CREATE --> TICKET
+        CROSS --> TICKET
+        TICKET --> NEW --> QUALIFY --> ASSIGN --> PROGRESS
+        PROGRESS --> BLOCKED
+        BLOCKED --> PROGRESS
+        PROGRESS --> RESOLVE --> CLOSED
+        CLOSED --> REOPENED --> QUALIFY
+    end
+
+    F --> CREATE
+    CAT --> TICKET
+    SLA --> TICKET
+    Q --> TICKET
+    TICKET --> NEW
+
+    subgraph VISIBILITY[Visibilité et traitement]
+        V1[Demandeur<br/>voit son ticket]
+        V2[Agent<br/>voit les tickets de son équipe active]
+        V3[Queue manager<br/>supervise sa file autorisée]
+        V4[Outsider<br/>ne voit pas la file d’un autre département]
+        V5[Confidentiel<br/>accès nominatif uniquement]
+        V1 --> TICKET
+        V2 --> TICKET
+        V3 --> TICKET
+        V4 -. accès refusé .-> TICKET
+        V5 -. autorisation explicite .-> TICKET
+    end
+
+    subgraph OPERATIONS[Opérations et traçabilité]
+        INBOX[Boîte agent /inbox]
+        CLAIM[Claim / prise en charge]
+        ASSIGNMENT[Assignment / affectation]
+        MSG[Messages publics et internes]
+        EVENTS[TicketEvent append-only]
+        AUDIT[AuditLog append-only]
+        NOTIF[Notifications + polling]
+        INBOX --> CLAIM
+        INBOX --> ASSIGNMENT
+        INBOX --> MSG
+        CLAIM --> EVENTS
+        ASSIGNMENT --> EVENTS
+        MSG --> EVENTS
+        EVENTS --> AUDIT
+        TICKET --> NOTIF
+    end
+
+    V2 --> INBOX
+    V3 --> INBOX
+    TICKET --> EVENTS
+    TICKET --> AUDIT
+    NOTIF --> F
+
+    subgraph DATA[Objets métiers associés]
+        CLIENT[Client]
+        DOSSIER[Dossier client]
+        MISSION[Mission + worklogs]
+        ASSET[Actif + AssetMovement]
+        KNOW[Base de connaissances<br/>DRAFT → REVIEW → PUBLISHED → ARCHIVED]
+        REPORT[Reporting / Pilotage SLA]
+    end
+
+    CLIENT --> DOSSIER --> MISSION
+    MISSION --> TICKET
+    ASSET --> TICKET
+    KNOW --> TICKET
+    TICKET --> REPORT
+    SLA --> REPORT
+
+    classDef admin fill:#403b8f,color:#fff,stroke:#6d64d9;
+    classDef active fill:#176b52,color:#fff,stroke:#38b98a;
+    classDef warning fill:#8a5a12,color:#fff,stroke:#d9a441;
+    classDef ticket fill:#243b67,color:#fff,stroke:#5d91e8;
+    classDef deny fill:#7f2631,color:#fff,stroke:#d76572;
+    class FA,FB,FC,FD,FE,FF admin;
+    class F,TM,ROLE,PERM,SCOPE,CAT,SLA,INBOX,NOTIF active;
+    class E,QUALIFY,ASSIGN,BLOCKED,RESOLVE warning;
+    class TICKET,NEW,PROGRESS,CLOSED,REOPENED ticket;
+    class G,V4,V5 deny;

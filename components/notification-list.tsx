@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type NotificationItem = { id: string; title: string; body: string; status: string; ticketId: string | null; ticketReference: string | null; createdAt: string };
 type NotificationResponse = { notifications: NotificationItem[] };
@@ -9,11 +9,14 @@ type NotificationResponse = { notifications: NotificationItem[] };
 export function NotificationList({ initialItems }: { initialItems: NotificationItem[] }) {
   const [items, setItems] = useState(initialItems);
   const [busy, setBusy] = useState(false);
+  const requestInFlight = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
 
     const loadNotifications = async () => {
+      if (requestInFlight.current) return;
+      requestInFlight.current = true;
       try {
         const response = await fetch("/api/notifications?take=100", { cache: "no-store" });
         if (!response.ok) return;
@@ -21,6 +24,8 @@ export function NotificationList({ initialItems }: { initialItems: NotificationI
         if (!cancelled) setItems(data.notifications ?? []);
       } catch {
         // Keep the last successful list visible when a polling request fails.
+      } finally {
+        requestInFlight.current = false;
       }
     };
 
@@ -28,7 +33,7 @@ export function NotificationList({ initialItems }: { initialItems: NotificationI
       if (document.visibilityState === "visible") void loadNotifications();
     };
 
-    const timer = window.setInterval(loadIfVisible, 5000);
+    const timer = window.setInterval(loadIfVisible, 15000);
     const onVisibilityChange = () => {
       if (document.visibilityState === "visible") void loadNotifications();
     };

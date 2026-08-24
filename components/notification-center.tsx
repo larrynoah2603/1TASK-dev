@@ -37,11 +37,14 @@ export function NotificationCenter({ initialUnreadCount = 0 }: { initialUnreadCo
   const [busy, setBusy] = useState(false);
   const [unreadCount, setUnreadCount] = useState(initialUnreadCount);
   const ref = useRef<HTMLDivElement>(null);
+  const requestInFlight = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
 
     const loadNotifications = async () => {
+      if (requestInFlight.current) return;
+      requestInFlight.current = true;
       try {
         const response = await fetch("/api/notifications?take=8", { cache: "no-store" });
         if (!response.ok) return;
@@ -52,6 +55,8 @@ export function NotificationCenter({ initialUnreadCount = 0 }: { initialUnreadCo
         setLoaded(true);
       } catch {
         if (!cancelled) setLoaded(true);
+      } finally {
+        requestInFlight.current = false;
       }
     };
 
@@ -60,7 +65,7 @@ export function NotificationCenter({ initialUnreadCount = 0 }: { initialUnreadCo
     };
 
     void loadNotifications();
-    const timer = window.setInterval(loadIfVisible, 5000);
+    const timer = window.setInterval(loadIfVisible, 15000);
     const onVisibilityChange = () => {
       if (document.visibilityState === "visible") void loadNotifications();
     };

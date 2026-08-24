@@ -12,6 +12,27 @@ describe("contrats de création et de filtrage", () => {
     expect(result.success).toBe(false);
   });
 
+  it("accepte une demande libre avec un département cible", () => {
+    const result = createTicketSchema.safeParse({
+      requestedService: "Création d’un compte client",
+      targetDepartmentId: "c123456789012345678901234",
+      type: "SERVICE_REQUEST",
+      title: "Créer un compte client",
+      description: "Le nouveau collaborateur doit disposer d’un compte client pour commencer sa mission.",
+      confidential: false,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("refuse une demande libre sans département cible", () => {
+    const result = createTicketSchema.safeParse({
+      requestedService: "Création d’un compte client",
+      title: "Créer un compte client",
+      description: "Le nouveau collaborateur doit disposer d’un compte client pour commencer sa mission.",
+    });
+    expect(result.success).toBe(false);
+  });
+
   it("accepte les filtres de file opérationnelle", () => {
     const result = ticketListQuerySchema.parse({
       scope: "team",

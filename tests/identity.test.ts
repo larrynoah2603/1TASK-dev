@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_BOOTSTRAP_ADMIN_EMAIL,
   isBootstrapFunctionalAdminEmail,
+  PERMISSION_CATALOG,
   statusAfterEntraSynchronization,
 } from "@/lib/identity";
 
@@ -28,6 +29,11 @@ describe("bootstrap administrateur 1TASK", () => {
       administrativelyDisabled: false,
       firstSynchronization: true,
     })).toBe(UserStatus.PENDING_ASSIGNMENT);
+  });
+
+  it("déclare la permission de création inter-départementale dans le catalogue runtime", () => {
+    expect(PERMISSION_CATALOG["ticket:create:cross-department"]).toBeDefined();
+    expect(PERMISSION_CATALOG["catalog:propose"]).toBeDefined();
   });
 
   it("ne réactive pas un compte bootstrapé désactivé administrativement", () => {

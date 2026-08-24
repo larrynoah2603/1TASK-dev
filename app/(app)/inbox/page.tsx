@@ -38,7 +38,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
 
   return (
     <div className="dashboard-page dashboard-operations-layout">
-      <AutoRefresh intervalMs={5000} />
+      <AutoRefresh intervalMs={15000} />
       <DashboardViewTabs active="operations" canOperate canReport={canReport} />
       <header className="dashboard-hero dashboard-role-hero">
         <div><p className="eyebrow">Opérations</p><h1>File opérationnelle</h1><p className="page-header-description">Tickets à traiter dans votre périmètre.</p></div>
