@@ -2291,3 +2291,86 @@ html[data-theme="dark"] .ticket-inline-error { background: #3b2029; color: #ff9a
   .ticket-comment-composer-actions .combobox,
   .ticket-comment-composer-actions .button-primary { width: 100%; }
 }
+
+/* Administration refresh: compact navigation, neutral dark surfaces and accessible status colors. */
+.admin-sidebar-brand-block { gap: 0.85rem; }
+.admin-console-chip { margin-left: auto; display: inline-flex; align-items: center; border: 1px solid rgba(110, 168, 254, 0.28); border-radius: 0.35rem; background: rgba(110, 168, 254, 0.1); color: #9fc3ff; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.08em; padding: 0.22rem 0.4rem; text-transform: uppercase; }
+.admin-sidebar-intro { border-top: 1px solid var(--sidebar-line); padding-top: 0.8rem; }
+.admin-sidebar-kicker { color: #8ea7c8; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
+.admin-sidebar-title { color: #f4f6fa; font-size: 0.85rem; font-weight: 700; margin-top: 0.24rem; }
+.admin-sidebar-description { color: #8f9baa; font-size: 0.68rem; line-height: 1.45; margin-top: 0.25rem; }
+.admin-sidebar-nav { gap: 0.2rem; padding-top: 0.8rem; }
+.admin-sidebar-nav .nav-link { min-height: 2.15rem; border-radius: 0.45rem; color: #aeb8c7; font-size: 0.73rem; }
+.admin-sidebar-nav .nav-link:hover { background: #20252d; color: #f4f6fa; }
+.admin-sidebar-nav .nav-link-active { background: #262d36; color: #f4f6fa; box-shadow: inset 2px 0 0 #6ea8fe; }
+.admin-sidebar-nav .nav-link-active .nav-icon { color: #9fc3ff; }
+.admin-sidebar-footer { border-top-color: #2b2b2b; padding: 0.8rem 1rem; }
+.admin-sidebar-footer-title { color: #d5dbe4; font-size: 0.68rem; font-weight: 700; }
+.admin-sidebar-footer-value { align-items: center; color: #8f9baa; display: flex; font-size: 0.66rem; gap: 0.45rem; margin-top: 0.45rem; }
+.admin-status-dot { background: #6ee7b7; border-radius: 999px; display: inline-block; height: 0.38rem; width: 0.38rem; }
+
+.admin-stat { background: var(--surface); border: 1px solid var(--line); border-radius: 0.7rem; min-width: 0; padding: 0.9rem 1rem; }
+.admin-stat-value { color: #4b6ff2; font-size: 1.65rem; font-weight: 750; letter-spacing: -0.04em; line-height: 1; }
+.admin-stat:nth-child(2) .admin-stat-value { color: #b7791f; }
+.admin-stat:nth-child(3) .admin-stat-value { color: #23856d; }
+.admin-notice { background: color-mix(in srgb, #6ea8fe 10%, var(--surface)); border: 1px solid color-mix(in srgb, #6ea8fe 28%, var(--line)); border-radius: 0.7rem; color: var(--text-body); padding: 0.8rem 1rem; }
+.admin-notice-warning { background: color-mix(in srgb, #d69e2e 11%, var(--surface)); border-color: color-mix(in srgb, #d69e2e 32%, var(--line)); }
+
+.admin-background main .panel { border-color: var(--line); background: var(--surface); }
+.admin-background main .panel > h2, .admin-background main .panel h2 { color: var(--text-strong); }
+.admin-background main .panel .bg-slate-50, .admin-background main .panel .bg-white { background: var(--surface-muted); }
+.admin-background main .panel .border-slate-100, .admin-background main .panel .border-slate-200 { border-color: var(--line); }
+.admin-background main .panel .text-slate-900, .admin-background main .panel .text-slate-800 { color: var(--text-strong); }
+.admin-background main .panel .text-slate-600, .admin-background main .panel .text-slate-500 { color: var(--text-body); }
+.admin-background main .panel .text-slate-400 { color: var(--text-subtle); }
+.admin-background main .panel .bg-blue-50, .admin-background main .panel .bg-blue-50\/50 { background: color-mix(in srgb, #6ea8fe 10%, var(--surface)); }
+.admin-background main .panel .border-blue-100 { border-color: color-mix(in srgb, #6ea8fe 30%, var(--line)); }
+
+.new-ticket-launcher-icon { display: inline-grid; place-items: center; height: 1rem; width: 1rem; }
+.new-ticket-launcher-icon svg { height: 1rem; width: 1rem; }
+.new-ticket-launcher-chevron svg { height: 0.8rem; width: 0.8rem; }
+html[data-theme="dark"] .new-ticket-launcher { background: #293b50; border-color: #5279a5; color: #e4efff; box-shadow: 0 3px 12px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.08); }
+html[data-theme="dark"] .new-ticket-launcher:hover { background: #34516e; border-color: #78a9e8; color: #ffffff; }
+html[data-theme="light"] .new-ticket-launcher { background: #3155d8; border-color: #2948bc; color: #ffffff; box-shadow: 0 3px 12px rgba(49, 85, 216, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2); }
+html[data-theme="light"] .new-ticket-launcher:hover { background: #2648c5; border-color: #1e3aa6; color: #ffffff; }
+
+@media (max-width: 767px) {
+  .admin-sidebar-intro { display: none; }
+  .admin-console-chip { display: none; }
+  .admin-background main { padding-inline: 0.75rem; }
+  .admin-background main .page-header { align-items: flex-start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .new-ticket-launcher, .admin-background main * { transition: none !important; }
+}
+
+/* Compact administration layout and icon-led section hierarchy. */
+.admin-config-section { padding: 1.1rem 1.2rem; }
+.admin-section-heading { align-items: center; display: flex; gap: 0.65rem; }
+.admin-section-heading h2 { color: var(--text-strong); font-size: 0.95rem; font-weight: 750; letter-spacing: -0.02em; }
+.admin-section-icon { align-items: center; background: color-mix(in srgb, #6ea8fe 13%, var(--surface-muted)); border: 1px solid color-mix(in srgb, #6ea8fe 35%, var(--line)); border-radius: 0.55rem; color: #6ea8fe; display: inline-flex; height: 1.85rem; justify-content: center; width: 1.85rem; }
+.admin-section-icon svg { height: 1rem; width: 1rem; }
+.admin-config-section > p { max-width: 72rem; }
+.admin-config-section form { align-items: end; }
+.admin-config-section form .field-label > span { color: var(--text-body); font-size: 0.68rem; }
+.admin-config-section .field-control { min-height: 2.35rem; }
+.admin-config-section .button-primary { min-height: 2.35rem; }
+.admin-config-section > .grid > div { border-color: var(--line); background: var(--surface-muted); }
+.admin-config-section .rounded-xl { border-color: color-mix(in srgb, #6ea8fe 28%, var(--line)); background: color-mix(in srgb, #6ea8fe 8%, var(--surface)); }
+html[data-theme="dark"] .admin-section-icon { background: #202a36; border-color: #3c5977; color: #9fc3ff; }
+html[data-theme="dark"] .admin-config-section .bg-amber-50 { background: #30291e; }
+html[data-theme="dark"] .admin-config-section .border-amber-100 { border-color: #5d4b2b; }
+html[data-theme="dark"] .admin-config-section .text-amber-700 { color: #f1c77a; }
+html[data-theme="dark"] .admin-config-section .text-emerald-700 { color: #6ee7b7; }
+html[data-theme="dark"] .admin-config-section .text-rose-700 { color: #fda4af; }
+html[data-theme="dark"] .admin-config-section .text-blue-800 { color: #bfdbfe; }
+
+@media (max-width: 900px) {
+  .admin-config-section { padding: 1rem; }
+  .admin-config-section form { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 560px) {
+  .admin-config-section form { grid-template-columns: 1fr; }
+  .admin-config-section form > * { grid-column: auto !important; }
+}

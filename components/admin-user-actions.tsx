@@ -76,6 +76,17 @@ export function AdminUserActions({
   const [historyBusy, setHistoryBusy] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingForm, setPendingForm] = useState<FormData | null>(null);
+  const [departmentId, setDepartmentId] = useState(user.department?.id ?? "");
+  const [managerId, setManagerId] = useState(user.manager?.id ?? "");
+  const [primaryTeamId, setPrimaryTeamId] = useState(user.primaryTeam?.id ?? "");
+  const [authorizedQueueId, setAuthorizedQueueId] = useState(user.authorizedQueue?.id ?? "");
+
+  function handleDepartmentChange(nextDepartmentId: string) {
+    setDepartmentId(nextDepartmentId);
+    setManagerId("");
+    setPrimaryTeamId("");
+    setAuthorizedQueueId("");
+  }
 
   async function loadHistory() {
     setHistoryBusy(true);
@@ -134,6 +145,15 @@ export function AdminUserActions({
   }
 
   const displayName = user.managedDisplayName ?? user.entraDisplayName ?? user.name;
+  const filteredManagers = options.managers.filter(
+    (item) => item.id !== user.id && item.status === "ACTIVE" && Boolean(departmentId) && item.departmentId === departmentId,
+  );
+  const filteredTeams = options.teams.filter(
+    (item) => item.isActive && Boolean(departmentId) && item.queue.departmentId === departmentId,
+  );
+  const filteredQueues = options.queues.filter(
+    (item) => item.isActive && Boolean(departmentId) && item.department.id === departmentId,
+  );
 
   return (
     <article className="panel overflow-hidden">
@@ -182,11 +202,11 @@ export function AdminUserActions({
             </label>
             <label className="grid gap-1 text-xs font-semibold text-slate-600">
               Département
-              <Combobox name="departmentId" defaultValue={user.department?.id ?? ""} options={[{ value: "", label: "Non affecté" }, ...options.departments.filter((item) => item.isActive).map((item) => ({ value: item.id, label: item.name }))]} />
+              <Combobox name="departmentId" value={departmentId} onChange={handleDepartmentChange} options={[{ value: "", label: "Non affecté" }, ...options.departments.filter((item) => item.isActive).map((item) => ({ value: item.id, label: item.name }))]} />
             </label>
             <label className="grid gap-1 text-xs font-semibold text-slate-600">
               Manager applicatif
-              <Combobox name="managerId" defaultValue={user.manager?.id ?? ""} options={[{ value: "", label: "Non affecté" }, ...options.managers.filter((item) => item.id !== user.id && item.status === "ACTIVE").map((item) => ({ value: item.id, label: `${item.name} — ${item.email}` }))]} />
+              <Combobox name="managerId" value={managerId} onChange={setManagerId} disabled={!departmentId} options={[{ value: "", label: departmentId ? "Non affecté" : "Sélectionnez d’abord un département" }, ...filteredManagers.map((item) => ({ value: item.id, label: `${item.name} — ${item.email}` }))]} />
             </label>
             <label className="grid gap-1 text-xs font-semibold text-slate-600">
               Rôle principal
@@ -194,11 +214,11 @@ export function AdminUserActions({
             </label>
             <label className="grid gap-1 text-xs font-semibold text-slate-600">
               Équipe principale
-              <Combobox name="primaryTeamId" defaultValue={user.primaryTeam?.id ?? ""} options={[{ value: "", label: "Non affectée" }, ...options.teams.filter((item) => item.isActive).map((item) => ({ value: item.id, label: `${item.name} — ${item.queue.name}` }))]} />
+              <Combobox name="primaryTeamId" value={primaryTeamId} onChange={setPrimaryTeamId} disabled={!departmentId} options={[{ value: "", label: departmentId ? "Non affectée" : "Sélectionnez d’abord un département" }, ...filteredTeams.map((item) => ({ value: item.id, label: `${item.name} — ${item.queue.name}` }))]} />
             </label>
             <label className="grid gap-1 text-xs font-semibold text-slate-600">
               File autorisée
-              <Combobox name="authorizedQueueId" defaultValue={user.authorizedQueue?.id ?? ""} options={[{ value: "", label: "Non affectée" }, ...options.queues.filter((item) => item.isActive).map((item) => ({ value: item.id, label: `${item.department.name} — ${item.name}` }))]} />
+              <Combobox name="authorizedQueueId" value={authorizedQueueId} onChange={setAuthorizedQueueId} disabled={!departmentId} options={[{ value: "", label: departmentId ? "Non affectée" : "Sélectionnez d’abord un département" }, ...filteredQueues.map((item) => ({ value: item.id, label: `${item.department.name} — ${item.name}` }))]} />
             </label>
             <label className="grid gap-1 text-xs font-semibold text-slate-600">
               Statut applicatif
@@ -212,6 +232,7 @@ export function AdminUserActions({
               {busy ? "Enregistrement…" : "Enregistrer la fiche"}
             </button>
           </form>
+          <p className="mt-3 text-[11px] leading-5 text-slate-500">Les managers, équipes et files affichés sont automatiquement filtrés par département. Le changement de département réinitialise les trois attributions dépendantes.</p>
           <div className="mt-5 border-t border-slate-200 pt-4">
             <button type="button" onClick={() => void loadHistory()} disabled={historyBusy} className="button-secondary min-h-9 px-3 py-2 text-xs">
               {historyBusy ? "Chargement de l’historique…" : "Afficher l’historique des changements"}
