@@ -14,7 +14,7 @@ export default async function QueuesPage() {
   const queues = await listVisibleQueues(user);
 
   return (
-    <div data-ui-family="queues" className="queues-page space-y-6">
+    <div className="space-y-6">
       <header className="page-header">
         <div>
           <p className="eyebrow">Responsable de file</p>

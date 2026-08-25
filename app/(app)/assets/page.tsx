@@ -15,5 +15,5 @@ export default async function AssetsPage() {
     canManage ? listAssetMoveTargets(user) : Promise.resolve({ departments: [], users: [] }),
   ]);
 
-  return <div data-ui-family="knowledge" className="reference-page space-y-5"><header className="page-header"><div><p className="eyebrow">Référentiel technique</p><h1 className="mt-1">Actifs</h1><p className="page-header-description mt-1">Suivez les équipements, licences, affectations et états visibles dans votre périmètre.</p></div></header><AssetListClient initialAssets={assets.map((asset) => ({ ...asset, licenseExpiresAt: asset.licenseExpiresAt?.toISOString() ?? null }))} departments={targets.departments} users={targets.users} canManage={canManage} /></div>;
+  return <div className="space-y-5"><header className="page-header"><div><p className="eyebrow">Référentiel technique</p><h1 className="mt-1">Actifs</h1><p className="page-header-description mt-1">Suivez les équipements, licences, affectations et états visibles dans votre périmètre.</p></div></header><AssetListClient initialAssets={assets.map((asset) => ({ ...asset, licenseExpiresAt: asset.licenseExpiresAt?.toISOString() ?? null }))} departments={targets.departments} users={targets.users} canManage={canManage} /></div>;
 }

@@ -9,7 +9,7 @@ export default async function NewTicketPage() {
     redirect("/dashboard");
   }
   return (
-    <div data-ui-family="form" className="new-ticket-page space-y-7">
+    <div className="space-y-7">
       <div className="surface-grid overflow-hidden rounded-xl border border-[#dfe1f9] bg-white px-5 py-6 sm:px-8 md:py-8">
         <p className="eyebrow">Catalogue de services · 1TASK</p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 md:text-4xl">Créer une demande</h1>

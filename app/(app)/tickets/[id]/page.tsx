@@ -70,7 +70,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
   const canResolve = actionContext.allowedStatuses.some((status) => String(status) === "RESOLUTION_PENDING");
 
   return (
-    <div data-ui-family="ticket-detail" className="ticket-detail-shell space-y-4">
+    <div className="ticket-detail-shell space-y-4">
       <Link href={operational ? "/inbox" : "/tickets"} className="ticket-back-link">
         ← {operational ? "Retour à la boîte agent" : "Retour à mes tickets"}
       </Link>

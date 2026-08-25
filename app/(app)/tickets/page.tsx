@@ -21,7 +21,7 @@ export default async function TicketsPage({ searchParams }: { searchParams: Prom
   const operational = roleCodes(user).some((role) => operationalRoles.includes(role));
 
   return (
-    <div data-ui-family="ticketing" className="space-y-6">
+    <div className="space-y-6">
       <header className="page-header">
         <div>
           <p className="eyebrow">Demandeur</p>
