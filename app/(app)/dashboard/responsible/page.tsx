@@ -25,7 +25,7 @@ export default async function DashboardResponsiblePage() {
   const nowTimestamp = getProductionTimestamp();
 
   return (
-    <div className="dashboard-page">
+    <div data-ui-family="dashboard" className="dashboard-page dashboard-responsible-page">
       <DashboardViewTabs active="responsible" canOperate={canOperate} canReport />
       <ResponsibleDashboard queues={queues} summary={summary} tickets={tickets} missions={missions.map((mission) => ({ ...mission, isLate: Boolean(mission.dueAt && mission.dueAt.getTime() < nowTimestamp && !["COMPLETED", "ARCHIVED"].includes(mission.status)) }))} />
     </div>

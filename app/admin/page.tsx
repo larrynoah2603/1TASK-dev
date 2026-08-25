@@ -49,7 +49,7 @@ export default async function AdminDashboardPage() {
   ] as const;
 
   return (
-    <div className="space-y-7">
+    <div data-ui-family="administration" className="admin-overview-page space-y-7">
       <AdminPageHeader
         eyebrow="Tableau de bord global"
         title="Administration du ticketing"

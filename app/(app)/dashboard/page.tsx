@@ -23,7 +23,7 @@ export default async function DashboardPage() {
   const personalClosed = countStatus(personalTickets, TicketStatus.CLOSED);
 
   return (
-    <div className="dashboard-page dashboard-requester-layout">
+    <div data-ui-family="dashboard" className="dashboard-page dashboard-requester-layout">
       <DashboardViewTabs active="requester" canOperate={canOperate} canReport={canReport} />
       <header className="dashboard-hero dashboard-role-hero">
         <div><p className="eyebrow">Workspace</p><h1>Tableau de bord</h1><p className="page-header-description">Un aperçu rapide de vos demandes et des tickets à traiter.</p></div>

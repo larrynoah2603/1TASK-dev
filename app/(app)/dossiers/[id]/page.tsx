@@ -40,7 +40,7 @@ export default async function DossierDetailPage({ params }: { params: Promise<{ 
   const blockedMissions = dossier.missions.filter((mission) => mission.status === "BLOCKED").length;
 
   return (
-    <div className="space-y-5">
+    <div data-ui-family="portfolio" className="portfolio-detail-page space-y-5">
       <div>
         <Link href={"/dossiers" as Route} className="text-xs font-semibold text-[#4c4dba] hover:underline">← Retour aux dossiers</Link>
         <header className="mt-4 flex flex-col justify-between gap-4 lg:flex-row lg:items-start">

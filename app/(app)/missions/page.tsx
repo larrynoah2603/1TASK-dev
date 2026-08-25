@@ -28,7 +28,7 @@ export default async function MissionsPage() {
   }));
 
   return (
-    <div className="space-y-5">
+    <div data-ui-family="portfolio" className="portfolio-page space-y-5">
       <header className="page-header">
         <div>
           <p className="eyebrow">Portefeuille de production</p>
