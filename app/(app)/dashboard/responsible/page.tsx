@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { DashboardViewTabs, ResponsibleDashboard } from "@/components/dashboard-visuals";
-import { AutoRefresh } from "@/components/auto-refresh";
 import { getReportingSummary } from "@/lib/reporting-service";
 import { listVisibleQueues, listVisibleTickets } from "@/lib/ticket-service";
 import { getProductionTimestamp, listMissionsForViewer } from "@/lib/production-service";
@@ -27,7 +26,6 @@ export default async function DashboardResponsiblePage() {
 
   return (
     <div className="dashboard-page">
-      <AutoRefresh intervalMs={15000} />
       <DashboardViewTabs active="responsible" canOperate={canOperate} canReport />
       <ResponsibleDashboard queues={queues} summary={summary} tickets={tickets} missions={missions.map((mission) => ({ ...mission, isLate: Boolean(mission.dueAt && mission.dueAt.getTime() < nowTimestamp && !["COMPLETED", "ARCHIVED"].includes(mission.status)) }))} />
     </div>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { useEffect, useRef, useState } from "react";
+import { fetchWithTimeout } from "@/lib/client-http";
 
 type NotificationItem = {
   id: string;
@@ -46,7 +47,7 @@ export function NotificationCenter({ initialUnreadCount = 0 }: { initialUnreadCo
       if (requestInFlight.current) return;
       requestInFlight.current = true;
       try {
-        const response = await fetch("/api/notifications?take=8", { cache: "no-store" });
+        const response = await fetchWithTimeout("/api/notifications?take=8", { cache: "no-store" }, 8_000);
         if (!response.ok) return;
         const data = await response.json() as NotificationResponse;
         if (cancelled) return;
@@ -60,22 +61,9 @@ export function NotificationCenter({ initialUnreadCount = 0 }: { initialUnreadCo
       }
     };
 
-    const loadIfVisible = () => {
-      if (document.visibilityState === "visible") void loadNotifications();
-    };
-
     void loadNotifications();
-    const timer = window.setInterval(loadIfVisible, 15000);
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") void loadNotifications();
-    };
-    document.addEventListener("visibilitychange", onVisibilityChange);
-    window.addEventListener("focus", onVisibilityChange);
     return () => {
       cancelled = true;
-      window.clearInterval(timer);
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-      window.removeEventListener("focus", onVisibilityChange);
     };
   }, []);
 

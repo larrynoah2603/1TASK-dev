@@ -76,6 +76,14 @@ export class DomainError extends Error {
   }
 }
 
+function isTicketCreationIdempotencyConflict(error: unknown): boolean {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2002") {
+    return false;
+  }
+  const target = error.meta?.target;
+  return Array.isArray(target) && target.includes("creationIdempotencyToken");
+}
+
 const ticketSecurityInclude = {
   // This is the browser-safe projection used after authorization. The richer
   // ticketAccessInclude below is kept internal to the access predicate.
@@ -213,7 +221,12 @@ async function queueWorkerIds(db: Prisma.TransactionClient | typeof prisma, queu
     where: {
       isActive: true,
       team: { queueId, isActive: true },
-      user: { status: "ACTIVE", roleAssignments: { some: { role: { code: RoleCode.AGENT } } } },
+      user: {
+        status: "ACTIVE",
+        administrativelyDisabled: false,
+        OR: [{ authorizedQueueId: null }, { authorizedQueueId: queueId }],
+        roleAssignments: { some: { role: { code: RoleCode.AGENT } } },
+      },
     },
     select: { userId: true },
   });
@@ -232,8 +245,22 @@ async function notifyQueueWorkers(
     excludeUserIds?: string[];
   },
 ) {
+  const manager = input.managerId
+    ? await db.user.findFirst({
+        where: {
+          id: input.managerId,
+          status: "ACTIVE",
+          administrativelyDisabled: false,
+          OR: [{ authorizedQueueId: null }, { authorizedQueueId: input.queueId }],
+          roleAssignments: {
+            some: { role: { code: { in: [RoleCode.QUEUE_MANAGER, RoleCode.FUNCTIONAL_ADMIN] } } },
+          },
+        },
+        select: { id: true },
+      })
+    : null;
   const recipients = new Set([
-    input.managerId,
+    manager?.id,
     ...(await queueWorkerIds(db, input.queueId)),
   ].filter(Boolean) as string[]);
   for (const recipientId of input.excludeUserIds ?? []) recipients.delete(recipientId);
@@ -363,6 +390,16 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
   }
   ensureActorDepartment(actor);
   const parsed = createTicketSchema.parse(input);
+  if (parsed.creationIdempotencyToken) {
+    const existingTicket = await prisma.ticket.findFirst({
+      where: {
+        createdById: actor.id,
+        creationIdempotencyToken: parsed.creationIdempotencyToken,
+      },
+      include: ticketSecurityInclude,
+    });
+    if (existingTicket) return existingTicket;
+  }
   const targetDepartment = parsed.targetDepartmentId
     ? await prisma.department.findFirst({ where: { id: parsed.targetDepartmentId, isActive: true }, select: { id: true, code: true, name: true } })
     : null;
@@ -440,7 +477,8 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
     holidays: activeSla.calendar.holidays.map((holiday) => holiday.date),
   });
 
-  const result = await prisma.$transaction(async (tx) => {
+  try {
+    const result = await prisma.$transaction(async (tx) => {
     let ticket = await tx.ticket.create({
       data: {
         reference: makeTicketReference(now),
@@ -459,6 +497,7 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
         requesterId: actor.id,
         sourceDepartmentId: actor.departmentId,
         createdById: actor.id,
+        creationIdempotencyToken: parsed.creationIdempotencyToken ?? null,
         queueId: routing.queueId,
         serviceCatalogItemId: routing.serviceCatalogItemId,
         slaId: activeSla.id,
@@ -581,7 +620,20 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
     }
   });
 
-  return result.ticket;
+    return result.ticket;
+  } catch (error) {
+    if (parsed.creationIdempotencyToken && isTicketCreationIdempotencyConflict(error)) {
+      const existingTicket = await prisma.ticket.findFirst({
+        where: {
+          createdById: actor.id,
+          creationIdempotencyToken: parsed.creationIdempotencyToken,
+        },
+        include: ticketSecurityInclude,
+      });
+      if (existingTicket) return existingTicket;
+    }
+    throw error;
+  }
 }
 
 type VisibilityOptions = {

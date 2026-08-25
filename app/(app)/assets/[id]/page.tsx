@@ -1,10 +1,11 @@
 import Link from "next/link";
 import type { Route } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { AssetDetailActions } from "@/components/asset-detail-actions";
 import { StatusBadge } from "@/components/status-badge";
+import { isFunctionalAssetAdministrator } from "@/lib/asset-access";
 import { getAssetForViewer, listAssetMoveTargets } from "@/lib/production-service";
-import { getSessionUserContext, permissionCodes } from "@/lib/server-auth";
+import { getSessionUserContext } from "@/lib/server-auth";
 
 const typeLabels: Record<string, string> = { COMPUTER: "Ordinateur", SCREEN: "Écran", PHONE: "Téléphone", LICENSE: "Licence", OTHER: "Autre" };
 const statusLabels: Record<string, string> = { ACTIVE: "Actif", IN_REPAIR: "En réparation", RETIRED: "Retiré", LOST: "Perdu" };
@@ -14,7 +15,9 @@ function formatDateTime(value: Date) { return new Intl.DateTimeFormat("fr-FR", {
 export default async function AssetDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUserContext();
   if (!user) return null;
-  const canManage = permissionCodes(user).includes("asset:manage");
+  const isFunctionalAdmin = isFunctionalAssetAdministrator(user);
+  if (!isFunctionalAdmin) redirect("/dashboard");
+  const canManage = true;
   let asset;
   try { asset = await getAssetForViewer(user, (await params).id); } catch { notFound(); }
   if (!asset) notFound();

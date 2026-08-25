@@ -684,8 +684,10 @@ model Ticket {
   // création. Le département opérationnel cible reste celui de la file issue
   // du catalogue.
   sourceDepartmentId     String?
-  createdById            String
-  assignedToId           String?
+    createdById             String
+  // Token namespaced by the authenticated creator to make client retries safe.
+  creationIdempotencyToken String?
+  assignedToId            String?
   queueId                String
   serviceCatalogItemId   String
   dossierId              String?
@@ -732,6 +734,7 @@ model Ticket {
   slaExceptions SlaException[]
   worklogs      Worklog[]
 
+  @@unique([createdById, creationIdempotencyToken])
   @@index([requesterId, status, updatedAt])
   @@index([sourceDepartmentId, createdAt])
   @@index([queueId, status, priority, updatedAt])

@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { MissionListClient } from "@/components/mission-list-client";
-import { AutoRefresh } from "@/components/auto-refresh";
 import { getProductionTimestamp, listMissionsForViewer } from "@/lib/production-service";
 import { getSessionUserContext, permissionCodes } from "@/lib/server-auth";
 
@@ -30,7 +29,6 @@ export default async function MissionsPage() {
 
   return (
     <div className="space-y-5">
-      <AutoRefresh intervalMs={30000} />
       <header className="page-header">
         <div>
           <p className="eyebrow">Portefeuille de production</p>

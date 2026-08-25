@@ -51,6 +51,8 @@ function walkTextSources(directory: string): string[] {
 }
 
 const ticketService = source("lib/ticket-service.ts");
+const productionService = source("lib/production-service.ts");
+const notificationCenter = source("components/notification-center.tsx");
 const ticketSchema = source("prisma/schema.prisma");
 const authSource = source("lib/auth.ts");
 const entraSource = source("lib/entra.ts");
@@ -101,6 +103,20 @@ describe("Prompt 8 — création, catalogue et département Entra", () => {
     expect(ticketService).toContain("sourceDepartmentId: actor.departmentId");
   });
 
+  it("protège la création contre les retries avec un token idempotent", () => {
+    const result = createTicketSchema.safeParse({
+      creationIdempotencyToken: "web-1234567890abcdef",
+      serviceCatalogItemId: serviceCandidates[0].id,
+      title: "Connexion Wi-Fi indisponible",
+      description: "La connexion Wi-Fi ne fonctionne plus dans le bureau.",
+    });
+
+    expect(result.success).toBe(true);
+    expect(ticketService).toContain("creationIdempotencyToken: parsed.creationIdempotencyToken ?? null");
+    expect(ticketService).toContain("isTicketCreationIdempotencyConflict");
+    expect(ticketService).toContain("createdById: actor.id");
+  });
+
   it("route automatiquement la nature, la catégorie, la file et la priorité", () => {
     const decision = routeTicketFromCatalog({
       serviceCatalogItemId: serviceCandidates[0].id,
@@ -114,6 +130,24 @@ describe("Prompt 8 — création, catalogue et département Entra", () => {
       category: "Réseau",
       priority: Priority.HIGH,
     });
+  });
+
+  it("limite les Worklogs au traitement autorisé du ticket", () => {
+    const worklogSection = section(productionService, "export async function addWorklog", "export async function listMissionWorklogs");
+    expect(worklogSection).toContain("isAssignedAgent");
+    expect(worklogSection).toContain("canManageTicketQueue");
+    expect(worklogSection).toContain("Un worklog ne peut être imputé");
+  });
+
+  it("ne réintroduit pas de polling périodique global des notifications", () => {
+    expect(notificationCenter).not.toContain("setInterval");
+    expect(notificationCenter).toContain("fetchWithTimeout");
+  });
+
+  it("aligne les notifications de file sur la visibilité opérationnelle", () => {
+    expect(ticketService).toContain("administrativelyDisabled: false");
+    expect(ticketService).toContain("authorizedQueueId: queueId");
+    expect(ticketService).toContain("RoleCode.QUEUE_MANAGER");
   });
 
   it("reprend le département et le manager depuis le profil Microsoft Entra", () => {

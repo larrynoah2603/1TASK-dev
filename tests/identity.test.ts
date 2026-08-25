@@ -1,9 +1,10 @@
-import { UserStatus } from "@prisma/client";
+import { RoleCode, UserStatus } from "@prisma/client";
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_BOOTSTRAP_ADMIN_EMAIL,
   isBootstrapFunctionalAdminEmail,
   PERMISSION_CATALOG,
+  ROLE_PERMISSION_CODES,
   statusAfterEntraSynchronization,
 } from "@/lib/identity";
 
@@ -34,6 +35,16 @@ describe("bootstrap administrateur 1TASK", () => {
   it("déclare la permission de création inter-départementale dans le catalogue runtime", () => {
     expect(PERMISSION_CATALOG["ticket:create:cross-department"]).toBeDefined();
     expect(PERMISSION_CATALOG["catalog:propose"]).toBeDefined();
+  });
+
+  it("réserve les permissions Actifs à l’administrateur fonctionnel", () => {
+    expect(ROLE_PERMISSION_CODES[RoleCode.FUNCTIONAL_ADMIN]).toContain("asset:read");
+    expect(ROLE_PERMISSION_CODES[RoleCode.FUNCTIONAL_ADMIN]).toContain("asset:manage");
+    expect(ROLE_PERMISSION_CODES[RoleCode.REQUESTER]).not.toContain("asset:read");
+    expect(ROLE_PERMISSION_CODES[RoleCode.AGENT]).not.toContain("asset:read");
+    expect(ROLE_PERMISSION_CODES[RoleCode.QUEUE_MANAGER]).not.toContain("asset:read");
+    expect(ROLE_PERMISSION_CODES[RoleCode.TECHNICAL_ADMIN]).not.toContain("asset:read");
+    expect(ROLE_PERMISSION_CODES[RoleCode.TECHNICAL_ADMIN]).not.toContain("asset:manage");
   });
 
   it("ne réactive pas un compte bootstrapé désactivé administrativement", () => {

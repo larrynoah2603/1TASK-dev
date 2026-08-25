@@ -1,8 +1,7 @@
 import { AssetStatus, MissionStatus, RoleCode } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import {
-  hasGlobalRole,
-} from "@/lib/access-control";
+import { canManageQueue, hasGlobalRole } from "@/lib/access-control";
+import { assertFunctionalAssetAdministrator } from "@/lib/asset-access";
 import {
   AuthorizationError,
   ResourceNotFoundError,
@@ -295,7 +294,7 @@ export async function getClientForViewer(actor: UserContext, clientId: string) {
 
 export async function getAssetForViewer(actor: UserContext, assetId: string) {
   actor = await requireCurrentActor(actor);
-  ensurePermission(actor, "asset:read");
+  assertFunctionalAssetAdministrator(actor);
   const asset = await prisma.asset.findUnique({
     where: { id: assetId },
     include: {
@@ -327,7 +326,7 @@ export async function getAssetForViewer(actor: UserContext, assetId: string) {
 
 export async function listAssetMoveTargets(actor: UserContext) {
   actor = await requireCurrentActor(actor);
-  ensurePermission(actor, "asset:manage");
+  assertFunctionalAssetAdministrator(actor);
   const departmentId = actor.departmentId ?? "__none__";
   const departmentWhere = isGlobalAdmin(actor) ? { isActive: true } : { id: departmentId, isActive: true };
   const userWhere = isGlobalAdmin(actor)
@@ -342,7 +341,7 @@ export async function listAssetMoveTargets(actor: UserContext) {
 
 export async function listAssetsForViewer(actor: UserContext, query?: string) {
   actor = await requireCurrentActor(actor);
-  ensurePermission(actor, "asset:read");
+  assertFunctionalAssetAdministrator(actor);
   const normalizedQuery = query?.trim();
   return prisma.asset.findMany({
     where: {
@@ -360,7 +359,7 @@ export async function listAssetsForViewer(actor: UserContext, query?: string) {
 
 export async function createAsset(actor: UserContext, input: AssetInput) {
   actor = await requireCurrentActor(actor);
-  ensurePermission(actor, "asset:manage");
+  assertFunctionalAssetAdministrator(actor);
   const parsed = assetSchema.parse(input);
   if (!departmentAllowed(actor, parsed.departmentId)) throw new AuthorizationError("Le département de l’actif est hors de votre périmètre.");
   const asset = await prisma.asset.create({ data: { ...parsed, status: AssetStatus.ACTIVE }, include: { department: true, assignedTo: { select: { id: true, name: true } } } });
@@ -370,7 +369,7 @@ export async function createAsset(actor: UserContext, input: AssetInput) {
 
 export async function moveAsset(actor: UserContext, assetId: string, input: AssetMovementInput) {
   actor = await requireCurrentActor(actor);
-  ensurePermission(actor, "asset:manage");
+  assertFunctionalAssetAdministrator(actor);
   const parsed = assetMovementSchema.parse(input);
   const asset = await prisma.asset.findUnique({ where: { id: assetId } });
   if (!asset) throw new ResourceNotFoundError("Actif introuvable.");
@@ -396,9 +395,21 @@ export async function addWorklog(actor: UserContext, input: WorklogInput) {
   const parsed = worklogSchema.parse(input);
   const access = await requireTicketAccess(parsed.ticketId);
   if (access.actor.id !== actor.id) throw new AuthorizationError("Le contexte utilisateur est obsolète.");
-  const ticket = await prisma.ticket.findUnique({ where: { id: parsed.ticketId }, select: { id: true, missionId: true, assignedToId: true } });
+  const ticket = await prisma.ticket.findUnique({ where: { id: parsed.ticketId }, select: { id: true, missionId: true, assignedToId: true, queueId: true, queue: { select: { departmentId: true } } } });
   if (!ticket) throw new ResourceNotFoundError("Ticket introuvable.");
   if (parsed.missionId && ticket.missionId && parsed.missionId !== ticket.missionId) throw new AuthorizationError("La mission ne correspond pas à celle du ticket.");
+  const isFunctionalAdministrator = isGlobalAdmin(actor);
+  const isAssignedAgent = ticket.assignedToId === actor.id;
+  const canManageTicketQueue = canManageQueue(toAccessSubject(actor), {
+    requesterId: actor.id,
+    assignedToId: ticket.assignedToId,
+    queueId: ticket.queueId,
+    departmentId: ticket.queue.departmentId,
+    confidential: false,
+  });
+  if (!isFunctionalAdministrator && !isAssignedAgent && !canManageTicketQueue) {
+    throw new AuthorizationError("Un worklog ne peut être imputé que par l’agent affecté ou le responsable autorisé de la file.");
+  }
   const worklog = await prisma.worklog.create({ data: { ticketId: parsed.ticketId, missionId: parsed.missionId ?? ticket.missionId, userId: actor.id, minutes: parsed.minutes, note: parsed.note, startedAt: parsed.startedAt ?? new Date() } });
   await appendAuditLog(prisma, { actorId: actor.id, action: "WORKLOG_CREATED", objectType: "Worklog", objectId: worklog.id, newValue: { ticketId: parsed.ticketId, missionId: worklog.missionId, minutes: parsed.minutes }, reason: parsed.note });
   return worklog;

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/toast-provider";
 import { Combobox } from "@/components/combobox";
@@ -30,6 +30,13 @@ const urgencyLabels: Record<string, string> = {
   CRITICAL: "Critique",
 };
 
+function createClientIdempotencyToken() {
+  const uuid = typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return `web-${uuid.replace(/[^A-Za-z0-9_-]/g, "")}`;
+}
+
 export function NewTicketForm({ onCancel }: { onCancel?: () => void } = {}) {
   const router = useRouter();
   const { toast } = useToast();
@@ -52,6 +59,7 @@ export function NewTicketForm({ onCancel }: { onCancel?: () => void } = {}) {
   const [submitting, setSubmitting] = useState(false);
   const [loadingDepartments, setLoadingDepartments] = useState(true);
   const [preview, setPreview] = useState(false);
+  const creationIdempotencyToken = useRef(createClientIdempotencyToken()).current;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -109,6 +117,7 @@ export function NewTicketForm({ onCancel }: { onCancel?: () => void } = {}) {
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
         body: JSON.stringify({
+          creationIdempotencyToken,
           requestedService,
           targetDepartmentId,
           type,
@@ -132,7 +141,7 @@ export function NewTicketForm({ onCancel }: { onCancel?: () => void } = {}) {
       router.push(`/tickets/${data.id}`);
     } catch (requestError: unknown) {
       const message = requestError instanceof DOMException && requestError.name === "AbortError"
-        ? "La création dépasse 30 secondes. Le ticket n’a pas été confirmé ; vérifiez la boîte agent avant de réessayer."
+        ? "La création dépasse 30 secondes. Vous pouvez réessayer : la même demande conservera son identifiant et ne créera pas de doublon."
         : "La création n’a pas pu être envoyée.";
       setError(message);
       toast(message, "error");

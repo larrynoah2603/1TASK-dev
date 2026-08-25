@@ -1,14 +1,15 @@
 import { redirect } from "next/navigation";
 import { AssetListClient } from "@/components/asset-list-client";
+import { isFunctionalAssetAdministrator } from "@/lib/asset-access";
 import { listAssetMoveTargets, listAssetsForViewer } from "@/lib/production-service";
-import { getSessionUserContext, permissionCodes } from "@/lib/server-auth";
+import { getSessionUserContext } from "@/lib/server-auth";
 
 export default async function AssetsPage() {
   const user = await getSessionUserContext();
   if (!user) return null;
-  const permissions = permissionCodes(user);
-  if (!permissions.includes("asset:read")) redirect("/dashboard");
-  const canManage = permissions.includes("asset:manage");
+  const isFunctionalAdmin = isFunctionalAssetAdministrator(user);
+  if (!isFunctionalAdmin) redirect("/dashboard");
+  const canManage = true;
   const [assets, targets] = await Promise.all([
     listAssetsForViewer(user),
     canManage ? listAssetMoveTargets(user) : Promise.resolve({ departments: [], users: [] }),

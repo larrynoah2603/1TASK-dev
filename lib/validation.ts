@@ -16,6 +16,7 @@ import { z } from "zod";
 
 export const createTicketSchema = z.object({
   serviceCatalogItemId: z.string().cuid().optional(),
+  creationIdempotencyToken: z.string().trim().min(16).max(200).regex(/^[A-Za-z0-9_-]+$/).optional(),
   requestedService: z.string().trim().min(3).max(180).optional(),
   targetDepartmentId: z.string().cuid().optional(),
   type: z.enum(TicketType).optional(),

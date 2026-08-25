@@ -63,20 +63,17 @@ Ensuite, exécuter le seed uniquement si les données de démonstration peuvent 
 
 ## Polling
 
-La stratégie n’utilise pas de connexion persistante. Elle est adaptée à Vercel sans service externe :
+La version livrée dans ce workspace n’utilise plus de polling RSC périodique global. Elle est adaptée à Vercel sans connexion persistante : les mutations appellent `router.refresh()` seulement après une action réussie, et l’écran Notifications propose une actualisation manuelle bornée à 8 secondes.
 
 ```text
-/inbox                  15 secondes
-/tickets/[id]           15 secondes
-centre de notifications 15 secondes
-/notifications          15 secondes
-/dashboard/responsible  15 secondes
-/missions               30 secondes
+mutation réussie       refresh ciblé de l’écran courant
+notifications ouvertes chargement ponctuel borné à 8 secondes
+centre Notifications   pas de setInterval
+Boîte agent            pas de router.refresh() périodique
+Fiche ticket           pas de router.refresh() périodique
 ```
 
-Les mutations appellent toujours `router.refresh()` immédiatement. Le polling sert uniquement de filet de sécurité. Les requêtes sont suspendues lorsque l’onglet est masqué, les retours de focus sont temporisés et une nouvelle requête n’est pas lancée si la précédente est encore en cours.
-
-Pour un vrai temps réel à grande échelle, remplacer ultérieurement les `router.refresh()` par un endpoint delta `updatedSince` ou un canal SSE/WebSocket managé. Ne pas descendre sous 10–15 secondes avec un rafraîchissement complet des Server Components si plusieurs centaines d’utilisateurs partagent la base.
+Cette stratégie évite qu’un polling de plusieurs pages consomme inutilement Neon et Vercel. Une évolution ultérieure pourra ajouter un endpoint delta `updatedSince` ou un canal SSE/WebSocket managé après mesure des durées réelles et validation de la charge. Il ne faut pas réintroduire un rafraîchissement complet fréquent des Server Components sans métriques.
 
 ## Validation locale
 

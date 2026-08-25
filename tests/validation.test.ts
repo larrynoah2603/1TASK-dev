@@ -24,6 +24,28 @@ describe("contrats de création et de filtrage", () => {
     expect(result.success).toBe(true);
   });
 
+  it("accepte un token d’idempotence stable pour les retries", () => {
+    const result = createTicketSchema.safeParse({
+      creationIdempotencyToken: "web-1234567890abcdef",
+      requestedService: "Création d’un compte client",
+      targetDepartmentId: "c123456789012345678901234",
+      title: "Créer un compte client",
+      description: "Le nouveau collaborateur doit disposer d’un compte client pour commencer sa mission.",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("refuse un token d’idempotence trop court ou contenant des caractères ambigus", () => {
+    const result = createTicketSchema.safeParse({
+      creationIdempotencyToken: "bad token",
+      requestedService: "Création d’un compte client",
+      targetDepartmentId: "c123456789012345678901234",
+      title: "Créer un compte client",
+      description: "Le nouveau collaborateur doit disposer d’un compte client pour commencer sa mission.",
+    });
+    expect(result.success).toBe(false);
+  });
+
   it("refuse une demande libre sans département cible", () => {
     const result = createTicketSchema.safeParse({
       requestedService: "Création d’un compte client",

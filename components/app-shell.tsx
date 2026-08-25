@@ -1,6 +1,7 @@
 import { RoleCode } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { hasGlobalRole } from "@/lib/access-control";
+import { isFunctionalAssetAdministrator } from "@/lib/asset-access";
 import { ROLE_LABELS } from "@/lib/identity";
 import { CollapsibleShell } from "@/components/collapsible-shell";
 import { GlobalSearch } from "@/components/global-search";
@@ -25,7 +26,7 @@ const links: AppLink[] = [
   { href: "/clients", label: "Clients", icon: "team", group: "Opérations", permission: "portfolio:read" },
   { href: "/dossiers", label: "Dossiers clients", icon: "folder", group: "Opérations", permission: "portfolio:read" },
   { href: "/missions", label: "Missions", icon: "briefcase", group: "Opérations", permission: "portfolio:read" },
-  { href: "/assets", label: "Actifs", icon: "monitor", group: "Opérations", permission: "asset:read" },
+  { href: "/assets", label: "Actifs", icon: "monitor", group: "Opérations", roles: [RoleCode.FUNCTIONAL_ADMIN] },
   { href: "/knowledge", label: "Base de connaissances", icon: "book", group: "Espace", permission: "knowledge:read" },
   { href: "/dashboard/responsible", label: "Pilotage SLA", icon: "team", group: "Opérations", permission: "reporting:read" },
   { href: "/reporting", label: "Reporting", icon: "chart", group: "Opérations", permission: "reporting:read" },
@@ -73,7 +74,8 @@ export async function AppShell({ user, children }: { user: UserContext; children
     const permissionAllowed = !link.permission || permissions.includes(link.permission);
     const roleAllowed = !link.roles || link.roles.some((role) => codes.includes(role));
     const adminAllowed = link.href !== "/admin" || isAdmin;
-    return permissionAllowed && roleAllowed && adminAllowed;
+    const assetsAllowed = link.href !== "/assets" || isFunctionalAssetAdministrator(user);
+    return permissionAllowed && roleAllowed && adminAllowed && assetsAllowed;
   });
   const groups: Array<AppLink["group"]> = ["Espace", "Opérations", "Administration"];
   const roleLabel = codes.map((code) => ROLE_LABELS[code]).join(" · ");

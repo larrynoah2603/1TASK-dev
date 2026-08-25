@@ -74,7 +74,7 @@ export const PERMISSION_CATALOG = {
 
 type PermissionCode = keyof typeof PERMISSION_CATALOG;
 
-const ROLE_PERMISSION_CODES: Record<RoleCode, readonly PermissionCode[]> = {
+export const ROLE_PERMISSION_CODES: Record<RoleCode, readonly PermissionCode[]> = {
   [RoleCode.REQUESTER]: [
     "ticket:create",
     "ticket:create:cross-department",
@@ -96,7 +96,6 @@ const ROLE_PERMISSION_CODES: Record<RoleCode, readonly PermissionCode[]> = {
     "ticket:block",
     "ticket:resolve",
     "portfolio:read",
-    "asset:read",
     "worklog:create",
     "knowledge:read",
     "catalog:propose",
@@ -117,7 +116,6 @@ const ROLE_PERMISSION_CODES: Record<RoleCode, readonly PermissionCode[]> = {
     "ticket:export",
     "reporting:read",
     "portfolio:read",
-    "asset:read",
     "worklog:create",
     "knowledge:read",
     "notification:preferences",
@@ -125,7 +123,7 @@ const ROLE_PERMISSION_CODES: Record<RoleCode, readonly PermissionCode[]> = {
     "catalog:propose",
   ],
   [RoleCode.FUNCTIONAL_ADMIN]: Object.keys(PERMISSION_CATALOG) as PermissionCode[],
-  [RoleCode.TECHNICAL_ADMIN]: ["technical:manage", "asset:read", "asset:manage"],
+  [RoleCode.TECHNICAL_ADMIN]: ["technical:manage"],
   [RoleCode.REPORTING_READER]: ["reporting:read", "reporting:export", "portfolio:read", "knowledge:read"],
 };
 

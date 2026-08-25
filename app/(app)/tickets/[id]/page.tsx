@@ -7,7 +7,6 @@ import { TicketAdvancedPanels } from "@/components/ticket-advanced-panels";
 import { TicketCommentThread } from "@/components/ticket-comment-thread";
 import { TicketSidePanel } from "@/components/ticket-side-panel";
 import { TicketStatusStrip } from "@/components/ticket-status-strip";
-import { AutoRefresh } from "@/components/auto-refresh";
 import { BLOCK_REASON_LABELS, STATUS_LABELS, TYPE_LABELS } from "@/lib/domain";
 import { getTicketSlaState } from "@/lib/sla";
 import { getTicketActionContext, getTicketForViewer } from "@/lib/ticket-service";
@@ -72,7 +71,6 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
 
   return (
     <div className="ticket-detail-shell space-y-4">
-      <AutoRefresh intervalMs={15000} />
       <Link href={operational ? "/inbox" : "/tickets"} className="ticket-back-link">
         ← {operational ? "Retour à la boîte agent" : "Retour à mes tickets"}
       </Link>
