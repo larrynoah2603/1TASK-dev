@@ -164,7 +164,41 @@ export async function createMission(actor: UserContext, input: MissionInput) {
   return mission;
 }
 
-export async function listMissionsForViewer(actor: UserContext, options: { query?: string; status?: string; departmentId?: string; dossierId?: string } = {}) {
+export type MissionListOptions = {
+  query?: string;
+  status?: string;
+  departmentId?: string;
+  dossierId?: string;
+  take?: number;
+};
+
+export async function getMissionPortfolioSummary(actor: UserContext, options: Pick<MissionListOptions, "departmentId"> = {}) {
+  actor = await requireCurrentActor(actor);
+  ensurePermission(actor, "portfolio:read");
+  const requestedDepartmentId = options.departmentId?.trim() || undefined;
+  if (!isGlobalAdmin(actor) && requestedDepartmentId && requestedDepartmentId !== actor.departmentId) {
+    throw new AuthorizationError("Le département demandé est hors de votre périmètre.");
+  }
+  const departmentId = isGlobalAdmin(actor) ? requestedDepartmentId : actor.departmentId ?? "__none__";
+  const where = departmentId ? { departmentId } : {};
+  const now = new Date();
+  const [total, active, late, budget, logged] = await Promise.all([
+    prisma.mission.count({ where }),
+    prisma.mission.count({ where: { ...where, status: MissionStatus.ACTIVE } }),
+    prisma.mission.count({ where: { ...where, status: { notIn: [MissionStatus.COMPLETED, MissionStatus.ARCHIVED] }, dueAt: { lt: now } } }),
+    prisma.mission.aggregate({ where, _sum: { budgetMinutes: true } }),
+    prisma.worklog.aggregate({ where: { mission: where }, _sum: { minutes: true } }),
+  ]);
+  return {
+    total,
+    active,
+    late,
+    budgetMinutes: budget._sum.budgetMinutes ?? 0,
+    worklogMinutes: logged._sum.minutes ?? 0,
+  };
+}
+
+export async function listMissionsForViewer(actor: UserContext, options: MissionListOptions = {}) {
   actor = await requireCurrentActor(actor);
   ensurePermission(actor, "portfolio:read");
   const requestedDepartmentId = options.departmentId?.trim() || undefined;
@@ -175,6 +209,9 @@ export async function listMissionsForViewer(actor: UserContext, options: { query
   const normalizedQuery = options.query?.trim();
   const status = options.status && Object.values(MissionStatus).includes(options.status as MissionStatus)
     ? options.status as MissionStatus
+    : undefined;
+  const take = typeof options.take === "number" && Number.isFinite(options.take)
+    ? Math.min(100, Math.max(1, Math.trunc(options.take)))
     : undefined;
   const missions = await prisma.mission.findMany({
     where: {
@@ -195,6 +232,7 @@ export async function listMissionsForViewer(actor: UserContext, options: { query
       _count: { select: { tickets: true, worklogs: true } },
     },
     orderBy: [{ status: "asc" }, { dueAt: "asc" }, { name: "asc" }],
+    ...(take ? { take } : {}),
   });
   const missionIds = missions.map((mission) => mission.id);
   const worklogs = missionIds.length ? await prisma.worklog.groupBy({
@@ -254,7 +292,20 @@ export async function getClientForViewer(actor: UserContext, clientId: string) {
   const client = await prisma.clientAccount.findUnique({ where: { id: clientId } });
   if (!client || !client.isActive) throw new ResourceNotFoundError("Client introuvable.");
 
-  const dossiers = (await listDossiersForViewer(actor)).filter((dossier) => dossier.clientId === clientId);
+  const dossiers = await prisma.clientDossier.findMany({
+    where: {
+      clientId,
+      isActive: true,
+      ...(isGlobalAdmin(actor) ? {} : {
+        missions: { some: { departmentId: actor.departmentId ?? "__none__" } },
+      }),
+    },
+    include: {
+      client: true,
+      missions: { include: { department: true }, orderBy: { dueAt: "asc" } },
+    },
+    orderBy: { name: "asc" },
+  });
   if (!isGlobalAdmin(actor) && !dossiers.length) {
     throw new ResourceNotFoundError("Client introuvable ou hors de votre périmètre.");
   }

@@ -86,3 +86,36 @@ La migration additive `20260826100000_add_organization_sla_calendars` crée `Org
 ### Validation
 
 La suite de tests couvre la validation des organisations, des plages horaires, des jours fériés et des signaux SLA. La validation finale doit inclure Vitest, TypeScript, ESLint, Prisma et le build Next.js avant publication.
+
+
+## [0.10.1] — Stabilisation des chargements serveur — 2026-08-26
+
+### Diagnostic
+
+Les temps d’ouverture supérieurs à 10 secondes provenaient principalement du volume de données chargé par certaines Server Components, de la résolution de session répétée et de collections tickets/portefeuille chargées plus largement que nécessaire. Le workspace traité ne contient pas de polling périodique global ; le délai doit donc être confirmé dans les logs Vercel et les métriques Neon.
+
+### Modifié
+
+- `getAdminConfiguration(actor, sections?)` charge maintenant uniquement les données nécessaires à la section admin ouverte, au lieu de charger systématiquement les douze collections de configuration.
+- Le dashboard admin utilise un résumé agrégé des utilisateurs au lieu du snapshot relationnel complet.
+- La résolution de session est dédupliquée au sein d’un rendu Server Components.
+- L’inbox utilise des métriques serveur ciblées et une liste limitée pour les alertes SLA, au lieu de charger une seconde collection de 100 tickets.
+- Le dashboard responsable charge uniquement les tickets nécessaires aux escalades récentes pour sa liste détaillée.
+- La fiche client interroge directement les dossiers du client demandé avec le même contrôle de périmètre.
+- Les membres actifs d’équipe utilisés pour la visibilité tickets sont mutualisés dans les lectures concurrentes du même rendu.
+- Les espaces applicatif et admin disposent d’un état de chargement immédiat.
+
+### Observabilité
+
+Les opérations serveur dépassant 750 ms produisent un log contrôlé avec les labels `admin.configuration`, `tickets.list` et `tickets.detail`. Aucun secret ni contenu métier n’est journalisé.
+
+### Validation
+
+- Vitest : **100 tests passés, 3 tests d’intégration ignorés**.
+- TypeScript : **OK**.
+- ESLint : **0 erreur, 3 warnings historiques `<img>`**.
+- Build Next.js : **OK**.
+
+### Étape suivante
+
+Après mesure réelle sur Vercel et Neon, introduire des réponses delta (`updatedSince`, curseur ou ETag) avant d’étudier SSE ou un autre mécanisme temps réel géré.

@@ -5,6 +5,7 @@ import {
 } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { appendAuditLog } from "@/lib/audit";
+import { measureServerOperation } from "@/lib/performance";
 import { createInAppNotification } from "@/lib/notifications";
 import {
   requireAdminAccess,
@@ -78,20 +79,42 @@ function plainDepartment(value: { id: string; code: string; name: string; isActi
   return { id: value.id, code: value.code, name: value.name, isActive: value.isActive };
 }
 
-export async function getAdminConfiguration(actor: UserContext) {
+export type AdminConfigurationSection = "departments" | "queues" | "teams" | "catalog" | "sla" | "roles" | "users";
+
+export function getAdminConfiguration(
+  actor: UserContext,
+  sections?: readonly AdminConfigurationSection[],
+) {
+  return measureServerOperation("admin.configuration", () => getAdminConfigurationInternal(actor, sections));
+}
+
+async function getAdminConfigurationInternal(
+  actor: UserContext,
+  sections?: readonly AdminConfigurationSection[],
+) {
   await requireFunctionalAdminFor(actor);
+  const selected = new Set(sections ?? ["departments", "queues", "teams", "catalog", "sla", "roles", "users"]);
+  const needs = (...names: AdminConfigurationSection[]) => names.some((name) => selected.has(name));
+  const needsDepartments = needs("departments", "queues", "teams", "catalog", "users");
+  const needsQueues = needs("queues", "teams", "catalog", "sla", "users");
+  const needsUsers = needs("queues", "teams", "roles", "users");
+  const needsTeams = needs("teams", "users");
+  const needsServices = needs("catalog", "sla");
+  const needsSlas = needs("catalog", "sla");
+  const needsSlaData = selected.has("sla");
+
   const [organizations, departments, queues, teams, users, services, slas, calendars, escalationRules, roles, entraMappings, pendingUsers] = await Promise.all([
-    prisma.organization.findMany({ orderBy: { name: "asc" } }),
-    prisma.department.findMany({ orderBy: { name: "asc" } }),
-    prisma.queue.findMany({
+    needsSlaData ? prisma.organization.findMany({ orderBy: { name: "asc" } }) : Promise.resolve([]),
+    needsDepartments ? prisma.department.findMany({ orderBy: { name: "asc" } }) : Promise.resolve([]),
+    needsQueues ? prisma.queue.findMany({
       include: {
         department: true,
         manager: { select: { id: true, name: true, email: true, status: true } },
         teams: { select: { id: true, name: true, isActive: true } },
       },
       orderBy: [{ department: { name: "asc" } }, { name: "asc" }],
-    }),
-    prisma.team.findMany({
+    }) : Promise.resolve([]),
+    needsTeams || !sections ? prisma.team.findMany({
       include: {
         queue: { include: { department: true } },
         lead: { select: { id: true, name: true, email: true, status: true } },
@@ -101,9 +124,8 @@ export async function getAdminConfiguration(actor: UserContext) {
         },
       },
       orderBy: { name: "asc" },
-    }),
-    prisma.user.findMany({
-      where: {},
+    }) : Promise.resolve([]),
+    needsUsers ? prisma.user.findMany({
       select: {
         id: true,
         name: true,
@@ -136,29 +158,42 @@ export async function getAdminConfiguration(actor: UserContext) {
         teamMemberships: { select: { isActive: true, team: { select: { id: true, name: true, queue: { select: { name: true } } } } } },
       },
       orderBy: { name: "asc" },
-    }),
-    prisma.serviceCatalogItem.findMany({
+    }) : Promise.resolve([]),
+    needsServices ? prisma.serviceCatalogItem.findMany({
       include: {
         queue: { include: { department: true } },
         sla: { include: { calendar: true } },
         escalationRules: { where: { isActive: true }, orderBy: { thresholdPercent: "asc" } },
       },
       orderBy: { name: "asc" },
-    }),
-    prisma.sLA.findMany({ include: { calendar: true }, orderBy: { name: "asc" } }),
-    prisma.businessCalendar.findMany({ include: { organization: true, holidays: { orderBy: { date: "asc" } } }, orderBy: { name: "asc" } }),
-    prisma.escalationRule.findMany({
+    }) : Promise.resolve([]),
+    needsSlas ? prisma.sLA.findMany({ include: { calendar: true }, orderBy: { name: "asc" } }) : Promise.resolve([]),
+    needsSlaData ? prisma.businessCalendar.findMany({ include: { organization: true, holidays: { orderBy: { date: "asc" } } }, orderBy: { name: "asc" } }) : Promise.resolve([]),
+    needsSlaData ? prisma.escalationRule.findMany({
       include: {
         queue: { select: { id: true, code: true, name: true } },
         serviceItem: { select: { id: true, code: true, name: true } },
       },
       orderBy: [{ thresholdPercent: "asc" }, { name: "asc" }],
-    }),
-    prisma.role.findMany({ include: { permissions: { include: { permission: true } } }, orderBy: { code: "asc" } }),
-    prisma.entraDepartmentMapping.findMany({ include: { department: true }, orderBy: { externalValue: "asc" } }),
-    prisma.user.findMany({ where: { status: { in: [UserStatus.PENDING_ASSIGNMENT, UserStatus.PENDING_VALIDATION] } }, select: { id: true, name: true, email: true, entraDepartmentValue: true }, orderBy: { createdAt: "asc" } }),
+    }) : Promise.resolve([]),
+    (selected.has("roles") || selected.has("users") || !sections) ? prisma.role.findMany({ include: { permissions: { include: { permission: true } } }, orderBy: { code: "asc" } }) : Promise.resolve([]),
+    selected.has("departments") || !sections ? prisma.entraDepartmentMapping.findMany({ include: { department: true }, orderBy: { externalValue: "asc" } }) : Promise.resolve([]),
+    selected.has("departments") || !sections ? prisma.user.findMany({ where: { status: { in: [UserStatus.PENDING_ASSIGNMENT, UserStatus.PENDING_VALIDATION] } }, select: { id: true, name: true, email: true, entraDepartmentValue: true }, orderBy: { createdAt: "asc" } }) : Promise.resolve([]),
   ]);
   return { organizations, departments, queues, teams, users, services, slas, calendars, escalationRules, roles, entraMappings, pendingUsers };
+}
+
+export async function getAdminUserSummary(actor: UserContext) {
+  await requireFunctionalAdminFor(actor);
+  const grouped = await prisma.user.groupBy({
+    by: ["status"],
+    _count: { _all: true },
+  });
+  const counts = new Map(grouped.map((item) => [item.status, item._count._all]));
+  return {
+    total: grouped.reduce((sum, item) => sum + item._count._all, 0),
+    active: counts.get(UserStatus.ACTIVE) ?? 0,
+  };
 }
 
 export async function saveDepartment(actor: UserContext, id: string | undefined, input: DepartmentAdminInput) {

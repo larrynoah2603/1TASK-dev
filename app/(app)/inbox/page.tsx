@@ -4,7 +4,7 @@ import { DashboardKpiGrid, DashboardViewTabs, OperationsTicketTable, OperationsW
 import { TicketFilters } from "@/components/ticket-filters";
 import { TicketViewSwitcher } from "@/components/ticket-view-switcher";
 import { Pagination } from "@/components/pagination";
-import { canActorClaimTicket, listVisibleQueues, listVisibleTickets, listVisibleTicketsPage } from "@/lib/ticket-service";
+import { canActorClaimTicket, getOperationalTicketSummary, listVisibleQueues, listVisibleTickets, listVisibleTicketsPage } from "@/lib/ticket-service";
 import { listDossiersForViewer, listMissionsForViewer } from "@/lib/production-service";
 import { getSessionUserContext, permissionCodes, roleCodes } from "@/lib/server-auth";
 import { ticketListQuerySchema } from "@/lib/validation";
@@ -19,19 +19,19 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
   const rawParams = await searchParams;
   const params = ticketListQuerySchema.parse({ ...rawParams, scope: rawParams.scope ?? "all" });
   const canPortfolio = permissionCodes(user).includes("portfolio:read");
-  const [queues, ticketPage, allOperational, portfolioOptions] = await Promise.all([
+  const [queues, ticketPage, operationalSummary, slaTickets, portfolioOptions] = await Promise.all([
     listVisibleQueues(user),
     listVisibleTicketsPage(user, { page: params.page, pageSize: params.pageSize, sort: params.sort, workQueue: true, query: params.q, status: params.status, priority: params.priority, scope: params.scope, sla: params.sla, departmentId: params.departmentId, queueId: params.queueId, dossierId: params.dossierId, missionId: params.missionId }),
-    listVisibleTickets(user, { workQueue: true, take: 100, sort: "updated_desc" }),
+    getOperationalTicketSummary(user),
+    listVisibleTickets(user, { workQueue: true, sla: "attention", take: 6, sort: "updated_desc" }),
     canPortfolio ? Promise.all([listDossiersForViewer(user), listMissionsForViewer(user)]) : Promise.resolve([[], []] as const),
   ]);
   const [dossiers, missions] = portfolioOptions;
 
-  const activeOperational = allOperational.filter((ticket) => ticket.status !== "CLOSED");
   const currentRows = ticketPage.tickets.filter((ticket) => ticket.status !== "CLOSED");
-  const unassignedCount = activeOperational.filter((ticket) => !ticket.assignedTo).length;
-  const mineCount = activeOperational.filter((ticket) => ticket.assignedTo?.id === user.id).length;
-  const slaAttention = activeOperational.filter((ticket) => ticket.slaState === "AT_RISK" || ticket.slaState === "BREACHED");
+  const unassignedCount = operationalSummary.unassigned;
+  const mineCount = operationalSummary.mine;
+  const slaAttention = slaTickets.filter((ticket) => ticket.slaState === "AT_RISK" || ticket.slaState === "BREACHED");
   const claimableTicketIds = currentRows.filter((ticket) => canActorClaimTicket(user, ticket)).map((ticket) => ticket.id);
   const canReport = permissionCodes(user).includes("reporting:read");
 
@@ -40,10 +40,10 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
       <DashboardViewTabs active="operations" canOperate canReport={canReport} />
       <header className="dashboard-hero dashboard-role-hero">
         <div><p className="eyebrow">Opérations</p><h1>File opérationnelle</h1><p className="page-header-description">Tickets à traiter dans votre périmètre.</p></div>
-        <span className="dashboard-hero-counter">{activeOperational.length} actifs</span>
+        <span className="dashboard-hero-counter">{operationalSummary.active} actifs</span>
       </header>
 
-      <DashboardKpiGrid items={[{ label: "Non affectés", value: unassignedCount, note: "à prendre en charge", href: "/inbox?scope=unassigned", tone: "dashboard-kpi-value-brand", icon: "◫" }, { label: "Mes tickets", value: mineCount, note: "affectés à votre profil", href: "/inbox?scope=mine", tone: "dashboard-kpi-value-info", icon: "▣" }, { label: "SLA à surveiller", value: slaAttention.length, note: "proches ou dépassés", href: "/inbox?sla=attention", tone: slaAttention.length ? "dashboard-kpi-value-warning" : "dashboard-kpi-value-success", icon: "!" }, { label: "SLA dépassés", value: slaAttention.filter((ticket) => ticket.slaState === "BREACHED").length, note: "escalades prioritaires", href: "/inbox?sla=breached", tone: "dashboard-kpi-value-danger", icon: "!" }]} />
+      <DashboardKpiGrid items={[{ label: "Non affectés", value: unassignedCount, note: "à prendre en charge", href: "/inbox?scope=unassigned", tone: "dashboard-kpi-value-brand", icon: "◫" }, { label: "Mes tickets", value: mineCount, note: "affectés à votre profil", href: "/inbox?scope=mine", tone: "dashboard-kpi-value-info", icon: "▣" }, { label: "SLA à surveiller", value: operationalSummary.slaAttention, note: "proches ou dépassés", href: "/inbox?sla=attention", tone: operationalSummary.slaAttention ? "dashboard-kpi-value-warning" : "dashboard-kpi-value-success", icon: "!" }, { label: "SLA dépassés", value: operationalSummary.slaBreached, note: "escalades prioritaires", href: "/inbox?sla=breached", tone: "dashboard-kpi-value-danger", icon: "!" }]} />
 
       <div className="dashboard-operations-grid">
         <section className="dashboard-widget dashboard-operations-table-card" aria-labelledby="operations-table-title">

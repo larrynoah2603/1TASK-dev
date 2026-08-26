@@ -1,4 +1,5 @@
 import { getServerSession } from "next-auth";
+import { cache } from "react";
 import { RoleCode, ScopeType, UserStatus } from "@prisma/client";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -84,11 +85,11 @@ export async function getUserContext(userId: string) {
   return prisma.user.findUnique({ where: { id: userId }, include: userContextInclude });
 }
 
-export async function getSessionUserContext(): Promise<UserContext | null> {
+export const getSessionUserContext = cache(async (): Promise<UserContext | null> => {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return null;
   return getUserContext(session.user.id);
-}
+});
 
 /**
  * The single server-side entry point for authenticated application actions.

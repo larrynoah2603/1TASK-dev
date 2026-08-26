@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { after } from "next/server";
+import { cache } from "react";
 import {
   MessageVisibility,
   NotificationType,
@@ -65,6 +66,7 @@ import {
   type TransitionTicketInput,
 } from "@/lib/validation";
 import { routeTicketFromCatalog } from "@/lib/routing";
+import { measureServerOperation } from "@/lib/performance";
 
 export class DomainError extends Error {
   statusCode: number;
@@ -667,6 +669,20 @@ function nonConfidential(clause: Prisma.TicketWhereInput): Prisma.TicketWhereInp
   return { ...clause, confidential: false };
 }
 
+const loadActiveTeamMemberRows = cache(async (teamIdsKey: string) => {
+  const teamIds = teamIdsKey.split("|").filter(Boolean);
+  if (!teamIds.length) return [];
+  return prisma.teamMember.findMany({
+    where: {
+      teamId: { in: teamIds },
+      isActive: true,
+      team: { isActive: true },
+      user: { status: "ACTIVE" },
+    },
+    select: { teamId: true, userId: true },
+  });
+});
+
 export async function visibleTicketWhere(
   actor: UserContext,
   options: VisibilityOptions = {},
@@ -689,17 +705,11 @@ export async function visibleTicketWhere(
   );
   const activeTeamQueueIds = [...new Set(activeTeamMemberships.map((membership) => membership.team.queueId))]
     .filter((queueId) => !actor.authorizedQueueId || actor.authorizedQueueId === queueId);
-  const activeTeamMemberRows = activeTeamMemberships.length
-    ? await prisma.teamMember.findMany({
-        where: {
-          teamId: { in: activeTeamMemberships.map((membership) => membership.team.id) },
-          isActive: true,
-          team: { isActive: true },
-          user: { status: "ACTIVE" },
-        },
-        select: { teamId: true, userId: true },
-      })
-    : [];
+  const teamIdsKey = activeTeamMemberships
+    .map((membership) => membership.team.id)
+    .sort()
+    .join("|");
+  const activeTeamMemberRows = await loadActiveTeamMemberRows(teamIdsKey);
   const agentBoundaryForTeams = (
     teams: UserContext["teamMemberships"],
   ): Prisma.TicketWhereInput => {
@@ -974,7 +984,11 @@ const ticketListInclude = {
   mission: { select: { id: true, code: true, name: true } },
 } as const;
 
-export async function listVisibleTicketsPage(actor: UserContext, options: TicketListOptions = {}) {
+export function listVisibleTicketsPage(actor: UserContext, options: TicketListOptions = {}) {
+  return measureServerOperation("tickets.list", () => listVisibleTicketsPageInternal(actor, options));
+}
+
+async function listVisibleTicketsPageInternal(actor: UserContext, options: TicketListOptions = {}) {
   const { where } = await buildTicketListWhere(actor, options);
   const page = Math.max(1, options.page ?? 1);
   const pageSize = Math.min(Math.max(options.pageSize ?? options.take ?? 25, 1), 100);
@@ -1006,7 +1020,47 @@ export async function listVisibleTickets(actor: UserContext, options: TicketList
   return (await listVisibleTicketsPage(actor, options)).tickets;
 }
 
-export async function getTicketForViewer(actor: UserContext, ticketId: string) {
+export async function getOperationalTicketSummary(actor: UserContext) {
+  const { actor: current, where } = await buildTicketListWhere(actor, { workQueue: true });
+  const activeWhere: Prisma.TicketWhereInput = { AND: [where, { status: { not: TicketStatus.CLOSED } }] };
+  const riskDeadline = new Date(Date.now() + SLA_RISK_WINDOW_MINUTES * 60_000);
+  const slaWhere: Prisma.TicketWhereInput = {
+    AND: [
+      activeWhere,
+      { status: { not: TicketStatus.BLOCKED }, slaPausedAt: null },
+      {
+        OR: [
+          { firstResponseDueAt: { not: null, lte: riskDeadline }, firstRespondedAt: null },
+          { resolutionDueAt: { not: null, lte: riskDeadline }, resolvedAt: null, status: { not: TicketStatus.RESOLUTION_PENDING } },
+        ],
+      },
+    ],
+  };
+  const [total, active, unassigned, mine, slaAttention, slaBreached] = await Promise.all([
+    prisma.ticket.count({ where }),
+    prisma.ticket.count({ where: activeWhere }),
+    prisma.ticket.count({ where: { AND: [activeWhere, { assignedToId: null }] } }),
+    prisma.ticket.count({ where: { AND: [activeWhere, { assignedToId: current.id }] } }),
+    prisma.ticket.count({ where: slaWhere }),
+    prisma.ticket.count({ where: {
+      AND: [
+        activeWhere,
+        { status: { not: TicketStatus.BLOCKED }, slaPausedAt: null },
+        { OR: [
+          { firstResponseDueAt: { not: null, lt: new Date() }, firstRespondedAt: null },
+          { resolutionDueAt: { not: null, lt: new Date() }, resolvedAt: null, status: { not: TicketStatus.RESOLUTION_PENDING } },
+        ] },
+      ],
+    } }),
+  ]);
+  return { total, active, unassigned, mine, slaAttention, slaBreached };
+}
+
+export function getTicketForViewer(actor: UserContext, ticketId: string) {
+  return measureServerOperation("tickets.detail", () => getTicketForViewerInternal(actor, ticketId));
+}
+
+async function getTicketForViewerInternal(actor: UserContext, ticketId: string) {
   actor = await requireCurrentActor(actor);
 
   // Resolve only the authorization target first. Ticket content, internal

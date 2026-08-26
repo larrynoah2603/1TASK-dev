@@ -2606,3 +2606,21 @@ html[data-theme="dark"] .calendar-admin-days label:has(input:checked) { border-c
   .calendar-admin-form, .calendar-admin-holiday-form { grid-template-columns: 1fr; }
   .calendar-admin-form > *:first-child, .calendar-admin-form > .contents > *:first-child, .calendar-admin-days { grid-column: auto; }
 }
+
+/* Route loading states: provide immediate feedback while server data is fetched. */
+.skeleton-line, .loading-block, .loading-table span { display: block; border-radius: 0.55rem; background: linear-gradient(90deg, var(--surface-muted) 0%, color-mix(in srgb, var(--surface-muted) 70%, var(--surface)) 50%, var(--surface-muted) 100%); }
+.skeleton-line { height: 0.8rem; }
+.skeleton-eyebrow { width: 7rem; }
+.skeleton-title { width: min(24rem, 70%); height: 2.45rem; margin-top: 0.55rem; }
+.skeleton-description { width: min(36rem, 90%); margin-top: 0.65rem; }
+.loading-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) repeat(2, minmax(0, 1fr)); gap: 0.85rem; }
+.loading-block { min-height: 7.2rem; border: 1px solid var(--line); }
+.loading-block-large { min-height: 14rem; }
+.loading-table { display: grid; gap: 0.55rem; border: 1px solid var(--line); border-radius: 0.85rem; background: var(--surface); padding: 1rem; }
+.loading-table span { height: 1.15rem; width: 100%; }
+.loading-table span:nth-child(2n) { width: 86%; }
+html[data-theme="dark"] .skeleton-line, html[data-theme="dark"] .loading-block, html[data-theme="dark"] .loading-table span { background: linear-gradient(90deg, #17283c 0%, #20364e 50%, #17283c 100%); }
+@media (max-width: 700px) {
+  .loading-grid { grid-template-columns: 1fr; }
+  .loading-block-large { min-height: 9rem; }
+}

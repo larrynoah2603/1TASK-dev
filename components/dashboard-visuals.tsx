@@ -44,6 +44,14 @@ type ReportingSummary = {
   byStatus: { status: TicketStatus; count: number }[];
 };
 
+type PortfolioSummary = {
+  total: number;
+  active: number;
+  late: number;
+  budgetMinutes: number;
+  worklogMinutes: number;
+};
+
 type PortfolioMission = {
   id: string;
   code: string;
@@ -246,9 +254,9 @@ export function OperationsWatchPanel({ tickets }: { tickets: DashboardTicket[] }
   );
 }
 
-export function SlaPerformanceWidget({ summary, tickets }: { summary: ReportingSummary; tickets: DashboardTicket[] }) {
+export function SlaPerformanceWidget({ summary }: { summary: ReportingSummary }) {
   const healthyRate = summary.total ? Math.max(0, Math.round(((summary.total - summary.overdue) / summary.total) * 100)) : 0;
-  const active = tickets.filter((ticket) => ticket.status !== TicketStatus.CLOSED).length;
+  const active = Math.max(0, summary.total - summary.closed);
   const states = [
     { label: "Objectif SLA", value: 90, tone: "dashboard-sla-target" },
     { label: "Réel", value: healthyRate, tone: "dashboard-sla-current" },
@@ -300,15 +308,16 @@ function formatMinutes(minutes: number) {
   return hours ? `${hours} h ${remaining.toString().padStart(2, "0")}` : `${remaining} min`;
 }
 
-function PortfolioMissionWidget({ missions }: { missions: PortfolioMission[] }) {
-  const activeMissions = missions.filter((mission) => mission.status === "ACTIVE").length;
-  const lateMissions = missions.filter((mission) => mission.isLate).length;
-  const totalBudget = missions.reduce((total, mission) => total + (mission.budgetMinutes ?? 0), 0);
-  const totalLogged = missions.reduce((total, mission) => total + mission.worklogMinutes, 0);
-  return <section className="dashboard-widget" aria-labelledby="portfolio-missions-title"><div className="dashboard-widget-header"><div><p className="eyebrow">Portefeuille de production</p><h2 id="portfolio-missions-title">Missions à piloter</h2></div><Link href={"/missions" as Route} className="dashboard-widget-link">Voir les missions <span aria-hidden="true">→</span></Link></div><div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4"><div className="rounded-lg border border-slate-100 bg-slate-50/70 p-2.5"><p className="text-[10px] text-slate-500">Visibles</p><p className="mt-1 text-lg font-bold text-slate-900">{missions.length}</p></div><div className="rounded-lg border border-slate-100 bg-slate-50/70 p-2.5"><p className="text-[10px] text-slate-500">Actives</p><p className="mt-1 text-lg font-bold text-emerald-700">{activeMissions}</p></div><div className={`rounded-lg border p-2.5 ${lateMissions ? "border-rose-200 bg-rose-50" : "border-slate-100 bg-slate-50/70"}`}><p className="text-[10px] text-slate-500">En retard</p><p className={`mt-1 text-lg font-bold ${lateMissions ? "text-rose-700" : "text-slate-900"}`}>{lateMissions}</p></div><div className="rounded-lg border border-slate-100 bg-slate-50/70 p-2.5"><p className="text-[10px] text-slate-500">Temps / budget</p><p className="mt-1 text-xs font-bold text-slate-900">{formatMinutes(totalLogged)}{totalBudget ? ` / ${formatMinutes(totalBudget)}` : ""}</p></div></div><div className="mt-4 space-y-2">{missions.slice(0, 5).map((mission) => { const percent = mission.budgetMinutes ? Math.min(100, Math.round((mission.worklogMinutes / mission.budgetMinutes) * 100)) : null; return <Link key={mission.id} href={`/missions/${mission.id}` as Route} className="flex items-center gap-3 rounded-lg border border-slate-100 px-3 py-2 transition hover:border-[#cfd0f0] hover:bg-[#fafaff]"><span className={`h-2 w-2 shrink-0 rounded-full ${mission.isLate ? "bg-rose-500" : mission.status === "BLOCKED" ? "bg-amber-500" : "bg-emerald-500"}`} /><div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold text-slate-800">{mission.code} · {mission.name}</p><p className="mt-0.5 truncate text-[10px] text-slate-400">{mission.dossier.client.name} · {mission.dossier.code} · échéance {formatDate(mission.dueAt)}</p></div><div className="w-16 shrink-0 text-right"><p className="text-[10px] font-semibold text-slate-600">{percent === null ? "—" : `${percent}%`}</p>{percent !== null ? <div className="mt-1 h-1 rounded-full bg-slate-100"><div className={`h-1 rounded-full ${percent >= 90 ? "bg-rose-500" : percent >= 70 ? "bg-amber-500" : "bg-emerald-500"}`} style={{ width: `${percent}%` }} /></div> : null}</div></Link>; })}{!missions.length ? <p className="dashboard-empty">Aucune mission visible dans votre périmètre.</p> : null}</div></section>;
+function PortfolioMissionWidget({ missions, summary }: { missions: PortfolioMission[]; summary?: PortfolioSummary }) {
+  const activeMissions = summary?.active ?? missions.filter((mission) => mission.status === "ACTIVE").length;
+  const lateMissions = summary?.late ?? missions.filter((mission) => mission.isLate).length;
+  const visibleMissions = summary?.total ?? missions.length;
+  const totalBudget = summary?.budgetMinutes ?? missions.reduce((total, mission) => total + (mission.budgetMinutes ?? 0), 0);
+  const totalLogged = summary?.worklogMinutes ?? missions.reduce((total, mission) => total + mission.worklogMinutes, 0);
+  return <section className="dashboard-widget" aria-labelledby="portfolio-missions-title"><div className="dashboard-widget-header"><div><p className="eyebrow">Portefeuille de production</p><h2 id="portfolio-missions-title">Missions à piloter</h2></div><Link href={"/missions" as Route} className="dashboard-widget-link">Voir les missions <span aria-hidden="true">→</span></Link></div><div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4"><div className="rounded-lg border border-slate-100 bg-slate-50/70 p-2.5"><p className="text-[10px] text-slate-500">Visibles</p><p className="mt-1 text-lg font-bold text-slate-900">{visibleMissions}</p></div><div className="rounded-lg border border-slate-100 bg-slate-50/70 p-2.5"><p className="text-[10px] text-slate-500">Actives</p><p className="mt-1 text-lg font-bold text-emerald-700">{activeMissions}</p></div><div className={`rounded-lg border p-2.5 ${lateMissions ? "border-rose-200 bg-rose-50" : "border-slate-100 bg-slate-50/70"}`}><p className="text-[10px] text-slate-500">En retard</p><p className={`mt-1 text-lg font-bold ${lateMissions ? "text-rose-700" : "text-slate-900"}`}>{lateMissions}</p></div><div className="rounded-lg border border-slate-100 bg-slate-50/70 p-2.5"><p className="text-[10px] text-slate-500">Temps / budget</p><p className="mt-1 text-xs font-bold text-slate-900">{formatMinutes(totalLogged)}{totalBudget ? ` / ${formatMinutes(totalBudget)}` : ""}</p></div></div><div className="mt-4 space-y-2">{missions.slice(0, 5).map((mission) => { const percent = mission.budgetMinutes ? Math.min(100, Math.round((mission.worklogMinutes / mission.budgetMinutes) * 100)) : null; return <Link key={mission.id} href={`/missions/${mission.id}` as Route} className="flex items-center gap-3 rounded-lg border border-slate-100 px-3 py-2 transition hover:border-[#cfd0f0] hover:bg-[#fafaff]"><span className={`h-2 w-2 shrink-0 rounded-full ${mission.isLate ? "bg-rose-500" : mission.status === "BLOCKED" ? "bg-amber-500" : "bg-emerald-500"}`} /><div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold text-slate-800">{mission.code} · {mission.name}</p><p className="mt-0.5 truncate text-[10px] text-slate-400">{mission.dossier.client.name} · {mission.dossier.code} · échéance {formatDate(mission.dueAt)}</p></div><div className="w-16 shrink-0 text-right"><p className="text-[10px] font-semibold text-slate-600">{percent === null ? "—" : `${percent}%`}</p>{percent !== null ? <div className="mt-1 h-1 rounded-full bg-slate-100"><div className={`h-1 rounded-full ${percent >= 90 ? "bg-rose-500" : percent >= 70 ? "bg-amber-500" : "bg-emerald-500"}`} style={{ width: `${percent}%` }} /></div> : null}</div></Link>; })}{!missions.length ? <p className="dashboard-empty">Aucune mission visible dans votre périmètre.</p> : null}</div></section>;
 }
 
-export function ResponsibleDashboard({ queues, summary, tickets, missions = [] }: { queues: QueueSummary[]; summary: ReportingSummary; tickets: DashboardTicket[]; missions?: PortfolioMission[] }) {
+export function ResponsibleDashboard({ queues, summary, tickets, missionSummary, missions = [] }: { queues: QueueSummary[]; summary: ReportingSummary; tickets: DashboardTicket[]; missionSummary?: PortfolioSummary; missions?: PortfolioMission[] }) {
   const healthyRate = summary.total ? Math.max(0, Math.round(((summary.total - summary.overdue) / summary.total) * 100)) : 0;
   const active = tickets.filter((ticket) => ticket.status !== TicketStatus.CLOSED).length;
   return (
@@ -318,8 +327,8 @@ export function ResponsibleDashboard({ queues, summary, tickets, missions = [] }
         <Link href="/reporting" className="button-secondary">Ouvrir le reporting</Link>
       </header>
       <DashboardKpiGrid items={[{ label: "Tickets ouverts", value: summary.total - summary.closed, note: "dans le périmètre autorisé", tone: "dashboard-kpi-value-brand", icon: "◫" }, { label: "SLA respectés", value: `${healthyRate}%`, note: `${summary.overdue} dépassement(s) à traiter`, tone: "dashboard-kpi-value-success", icon: "✓" }, { label: "Taux clôturé", value: `${summary.closureRate}%`, note: `${summary.closed} ticket(s) clôturé(s)`, tone: "dashboard-kpi-value-info", icon: "◒" }, { label: "Charge active", value: active, note: "tickets opérationnels visibles", tone: "dashboard-kpi-value-warning", icon: "◌" }]} />
-      <div className="dashboard-responsible-grid"><SlaPerformanceWidget summary={summary} tickets={tickets} /><TeamLoadPanel queues={queues} /></div>
-      <PortfolioMissionWidget missions={missions} />
+      <div className="dashboard-responsible-grid"><SlaPerformanceWidget summary={summary} /><TeamLoadPanel queues={queues} /></div>
+      <PortfolioMissionWidget missions={missions} summary={missionSummary} />
       <ResponsibleEscalations tickets={tickets} />
     </div>
   );
