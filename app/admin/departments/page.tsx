@@ -5,7 +5,7 @@ import { requireAdminAccess } from "@/lib/server-auth";
 
 export default async function AdminDepartmentsPage() {
   const admin = await requireAdminAccess("FUNCTIONAL");
-  const configuration = await getAdminConfiguration(admin);
+  const configuration = await getAdminConfiguration(admin, ["departments"]);
   return (
     <div className="space-y-6">
     <AdminPageHeader eyebrow="Organisation" title="Départements et référentiel Entra ID" description="Gérez les départements internes et le référentiel des valeurs brutes reçues de Microsoft Entra ID. L’affectation du département d’un utilisateur se fait dans /admin/users." />

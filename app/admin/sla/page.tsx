@@ -5,7 +5,7 @@ import { requireAdminAccess } from "@/lib/server-auth";
 
 export default async function AdminSlaPage() {
   const admin = await requireAdminAccess("FUNCTIONAL");
-  const configuration = await getAdminConfiguration(admin);
+  const configuration = await getAdminConfiguration(admin, ["sla"]);
   return (
     <div className="space-y-6">
       <AdminPageHeader eyebrow="Qualité de service" title="SLA, calendriers et escalades" description="Définissez les délais de première réponse, de résolution, les calendriers actifs et les seuils d’escalade." />

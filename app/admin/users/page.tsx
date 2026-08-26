@@ -8,7 +8,7 @@ import { requireAdminAccess } from "@/lib/server-auth";
 export default async function AdminUsersPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const admin = await requireAdminAccess("FUNCTIONAL");
   const raw = await searchParams;
-  const configuration = await getAdminConfiguration(admin);
+  const configuration = await getAdminConfiguration(admin, ["users"]);
   const active = configuration.users.filter((user) => user.status === "ACTIVE").length;
   const pending = configuration.users.filter(
     (user) => user.status === "PENDING_ASSIGNMENT" || user.status === "PENDING_VALIDATION",

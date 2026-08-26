@@ -3,7 +3,7 @@ import type { Route } from "next";
 import { RoleCode, TicketStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { hasGlobalRole } from "@/lib/access-control";
-import { getAdminConfiguration } from "@/lib/admin-service";
+import { getAdminUserSummary } from "@/lib/admin-service";
 import { AdminNotice, AdminPageHeader, AdminStatCard } from "@/components/admin-primitives";
 import { requireAdminAccess, toAccessSubject } from "@/lib/server-auth";
 
@@ -30,8 +30,8 @@ export default async function AdminDashboardPage() {
     );
   }
 
-  const configuration = await getAdminConfiguration(admin);
-  const [ticketCount, activeTicketCount, overdueCount, notificationCount, auditCount] = await Promise.all([
+  const [userSummary, ticketCount, activeTicketCount, overdueCount, notificationCount, auditCount] = await Promise.all([
+    getAdminUserSummary(admin),
     prisma.ticket.count({ where: { confidential: false } }),
     prisma.ticket.count({ where: { confidential: false, status: { not: TicketStatus.CLOSED } } }),
     prisma.ticket.count({ where: { confidential: false, status: { not: TicketStatus.CLOSED }, resolutionDueAt: { not: null, lt: new Date() } } }),
@@ -58,7 +58,7 @@ export default async function AdminDashboardPage() {
       <AdminNotice>Les valeurs brutes du département viennent de Microsoft Entra ID. Le département interne du profil et sa validation sont gérés explicitement dans <code>/admin/users</code> ; le référentiel de correspondance reste audité et ne remplace pas cette affectation.</AdminNotice>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <AdminStatCard label="Utilisateurs" value={configuration.users.length} detail={`${configuration.users.filter((user) => user.status === "ACTIVE").length} actifs`} />
+        <AdminStatCard label="Utilisateurs" value={userSummary.total} detail={`${userSummary.active} actifs`} />
         <AdminStatCard label="Tickets actifs" value={activeTicketCount} detail={`${ticketCount} tickets non confidentiels visibles`} tone="emerald" />
         <AdminStatCard label="SLA à surveiller" value={overdueCount} detail="Tickets dépassant l’échéance" tone={overdueCount ? "rose" : "emerald"} />
         <AdminStatCard label="Règles notification" value={notificationCount} detail="Règles actives" tone="amber" />

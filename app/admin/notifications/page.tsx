@@ -7,7 +7,7 @@ import { requireAdminAccess } from "@/lib/server-auth";
 export default async function AdminNotificationsPage() {
   const admin = await requireAdminAccess("FUNCTIONAL");
   const [configuration, rules] = await Promise.all([
-    getAdminConfiguration(admin),
+    getAdminConfiguration(admin, ["departments", "queues"]),
     listNotificationRules(admin),
   ]);
   return (

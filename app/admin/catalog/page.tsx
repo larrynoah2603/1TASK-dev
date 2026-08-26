@@ -5,7 +5,7 @@ import { requireAdminAccess } from "@/lib/server-auth";
 
 export default async function AdminCatalogPage() {
   const admin = await requireAdminAccess("FUNCTIONAL");
-  const configuration = await getAdminConfiguration(admin);
+  const configuration = await getAdminConfiguration(admin, ["catalog"]);
   return (
     <div className="space-y-6">
       <AdminPageHeader eyebrow="Routage automatique" title="Catalogue de services" description="Le catalogue détermine la catégorie, la nature, le département opérationnel, la file, la priorité par défaut et le SLA des nouveaux tickets." />
