@@ -65,22 +65,10 @@ type PortfolioMission = {
 };
 
 const priorityColor: Record<Priority, string> = {
-  [Priority.LOW]: "#4caf78",
-  [Priority.MEDIUM]: "#e4b63f",
-  [Priority.HIGH]: "#e99535",
-  [Priority.CRITICAL]: "#dc5964",
-};
-
-const statusTone: Record<TicketStatus, string> = {
-  [TicketStatus.NEW]: "#5b5bd6",
-  [TicketStatus.TO_QUALIFY]: "#5b5bd6",
-  [TicketStatus.TO_ASSIGN]: "#5b5bd6",
-  [TicketStatus.ASSIGNED]: "#4b82d6",
-  [TicketStatus.IN_PROGRESS]: "#4b82d6",
-  [TicketStatus.BLOCKED]: "#d99532",
-  [TicketStatus.RESOLUTION_PENDING]: "#8b72dc",
-  [TicketStatus.REOPENED]: "#d99532",
-  [TicketStatus.CLOSED]: "#4caf78",
+  [Priority.LOW]: "#9ed7b9",
+  [Priority.MEDIUM]: "#d6b36a",
+  [Priority.HIGH]: "#e6a85d",
+  [Priority.CRITICAL]: "#e9796c",
 };
 
 function formatDate(date: Date | null) {

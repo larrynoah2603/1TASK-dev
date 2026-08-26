@@ -9,7 +9,7 @@ export default async function ReportingPage() {
 
   const summary = await getReportingSummary(user);
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 reporting-page-shell">
       <header className="page-header">
         <div>
           <p className="eyebrow">Indicateurs cloisonnés</p>

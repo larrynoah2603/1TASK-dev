@@ -156,7 +156,7 @@ export function AdminUserActions({
   );
 
   return (
-    <article className="panel overflow-hidden">
+    <article className="panel admin-user-card overflow-hidden">
       <div className="flex flex-col gap-4 px-5 py-5 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">

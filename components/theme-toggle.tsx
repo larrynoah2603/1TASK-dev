@@ -3,12 +3,11 @@
 import { useEffect, useState } from "react";
 
 export function ThemeToggle() {
-  const [dark, setDark] = useState(false);
+  const [dark, setDark] = useState(true);
 
   useEffect(() => {
     const saved = window.localStorage.getItem("1task-theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const next = saved ? saved === "dark" : prefersDark;
+    const next = saved ? saved === "dark" : true;
     const timer = window.setTimeout(() => {
       setDark(next);
       document.documentElement.dataset.theme = next ? "dark" : "light";

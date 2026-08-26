@@ -88,7 +88,7 @@ export async function AppShell({ user, children }: { user: UserContext; children
         {groups.map((group) => {
           const groupLinks = visibleLinks.filter((link) => link.group === group);
           if (!groupLinks.length) return null;
-          return <div key={group} className="sidebar-nav-group"><p className="sidebar-label">{group}</p>{groupLinks.map((link) => <ShellNavLink key={link.href} href={link.href} icon={<AppIcon kind={link.icon} />}><span className="flex min-w-0 items-center gap-2 truncate">{link.label}{link.href === "/notifications" && unreadCount > 0 ? <span className="rounded-full bg-[#5d78f6] px-1.5 py-0.5 text-[10px] font-bold text-white">{unreadCount > 9 ? "9+" : unreadCount}</span> : null}</span></ShellNavLink>)}</div>;
+          return <div key={group} className="sidebar-nav-group"><p className="sidebar-label">{group}</p>{groupLinks.map((link) => <ShellNavLink key={link.href} href={link.href} icon={<AppIcon kind={link.icon} />}><span className="flex min-w-0 items-center gap-2 truncate">{link.label}{link.href === "/notifications" && unreadCount > 0 ? <span className="nav-notification-count">{unreadCount > 9 ? "9+" : unreadCount}</span> : null}</span></ShellNavLink>)}</div>;
         })}
       </nav>
       <div className="sidebar-user-block sidebar-extra hidden md:block"><div className="sidebar-user-avatar">{user.image ? <img src={user.image} alt="" /> : initials(user.name)}</div><div className="min-w-0"><p className="truncate text-[11px] font-semibold text-slate-200">{user.name}</p><p className="truncate text-[10px] text-slate-500">{user.department?.name ?? "Service desk interne"}</p></div></div>
