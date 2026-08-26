@@ -24,8 +24,10 @@ flowchart TD
   Queue --> Manager["Responsable de file"]
   Team --> Agent["Agent / traitant"]
   User["Profil utilisateur"] --> AppManager["Manager applicatif"]
+  Organization["Organisation"] --> Calendar["Calendrier ouvré"]
+  Calendar --> SLA["SLA + escalades"]
   Catalog["Catalogue de services"] --> Queue
-  Catalog --> SLA["SLA + escalades"]
+  Catalog --> SLA
 ```
 
 Le manager hiérarchique Entra ID du demandeur est une relation distincte du
@@ -40,7 +42,7 @@ Les éléments opérationnels ne sont pas stockés dans un tableau JSON du ticke
 | Domaine | Tables principales |
 |---|---|
 | Identité | `User`, `Account`, `Session`, `Department`, `EntraDepartmentMapping`, `UserProfileChange` |
-| Organisation | `Queue`, `Team`, `TeamMember`, `Role`, `Permission`, `PermissionScope`, `UserRole` |
+| Organisation | `Organization`, `Department`, `Queue`, `Team`, `TeamMember`, `Role`, `Permission`, `PermissionScope`, `UserRole` |
 | Catalogue | `ServiceCatalogItem`, `SLA`, `BusinessCalendar`, `Holiday`, `EscalationRule` |
 | Ticket | `Ticket`, `TicketMessage`, `TicketAssignment`, `TicketEvent`, `Attachment` |
 | Sécurité | `TicketAccess`, `AuditLog` |
@@ -164,7 +166,7 @@ Le test de routage strict et l’algorithme d’auto-attribution sont dans `test
 
 ## 7. SLA et exploitation
 
-`SLA` définit les délais de première réponse et de résolution, le calendrier et les seuils 50/80/100 %. `BusinessCalendar` contient les jours ouvrés, les horaires, le fuseau et les jours fériés. Les modes `ROLLING`, `ABSOLUTE` et `RELATIVE_MILESTONE` sont pris en charge par `lib/sla.ts`.
+`SLA` définit les délais de première réponse et de résolution, le calendrier et les seuils 50/80/100 %. `Organization` porte le périmètre de gouvernance, tandis que `BusinessCalendar` contient les jours ouvrés, les horaires, le fuseau et les jours fériés d’une organisation active. Les modes `ROLLING`, `ABSOLUTE` et `RELATIVE_MILESTONE` sont pris en charge par `lib/sla.ts`.
 
 `/api/jobs/sla-monitor` est prévu pour Vercel Cron. Il crée des événements et notifications idempotents par seuil, puis alerte le responsable et l’agent affecté.
 

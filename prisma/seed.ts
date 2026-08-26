@@ -67,7 +67,8 @@ async function main() {
     }
   }
 
-  const calendar = await prisma.businessCalendar.upsert({ where: { code: "MADAGASCAR_STANDARD" }, update: {}, create: { code: "MADAGASCAR_STANDARD", name: "Calendrier Madagascar standard", timezone: "Indian/Antananarivo", workingDays: [1, 2, 3, 4, 5], workdayStartMinute: 480, workdayEndMinute: 1020 } });
+  const organization = await prisma.organization.upsert({ where: { code: "DEFAULT" }, update: { name: "Organisation principale 1TASK", isActive: true }, create: { code: "DEFAULT", name: "Organisation principale 1TASK", isActive: true } });
+  const calendar = await prisma.businessCalendar.upsert({ where: { code: "MADAGASCAR_STANDARD" }, update: { organizationId: organization.id }, create: { code: "MADAGASCAR_STANDARD", name: "Calendrier Madagascar standard", organizationId: organization.id, timezone: "Indian/Antananarivo", workingDays: [1, 2, 3, 4, 5], workdayStartMinute: 480, workdayEndMinute: 1020 } });
   const standardSla = await prisma.sLA.upsert({ where: { code: "STANDARD_8H_2J" }, update: {}, create: { code: "STANDARD_8H_2J", name: "Standard – première réponse 8 h / résolution 2 jours", firstResponseMinutes: 480, resolutionMinutes: 960, calendarId: calendar.id, alertThresholds: [50, 80, 100] } });
 
   const departmentSpecs = [

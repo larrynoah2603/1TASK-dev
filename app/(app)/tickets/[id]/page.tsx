@@ -89,6 +89,8 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
           priority={ticket.priority}
           slaState={sla.state}
           slaDueAt={sla.dueAt}
+          createdAt={ticket.createdAt}
+          pausedMinutes={ticket.totalPausedMinutes}
           canClaim={actionContext.canClaim}
           canResolve={canResolve}
         />

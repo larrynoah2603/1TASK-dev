@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createTicketSchema, ticketListQuerySchema } from "@/lib/validation";
+import { calendarAdminSchema, createTicketSchema, holidayAdminSchema, organizationAdminSchema, ticketListQuerySchema } from "@/lib/validation";
 
 describe("contrats de création et de filtrage", () => {
   it("ignore toute tentative de fournir un routage hors catalogue", () => {
@@ -53,6 +53,20 @@ describe("contrats de création et de filtrage", () => {
       description: "Le nouveau collaborateur doit disposer d’un compte client pour commencer sa mission.",
     });
     expect(result.success).toBe(false);
+  });
+
+  it("valide une organisation et un calendrier SLA configurables", () => {
+    const organization = organizationAdminSchema.safeParse({ code: "BIOS-MADA", name: "BIOS Expertise Madagascar", isActive: true, reason: "Création du périmètre organisationnel." });
+    const calendar = calendarAdminSchema.safeParse({ code: "BIOS-MADA-OUVRE", name: "Horaires ouvrés Madagascar", organizationId: "c123456789012345678901234", timezone: "Indian/Antananarivo", workingDays: [1, 2, 3, 4, 5], workdayStartMinute: 480, workdayEndMinute: 1020, isActive: true, reason: "Configuration des horaires de service." });
+    expect(organization.success).toBe(true);
+    expect(calendar.success).toBe(true);
+  });
+
+  it("refuse un calendrier dont la fin précède le début et un jour férié sans motif", () => {
+    const calendar = calendarAdminSchema.safeParse({ code: "BAD-CALENDAR", name: "Calendrier invalide", organizationId: "c123456789012345678901234", timezone: "Indian/Antananarivo", workingDays: [1], workdayStartMinute: 1_020, workdayEndMinute: 480, isActive: true, reason: "Configuration volontairement invalide." });
+    const holiday = holidayAdminSchema.safeParse({ date: "2026-12-25", name: "Noël", reason: "court" });
+    expect(calendar.success).toBe(false);
+    expect(holiday.success).toBe(false);
   });
 
   it("accepte les filtres de file opérationnelle", () => {

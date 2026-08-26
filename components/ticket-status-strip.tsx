@@ -1,7 +1,7 @@
 import { Priority, TicketStatus } from "@prisma/client";
 import type { TicketSlaState } from "@/lib/sla";
 import { PriorityBadge, StatusBadge } from "@/components/status-badge";
-import { SlaBadge } from "@/components/sla-badge";
+import { SlaIndicator } from "@/components/sla-indicator";
 import { STATUS_LABELS } from "@/lib/domain";
 
 const STATUS_ORDER = [
@@ -27,6 +27,8 @@ export function TicketStatusStrip({
   priority,
   slaState,
   slaDueAt,
+  createdAt,
+  pausedMinutes = 0,
   canClaim,
   canResolve,
 }: {
@@ -35,6 +37,8 @@ export function TicketStatusStrip({
   priority: Priority;
   slaState: TicketSlaState;
   slaDueAt: Date | null;
+  createdAt?: Date | null;
+  pausedMinutes?: number;
   canClaim: boolean;
   canResolve: boolean;
 }) {
@@ -52,8 +56,11 @@ export function TicketStatusStrip({
         <div className="ticket-status-badges">
           <StatusBadge status={status} />
           <PriorityBadge priority={priority} />
-          <SlaBadge state={slaState} dueAt={slaDueAt} compact />
+          <SlaIndicator state={slaState} dueAt={slaDueAt} startedAt={createdAt} pausedMinutes={pausedMinutes} compact />
         </div>
+      </div>
+      <div className="ticket-status-sla-callout">
+        <SlaIndicator state={slaState} dueAt={slaDueAt} startedAt={createdAt} pausedMinutes={pausedMinutes} />
       </div>
       <div className="ticket-status-progress" aria-label="Progression du workflow">
         {STATUS_ORDER.map((step, index) => {

@@ -59,3 +59,30 @@ La migration additive `20260825090000_add_ticket_creation_idempotency` ajoute `T
 - Vitest : **96 tests passés, 3 tests d’intégration ignorés**.
 - TypeScript : **OK**.
 - Prisma schema : **valide avec une URL de validation non connectée**.
+
+
+## [0.10.0] — Refonte UX/UI et calendriers SLA organisationnels — 2026-08-26
+
+### Refonte interface
+
+Une couche visuelle cohérente modernise les écrans visibles sans modifier les règles métier. Le shell, la navigation, les surfaces, les formulaires, les tableaux, les états de focus, les modes clair/sombre et les vues responsives partagent désormais une palette bleu ardoise, des contrastes explicites et une hiérarchie orientée décision.
+
+### Vue ticket et SLA
+
+Les tickets affichent maintenant simultanément l’état du workflow, la priorité, le risque SLA, le compte à rebours et une barre de progression lorsque la date de création est disponible. Les états `Dans les temps`, `À surveiller`, `Dépassement`, `En pause` et `SLA non configuré` utilisent des signaux distincts et restent lisibles dans les listes comme dans la fiche détaillée.
+
+### Calendriers organisationnels
+
+Le modèle `Organization` permet de rattacher un `BusinessCalendar` à une organisation active. L’administration fonctionnelle peut créer ou modifier un calendrier, sélectionner le fuseau horaire, les jours travaillés, les horaires d’ouverture et de fermeture, puis ajouter des jours fériés avec un motif audité. Les SLA continuent de référencer un calendrier et les tickets existants conservent leurs échéances enregistrées.
+
+### Sécurité et audit
+
+Les mutations de configuration restent réservées à l’administrateur fonctionnel et passent par les validations serveur existantes. Les créations d’organisation, de calendrier et de jour férié sont journalisées. Aucun endpoint de suppression définitive des tickets n’a été introduit.
+
+### Base de données
+
+La migration additive `20260826100000_add_organization_sla_calendars` crée `Organization`, rattache les calendriers existants à une organisation par défaut et ajoute l’index et la clé étrangère correspondants. Elle ne supprime aucune donnée historique.
+
+### Validation
+
+La suite de tests couvre la validation des organisations, des plages horaires, des jours fériés et des signaux SLA. La validation finale doit inclure Vitest, TypeScript, ESLint, Prisma et le build Next.js avant publication.

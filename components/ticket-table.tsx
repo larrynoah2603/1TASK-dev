@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Route } from "next";
 import { Priority, TicketStatus } from "@prisma/client";
 import { ClaimTicketButton } from "@/components/claim-ticket-button";
-import { SlaBadge } from "@/components/sla-badge";
+import { SlaIndicator } from "@/components/sla-indicator";
 import { PriorityBadge, StatusBadge } from "@/components/status-badge";
 
 type TicketRow = {
@@ -11,7 +11,9 @@ type TicketRow = {
   title: string;
   status: TicketStatus;
   priority: Priority;
+  createdAt?: Date;
   updatedAt: Date;
+  totalPausedMinutes?: number;
   queue: { name: string; department: { name: string }; manager: { name: string } | null };
   sourceDepartment?: { name: string } | null;
   requester: { name: string };
@@ -38,7 +40,7 @@ export function TicketTable({
   return (
     <div className="table-shell">
       <div className="overflow-x-auto">
-        <table aria-label="Liste des tickets" className="w-full min-w-[1040px] text-left text-[12px]">
+        <table aria-label="Liste des tickets" className="w-full min-w-[1080px] text-left text-[12px]">
           <thead className="border-b border-slate-100 text-[10px] font-semibold uppercase tracking-[0.12em]">
             <tr>
               <th className="px-4 py-3.5">Ticket</th>
@@ -48,7 +50,7 @@ export function TicketTable({
               <th className="px-4 py-3.5">Responsable</th>
               <th className="px-4 py-3.5">Priorité</th>
               <th className="px-4 py-3.5">Statut</th>
-              <th className="px-4 py-3.5">SLA</th>
+              <th className="px-4 py-3.5">Signal SLA</th>
               <th className="px-4 py-3.5">Actualisé</th>
               {showActions ? <th className="px-4 py-3.5">Action</th> : null}
             </tr>
@@ -75,7 +77,7 @@ export function TicketTable({
                 <td className="px-4 py-3.5 text-slate-600">{ticket.queue.manager?.name ?? "Non désigné"}</td>
                 <td className="px-4 py-3.5"><PriorityBadge priority={ticket.priority} /></td>
                 <td className="px-4 py-3.5"><StatusBadge status={ticket.status} /></td>
-                <td className="px-4 py-3.5"><SlaBadge state={ticket.slaState} dueAt={ticket.slaDueAt} compact /></td>
+                <td className="px-4 py-3.5"><SlaIndicator state={ticket.slaState} dueAt={ticket.slaDueAt} startedAt={ticket.createdAt} pausedMinutes={ticket.totalPausedMinutes} compact /></td>
                 <td className="px-4 py-3.5 text-[11px] text-slate-500">
                   {new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" }).format(ticket.updatedAt)}
                 </td>

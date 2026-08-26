@@ -285,6 +285,8 @@ export type WorkflowDefinitionInput = z.infer<typeof workflowDefinitionSchema>;
 export type EntraDepartmentMappingInput = z.infer<typeof entraDepartmentMappingSchema>;
 export type UserStatusAdminInput = z.infer<typeof userStatusAdminSchema>;
 export type UserProfileAdminInput = z.infer<typeof userProfileAdminSchema>;
+export type OrganizationAdminInput = z.infer<typeof organizationAdminSchema>;
+export type HolidayAdminInput = z.infer<typeof holidayAdminSchema>;
 
 const adminReason = z.string().trim().min(10, "Un motif d’au moins 10 caractères est obligatoire.").max(2_000);
 
@@ -335,9 +337,17 @@ export const catalogAdminSchema = z.object({
   reason: adminReason,
 });
 
+export const organizationAdminSchema = z.object({
+  code: z.string().trim().min(2).max(80).regex(/^[A-Za-z0-9][A-Za-z0-9_-]*$/),
+  name: z.string().trim().min(2).max(180),
+  isActive: z.boolean().default(true),
+  reason: adminReason,
+});
+
 export const calendarAdminSchema = z.object({
   code: z.string().trim().min(2).max(80).regex(/^[A-Za-z0-9][A-Za-z0-9_-]*$/),
   name: z.string().trim().min(2).max(180),
+  organizationId: z.string().cuid(),
   timezone: z.string().trim().min(1).max(80),
   workingDays: z.array(z.number().int().min(1).max(7)).min(1).max(7),
   workdayStartMinute: z.number().int().min(0).max(1_439),
@@ -347,6 +357,12 @@ export const calendarAdminSchema = z.object({
 }).refine((value) => value.workdayEndMinute > value.workdayStartMinute, {
   message: "La fin de journée doit être postérieure au début.",
   path: ["workdayEndMinute"],
+});
+
+export const holidayAdminSchema = z.object({
+  date: z.coerce.date(),
+  name: z.string().trim().min(2).max(180),
+  reason: adminReason,
 });
 
 export const slaAdminSchema = z.object({

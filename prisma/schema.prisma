@@ -312,6 +312,18 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+model Organization {
+  id        String             @id @default(cuid())
+  code      String             @unique
+  name      String             @unique
+  isActive  Boolean            @default(true)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  calendars BusinessCalendar[]
+
+  @@index([isActive, name])
+}
+
 model Department {
   id                 String                   @id @default(cuid())
   code               String                   @unique
@@ -518,16 +530,20 @@ model SLA {
 }
 
 model BusinessCalendar {
-  id                 String    @id @default(cuid())
-  code               String    @unique
+  id                 String       @id @default(cuid())
+  code               String       @unique
   name               String
-  timezone           String    @default("Indian/Antananarivo")
-  workingDays        Int[]     @default([1, 2, 3, 4, 5])
-  workdayStartMinute Int       @default(480)
-  workdayEndMinute   Int       @default(1020)
-  isActive           Boolean   @default(true)
+  organizationId     String
+  timezone           String       @default("Indian/Antananarivo")
+  workingDays        Int[]        @default([1, 2, 3, 4, 5])
+  workdayStartMinute Int          @default(480)
+  workdayEndMinute   Int          @default(1020)
+  isActive           Boolean      @default(true)
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   holidays           Holiday[]
   slas               SLA[]
+
+  @@index([organizationId, isActive])
 }
 
 model Holiday {
@@ -665,35 +681,35 @@ model Worklog {
 }
 
 model Ticket {
-  id                     String       @id @default(cuid())
-  reference              String       @unique
-  title                  String
-  description            String       @db.Text
+  id                       String       @id @default(cuid())
+  reference                String       @unique
+  title                    String
+  description              String       @db.Text
   // Besoin libre saisi par le demandeur avant qualification catalogue.
-  requestedService       String?
-  type                   TicketType
-  category               String
-  priority               Priority
-  impact                 Impact       @default(MEDIUM)
-  urgency                Urgency      @default(MEDIUM)
-  priorityOverrideReason String?
-  legalDueAt             DateTime?
-  status                 TicketStatus @default(NEW)
-  requesterId            String
+  requestedService         String?
+  type                     TicketType
+  category                 String
+  priority                 Priority
+  impact                   Impact       @default(MEDIUM)
+  urgency                  Urgency      @default(MEDIUM)
+  priorityOverrideReason   String?
+  legalDueAt               DateTime?
+  status                   TicketStatus @default(NEW)
+  requesterId              String
   // Snapshot du département applicatif validé du demandeur au moment de la
   // création. Le département opérationnel cible reste celui de la file issue
   // du catalogue.
-  sourceDepartmentId     String?
-    createdById             String
+  sourceDepartmentId       String?
+  createdById              String
   // Token namespaced by the authenticated creator to make client retries safe.
   creationIdempotencyToken String?
-  assignedToId            String?
-  queueId                String
-  serviceCatalogItemId   String
-  dossierId              String?
-  missionId              String?
-  assetId                String?
-  slaId                  String?
+  assignedToId             String?
+  queueId                  String
+  serviceCatalogItemId     String
+  dossierId                String?
+  missionId                String?
+  assetId                  String?
+  slaId                    String?
 
   confidential       Boolean            @default(false)
   firstResponseDueAt DateTime?

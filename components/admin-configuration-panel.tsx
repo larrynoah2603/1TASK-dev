@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { Priority, RoleCode, TicketType } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { AdminCalendarConfiguration } from "@/components/admin-calendar-configuration";
 import { Combobox } from "@/components/combobox";
 import { useToast } from "@/components/toast-provider";
 
@@ -44,11 +45,13 @@ type Service = {
   isActive: boolean;
 };
 type Sla = { id: string; code: string; name: string; firstResponseMinutes: number; resolutionMinutes: number; calendar: { id: string; name: string; isActive: boolean }; isActive: boolean };
-type Calendar = { id: string; code: string; name: string; isActive: boolean };
+type Organization = { id: string; code: string; name: string; isActive: boolean };
+type Calendar = { id: string; code: string; name: string; organizationId: string; organization: Organization; timezone: string; workingDays: number[]; workdayStartMinute: number; workdayEndMinute: number; isActive: boolean; holidays: { id: string; date: Date | string; name: string }[] };
 type EscalationRule = { id: string; name: string; thresholdPercent: number; targetRole: RoleCode; isActive: boolean; queue: { id: string; code: string; name: string } | null; serviceItem: { id: string; code: string; name: string } | null };
 type EntraMapping = { id: string; externalValue: string; normalizedValue: string; isActive: boolean; department: Department };
 
 export type AdminConfiguration = {
+  organizations: Organization[];
   departments: Department[];
   queues: Queue[];
   teams: Team[];
@@ -198,6 +201,7 @@ export function AdminConfigurationPanel({ configuration, sections }: { configura
 
     {enabled("sla") ? <section className="panel admin-config-section p-6">
       <AdminSectionTitle icon="sla">SLA, calendriers et escalades</AdminSectionTitle>
+      <AdminCalendarConfiguration organizations={configuration.organizations} calendars={configuration.calendars} />
       <p className="mt-1 text-xs text-slate-500">Les changements de catalogue s’appliquent aux nouveaux tickets sans réécrire l’historique des anciens.</p>
       <form onSubmit={(event) => void submit(event, "/api/admin/slas", { code: value(event.currentTarget, "code"), name: value(event.currentTarget, "name"), firstResponseMinutes: Number(value(event.currentTarget, "firstResponseMinutes")), resolutionMinutes: Number(value(event.currentTarget, "resolutionMinutes")), calendarId: value(event.currentTarget, "calendarId"), calculationMode: "ROLLING", alertThresholds: [50, 80, 100], isActive: true, reason: value(event.currentTarget, "reason") })} className="mt-4 grid gap-3 md:grid-cols-3">
         <Field label="Code"><input name="code" required className={inputClass} placeholder="STANDARD_8H_2J" /></Field>

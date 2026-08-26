@@ -15,6 +15,8 @@ import {
 import {
   calendarAdminSchema,
   catalogAdminSchema,
+  holidayAdminSchema,
+  organizationAdminSchema,
   departmentAdminSchema,
   escalationRuleAdminSchema,
   queueAdminSchema,
@@ -26,6 +28,8 @@ import {
   userProfileAdminSchema,
   type CalendarAdminInput,
   type CatalogAdminInput,
+  type HolidayAdminInput,
+  type OrganizationAdminInput,
   type DepartmentAdminInput,
   type EscalationRuleAdminInput,
   type QueueAdminInput,
@@ -76,7 +80,8 @@ function plainDepartment(value: { id: string; code: string; name: string; isActi
 
 export async function getAdminConfiguration(actor: UserContext) {
   await requireFunctionalAdminFor(actor);
-  const [departments, queues, teams, users, services, slas, calendars, escalationRules, roles, entraMappings, pendingUsers] = await Promise.all([
+  const [organizations, departments, queues, teams, users, services, slas, calendars, escalationRules, roles, entraMappings, pendingUsers] = await Promise.all([
+    prisma.organization.findMany({ orderBy: { name: "asc" } }),
     prisma.department.findMany({ orderBy: { name: "asc" } }),
     prisma.queue.findMany({
       include: {
@@ -141,7 +146,7 @@ export async function getAdminConfiguration(actor: UserContext) {
       orderBy: { name: "asc" },
     }),
     prisma.sLA.findMany({ include: { calendar: true }, orderBy: { name: "asc" } }),
-    prisma.businessCalendar.findMany({ include: { holidays: true }, orderBy: { name: "asc" } }),
+    prisma.businessCalendar.findMany({ include: { organization: true, holidays: { orderBy: { date: "asc" } } }, orderBy: { name: "asc" } }),
     prisma.escalationRule.findMany({
       include: {
         queue: { select: { id: true, code: true, name: true } },
@@ -153,7 +158,7 @@ export async function getAdminConfiguration(actor: UserContext) {
     prisma.entraDepartmentMapping.findMany({ include: { department: true }, orderBy: { externalValue: "asc" } }),
     prisma.user.findMany({ where: { status: { in: [UserStatus.PENDING_ASSIGNMENT, UserStatus.PENDING_VALIDATION] } }, select: { id: true, name: true, email: true, entraDepartmentValue: true }, orderBy: { createdAt: "asc" } }),
   ]);
-  return { departments, queues, teams, users, services, slas, calendars, escalationRules, roles, entraMappings, pendingUsers };
+  return { organizations, departments, queues, teams, users, services, slas, calendars, escalationRules, roles, entraMappings, pendingUsers };
 }
 
 export async function saveDepartment(actor: UserContext, id: string | undefined, input: DepartmentAdminInput) {
@@ -299,15 +304,39 @@ export async function saveCatalogItem(actor: UserContext, id: string | undefined
   });
 }
 
+export async function saveOrganization(actor: UserContext, id: string | undefined, input: OrganizationAdminInput) {
+  await requireFunctionalAdminFor(actor, "organization:manage");
+  const parsed = organizationAdminSchema.parse(input);
+  const existing = id ? await prisma.organization.findUnique({ where: { id } }) : null;
+  if (id && !existing) throw new AdminServiceError("Organisation introuvable.", 404);
+  return prisma.$transaction(async (tx) => {
+    const organization = existing
+      ? await tx.organization.update({ where: { id }, data: { code: parsed.code, name: parsed.name, isActive: parsed.isActive } })
+      : await tx.organization.create({ data: { code: parsed.code, name: parsed.name, isActive: parsed.isActive } });
+    await appendAuditLog(tx, {
+      actorId: actor.id,
+      action: existing ? "ORGANIZATION_UPDATED" : "ORGANIZATION_CREATED",
+      objectType: "Organization",
+      objectId: organization.id,
+      oldValue: existing ? { code: existing.code, name: existing.name, isActive: existing.isActive } : null,
+      newValue: { code: organization.code, name: organization.name, isActive: organization.isActive },
+      reason: parsed.reason,
+    });
+    return organization;
+  });
+}
+
 export async function saveCalendar(actor: UserContext, id: string | undefined, input: CalendarAdminInput) {
   await requireFunctionalAdminFor(actor, "sla:manage");
   const parsed = calendarAdminSchema.parse(input);
   const existing = id ? await prisma.businessCalendar.findUnique({ where: { id } }) : null;
   if (id && !existing) throw new AdminServiceError("Calendrier introuvable.", 404);
+  const organization = await prisma.organization.findFirst({ where: { id: parsed.organizationId, isActive: true }, select: { id: true } });
+  if (!organization) throw new AdminServiceError("Le calendrier doit être rattaché à une organisation active.", 422);
   return prisma.$transaction(async (tx) => {
     const calendar = existing
-      ? await tx.businessCalendar.update({ where: { id }, data: { code: parsed.code, name: parsed.name, timezone: parsed.timezone, workingDays: parsed.workingDays, workdayStartMinute: parsed.workdayStartMinute, workdayEndMinute: parsed.workdayEndMinute, isActive: parsed.isActive } })
-      : await tx.businessCalendar.create({ data: { code: parsed.code, name: parsed.name, timezone: parsed.timezone, workingDays: parsed.workingDays, workdayStartMinute: parsed.workdayStartMinute, workdayEndMinute: parsed.workdayEndMinute, isActive: parsed.isActive } });
+      ? await tx.businessCalendar.update({ where: { id }, data: { code: parsed.code, name: parsed.name, organizationId: parsed.organizationId, timezone: parsed.timezone, workingDays: parsed.workingDays, workdayStartMinute: parsed.workdayStartMinute, workdayEndMinute: parsed.workdayEndMinute, isActive: parsed.isActive } })
+      : await tx.businessCalendar.create({ data: { code: parsed.code, name: parsed.name, organizationId: parsed.organizationId, timezone: parsed.timezone, workingDays: parsed.workingDays, workdayStartMinute: parsed.workdayStartMinute, workdayEndMinute: parsed.workdayEndMinute, isActive: parsed.isActive } });
     await appendAuditLog(tx, {
       actorId: actor.id,
       action: existing ? "BUSINESS_CALENDAR_UPDATED" : "BUSINESS_CALENDAR_CREATED",
@@ -318,6 +347,49 @@ export async function saveCalendar(actor: UserContext, id: string | undefined, i
       reason: parsed.reason,
     });
     return calendar;
+  });
+}
+
+export async function saveHoliday(actor: UserContext, calendarId: string, input: HolidayAdminInput) {
+  await requireFunctionalAdminFor(actor, "sla:manage");
+  const parsed = holidayAdminSchema.parse(input);
+  const calendar = await prisma.businessCalendar.findUnique({ where: { id: calendarId }, select: { id: true, isActive: true } });
+  if (!calendar || !calendar.isActive) throw new AdminServiceError("Le calendrier est introuvable ou inactif.", 422);
+  const duplicate = await prisma.holiday.findUnique({ where: { calendarId_date: { calendarId, date: parsed.date } }, select: { id: true } });
+  if (duplicate) throw new AdminServiceError("Cette date existe déjà dans le calendrier.", 409);
+  return prisma.$transaction(async (tx) => {
+    const holiday = await tx.holiday.create({ data: { calendarId, date: parsed.date, name: parsed.name } });
+    await appendAuditLog(tx, {
+      actorId: actor.id,
+      action: "BUSINESS_CALENDAR_HOLIDAY_CREATED",
+      objectType: "Holiday",
+      objectId: holiday.id,
+      newValue: { calendarId, date: holiday.date, name: holiday.name },
+      reason: parsed.reason,
+    });
+    return holiday;
+  });
+}
+
+export async function updateHoliday(actor: UserContext, holidayId: string, input: HolidayAdminInput) {
+  await requireFunctionalAdminFor(actor, "sla:manage");
+  const parsed = holidayAdminSchema.parse(input);
+  const existing = await prisma.holiday.findUnique({ where: { id: holidayId } });
+  if (!existing) throw new AdminServiceError("Jour férié introuvable.", 404);
+  const duplicate = await prisma.holiday.findUnique({ where: { calendarId_date: { calendarId: existing.calendarId, date: parsed.date } }, select: { id: true } });
+  if (duplicate && duplicate.id !== holidayId) throw new AdminServiceError("Cette date existe déjà dans le calendrier.", 409);
+  return prisma.$transaction(async (tx) => {
+    const holiday = await tx.holiday.update({ where: { id: holidayId }, data: { date: parsed.date, name: parsed.name } });
+    await appendAuditLog(tx, {
+      actorId: actor.id,
+      action: "BUSINESS_CALENDAR_HOLIDAY_UPDATED",
+      objectType: "Holiday",
+      objectId: holiday.id,
+      oldValue: { calendarId: existing.calendarId, date: existing.date, name: existing.name },
+      newValue: { calendarId: holiday.calendarId, date: holiday.date, name: holiday.name },
+      reason: parsed.reason,
+    });
+    return holiday;
   });
 }
 
