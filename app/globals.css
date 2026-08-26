@@ -2624,3 +2624,5 @@ html[data-theme="dark"] .skeleton-line, html[data-theme="dark"] .loading-block, 
   .loading-grid { grid-template-columns: 1fr; }
   .loading-block-large { min-height: 9rem; }
 }
+
+/* Deployment verification after latency optimization. */
