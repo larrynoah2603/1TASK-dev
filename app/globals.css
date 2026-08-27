@@ -4523,3 +4523,143 @@ html[data-theme="light"] {
   .admin-industrial .data-table th,
   .admin-industrial .data-table td { padding-inline: 0.6rem; }
 }
+
+/* -------------------------------------------------------------------------- */
+/* Correction de densité et mode clair industriel — présentation uniquement.  */
+/* Les données, actions, droits et comportements de défilement restent sûrs.  */
+/* -------------------------------------------------------------------------- */
+.shell-industrial .shell-main {
+  padding-bottom: 2.25rem;
+}
+
+.shell-industrial main .space-y-8 > :not([hidden]) ~ :not([hidden]) { margin-top: 1.7rem !important; }
+.shell-industrial main .space-y-7 > :not([hidden]) ~ :not([hidden]) { margin-top: 1.5rem !important; }
+.shell-industrial main .space-y-6 > :not([hidden]) ~ :not([hidden]) { margin-top: 1.35rem !important; }
+.shell-industrial main .space-y-5 > :not([hidden]) ~ :not([hidden]) { margin-top: 1.15rem !important; }
+.shell-industrial main .space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.95rem !important; }
+.shell-industrial main .gap-6 { gap: 1.25rem !important; }
+.shell-industrial main .gap-5 { gap: 1rem !important; }
+
+.shell-industrial .dashboard-role-hero { margin-bottom: 1.15rem; }
+.shell-industrial .dashboard-responsible-layout { gap: 1.25rem; }
+.shell-industrial .dashboard-responsible-layout > .dashboard-kpi-grid { gap: 0.8rem; }
+.shell-industrial .dashboard-responsible-grid { gap: 1rem; }
+.shell-industrial .dashboard-operations-table-card { padding: 1rem 1rem 0; }
+.shell-industrial .dashboard-operations-table-card > .filter-panel { margin: 0.9rem 0 1.1rem; gap: 0.75rem; padding: 0.9rem; }
+.shell-industrial .dashboard-operation-table-wrap { margin: 0.95rem -1rem 0; }
+.shell-industrial .dashboard-operation-table th,
+.shell-industrial .dashboard-operation-table td { padding: 0.72rem 0.75rem; }
+.shell-industrial .dashboard-widget-header,
+.shell-industrial .dashboard-watch-header { padding-bottom: 0.95rem; }
+.shell-industrial .dashboard-watch-list { gap: 0.65rem; padding: 0.85rem; }
+.shell-industrial .dashboard-watch-card { padding: 0.75rem; }
+
+.shell-industrial .data-table th,
+.shell-industrial .data-table td,
+.shell-industrial .table-shell th,
+.shell-industrial .table-shell td { padding-top: 0.72rem !important; padding-bottom: 0.72rem !important; }
+
+.shell-industrial .portfolio-table-surface,
+.shell-industrial .notification-history,
+.shell-industrial .knowledge-query-panel,
+.shell-industrial .assets-industrial .panel.p-4,
+.shell-industrial .reporting-distribution-panel,
+.admin-industrial .panel { margin-top: 0.25rem; }
+
+/* Les onglets restent défilables au doigt sur mobile, mais sans petite barre visible. */
+.view-switcher { -ms-overflow-style: none; scrollbar-width: none; }
+.view-switcher::-webkit-scrollbar { display: none; height: 0; }
+
+@media (min-width: 761px) {
+  .view-switcher { overflow-x: visible; }
+}
+
+/* Le fil de commentaires utilise désormais le défilement de la page, pas un mini-scroll interne. */
+.shell-industrial .ticket-detail-industrial .ticket-comment-list {
+  max-height: none !important;
+  overflow-y: visible !important;
+  padding-right: 0 !important;
+}
+
+.shell-industrial .global-search-industrial .popover-panel { max-height: min(70dvh, 44rem); }
+
+@media (max-width: 760px) {
+  .shell-industrial main .space-y-8 > :not([hidden]) ~ :not([hidden]) { margin-top: 1.25rem !important; }
+  .shell-industrial main .space-y-7 > :not([hidden]) ~ :not([hidden]) { margin-top: 1.1rem !important; }
+  .shell-industrial main .space-y-6 > :not([hidden]) ~ :not([hidden]) { margin-top: 1rem !important; }
+  .shell-industrial main .gap-6 { gap: 1rem !important; }
+  .shell-industrial .dashboard-operations-table-card { padding: 0.85rem 0.85rem 0; }
+  .shell-industrial .dashboard-operation-table-wrap { margin: 0.85rem -0.85rem 0; }
+}
+
+/* Mode clair : papier chaud, encre anthracite, sidebar sombre et contrastes calmes. */
+html[data-theme="light"] {
+  --industrial-black: #e9e5dc;
+  --industrial-rail: #171716;
+  --industrial-panel: #fffdf7;
+  --industrial-panel-raised: #f4f0e7;
+  --industrial-ink: #25221d;
+  --industrial-muted: #675f54;
+  --industrial-line: #c8c0b3;
+  --industrial-red: #bf4234;
+  --industrial-gold: #84632d;
+}
+
+html[data-theme="light"] .shell-industrial { background: var(--industrial-black); color: var(--industrial-ink); }
+html[data-theme="light"] .shell-industrial .shell-sidebar-industrial { background: var(--industrial-rail); }
+html[data-theme="light"] .shell-industrial .sidebar-brand-block,
+html[data-theme="light"] .shell-industrial .sidebar-user-block-industrial { background: #171716; }
+html[data-theme="light"] .shell-industrial .nav-link-industrial { color: #c4beb3; }
+html[data-theme="light"] .shell-industrial .nav-link-industrial:hover,
+html[data-theme="light"] .shell-industrial .nav-link-active { background: #292824; color: #fffaf0; }
+html[data-theme="light"] .shell-industrial .sidebar-label,
+html[data-theme="light"] .shell-industrial .sidebar-user-context { color: #aaa398; }
+
+html[data-theme="light"] .shell-industrial .shell-topbar-industrial { background: color-mix(in srgb, #fffdf7 96%, transparent); }
+html[data-theme="light"] .shell-industrial .global-search-industrial .global-search-form,
+html[data-theme="light"] .shell-industrial .global-search-industrial .popover-panel,
+html[data-theme="light"] .shell-industrial .profile-menu-industrial .popover-panel,
+html[data-theme="light"] .shell-industrial .notification-center-industrial .notification-popover,
+html[data-theme="light"] .shell-industrial .combobox-listbox,
+html[data-theme="light"] .admin-industrial .combobox-listbox { background: var(--industrial-panel) !important; }
+
+html[data-theme="light"] .shell-industrial .panel,
+html[data-theme="light"] .shell-industrial .metric-card,
+html[data-theme="light"] .shell-industrial .admin-stat,
+html[data-theme="light"] .shell-industrial .action-card,
+html[data-theme="light"] .shell-industrial .dashboard-hero,
+html[data-theme="light"] .shell-industrial .dashboard-kpi-card,
+html[data-theme="light"] .shell-industrial .dashboard-widget,
+html[data-theme="light"] .shell-industrial .dashboard-watch-panel,
+html[data-theme="light"] .shell-industrial .ticket-status-strip,
+html[data-theme="light"] .shell-industrial .ticket-comment-thread,
+html[data-theme="light"] .shell-industrial .ticket-side-panel,
+html[data-theme="light"] .shell-industrial .ticket-create-hero,
+html[data-theme="light"] .shell-industrial .ticket-composer-industrial,
+html[data-theme="light"] .shell-industrial .portfolio-table-surface,
+html[data-theme="light"] .shell-industrial .notification-history,
+html[data-theme="light"] .pending-industrial > section { background: var(--industrial-panel) !important; }
+
+html[data-theme="light"] .shell-industrial .filter-panel,
+html[data-theme="light"] .shell-industrial .portfolio-query-panel,
+html[data-theme="light"] .shell-industrial .knowledge-query-panel,
+html[data-theme="light"] .shell-industrial .ticket-comment,
+html[data-theme="light"] .shell-industrial .ticket-timeline-assignment,
+html[data-theme="light"] .shell-industrial .ticket-timeline-message,
+html[data-theme="light"] .shell-industrial .dashboard-watch-card,
+html[data-theme="light"] .shell-industrial .field-control,
+html[data-theme="light"] .shell-industrial .combobox-trigger,
+html[data-theme="light"] .shell-industrial .data-table th,
+html[data-theme="light"] .shell-industrial .dashboard-operation-table th,
+html[data-theme="light"] .admin-industrial [class*="bg-slate-"] { background: var(--industrial-panel-raised) !important; }
+
+html[data-theme="light"] .shell-industrial .field-control,
+html[data-theme="light"] .shell-industrial .combobox-trigger { color: var(--industrial-ink); }
+html[data-theme="light"] .shell-industrial .data-table th,
+html[data-theme="light"] .shell-industrial .dashboard-operation-table th { color: #625b50; }
+html[data-theme="light"] .shell-industrial .dashboard-operation-table tbody tr:hover,
+html[data-theme="light"] .shell-industrial .data-table tbody tr:hover { background: #f0eadf; }
+
+html[data-theme="light"] .pending-industrial { background: var(--industrial-black) !important; color: var(--industrial-muted) !important; }
+html[data-theme="light"] .pending-industrial [class*="bg-slate-50"],
+html[data-theme="light"] .pending-industrial > section [class*="bg-amber-50"] { background: var(--industrial-panel-raised) !important; }

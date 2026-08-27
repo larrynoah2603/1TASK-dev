@@ -42,6 +42,14 @@
 - [x] Lot 8 : ajouter un test de contrat administration et valider typecheck, tests, lint et build avant livraison.
 - [ ] Réaliser la validation fonctionnelle complète de tous les lots avec les comptes Entra et les périmètres réels avant mise en production.
 - [ ] Après déploiement effectif, vérifier les journaux Vercel `[perf]` et les temps réseau des pages critiques sans réintroduire de polling ou cron Hobby.
+- [ ] Corriger les espacements trop serrés entre titres, séparateurs, filtres, tableaux et files dans les surfaces industrielles.
+- [ ] Retirer les scrollbars internes non nécessaires tout en préservant le défilement horizontal des tableaux sur petits écrans.
+- [ ] Recomposer le mode clair en palette neutre industrielle à contraste suffisant, sans surfaces blanches éblouissantes ni accents bleus/violets.
+- [ ] Valider les correctifs de densité et de thème sans modifier les flux métier, droits, API ou données.
+- [x] Corriger les espacements trop serrés entre titres, séparateurs, filtres, tableaux et files dans les surfaces industrielles.
+- [x] Retirer les scrollbars internes non nécessaires tout en préservant le défilement horizontal des tableaux sur petits écrans.
+- [x] Recomposer le mode clair en palette neutre industrielle à contraste suffisant, sans surfaces blanches éblouissantes ni accents bleus/violets.
+- [x] Valider les correctifs de densité et de thème sans modifier les flux métier, droits, API ou données.
 - [x] Préparer un inventaire consolidé des fichiers modifiés à travers les huit lots de refonte.
 - [x] Préparer une checklist de validation locale et de vigilance production pour l’ensemble des huit lots.
 - [x] Créer une archive consolidée sans secrets, données, dépendances, cache ni dossier Git.
