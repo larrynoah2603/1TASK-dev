@@ -28,7 +28,7 @@ export default async function MissionsPage() {
   }));
 
   return (
-    <div className="space-y-5 portfolio-page portfolio-missions-page">
+    <div className="space-y-5 portfolio-page portfolio-industrial portfolio-missions-page">
       <header className="page-header">
         <div>
           <p className="eyebrow">Portefeuille de production</p>

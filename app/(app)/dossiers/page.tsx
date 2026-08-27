@@ -33,7 +33,7 @@ export default async function DossiersPage() {
   }));
 
   return (
-    <div className="space-y-5 portfolio-page portfolio-dossiers-page">
+    <div className="space-y-5 portfolio-page portfolio-industrial portfolio-dossiers-page">
       <header className="page-header">
         <div>
           <p className="eyebrow">Portefeuille de production</p>

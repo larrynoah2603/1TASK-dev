@@ -20,7 +20,7 @@ export function ProfileMenu({ name, email, image, department, roles, admin }: { 
   }, [open]);
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="profile-menu-industrial relative">
       <button type="button" onClick={() => setOpen((value) => !value)} className="profile-trigger" aria-expanded={open} aria-haspopup="menu">
         <span className="profile-avatar-wrap"><span className="profile-avatar">{image ? <img src={image} alt="" className="profile-avatar-image" /> : initials(name)}</span><span className="profile-status-dot" aria-hidden="true" /></span>
         <span className="profile-compact-label hidden min-w-0 text-left xl:block"><span className="block max-w-[150px] truncate text-xs font-semibold text-slate-800">{name}</span><span className="mt-0.5 block max-w-[180px] truncate text-[10px] text-slate-500">{department}</span></span>

@@ -124,5 +124,5 @@ export async function AdminShell({ user, children }: { user: UserContext; childr
     </div>
   );
 
-  return <CollapsibleShell variant="admin" sidebar={sidebar} topbar={topbar}>{children}</CollapsibleShell>;
+  return <div className="admin-industrial"><CollapsibleShell variant="admin" sidebar={sidebar} topbar={topbar}>{children}</CollapsibleShell></div>;
 }

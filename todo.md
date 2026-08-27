@@ -1,0 +1,47 @@
+# Project TODO
+
+- [ ] Relever les temps d’ouverture réels des écrans Vercel et les lignes `[perf]` correspondantes, sans inclure de secrets.
+- [ ] Réduire les lectures serveur restantes sur les écrans dépassant le seuil de latence acceptable.
+- [ ] Vérifier que la refonte sombre reste lisible, dense et cohérente sur ordinateur et mobile.
+- [ ] Simplifier le workflow ticket-SLA sans modifier les statuts, l’audit append-only ni les règles de visibilité.
+- [ ] Corriger les bugs d’écran précis à partir de captures et de messages d’erreur reproductibles.
+- [ ] Vérifier le cloisonnement multi-rôles, département/file/équipe et l’accès Actifs réservé au FUNCTIONAL_ADMIN global.
+- [ ] Valider chaque lot par typecheck, tests, lint, build et contrôle visuel avant son push GitHub/Vercel.
+- [x] Préparer une refonte complète des vues à partir des maquettes, sans interface générique et sans modification des routes, règles métier ou données.
+- [x] Établir l’inventaire des routes, composants, données visibles et permissions avant tout lot de refonte globale.
+- [x] Documenter les fichiers explicitement exclus de la première phase de refonte complète.
+- [x] Lot 1 : reconstruire les tokens CSS, le shell global, la navigation, la recherche et la topbar sans modifier les permissions.
+- [x] Valider le lot 1 par typecheck, 108 tests passants, lint sans erreur et build Next.js de production.
+- [x] Lot 2 : refondre la boîte agent, la création de ticket et le détail ticket après validation explicite du lot 1.
+- [x] Lot 2 : analyser les composants de boîte agent, création et détail afin d’isoler strictement les changements de présentation.
+- [x] Lot 2 : appliquer la refonte industrielle de la boîte agent, création et détail sans modifier les transitions, SLA, permissions, API ni données.
+- [x] Lot 2 : valider les invariants de flux ticket, les états responsive et la compilation avant livraison.
+- [x] Lot 3 : refondre les modules portefeuille après validation explicite de la boîte agent et du détail ticket.
+- [x] Lot 3 : analyser les écrans clients, dossiers et missions pour préserver leur visibilité, confidentialité et liaisons ticket existantes.
+- [x] Lot 3 : appliquer une surcouche industrielle scoped aux listes et détails portefeuille sans modifier les services, API, modèles Prisma ou permissions.
+- [x] Lot 3 : ajouter un test de contrat des invariants portefeuille et valider typecheck, tests, lint et build avant livraison.
+- [x] Lot 4 : refondre Notifications, Profil et Accès en attente après validation explicite du portefeuille.
+- [x] Lot 4 : analyser les écrans notifications, profil et accès en attente pour préserver les flux NextAuth, préférences, notifications et redirections.
+- [x] Lot 4 : appliquer une surcouche industrielle scoped aux trois écrans sans modifier les API, les actions de lecture, la déconnexion ni les permissions.
+- [x] Lot 4 : ajouter un test de contrat identité et valider typecheck, tests, lint et build avant livraison.
+- [x] Lot 5 : refondre Base de connaissances après validation explicite des écrans identité.
+- [x] Lot 5 : analyser les écrans et composants de connaissance afin de préserver le workflow DRAFT, REVIEW, PUBLISHED, ARCHIVED et les droits existants.
+- [x] Lot 5 : appliquer une surcouche industrielle scoped à la liste, aux formulaires et au lecteur sans modifier les API, publications, révisions ou données.
+- [x] Lot 5 : ajouter un test de contrat connaissance et valider typecheck, tests, lint et build avant livraison.
+- [x] Lot 6 : refondre Actifs après validation explicite de la Base de connaissances.
+- [x] Lot 6 : analyser les écrans et composants actifs pour confirmer l’accès exclusif au FUNCTIONAL_ADMIN global et préserver les mouvements existants.
+- [x] Lot 6 : appliquer une surcouche industrielle scoped aux listes, détails, inventaire et mouvements sans modifier les API, modèles Prisma ou autorisations.
+- [x] Lot 6 : ajouter un test de contrat actifs et valider typecheck, tests, lint et build avant livraison.
+- [x] Lot 7 : refondre Pilotage SLA et Reporting après validation explicite du module Actifs.
+- [x] Lot 7 : analyser les écrans SLA et reporting pour préserver calendriers d’organisation, calculs, seuils, escalades, accès et export existants.
+- [x] Lot 7 : appliquer une surcouche industrielle scoped aux écrans SLA et reporting sans modifier les services, API, modèles Prisma ou données calculées.
+- [x] Lot 7 : ajouter un test de contrat SLA/reporting et valider typecheck, tests, lint et build avant livraison.
+- [x] Lot 8 : refondre Administration après validation explicite de Pilotage SLA et Reporting.
+- [x] Lot 8 : analyser les écrans, composants et sections administration pour préserver l’autorisation fonctionnelle, les mutations, les audits et le cloisonnement existants.
+- [x] Lot 8 : appliquer une surcouche industrielle scoped à la console, aux configurations et aux tableaux sans modifier les routes API, modèles Prisma ou permissions.
+- [x] Lot 8 : ajouter un test de contrat administration et valider typecheck, tests, lint et build avant livraison.
+- [ ] Réaliser la validation fonctionnelle complète de tous les lots avec les comptes Entra et les périmètres réels avant mise en production.
+- [ ] Après déploiement effectif, vérifier les journaux Vercel `[perf]` et les temps réseau des pages critiques sans réintroduire de polling ou cron Hobby.
+- [x] Préparer un inventaire consolidé des fichiers modifiés à travers les huit lots de refonte.
+- [x] Préparer une checklist de validation locale et de vigilance production pour l’ensemble des huit lots.
+- [x] Créer une archive consolidée sans secrets, données, dépendances, cache ni dossier Git.

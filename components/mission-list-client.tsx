@@ -77,14 +77,14 @@ export function MissionListClient({ initialMissions, nowTimestamp }: { initialMi
 
   return (
     <>
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="portfolio-kpi-grid grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div className="metric-card"><p className="text-[11px] text-slate-500">Missions visibles</p><p className="mt-1 text-2xl font-bold tracking-tight text-slate-900">{missions.length}</p></div>
         <div className="metric-card"><p className="text-[11px] text-slate-500">Missions actives</p><p className="mt-1 text-2xl font-bold tracking-tight text-emerald-700">{activeMissions}</p></div>
         <div className={`metric-card ${lateMissions ? "border-rose-200 bg-rose-50/50" : ""}`}><p className="text-[11px] text-slate-500">Échéances dépassées</p><p className="mt-1 text-2xl font-bold tracking-tight text-slate-900">{lateMissions}</p></div>
         <div className="metric-card"><p className="text-[11px] text-slate-500">Temps / budget</p><p className="mt-1 text-2xl font-bold tracking-tight text-slate-900">{formatMinutes(totalLogged)}</p><p className="mt-1 text-[11px] text-slate-400">{totalBudget ? `sur ${formatMinutes(totalBudget)}` : "Budget non défini"}</p></div>
       </section>
 
-      <section className="panel p-4 sm:p-5">
+      <section className="portfolio-query-panel panel p-4 sm:p-5">
         <div className="grid gap-3 xl:grid-cols-[minmax(240px,1.4fr)_repeat(3,minmax(150px,1fr))_auto] xl:items-end">
           <label className="field-label">Rechercher<input className="field-control" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Code, nom, dossier ou client…" /></label>
           <label className="field-label">Statut<Combobox value={status} onChange={setStatus} ariaLabel="Filtrer par statut" options={[{ value: "ALL", label: "Tous les statuts" }, ...Object.entries(missionStatusLabels).map(([value, label]) => ({ value, label }))]} /></label>

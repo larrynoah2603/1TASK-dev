@@ -43,9 +43,9 @@ export function CollapsibleShell({ variant, sidebar, topbar, children }: { varia
   }
 
   return (
-    <div data-sidebar-collapsed={collapsed ? "true" : "false"} className={`${variant === "admin" ? "admin-background" : "app-background"} shell-root min-h-screen`}>
+    <div data-sidebar-collapsed={collapsed ? "true" : "false"} className={`${variant === "admin" ? "admin-background" : "app-background"} shell-root shell-industrial min-h-screen`}>
       {mobileOpen ? <button type="button" className="shell-mobile-backdrop lg:hidden" aria-label="Fermer le menu" onClick={() => setMobileOpen(false)} /> : null}
-      <aside id={`${variant}-sidebar`} aria-label={variant === "admin" ? "Navigation administration" : "Navigation principale"} aria-hidden={!mobileOpen ? undefined : false} onClick={(event) => { if ((event.target as HTMLElement).closest("a")) setMobileOpen(false); }} className={`shell-sidebar ${mobileOpen ? "shell-sidebar-mobile-open" : ""}`}>
+      <aside id={`${variant}-sidebar`} aria-label={variant === "admin" ? "Navigation administration" : "Navigation principale"} aria-hidden={!mobileOpen ? undefined : false} onClick={(event) => { if ((event.target as HTMLElement).closest("a")) setMobileOpen(false); }} className={`shell-sidebar shell-sidebar-industrial ${mobileOpen ? "shell-sidebar-mobile-open" : ""}`}>
         <div className="shell-mobile-toolbar">
           <button type="button" onClick={() => setMobileOpen(false)} className="shell-mobile-close" aria-label="Fermer le menu">Fermer</button>
         </div>
@@ -56,10 +56,11 @@ export function CollapsibleShell({ variant, sidebar, topbar, children }: { varia
       </aside>
 
       <div className="shell-content">
-        <header className="app-topbar shell-topbar shell-topbar-fixed sticky top-0 z-40 flex items-center gap-3 border-b px-4 py-3 backdrop-blur-xl sm:px-6 md:px-8 md:py-3.5">
+        <header className="app-topbar shell-topbar shell-topbar-fixed shell-topbar-industrial sticky top-0 z-40 flex items-center gap-3 border-b px-4 py-3 sm:px-6 md:px-8 md:py-3.5">
           <button type="button" onClick={() => setMobileOpen(true)} className="topbar-icon-button lg:hidden" aria-expanded={mobileOpen} aria-controls={`${variant}-sidebar`} aria-label="Ouvrir le menu">☰</button>
           <div className="min-w-0 flex-1">{topbar}</div>
         </header>
+        <div className="shell-structural-rule" aria-hidden="true" />
         <main id="main-content" className="shell-main mx-auto w-full max-w-[1500px] px-4 py-5 sm:px-6 md:px-8 md:py-7">
           <Breadcrumbs />
           {children}

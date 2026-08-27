@@ -73,7 +73,7 @@ export function GlobalSearch() {
   }
 
   return (
-    <div ref={ref} className={`global-search-wrap ${expanded ? "global-search-expanded" : ""}`}>
+    <div ref={ref} className={`global-search-wrap global-search-industrial ${expanded ? "global-search-expanded" : ""}`}>
       <form onSubmit={submit} className="global-search-form">
         <span aria-hidden="true" className="global-search-icon"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="5.8" /><path d="m15.2 15.2 4.2 4.2" /></svg></span>
         <input ref={inputRef} value={query} onFocus={() => setExpanded(true)} onChange={(event) => { const next = event.target.value; setQuery(next); setExpanded(true); setOpen(true); if (next.trim().length < 2) { setResults([]); setLoading(false); } }} placeholder="Rechercher…" aria-label="Recherche globale" />
@@ -81,9 +81,9 @@ export function GlobalSearch() {
       </form>
       {open && (query.trim().length >= 2 || loading) ? (
         <div className="popover-panel left-0 right-0 top-[calc(100%+0.5rem)] max-h-96 overflow-y-auto p-2" role="listbox" aria-label="Résultats de recherche">
-          {loading ? <p className="px-3 py-4 text-xs text-slate-500">Recherche en cours…</p> : null}
-          {!loading && !results.length ? <p className="px-3 py-4 text-xs text-slate-500">Aucun ticket visible ne correspond à cette recherche.</p> : null}
-          {results.map((result) => <Link key={result.id} href={`/tickets/${result.id}`} onClick={() => setOpen(false)} className="search-result" role="option"><span className="font-mono text-[11px] font-bold text-[#4c4dba]">{result.reference}</span><span className="min-w-0 flex-1"><span className="block truncate text-xs font-semibold text-slate-800">{result.title}</span><span className="mt-0.5 block truncate text-[11px] text-slate-500">{result.queue} · {result.status}</span></span><span className="text-[10px] text-slate-400">Ouvrir</span></Link>)}
+          {loading ? <p className="global-search-message px-3 py-4 text-xs">Recherche en cours…</p> : null}
+          {!loading && !results.length ? <p className="global-search-message px-3 py-4 text-xs">Aucun ticket visible ne correspond à cette recherche.</p> : null}
+          {results.map((result) => <Link key={result.id} href={`/tickets/${result.id}`} onClick={() => setOpen(false)} className="search-result search-result-industrial" role="option"><span className="search-result-reference font-mono text-[11px] font-bold">{result.reference}</span><span className="min-w-0 flex-1"><span className="search-result-title block truncate text-xs font-semibold">{result.title}</span><span className="search-result-meta mt-0.5 block truncate text-[11px]">{result.queue} · {result.status}</span></span><span className="search-result-action text-[10px]">Ouvrir</span></Link>)}
         </div>
       ) : null}
     </div>

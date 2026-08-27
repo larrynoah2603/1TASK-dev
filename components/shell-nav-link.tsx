@@ -35,9 +35,9 @@ export function ShellNavLink({
     <Link
       href={href as Route}
       aria-current={active ? "page" : undefined}
-      className={`nav-link ${active ? "nav-link-active" : ""} flex w-full min-w-0 items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium ${className}`}
+      className={`nav-link nav-link-industrial ${active ? "nav-link-active" : ""} flex w-full min-w-0 items-center gap-3 px-3 py-2 text-[13px] font-medium ${className}`}
     >
-      <span className="nav-icon grid h-7 w-7 shrink-0 place-items-center rounded-md bg-white/[0.06] text-slate-400 transition-colors">
+      <span className="nav-icon nav-icon-industrial grid h-7 w-7 shrink-0 place-items-center transition-colors">
         {icon}
       </span>
       <span className="shell-nav-label truncate">{children}</span>

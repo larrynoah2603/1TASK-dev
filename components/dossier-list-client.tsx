@@ -102,20 +102,20 @@ export function DossierListClient({
 
   return (
     <>
-      <section className="grid gap-3 sm:grid-cols-3">
+      <section className="portfolio-kpi-grid grid gap-3 sm:grid-cols-3">
         <div className="metric-card"><p className="text-[11px] text-slate-500">Dossiers visibles</p><p className="mt-1 text-2xl font-bold tracking-tight text-slate-900">{initialDossiers.length}</p></div>
         <div className="metric-card"><p className="text-[11px] text-slate-500">Missions rattachées</p><p className="mt-1 text-2xl font-bold tracking-tight text-slate-900">{totalMissions}</p></div>
         <div className="metric-card"><p className="text-[11px] text-slate-500">Missions actives</p><p className="mt-1 text-2xl font-bold tracking-tight text-emerald-700">{activeMissions}</p></div>
       </section>
 
-      <section className="panel p-4 sm:p-5">
+      <section className="portfolio-query-panel panel p-4 sm:p-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <label className="field-label min-w-0 flex-1">Rechercher un dossier ou un client<input className="field-control" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Code, nom du dossier ou client…" /></label>
           {canManage ? <button type="button" className="button-primary shrink-0" onClick={() => { setError(""); setShowCreate(true); }}>Nouveau dossier</button> : null}
         </div>
       </section>
 
-      <section className="panel overflow-hidden">
+      <section className="portfolio-table-surface panel overflow-hidden">
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 sm:px-5"><div><p className="eyebrow">Portefeuille</p><h2 className="mt-1 text-base font-semibold text-slate-900">Dossiers clients</h2></div><span className="text-[11px] text-slate-400">{dossiers.length} résultat(s)</span></div>
         <div className="overflow-x-auto">
           <table className="data-table min-w-[760px]">

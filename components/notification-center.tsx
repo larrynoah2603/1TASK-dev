@@ -99,7 +99,7 @@ export function NotificationCenter({ initialUnreadCount = 0 }: { initialUnreadCo
   }
 
   return (
-    <div ref={ref} className="notification-anchor">
+    <div ref={ref} className="notification-anchor notification-center-industrial">
       <button type="button" onClick={() => setOpen((value) => !value)} className="topbar-icon-button notification-trigger relative" aria-label={`Notifications${unreadCount ? `, ${unreadCount} non lue(s)` : ""}`} aria-expanded={open} aria-haspopup="dialog" title="Notifications">
         <span aria-hidden="true" className="notification-trigger-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path strokeLinecap="round" strokeLinejoin="round" d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-7-3-9M10 21h4" /></svg></span>
         {unreadCount ? <span className="notification-count">{unreadCount > 9 ? "9+" : unreadCount}</span> : null}

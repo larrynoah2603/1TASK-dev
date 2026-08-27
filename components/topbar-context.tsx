@@ -23,7 +23,7 @@ function sectionLabel(pathname: string) {
 export function TopbarContext() {
   const pathname = usePathname();
   return (
-    <div className="topbar-context" aria-label="Contexte de navigation">
+    <div className="topbar-context topbar-context-industrial" aria-label="Contexte de navigation">
       <button type="button" className="topbar-context-icon topbar-context-menu" onClick={() => window.dispatchEvent(new CustomEvent("1task:toggle-sidebar"))} aria-label="Ouvrir ou replier la navigation" title="Navigation">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
       </button>

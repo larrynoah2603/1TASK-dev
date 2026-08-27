@@ -155,13 +155,13 @@ export function NewTicketForm({ onCancel }: { onCancel?: () => void } = {}) {
   const resetPreview = () => setPreview(false);
 
   return (
-    <form onSubmit={submit} aria-busy={submitting || loadingDepartments} className="ticket-composer panel max-w-4xl space-y-6 p-5 sm:p-7 md:p-8">
+    <form onSubmit={submit} aria-busy={submitting || loadingDepartments} className="ticket-composer ticket-composer-industrial panel max-w-4xl space-y-6 p-5 sm:p-7 md:p-8">
       <ol className="form-progress" aria-label="Étapes de création du ticket">
         <li className={!preview ? "form-progress-active" : "form-progress-complete"}><span>01</span><strong>Décrire</strong></li>
         <li className={preview ? "form-progress-active" : ""}><span>02</span><strong>Vérifier</strong></li>
       </ol>
       <div className="form-step-header flex items-start gap-3 border-b border-slate-100 pb-5">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[#f0f0ff] text-sm font-bold text-[#4c4dba]">01</span>
+        <span className="ticket-form-step-marker grid h-9 w-9 shrink-0 place-items-center text-sm font-bold">01</span>
         <div>
           <h2 className="text-base font-semibold text-slate-950">Parlons de votre besoin</h2>
           <p className="mt-1 text-xs leading-5 text-slate-500">Décrivez votre besoin ; l’équipe du département choisi le qualifiera ensuite.</p>
@@ -170,7 +170,7 @@ export function NewTicketForm({ onCancel }: { onCancel?: () => void } = {}) {
       {error ? <div role="alert" aria-live="assertive" className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
 
       <section className="route-panel rounded-lg border border-[#dfe1f9] bg-[#f7f7ff] p-5" aria-labelledby="free-request-title">
-        <div className="flex items-center justify-between gap-3"><div><p id="free-request-title" className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#4c4dba]">Saisie libre</p><p className="mt-1 text-xs leading-5 text-slate-600">Le catalogue n’est pas imposé au demandeur.</p></div><span className="rounded-md bg-white px-2 py-1 text-[10px] font-semibold text-[#4c4dba]">Qualification requise</span></div>
+        <div className="flex items-center justify-between gap-3"><div><p id="free-request-title" className="ticket-route-kicker text-[10px] font-bold uppercase tracking-[0.14em]">Saisie libre</p><p className="mt-1 text-xs leading-5 text-slate-600">Le catalogue n’est pas imposé au demandeur.</p></div><span className="ticket-route-badge px-2 py-1 text-[10px] font-semibold">Qualification requise</span></div>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <label className="field-label sm:col-span-2">Besoin demandé<textarea required minLength={3} maxLength={180} value={requestedService} onChange={(event) => { setRequestedService(event.target.value); resetPreview(); }} className="field-control min-h-20" placeholder="Ex. Création d’un compte client" /></label>
           <label className="field-label">Département cible<Combobox required disabled={loadingDepartments} value={targetDepartmentId} onChange={(next) => { setTargetDepartmentId(next); resetPreview(); }} placeholder={loadingDepartments ? "Chargement…" : "Choisir un département"} options={[{ value: "", label: loadingDepartments ? "Chargement…" : "Choisir un département" }, ...departments.map((department) => ({ value: department.id, label: `${department.name} (${department.code})` }))]} /></label>

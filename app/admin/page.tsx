@@ -13,7 +13,7 @@ export default async function AdminDashboardPage() {
 
   if (!functional) {
     return (
-      <div className="space-y-6">
+          <div className="space-y-6 admin-dashboard-industrial">
         <AdminPageHeader
           eyebrow="Périmètre technique"
           title="Administration technique"
@@ -49,7 +49,7 @@ export default async function AdminDashboardPage() {
   ] as const;
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-7 admin-dashboard-industrial">
       <AdminPageHeader
         eyebrow="Tableau de bord global"
         title="Administration du ticketing"

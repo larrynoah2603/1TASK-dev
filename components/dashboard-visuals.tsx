@@ -217,7 +217,7 @@ export function OperationsTicketTable({ tickets, claimableTicketIds = [] }: { ti
               <td><span className="dashboard-avatar dashboard-avatar-green">{ticket.requester.name.slice(0, 2).toUpperCase()}</span>{ticket.requester.name}</td>
               <td><PriorityBadge priority={ticket.priority} /></td>
               <td><StatusBadge status={ticket.status} /></td>
-              <td>{ticket.assignedTo ? <><span className="dashboard-avatar dashboard-avatar-violet">{ticket.assignedTo.name.slice(0, 2).toUpperCase()}</span>{ticket.assignedTo.name}</> : <span className="dashboard-muted">Non affecté</span>}</td>
+              <td>{ticket.assignedTo ? <><span className="dashboard-avatar dashboard-avatar-assignee">{ticket.assignedTo.name.slice(0, 2).toUpperCase()}</span>{ticket.assignedTo.name}</> : <span className="dashboard-muted">Non affecté</span>}</td>
               <td><SlaBadge state={ticket.slaState} dueAt={ticket.slaDueAt} compact /></td>
               <td className="dashboard-table-action">{claimable.has(ticket.id) ? <ClaimTicketButton ticketId={ticket.id} /> : <Link href={`/tickets/${ticket.id}` as Route} className="dashboard-row-action">Ouvrir</Link>}</td>
             </tr>
@@ -234,7 +234,7 @@ export function OperationsWatchPanel({ tickets }: { tickets: DashboardTicket[] }
     <aside className="dashboard-watch-panel" aria-labelledby="watch-panel-title">
       <div className="dashboard-watch-header"><div><p className="eyebrow">Priorité opérationnelle</p><h2 id="watch-panel-title">À surveiller</h2></div><span className="dashboard-watch-count">{attention.length}</span></div>
       <div className="dashboard-watch-list">
-        {attention.map((ticket) => <Link key={ticket.id} href={`/tickets/${ticket.id}` as Route} className={`dashboard-watch-card dashboard-watch-${ticket.slaState.toLowerCase()}`}><div className="dashboard-watch-card-top"><strong>{ticket.reference}</strong><span>{ticket.slaState === "BREACHED" ? "SLA dépassé" : "SLA à surveiller"}</span></div><b>{ticket.title}</b><small><span className="dashboard-avatar dashboard-avatar-blue">{ticket.requester.name.slice(0, 2).toUpperCase()}</span>{ticket.requester.name}</small><em>{ticket.slaState === "BREACHED" ? formatHours(ticket.slaDueAt) : `SLA dans ${formatHours(ticket.slaDueAt)}`}</em></Link>)}
+        {attention.map((ticket) => <Link key={ticket.id} href={`/tickets/${ticket.id}` as Route} className={`dashboard-watch-card dashboard-watch-${ticket.slaState.toLowerCase()}`}><div className="dashboard-watch-card-top"><strong>{ticket.reference}</strong><span>{ticket.slaState === "BREACHED" ? "SLA dépassé" : "SLA à surveiller"}</span></div><b>{ticket.title}</b><small><span className="dashboard-avatar dashboard-avatar-watch">{ticket.requester.name.slice(0, 2).toUpperCase()}</span>{ticket.requester.name}</small><em>{ticket.slaState === "BREACHED" ? formatHours(ticket.slaDueAt) : `SLA dans ${formatHours(ticket.slaDueAt)}`}</em></Link>)}
         {!attention.length ? <p className="dashboard-empty">Aucune alerte SLA pour cette vue.</p> : null}
       </div>
       <Link href="/inbox?sla=attention" className="dashboard-watch-footer">Voir toutes les alertes <span aria-hidden="true">→</span></Link>

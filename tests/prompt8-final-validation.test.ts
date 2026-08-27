@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { extname, join, relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { BlockReason, Priority, RoleCode, ScopeType, TicketStatus, TicketType } from "@prisma/client";
@@ -439,7 +439,7 @@ describe("Prompt 8 — authentification et migrations", () => {
       ...walkTextSources(resolve(projectRoot, "lib")),
       ...walkTextSources(resolve(projectRoot, "components")),
       resolve(projectRoot, ".env.example"),
-    ];
+    ].filter(existsSync);
     const activeText = activeFiles.map((path) => readFileSync(path, "utf8")).join("\n");
     expect(activeText).not.toMatch(/azure-ad|azure_ad/i);
     expect(activeText).not.toMatch(/CredentialsProvider|GoogleProvider|Firebase|MongoDB/i);

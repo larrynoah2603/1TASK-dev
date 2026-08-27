@@ -7,7 +7,7 @@ export default async function ProfilePage() {
   const roles = roleCodes(user);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 profile-page-shell">
+    <div className="mx-auto max-w-4xl space-y-6 profile-page-shell identity-industrial profile-industrial">
       <header className="page-header flex items-start gap-4">
         <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-2xl bg-[#f0f0ff] text-lg font-bold text-[#4c4dba]">{user.image ? <img src={user.image} alt="Photo de profil" className="h-full w-full object-cover" /> : user.name.slice(0, 1).toUpperCase()}</div>
         <div><p className="eyebrow">Identité applicative</p><h1 className="mt-2">Mon profil 1TASK</h1><p className="page-header-description mt-2">Ces informations sont affichées en lecture seule. Toute modification doit être demandée à l’administrateur fonctionnel.</p></div>
