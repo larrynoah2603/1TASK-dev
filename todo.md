@@ -53,3 +53,12 @@
 - [x] Remplacer les variables et surcharges du mode clair par un socle unique papier chaud, encre et surfaces contrastées.
 - [x] Uniformiser les panneaux, formulaires, tableaux, menus, badges et états de tous les modules en mode clair.
 - [x] Tester la lisibilité et les invariants fonctionnels, puis livrer un correctif complet sans données ni secrets.
+- [x] Mettre à jour le test de densité historique afin qu’il attende les tokens de la reconstruction complète du mode clair.
+- [x] Valider que les tests densité et mode clair sont compatibles avant de poursuivre le commit de production.
+- [x] Réintégrer les règles de densité et de défilement du correctif précédent dans la reconstruction complète du thème clair.
+- [ ] Adapter le mode clair aux quatre couleurs demandées : #343434, #E6B31E, #FCFAF1 et #CACACA.
+- [ ] Vérifier les contrastes de texte, états, tableaux, champs et menus avec cette nouvelle palette.
+- [ ] Valider les contrats CSS et livrer une archive de remplacement de la version v2.
+- [x] Adapter le mode clair aux quatre couleurs demandées : #343434, #E6B31E, #FCFAF1 et #CACACA.
+- [x] Vérifier les contrastes de texte, états, tableaux, champs et menus avec cette nouvelle palette.
+- [x] Valider les contrats CSS et livrer une archive de remplacement de la version v2.

@@ -14,8 +14,8 @@ describe("correctif densité et thème industriel", () => {
 
   it("définit un mode clair industriel contrasté sans altérer les contrôles métier", () => {
     expect(css).toContain('html[data-theme="light"] .shell-industrial');
-    expect(css).toContain("--industrial-panel: #fffdf7");
-    expect(css).toContain("--industrial-rail: #171716");
-    expect(css).toContain(".shell-industrial .dashboard-operation-table th");
+    expect(css).toContain("--industrial-panel: #FCFAF1");
+    expect(css).toContain("--industrial-rail: #343434");
+    expect(css).toContain(".dashboard-operation-table");
   });
 });

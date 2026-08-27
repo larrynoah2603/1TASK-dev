@@ -12,9 +12,10 @@ describe("mode clair industriel unifié", () => {
 
   it("définit un socle clair unique avec des surfaces et une encre contrastées", () => {
     expect(css).toContain("Mode clair industriel unifié");
-    expect(css).toContain("--industrial-black: #e8e4db");
-    expect(css).toContain("--industrial-panel: #fffdf8");
-    expect(css).toContain("--industrial-ink: #24211c");
+    expect(css).toContain("--industrial-black: #CACACA");
+    expect(css).toContain("--industrial-panel: #FCFAF1");
+    expect(css).toContain("--industrial-ink: #343434");
+    expect(css).toContain("--industrial-red: #E6B31E");
     expect(css).toContain(".shell-sidebar-industrial");
   });
 
