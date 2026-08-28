@@ -4807,3 +4807,53 @@ html[data-theme="light"] :is(.shell-industrial, .admin-industrial) :is(.field-co
   .shell-industrial .dashboard-operations-table-card { padding: 0.85rem 0.85rem 0; }
   .shell-industrial .dashboard-operation-table-wrap { margin: 0.85rem -0.85rem 0; }
 }
+
+/* Boîte agent : lecture complète sur ordinateur, sans rail horizontal inutile. */
+.shell-industrial .inbox-operations-industrial .dashboard-operation-table-wrap {
+  overflow-x: hidden;
+}
+
+.shell-industrial .inbox-operations-industrial .inbox-operations-table-complete {
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.shell-industrial .inbox-operations-industrial .inbox-operations-table-complete th,
+.shell-industrial .inbox-operations-industrial .inbox-operations-table-complete td {
+  white-space: normal;
+}
+
+.shell-industrial .inbox-operations-industrial .inbox-operations-table-complete th:nth-child(1),
+.shell-industrial .inbox-operations-industrial .inbox-operations-ticket-cell { width: 45%; }
+.shell-industrial .inbox-operations-industrial .inbox-operations-table-complete th:nth-child(2),
+.shell-industrial .inbox-operations-industrial .inbox-operations-followup-cell { width: 27%; }
+.shell-industrial .inbox-operations-industrial .inbox-operations-table-complete th:nth-child(3),
+.shell-industrial .inbox-operations-industrial .inbox-operations-assignment-cell { width: 18%; }
+.shell-industrial .inbox-operations-industrial .inbox-operations-table-complete th:nth-child(4),
+.shell-industrial .inbox-operations-industrial .inbox-operations-action-cell { width: 10%; }
+
+.shell-industrial .inbox-operations-industrial .inbox-operations-ticket-cell small {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.shell-industrial .inbox-operations-industrial .inbox-operations-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.shell-industrial .inbox-operations-industrial .inbox-operations-assignment-cell { overflow-wrap: anywhere; }
+.shell-industrial .inbox-operations-industrial .inbox-operations-action-cell,
+.shell-industrial .inbox-operations-industrial .inbox-operations-action-heading { text-align: right; }
+
+@media (max-width: 767px) {
+  .shell-industrial .inbox-operations-industrial .dashboard-operation-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .shell-industrial .inbox-operations-industrial .inbox-operations-table-complete { min-width: 640px; }
+}

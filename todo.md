@@ -62,3 +62,7 @@
 - [x] Adapter le mode clair aux quatre couleurs demandées : #343434, #E6B31E, #FCFAF1 et #CACACA.
 - [x] Vérifier les contrastes de texte, états, tableaux, champs et menus avec cette nouvelle palette.
 - [x] Valider les contrats CSS et livrer une archive de remplacement de la version v2.
+- [x] Afficher la table de boîte agent sans scroll horizontal sur ordinateur en conservant les informations essentielles lisibles.
+- [x] Diagnostiquer et corriger l’erreur de transaction Prisma lors de la transition vers la résolution.
+- [x] Ajouter des tests de non-régression de table inbox et de transition de résolution, puis valider sans modifier les droits.
+- [ ] Exécuter la batterie complète typecheck, tests, lint, build et contrôle du diff dans le dépôt source C:\1task avant tout commit.

@@ -207,19 +207,15 @@ export function OperationsTicketTable({ tickets, claimableTicketIds = [] }: { ti
   if (!tickets.length) return <div className="dashboard-empty dashboard-table-empty">Aucun ticket actif pour ces critères.</div>;
   return (
     <div className="dashboard-operation-table-wrap">
-      <table className="dashboard-operation-table" aria-label="File opérationnelle">
-        <thead><tr><th>Référence</th><th>Objet</th><th>Demandeur</th><th>Priorité</th><th>Statut</th><th>Affecté à</th><th>SLA</th><th className="dashboard-table-action"> </th></tr></thead>
+      <table className="dashboard-operation-table inbox-operations-table-complete" aria-label="File opérationnelle">
+        <thead><tr><th>Ticket</th><th>Suivi</th><th>Traitement</th><th className="dashboard-table-action inbox-operations-action-heading">Action</th></tr></thead>
         <tbody>
           {tickets.map((ticket) => (
             <tr key={ticket.id}>
-              <td><Link href={`/tickets/${ticket.id}` as Route} className="dashboard-ticket-reference">{ticket.reference}</Link></td>
-              <td><Link href={`/tickets/${ticket.id}` as Route} className="dashboard-ticket-title">{ticket.title}</Link><small>{ticket.queue.name}</small></td>
-              <td><span className="dashboard-avatar dashboard-avatar-green">{ticket.requester.name.slice(0, 2).toUpperCase()}</span>{ticket.requester.name}</td>
-              <td><PriorityBadge priority={ticket.priority} /></td>
-              <td><StatusBadge status={ticket.status} /></td>
-              <td>{ticket.assignedTo ? <><span className="dashboard-avatar dashboard-avatar-assignee">{ticket.assignedTo.name.slice(0, 2).toUpperCase()}</span>{ticket.assignedTo.name}</> : <span className="dashboard-muted">Non affecté</span>}</td>
-              <td><SlaBadge state={ticket.slaState} dueAt={ticket.slaDueAt} compact /></td>
-              <td className="dashboard-table-action">{claimable.has(ticket.id) ? <ClaimTicketButton ticketId={ticket.id} /> : <Link href={`/tickets/${ticket.id}` as Route} className="dashboard-row-action">Ouvrir</Link>}</td>
+              <td className="inbox-operations-ticket-cell"><Link href={`/tickets/${ticket.id}` as Route} className="dashboard-ticket-reference">{ticket.reference}</Link><Link href={`/tickets/${ticket.id}` as Route} className="dashboard-ticket-title">{ticket.title}</Link><small>{ticket.serviceCatalogItem?.name ?? ticket.queue.name} · Demandeur : {ticket.requester.name}</small></td>
+              <td className="inbox-operations-followup-cell"><div className="inbox-operations-badges"><PriorityBadge priority={ticket.priority} /><StatusBadge status={ticket.status} /><SlaBadge state={ticket.slaState} dueAt={ticket.slaDueAt} compact /></div></td>
+              <td className="inbox-operations-assignment-cell">{ticket.assignedTo ? <><span className="dashboard-avatar dashboard-avatar-assignee">{ticket.assignedTo.name.slice(0, 2).toUpperCase()}</span>{ticket.assignedTo.name}</> : <span className="dashboard-muted">Non affecté</span>}</td>
+              <td className="dashboard-table-action inbox-operations-action-cell">{claimable.has(ticket.id) ? <ClaimTicketButton ticketId={ticket.id} /> : <Link href={`/tickets/${ticket.id}` as Route} className="dashboard-row-action">Ouvrir</Link>}</td>
             </tr>
           ))}
         </tbody>

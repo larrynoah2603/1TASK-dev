@@ -1733,7 +1733,8 @@ export async function transitionTicket(
     totalPausedMinutes,
   };
 
-  return prisma.$transaction(async (tx) => {
+  const notificationInputs: Parameters<typeof createInAppNotifications>[1] = [];
+  const updated = await prisma.$transaction(async (tx) => {
     const changed = await tx.ticket.updateMany({
       where: {
         id: ticketId,
@@ -1813,7 +1814,7 @@ export async function transitionTicket(
           .filter((recipientId) => recipientId !== actor.id) as string[],
       );
       for (const recipientId of recipients) {
-        await createInAppNotification(tx, {
+        notificationInputs.push({
           recipientId,
           ticketId,
           type: NotificationType.ADMINISTRATIVE_ACTION,
@@ -1824,7 +1825,7 @@ export async function transitionTicket(
     }
 
     if (parsed.status === TicketStatus.RESOLUTION_PENDING) {
-      await createInAppNotification(tx, {
+      notificationInputs.push({
         recipientId: ticket.requesterId,
         ticketId,
         type: NotificationType.TICKET_RESOLVED,
@@ -1833,7 +1834,7 @@ export async function transitionTicket(
       });
     }
     if (parsed.status === TicketStatus.CLOSED) {
-      await createInAppNotification(tx, {
+      notificationInputs.push({
         recipientId: ticket.requesterId,
         ticketId,
         type: NotificationType.TICKET_RESOLVED,
@@ -1846,7 +1847,7 @@ export async function transitionTicket(
         [ticket.assignedToId, ticket.queue.managerId].filter(Boolean) as string[],
       );
       for (const recipientId of recipients) {
-        await createInAppNotification(tx, {
+        notificationInputs.push({
           recipientId,
           ticketId,
           type: NotificationType.TICKET_REOPENED,
@@ -1856,7 +1857,22 @@ export async function transitionTicket(
       }
     }
     return updated;
+  }, {
+    maxWait: 10_000,
+    timeout: 15_000,
   });
+
+  if (notificationInputs.length) {
+    after(async () => {
+      try {
+        await createInAppNotifications(prisma, notificationInputs);
+      } catch (notificationError) {
+        console.error("Ticket transition committed, but notification delivery failed.", notificationError);
+      }
+    });
+  }
+
+  return updated;
 }
 
 export async function addTicketMessage(actor: UserContext, ticketId: string, input: AddMessageInput) {
