@@ -3962,6 +3962,57 @@ html[data-theme="light"] {
 .shell-industrial .portfolio-industrial .metric-card [class*="bg-rose-"] { border-color: color-mix(in srgb, #ee8a7d 48%, var(--industrial-line)) !important; background: #2c1c1a !important; }
 .shell-industrial .portfolio-industrial .metric-card [class*="bg-amber-"] { border-color: color-mix(in srgb, #e6b55d 48%, var(--industrial-line)) !important; background: #211c13 !important; }
 
+/* -------------------------------------------------------------------------- */
+/* Lot 9 — supervision des files : espace responsable de file (/queues).      */
+/* Cette couche ne change ni le périmètre, ni les rôles, ni les données.      */
+/* -------------------------------------------------------------------------- */
+.shell-industrial .queues-industrial { color: var(--industrial-ink); }
+.shell-industrial .queues-industrial .page-header {
+  margin: 0;
+  border-top: 3px solid var(--industrial-red);
+  border-bottom: 1px solid var(--industrial-line);
+  border-radius: 0;
+  background: var(--industrial-panel);
+  padding: 1.05rem 1.15rem;
+}
+.shell-industrial .queues-industrial .page-header h1,
+.shell-industrial .queues-industrial h2 { color: var(--industrial-ink); font-family: "Arial Narrow", Inter, sans-serif; font-weight: 900; letter-spacing: -0.035em; }
+.shell-industrial .queues-industrial .eyebrow { color: var(--industrial-gold); }
+.shell-industrial .queues-industrial .page-header-description { color: var(--industrial-muted); }
+.shell-industrial .queues-industrial a { color: var(--industrial-gold); }
+.shell-industrial .queues-industrial a:hover { color: #eed18f; text-decoration: none; }
+
+.shell-industrial .queues-industrial .metric-card {
+  border-color: var(--industrial-line);
+  border-top-color: var(--industrial-red);
+  border-radius: 0;
+  background: var(--industrial-panel);
+  box-shadow: none;
+}
+.shell-industrial .queues-industrial .metric-card:hover { border-color: var(--industrial-gold); border-top-color: var(--industrial-red); box-shadow: none; transform: none; }
+.shell-industrial .queues-industrial .metric-card [class*="text-slate-900"],
+.shell-industrial .queues-industrial .metric-card [class*="text-slate-800"] { color: var(--industrial-ink) !important; }
+.shell-industrial .queues-industrial .metric-card [class*="text-slate-500"],
+.shell-industrial .queues-industrial .metric-card [class*="text-slate-400"] { color: var(--industrial-muted) !important; }
+.shell-industrial .queues-industrial .metric-card [class*="text-emerald-"] { color: #9ed7b9 !important; }
+.shell-industrial .queues-industrial .metric-card [class*="text-amber-"] { color: #e6b55d !important; }
+.shell-industrial .queues-industrial .metric-card [class*="text-rose-"] { color: #ee8a7d !important; }
+.shell-industrial .queues-industrial .metric-card .queue-stat { border-color: var(--industrial-line); border-radius: 0; background: var(--industrial-panel-raised); }
+.shell-industrial .queues-industrial .metric-card .queue-stat-warning { border-color: color-mix(in srgb, #e6b55d 48%, var(--industrial-line)); background: #211c13; }
+.shell-industrial .queues-industrial .metric-card .queue-stat-danger { border-color: color-mix(in srgb, #ee8a7d 48%, var(--industrial-line)); background: #2c1c1a; }
+.shell-industrial .queues-industrial .queue-status-chip { border-radius: 0; background: #142820 !important; color: #9ed7b9 !important; }
+
+.shell-industrial .queues-industrial .panel {
+  border-color: var(--industrial-line);
+  border-radius: 0;
+  background: var(--industrial-panel);
+  box-shadow: none;
+  color: var(--industrial-muted);
+}
+
+.shell-industrial .queues-industrial .button-secondary { border-color: var(--industrial-line); border-radius: 0; background: transparent; color: var(--industrial-ink); }
+.shell-industrial .queues-industrial .button-secondary:hover { border-color: var(--industrial-gold); background: #191713; color: var(--industrial-gold); }
+
 .shell-industrial .portfolio-industrial .portfolio-query-panel,
 .shell-industrial .portfolio-industrial .portfolio-table-surface,
 .shell-industrial .portfolio-industrial .panel {
@@ -4038,6 +4089,7 @@ html[data-theme="light"] {
   .shell-industrial .portfolio-industrial .portfolio-query-panel { padding: 0.9rem; }
   .shell-industrial .portfolio-industrial .data-table th,
   .shell-industrial .portfolio-industrial .data-table td { padding-inline: 0.6rem; }
+  .shell-industrial .queues-industrial .page-header { padding: 0.9rem; }
 }
 
 /* -------------------------------------------------------------------------- */
