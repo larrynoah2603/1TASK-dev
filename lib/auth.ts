@@ -8,6 +8,7 @@ import MicrosoftEntraIDProvider from "@/lib/microsoft-entra-id-provider";
 import {
   getProfileEmail,
   isEmailAllowed,
+  isSignInAccountAllowed,
   isSupportedAuthProvider,
 } from "@/lib/auth-policy";
 
@@ -67,11 +68,19 @@ export const authOptions: NextAuthOptions = {
       const email = getProfileEmail(user.email, profile);
       if (!email || !isEmailAllowed(email)) return false;
 
-      const existing = await prisma.user.findUnique({
-        where: { email },
-        select: { status: true },
+      // An administrator disables an identity, not merely its current email
+      // address. Check both stable Entra object id and normalized email so an
+      // email rename cannot create a second account and bypass suspension.
+      const matchingAccounts = await prisma.user.findMany({
+        where: {
+          OR: [
+            { entraObjectId: account.providerAccountId },
+            { email: { equals: email, mode: "insensitive" } },
+          ],
+        },
+        select: { status: true, administrativelyDisabled: true },
       });
-      if (existing?.status === "DISABLED") return false;
+      if (matchingAccounts.some((candidate) => !isSignInAccountAllowed(candidate))) return false;
 
       return Boolean(account.access_token);
     },

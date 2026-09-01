@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getProfileEmail,
   isEmailAllowedForDomain,
+  isSignInAccountAllowed,
   isSupportedAuthProvider,
 } from "@/lib/auth-policy";
 
@@ -21,5 +22,11 @@ describe("politique d’authentification", () => {
     expect(isSupportedAuthProvider("microsoft-entra-id")).toBe(true);
     expect(isSupportedAuthProvider("google")).toBe(false);
     expect(isSupportedAuthProvider("credentials")).toBe(false);
+  });
+
+  it("refuse une identité suspendue même si son statut paraît actif", () => {
+    expect(isSignInAccountAllowed({ status: "ACTIVE", administrativelyDisabled: true })).toBe(false);
+    expect(isSignInAccountAllowed({ status: "DISABLED", administrativelyDisabled: false })).toBe(false);
+    expect(isSignInAccountAllowed({ status: "ACTIVE", administrativelyDisabled: false })).toBe(true);
   });
 });

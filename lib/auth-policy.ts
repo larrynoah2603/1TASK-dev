@@ -1,5 +1,10 @@
 export type SupportedAuthProvider = "microsoft-entra-id";
 
+export interface SignInAccountState {
+  status: "ACTIVE" | "DISABLED" | "PENDING_VALIDATION" | "PENDING_ASSIGNMENT";
+  administrativelyDisabled: boolean;
+}
+
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
 }
@@ -35,4 +40,13 @@ export function isEmailAllowed(email: string): boolean {
 
 export function isSupportedAuthProvider(provider: string): provider is SupportedAuthProvider {
   return provider === "microsoft-entra-id";
+}
+
+/**
+ * Administrative suspension always wins over the Entra lifecycle status.
+ * Keeping this rule independent from the callback makes the fail-closed
+ * decision directly testable.
+ */
+export function isSignInAccountAllowed(account: SignInAccountState): boolean {
+  return account.status !== "DISABLED" && !account.administrativelyDisabled;
 }
