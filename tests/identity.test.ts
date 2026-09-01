@@ -1,5 +1,5 @@
 import { RoleCode, UserStatus } from "@prisma/client";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   DEFAULT_BOOTSTRAP_ADMIN_EMAIL,
   isBootstrapFunctionalAdminEmail,
@@ -9,6 +9,10 @@ import {
 } from "@/lib/identity";
 
 describe("bootstrap administrateur 1TASK", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("reconnaît l’adresse de l’administrateur fonctionnel du prototype", () => {
     expect(DEFAULT_BOOTSTRAP_ADMIN_EMAIL).toBe("larry.andrianina@bios-expertise.com");
     expect(isBootstrapFunctionalAdminEmail("Larry.Andrianina@Bios-Expertise.com")).toBe(true);
@@ -16,6 +20,15 @@ describe("bootstrap administrateur 1TASK", () => {
 
   it("ne transforme pas une autre adresse en administrateur par défaut", () => {
     expect(isBootstrapFunctionalAdminEmail("agent@bios-expertise.com")).toBe(false);
+  });
+
+  it("exige une configuration explicite du bootstrap en production", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("ADMIN_EMAILS", "");
+    expect(isBootstrapFunctionalAdminEmail(DEFAULT_BOOTSTRAP_ADMIN_EMAIL)).toBe(false);
+
+    vi.stubEnv("ADMIN_EMAILS", DEFAULT_BOOTSTRAP_ADMIN_EMAIL);
+    expect(isBootstrapFunctionalAdminEmail(DEFAULT_BOOTSTRAP_ADMIN_EMAIL)).toBe(true);
   });
 
   it("active le véritable compte Entra bootstrapé sans passer par le seed", () => {

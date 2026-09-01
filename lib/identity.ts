@@ -182,8 +182,14 @@ export async function ensureRequesterRole(tx: Prisma.TransactionClient, userId: 
 }
 
 function bootstrapAdminEmails(): Set<string> {
+  // Never ship a source-controlled privileged identity as an implicit
+  // production administrator. Production bootstrap must be explicitly
+  // configured through ADMIN_EMAILS.
+  const developmentDefaults = process.env.NODE_ENV === "production"
+    ? []
+    : [DEFAULT_BOOTSTRAP_ADMIN_EMAIL];
   return new Set(
-    [DEFAULT_BOOTSTRAP_ADMIN_EMAIL, ...(process.env.ADMIN_EMAILS ?? "").split(/[;,]/)]
+    [...developmentDefaults, ...(process.env.ADMIN_EMAILS ?? "").split(/[;,]/)]
       .map((email) => email.trim().toLowerCase())
       .filter(Boolean),
   );

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "packageManager": "npm@11.4.2",
   "scripts": {
     "dev": "next dev",
     "predev": "prisma generate",
@@ -35,6 +36,7 @@
     "@types/node": "26.1.2",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
+    "dotenv": "16.6.1",
     "eslint": "9.39.5",
     "eslint-config-next": "16.3.0",
     "postcss": "8.5.26",
@@ -43,9 +45,6 @@
     "tsx": "4.21.0",
     "typescript": "5.9.3",
     "vitest": "4.1.10"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
   },
   "engines": {
     "node": ">=20.9.0"
