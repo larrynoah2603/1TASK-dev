@@ -3,7 +3,7 @@ import { errorResponse } from "@/lib/http";
 import {
   listNotificationPreferences,
   updateNotificationPreference,
-} from "@/lib/notification-service";
+} from "@/lib/knowledge-service";
 import { requireSessionUserContext } from "@/lib/server-auth";
 import { notificationPreferenceSchema } from "@/lib/validation";
 

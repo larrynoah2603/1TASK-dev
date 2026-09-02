@@ -12,7 +12,7 @@ export async function PATCH(
 ) {
   try {
     const actor = await requireAdminAccess(
-      "SECURITY",
+      "FUNCTIONAL",
     );
 
 

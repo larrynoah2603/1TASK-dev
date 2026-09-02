@@ -9,7 +9,7 @@ export async function POST(
 ) {
   try {
     const actor = await requireAdminAccess(
-      "SECURITY",
+      "FUNCTIONAL",
     );
 
 
