@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/http";
 import { assignTicket } from "@/lib/ticket-service";
-import { requireSessionUserContext } from "@/lib/server-auth";
+import { requirePermission } from "@/lib/server-auth";
 import { assignmentSchema } from "@/lib/validation";
 
 export async function POST(
@@ -9,10 +9,31 @@ export async function POST(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const actor = await requireSessionUserContext();
+    const actor = await requirePermission("ticket:assign");
+
     const { id } = await context.params;
-    const ticket = await assignTicket(actor, id, assignmentSchema.parse(await request.json()));
+
+    const payload = assignmentSchema.parse(
+      await request.json(),
+    );
+       if (!id || id.trim().length === 0) {
+  return NextResponse.json(
+    {
+      error: "Identifiant ticket invalide."
+    },
+    {
+      status:400
+    }
+  );
+}
+    const ticket = await assignTicket(
+      actor,
+      id,
+      payload,
+    );
+
     return NextResponse.json(ticket);
+
   } catch (error) {
     return errorResponse(error);
   }

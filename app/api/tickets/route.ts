@@ -1,15 +1,23 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/http";
+import {
+  requirePermission,
+  requireSessionUserContext,
+} from "@/lib/server-auth";
 import { listVisibleTickets, createTicket } from "@/lib/ticket-service";
-import { requireSessionUserContext } from "@/lib/server-auth";
-import { createTicketSchema, ticketListQuerySchema } from "@/lib/validation";
+import {
+  createTicketSchema,
+  ticketListQuerySchema,
+} from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
-    const actor = await requireSessionUserContext();
+    const actor = await requirePermission("ticket:read");
+
     const url = new URL(request.url);
+
     const parsed = ticketListQuerySchema.parse({
       status: url.searchParams.get("status") || undefined,
       priority: url.searchParams.get("priority") || undefined,
@@ -25,6 +33,7 @@ export async function GET(request: Request) {
       pageSize: url.searchParams.get("pageSize") || undefined,
       take: url.searchParams.get("take") || undefined,
     });
+    const MAX_PAGE_SIZE = 100;
     const tickets = await listVisibleTickets(actor, {
       status: parsed.status,
       priority: parsed.priority,
@@ -40,18 +49,28 @@ export async function GET(request: Request) {
       page: parsed.page,
       pageSize: parsed.pageSize,
     });
+
     return NextResponse.json(tickets);
   } catch (error) {
     return errorResponse(error);
   }
 }
 
+
 export async function POST(request: Request) {
   try {
-    const actor = await requireSessionUserContext();
-    const body = createTicketSchema.parse(await request.json());
+    const actor = await requirePermission("ticket:create");
+
+    const body = createTicketSchema.parse(
+      await request.json()
+    );
+
     const ticket = await createTicket(actor, body);
-    return NextResponse.json(ticket, { status: 201 });
+
+    return NextResponse.json(ticket, {
+      status: 201,
+    });
+
   } catch (error) {
     return errorResponse(error);
   }

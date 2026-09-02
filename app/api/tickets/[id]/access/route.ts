@@ -4,13 +4,71 @@ import { grantConfidentialAccess } from "@/lib/ticket-service";
 import { requireSessionUserContext } from "@/lib/server-auth";
 import { confidentialAccessSchema } from "@/lib/validation";
 
-export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
+
+function isValidTicketId(id: string) {
+  return Boolean(
+    id &&
+    id.trim().length > 0,
+  );
+}
+
+
+
+export async function POST(
+  request: Request,
+  context: {
+    params: Promise<{ id: string }>;
+  },
+) {
+
   try {
-    const actor = await requireSessionUserContext();
-    const { id } = await context.params;
-    const result = await grantConfidentialAccess(actor, id, confidentialAccessSchema.parse(await request.json()));
+
+    const actor =
+      await requireSessionUserContext();
+
+
+    const { id } =
+      await context.params;
+
+
+
+    if (!isValidTicketId(id)) {
+
+      return NextResponse.json(
+        {
+          error:
+            "Identifiant ticket invalide.",
+        },
+        {
+          status:400,
+        },
+      );
+
+    }
+
+
+
+    const payload =
+      confidentialAccessSchema.parse(
+        await request.json(),
+      );
+
+
+
+    const result =
+      await grantConfidentialAccess(
+        actor,
+        id,
+        payload,
+      );
+
+
     return NextResponse.json(result);
-  } catch (error) {
+
+
+  } catch(error) {
+
     return errorResponse(error);
+
   }
 }
