@@ -1,25 +1,113 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/http";
-import { createDossier, listDossiersForViewer } from "@/lib/production-service";
+import {
+  createDossier,
+  listDossiersForViewer,
+} from "@/lib/production-service";
 import { requireSessionUserContext } from "@/lib/server-auth";
 import { dossierSchema } from "@/lib/validation";
 
-export async function GET(request: Request) {
-  try {
-    const actor = await requireSessionUserContext();
-    const query = new URL(request.url).searchParams.get("q") ?? undefined;
-    return NextResponse.json({ dossiers: await listDossiersForViewer(actor, query) });
-  } catch (error) {
-    return errorResponse(error);
+
+function requirePermission(
+  actor: Awaited<ReturnType<typeof requireSessionUserContext>>,
+  permission: string,
+) {
+
+  const permissions =
+    actor.roleAssignments.flatMap(
+      (assignment) =>
+        assignment.role.permissions.map(
+          (item) => item.permission.code,
+        ),
+    );
+
+
+  if (!permissions.includes(permission)) {
+    throw new Error(
+      "Permission insuffisante.",
+    );
   }
 }
 
-export async function POST(request: Request) {
+
+
+export async function GET(
+  request: Request,
+) {
+
   try {
-    const actor = await requireSessionUserContext();
-    const dossier = await createDossier(actor, dossierSchema.parse(await request.json()));
-    return NextResponse.json(dossier, { status: 201 });
+
+    const actor =
+      await requireSessionUserContext();
+
+
+    requirePermission(
+      actor,
+      "portfolio:read",
+    );
+
+
+    const query =
+      new URL(request.url)
+        .searchParams
+        .get("q")
+        ?? undefined;
+
+
+    return NextResponse.json({
+      dossiers:
+        await listDossiersForViewer(
+          actor,
+          query,
+        ),
+    });
+
+
   } catch (error) {
+
     return errorResponse(error);
+
+  }
+}
+
+
+
+export async function POST(
+  request: Request,
+) {
+
+  try {
+
+    const actor =
+      await requireSessionUserContext();
+
+
+    requirePermission(
+      actor,
+      "portfolio:manage",
+    );
+
+
+    const dossier =
+      await createDossier(
+        actor,
+        dossierSchema.parse(
+          await request.json(),
+        ),
+      );
+
+
+    return NextResponse.json(
+      dossier,
+      {
+        status: 201,
+      },
+    );
+
+
+  } catch (error) {
+
+    return errorResponse(error);
+
   }
 }

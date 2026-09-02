@@ -1,25 +1,69 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/http";
-import { createKnowledgeArticle, listKnowledgeArticles } from "@/lib/knowledge-service";
+import { addWorklog } from "@/lib/production-service";
 import { requireSessionUserContext } from "@/lib/server-auth";
-import { knowledgeArticleSchema } from "@/lib/validation";
+import { worklogSchema } from "@/lib/validation";
 
-export async function GET(request: Request) {
-  try {
-    const actor = await requireSessionUserContext();
-    const query = new URL(request.url).searchParams.get("q") ?? undefined;
-    return NextResponse.json({ articles: await listKnowledgeArticles(actor, query) });
-  } catch (error) {
-    return errorResponse(error);
+
+function requirePermission(
+  actor: Awaited<ReturnType<typeof requireSessionUserContext>>,
+  permission: string,
+) {
+
+  const permissions =
+    actor.roleAssignments.flatMap(
+      (assignment) =>
+        assignment.role.permissions.map(
+          (item) => item.permission.code,
+        ),
+    );
+
+
+  if (!permissions.includes(permission)) {
+    throw new Error(
+      "Permission insuffisante.",
+    );
   }
 }
 
-export async function POST(request: Request) {
+
+
+export async function POST(
+  request: Request,
+) {
+
   try {
-    const actor = await requireSessionUserContext();
-    const article = await createKnowledgeArticle(actor, knowledgeArticleSchema.parse(await request.json()));
-    return NextResponse.json(article, { status: 201 });
+
+    const actor =
+      await requireSessionUserContext();
+
+
+    requirePermission(
+      actor,
+      "worklog:create",
+    );
+
+
+    const worklog =
+      await addWorklog(
+        actor,
+        worklogSchema.parse(
+          await request.json(),
+        ),
+      );
+
+
+    return NextResponse.json(
+      worklog,
+      {
+        status: 201,
+      },
+    );
+
+
   } catch (error) {
+
     return errorResponse(error);
+
   }
 }

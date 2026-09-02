@@ -4,22 +4,103 @@ import { createAsset, listAssetsForViewer } from "@/lib/production-service";
 import { requireSessionUserContext } from "@/lib/server-auth";
 import { assetSchema } from "@/lib/validation";
 
-export async function GET(request: Request) {
-  try {
-    const actor = await requireSessionUserContext();
-    const query = new URL(request.url).searchParams.get("q") ?? undefined;
-    return NextResponse.json({ assets: await listAssetsForViewer(actor, query) });
-  } catch (error) {
-    return errorResponse(error);
+
+function requirePermission(
+  actor: Awaited<ReturnType<typeof requireSessionUserContext>>,
+  permission: string,
+) {
+  const permissions =
+    actor.roleAssignments.flatMap(
+      (assignment) =>
+        assignment.role.permissions.map(
+          (item) => item.permission.code,
+        ),
+    );
+
+
+  if (!permissions.includes(permission)) {
+    throw new Error(
+      "Permission insuffisante.",
+    );
   }
 }
 
-export async function POST(request: Request) {
+
+export async function GET(
+  request: Request,
+) {
   try {
-    const actor = await requireSessionUserContext();
-    const asset = await createAsset(actor, assetSchema.parse(await request.json()));
-    return NextResponse.json(asset, { status: 201 });
+
+    const actor =
+      await requireSessionUserContext();
+
+
+    requirePermission(
+      actor,
+      "asset:read",
+    );
+
+
+    const query =
+      new URL(request.url)
+        .searchParams
+        .get("q")
+        ?? undefined;
+
+
+    return NextResponse.json({
+      assets:
+        await listAssetsForViewer(
+          actor,
+          query,
+        ),
+    });
+
+
   } catch (error) {
+
     return errorResponse(error);
+
+  }
+}
+
+
+
+export async function POST(
+  request: Request,
+) {
+  try {
+
+    const actor =
+      await requireSessionUserContext();
+
+
+    requirePermission(
+      actor,
+      "asset:manage",
+    );
+
+
+    const asset =
+      await createAsset(
+        actor,
+        assetSchema.parse(
+          await request.json(),
+        ),
+      );
+
+
+    return NextResponse.json(
+      asset,
+      {
+        status: 201,
+      },
+    );
+
+
+  } catch (error) {
+
+    return errorResponse(error);
+
   }
 }
