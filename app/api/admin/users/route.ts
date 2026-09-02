@@ -5,13 +5,26 @@ import { requireAdminAccess } from "@/lib/server-auth";
 
 export const dynamic = "force-dynamic";
 
+
 export async function GET() {
   try {
-    const actor = await requireAdminAccess("FUNCTIONAL");
-    const configuration = await getAdminConfiguration(actor);
-    return NextResponse.json(configuration.users, {
-      headers: { "Cache-Control": "no-store" },
-    });
+    const actor = await requireAdminAccess(
+      "SECURITY",
+    );
+
+    const configuration =
+      await getAdminConfiguration(actor);
+
+
+    return NextResponse.json(
+      configuration.users,
+      {
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      },
+    );
+
   } catch (error) {
     return errorResponse(error);
   }

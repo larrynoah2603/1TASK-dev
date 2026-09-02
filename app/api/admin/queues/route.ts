@@ -3,10 +3,34 @@ import { errorResponse } from "@/lib/http";
 import { saveQueue } from "@/lib/admin-service";
 import { requireAdminAccess } from "@/lib/server-auth";
 
-export async function POST(request: Request) {
+
+export async function POST(
+  request: Request,
+) {
   try {
-    const actor = await requireAdminAccess("FUNCTIONAL");
-    return NextResponse.json(await saveQueue(actor, undefined, await request.json()), { status: 201 });
+    const actor = await requireAdminAccess(
+      "SECURITY",
+    );
+
+
+    const payload = await request.json();
+
+
+    const queue = await saveQueue(
+      actor,
+      undefined,
+      payload,
+    );
+
+
+    return NextResponse.json(
+      queue,
+      {
+        status: 201,
+      },
+    );
+
+
   } catch (error) {
     return errorResponse(error);
   }

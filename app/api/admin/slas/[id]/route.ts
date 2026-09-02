@@ -3,11 +3,36 @@ import { errorResponse } from "@/lib/http";
 import { saveSla } from "@/lib/admin-service";
 import { requireAdminAccess } from "@/lib/server-auth";
 
-export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
+
+export async function PATCH(
+  request: Request,
+  context: {
+    params: Promise<{ id: string }>;
+  },
+) {
   try {
-    const actor = await requireAdminAccess("FUNCTIONAL");
+    const actor = await requireAdminAccess(
+      "SECURITY",
+    );
+
+
     const { id } = await context.params;
-    return NextResponse.json(await saveSla(actor, id, await request.json()));
+
+
+    const payload =
+      await request.json();
+
+
+    const sla = await saveSla(
+      actor,
+      id,
+      payload,
+    );
+
+
+    return NextResponse.json(sla);
+
+
   } catch (error) {
     return errorResponse(error);
   }
