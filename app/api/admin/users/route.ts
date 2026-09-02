@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const actor = await requireAdminAccess(
-      "SECURITY",
+      "FUNCTIONAL",
     );
 
     const configuration =

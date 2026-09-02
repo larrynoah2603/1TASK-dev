@@ -37,7 +37,7 @@ export async function PUT(
 ) {
   try {
     const actor = await requireAdminAccess(
-      "SECURITY",
+      "FUNCTIONAL",
     );
 
 
@@ -65,7 +65,7 @@ export async function POST(
 ) {
   try {
     const actor = await requireAdminAccess(
-      "SECURITY",
+      "FUNCTIONAL",
     );
 
 

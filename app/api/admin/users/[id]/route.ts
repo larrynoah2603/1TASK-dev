@@ -15,9 +15,7 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const actor = await requireAdminAccess(
-      "SECURITY",
-    );
+    const actor = await requireAdminAccess("FUNCTIONAL");
 
 
     const { id } = await context.params;
@@ -47,9 +45,7 @@ export async function GET(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const actor = await requireAdminAccess(
-      "FUNCTIONAL",
-    );
+    const actor = await requireAdminAccess("FUNCTIONAL");
 
 
     const { id } = await context.params;
