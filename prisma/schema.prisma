@@ -677,6 +677,7 @@ model Worklog {
 
   @@index([ticketId, createdAt])
   @@index([missionId, createdAt])
+  @@index([missionId, startedAt])
   @@index([userId, startedAt])
 }
 
@@ -826,6 +827,7 @@ model Notification {
   ticket      Ticket?             @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 
   @@index([recipientId, status, createdAt])
+  @@index([recipientId, createdAt])
   @@index([ticketId, type, createdAt])
 }
 

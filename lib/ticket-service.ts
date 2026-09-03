@@ -2203,11 +2203,12 @@ export async function listVisibleQueues(
     }),
   );
   const visibleWhere = await visibleTicketWhere(actor, { workQueue: true });
-  return Promise.all(visibleQueues.map(async (queue) => {
-    const queueWhere = { AND: [visibleWhere, { queueId: queue.id }] };
-    const queueTickets = await prisma.ticket.findMany({
-      where: queueWhere,
+  const visibleQueueIds = visibleQueues.map((queue) => queue.id);
+  const visibleTickets = visibleQueueIds.length
+    ? await prisma.ticket.findMany({
+      where: { AND: [visibleWhere, { queueId: { in: visibleQueueIds } }] },
       select: {
+        queueId: true,
         priority: true,
         status: true,
         firstResponseDueAt: true,
@@ -2216,7 +2217,17 @@ export async function listVisibleQueues(
         resolvedAt: true,
         slaPausedAt: true,
       },
-    });
+    })
+    : [];
+  const ticketsByQueue = new Map<string, typeof visibleTickets>();
+  for (const ticket of visibleTickets) {
+    const queueTickets = ticketsByQueue.get(ticket.queueId) ?? [];
+    queueTickets.push(ticket);
+    ticketsByQueue.set(ticket.queueId, queueTickets);
+  }
+
+  return visibleQueues.map((queue) => {
+    const queueTickets = ticketsByQueue.get(queue.id) ?? [];
     const activeTickets = queueTickets.filter((ticket) => ticket.status !== TicketStatus.CLOSED);
     const slaAtRisk = activeTickets.filter((ticket) => {
       const state = getTicketSlaState(ticket).state;
@@ -2236,7 +2247,7 @@ export async function listVisibleQueues(
         slaAtRisk,
       },
     };
-  }));
+  });
 }
 
 const MAX_TICKET_ATTACHMENT_BYTES = 10 * 1024 * 1024;

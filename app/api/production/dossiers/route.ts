@@ -4,8 +4,8 @@ import {
   createDossier,
   listDossiersForViewer,
 } from "@/lib/production-service";
-import { requireSessionUserContext } from "@/lib/server-auth";
-import { dossierSchema } from "@/lib/validation";
+import { AuthorizationError, requireSessionUserContext } from "@/lib/server-auth";
+import { dossierSchema, productionSearchQuerySchema } from "@/lib/validation";
 
 
 function requirePermission(
@@ -23,9 +23,7 @@ function requirePermission(
 
 
   if (!permissions.includes(permission)) {
-    throw new Error(
-      "Permission insuffisante.",
-    );
+    throw new AuthorizationError("Permission insuffisante.");
   }
 }
 
@@ -47,11 +45,9 @@ export async function GET(
     );
 
 
-    const query =
-      new URL(request.url)
-        .searchParams
-        .get("q")
-        ?? undefined;
+    const { q: query } = productionSearchQuerySchema.parse({
+      q: new URL(request.url).searchParams.get("q") ?? undefined,
+    });
 
 
     return NextResponse.json({
