@@ -22,9 +22,29 @@ describe("calcul des SLA", () => {
 
   it("déduit le temps de blocage du pourcentage SLA", () => {
     const start = new Date(2026, 7, 3, 8, 0, 0);
-    const due = new Date(2026, 7, 3, 12, 0, 0);
+    const due = new Date(2026, 7, 3, 14, 0, 0);
     const now = new Date(2026, 7, 3, 12, 0, 0);
     expect(slaProgressPercent(now, start, due, 120)).toBe(50);
+  });
+
+  it("calcule les horaires ouvrés dans le fuseau du calendrier", () => {
+    const start = new Date("2026-08-03T04:00:00.000Z"); // 07:00 à Antananarivo
+    const result = addBusinessMinutes(start, 60, {
+      ...calendar,
+      timezone: "Indian/Antananarivo",
+    });
+
+    expect(result.toISOString()).toBe("2026-08-03T06:00:00.000Z"); // 09:00 locale
+  });
+
+  it("saute un jour férié défini dans le calendrier local", () => {
+    const result = addBusinessMinutes(new Date("2026-08-02T12:00:00.000Z"), 60, {
+      ...calendar,
+      timezone: "UTC",
+      holidays: [new Date("2026-08-03T00:00:00.000Z")],
+    });
+
+    expect(result.toISOString()).toBe("2026-08-04T09:00:00.000Z");
   });
 
   it("distingue un SLA proche, dépassé et en pause", () => {

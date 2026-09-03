@@ -17,9 +17,9 @@ describe("lot 4 identity industrial visual contract", () => {
     expect(page).toContain("requireAuthenticatedUser()");
     expect(page).toContain("listUserNotifications(user, 100)");
     expect(list).toContain('fetchWithTimeout("/api/notifications?take=100"');
-    expect(list).toContain('fetch("/api/notifications/read-all"');
+    expect(list).toContain('fetchWithTimeout("/api/notifications/read-all"');
     expect(center).toContain('fetchWithTimeout("/api/notifications?take=8"');
-    expect(center).toContain('fetch("/api/notifications/read-all"');
+    expect(center).toContain('fetchWithTimeout("/api/notifications/read-all"');
     expect(page).toContain("notification-industrial");
   });
 

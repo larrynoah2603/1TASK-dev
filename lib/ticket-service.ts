@@ -1020,6 +1020,22 @@ export async function listVisibleTickets(actor: UserContext, options: TicketList
   return (await listVisibleTicketsPage(actor, options)).tickets;
 }
 
+export async function getRequesterTicketSummary(actor: UserContext) {
+  const current = await requireCurrentActor(actor);
+  const visibleWhere = await visibleTicketWhere(current);
+  const grouped = await prisma.ticket.groupBy({
+    by: ["status"],
+    where: { AND: [visibleWhere, { requesterId: current.id }] },
+    _count: { _all: true },
+  });
+  return Object.fromEntries(
+    Object.values(TicketStatus).map((status) => [
+      status,
+      grouped.find((row) => row.status === status)?._count._all ?? 0,
+    ]),
+  ) as Record<TicketStatus, number>;
+}
+
 export async function getOperationalTicketSummary(actor: UserContext) {
   const { actor: current, where } = await buildTicketListWhere(actor, { workQueue: true });
   const activeWhere: Prisma.TicketWhereInput = { AND: [where, { status: { not: TicketStatus.CLOSED } }] };
@@ -1280,40 +1296,42 @@ export async function qualifyTicket(actor: UserContext, ticketId: string, input:
   }
   if (ticket.status === TicketStatus.CLOSED) throw new DomainError("Un ticket clôturé ne peut plus être qualifié.", 409);
   const priority = parsed.priority ?? calculatePriorityFromImpactUrgency(parsed.impact, parsed.urgency);
-  const changed = await prisma.ticket.updateMany({
-    where: { id: ticketId, status: ticket.status },
-    data: {
-      impact: parsed.impact,
-      urgency: parsed.urgency,
-      priority,
-      priorityOverrideReason: parsed.priority ? parsed.reason : null,
-      legalDueAt: parsed.legalDueAt ?? null,
-    },
-  });
-  if (changed.count !== 1) throw new DomainError("Le ticket a changé avant la qualification. Rechargez la fiche puis réessayez.", 409);
-  const updated = await prisma.ticket.findUnique({ where: { id: ticketId }, include: ticketSecurityInclude });
-  if (!updated) throw new DomainError("Ticket introuvable après la qualification.", 404);
-  await prisma.ticketEvent.create({
-    data: {
-      ticketId,
+  return prisma.$transaction(async (tx) => {
+    const changed = await tx.ticket.updateMany({
+      where: { id: ticketId, status: ticket.status },
+      data: {
+        impact: parsed.impact,
+        urgency: parsed.urgency,
+        priority,
+        priorityOverrideReason: parsed.priority ? parsed.reason : null,
+        legalDueAt: parsed.legalDueAt ?? null,
+      },
+    });
+    if (changed.count !== 1) throw new DomainError("Le ticket a changé avant la qualification. Rechargez la fiche puis réessayez.", 409);
+    const updated = await tx.ticket.findUnique({ where: { id: ticketId }, include: ticketSecurityInclude });
+    if (!updated) throw new DomainError("Ticket introuvable après la qualification.", 404);
+    await tx.ticketEvent.create({
+      data: {
+        ticketId,
+        actorId: actor.id,
+        queueId: ticket.queueId,
+        eventType: TicketEventType.QUALIFIED,
+        fromStatus: ticket.status,
+        toStatus: ticket.status,
+        metadata: { impact: parsed.impact, urgency: parsed.urgency, priority, legalDueAt: parsed.legalDueAt, reason: parsed.reason },
+      },
+    });
+    await appendAuditLog(tx, {
       actorId: actor.id,
-      queueId: ticket.queueId,
-      eventType: TicketEventType.QUALIFIED,
-      fromStatus: ticket.status,
-      toStatus: ticket.status,
-      metadata: { impact: parsed.impact, urgency: parsed.urgency, priority, legalDueAt: parsed.legalDueAt, reason: parsed.reason },
-    },
+      action: "TICKET_QUALIFIED",
+      objectType: "Ticket",
+      objectId: ticketId,
+      oldValue: { impact: ticket.impact, urgency: ticket.urgency, priority: ticket.priority, legalDueAt: ticket.legalDueAt },
+      newValue: { impact: parsed.impact, urgency: parsed.urgency, priority, legalDueAt: parsed.legalDueAt ?? null },
+      reason: parsed.reason,
+    });
+    return updated;
   });
-  await appendAuditLog(prisma, {
-    actorId: actor.id,
-    action: "TICKET_QUALIFIED",
-    objectType: "Ticket",
-    objectId: ticketId,
-    oldValue: { impact: ticket.impact, urgency: ticket.urgency, priority: ticket.priority, legalDueAt: ticket.legalDueAt },
-    newValue: { impact: parsed.impact, urgency: parsed.urgency, priority, legalDueAt: parsed.legalDueAt ?? null },
-    reason: parsed.reason,
-  });
-  return updated;
 }
 
 export async function createTicketLink(actor: UserContext, ticketId: string, input: TicketLinkInput) {
@@ -1375,9 +1393,17 @@ export async function addSlaException(actor: UserContext, ticketId: string, inpu
     await tx.ticket.update({ where: { id: ticketId }, data: { firstResponseDueAt, resolutionDueAt } });
     const created = await tx.slaException.create({ data: { ticketId, createdById: actor.id, reason: parsed.reason, addedMinutes: parsed.addedMinutes, firstResponseDueAt, resolutionDueAt } });
     await tx.ticketEvent.create({ data: { ticketId, actorId: actor.id, queueId: ticket.queueId, eventType: TicketEventType.SLA_EXCEPTION_CREATED, metadata: { addedMinutes: parsed.addedMinutes, reason: parsed.reason, firstResponseDueAt, resolutionDueAt } } });
+    await appendAuditLog(tx, {
+      actorId: actor.id,
+      action: "SLA_EXCEPTION_CREATED",
+      objectType: "Ticket",
+      objectId: ticketId,
+      oldValue: { firstResponseDueAt: ticket.firstResponseDueAt, resolutionDueAt: ticket.resolutionDueAt },
+      newValue: { addedMinutes: parsed.addedMinutes, firstResponseDueAt, resolutionDueAt },
+      reason: parsed.reason,
+    });
     return created;
   });
-  await appendAuditLog(prisma, { actorId: actor.id, action: "SLA_EXCEPTION_CREATED", objectType: "Ticket", objectId: ticketId, newValue: { addedMinutes: parsed.addedMinutes, firstResponseDueAt, resolutionDueAt }, reason: parsed.reason });
   return exception;
 }
 
@@ -1701,6 +1727,7 @@ export async function transitionTicket(
     );
     totalPausedMinutes += pauseDurationMinutes;
   }
+  const pauseExtension = pauseDurationMinutes * 60_000;
 
   const data: Prisma.TicketUncheckedUpdateInput = {
     status: parsed.status,
@@ -1731,6 +1758,12 @@ export async function transitionTicket(
           ? null
           : undefined,
     totalPausedMinutes,
+    firstResponseDueAt: pauseExtension && ticket.firstResponseDueAt && !ticket.firstRespondedAt
+      ? new Date(ticket.firstResponseDueAt.getTime() + pauseExtension)
+      : undefined,
+    resolutionDueAt: pauseExtension && ticket.resolutionDueAt && !ticket.resolvedAt
+      ? new Date(ticket.resolutionDueAt.getTime() + pauseExtension)
+      : undefined,
   };
 
   const notificationInputs: Parameters<typeof createInAppNotifications>[1] = [];
@@ -1773,6 +1806,8 @@ export async function transitionTicket(
           administrativeOverride,
           pauseDurationMinutes,
           totalPausedMinutes,
+          firstResponseDueAt: updated.firstResponseDueAt,
+          resolutionDueAt: updated.resolutionDueAt,
         },
       },
     });
@@ -1785,11 +1820,15 @@ export async function transitionTicket(
         status: ticket.status,
         assignedToId: ticket.assignedToId,
         totalPausedMinutes: ticket.totalPausedMinutes,
+        firstResponseDueAt: ticket.firstResponseDueAt,
+        resolutionDueAt: ticket.resolutionDueAt,
       },
       newValue: {
         status: parsed.status,
         assignedToId: updated.assignedTo?.id ?? null,
         totalPausedMinutes,
+        firstResponseDueAt: updated.firstResponseDueAt,
+        resolutionDueAt: updated.resolutionDueAt,
       },
       reason: parsed.reason ?? parsed.reopenedReason ?? parsed.blockDetails,
     });
@@ -2203,11 +2242,12 @@ export async function listVisibleQueues(
     }),
   );
   const visibleWhere = await visibleTicketWhere(actor, { workQueue: true });
-  return Promise.all(visibleQueues.map(async (queue) => {
-    const queueWhere = { AND: [visibleWhere, { queueId: queue.id }] };
-    const queueTickets = await prisma.ticket.findMany({
-      where: queueWhere,
+  const visibleQueueIds = visibleQueues.map((queue) => queue.id);
+  const visibleTickets = visibleQueueIds.length
+    ? await prisma.ticket.findMany({
+      where: { AND: [visibleWhere, { queueId: { in: visibleQueueIds } }] },
       select: {
+        queueId: true,
         priority: true,
         status: true,
         firstResponseDueAt: true,
@@ -2216,7 +2256,17 @@ export async function listVisibleQueues(
         resolvedAt: true,
         slaPausedAt: true,
       },
-    });
+    })
+    : [];
+  const ticketsByQueue = new Map<string, typeof visibleTickets>();
+  for (const ticket of visibleTickets) {
+    const queueTickets = ticketsByQueue.get(ticket.queueId) ?? [];
+    queueTickets.push(ticket);
+    ticketsByQueue.set(ticket.queueId, queueTickets);
+  }
+
+  return visibleQueues.map((queue) => {
+    const queueTickets = ticketsByQueue.get(queue.id) ?? [];
     const activeTickets = queueTickets.filter((ticket) => ticket.status !== TicketStatus.CLOSED);
     const slaAtRisk = activeTickets.filter((ticket) => {
       const state = getTicketSlaState(ticket).state;
@@ -2236,7 +2286,7 @@ export async function listVisibleQueues(
         slaAtRisk,
       },
     };
-  }));
+  });
 }
 
 const MAX_TICKET_ATTACHMENT_BYTES = 10 * 1024 * 1024;

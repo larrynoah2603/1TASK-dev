@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { errorResponse } from "@/lib/http";
 import { runSlaMonitor } from "@/lib/sla-monitor";
 
 
@@ -77,18 +78,6 @@ export async function POST(
 
 
   } catch (error) {
-
-    return NextResponse.json(
-      {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Échec du moniteur SLA.",
-      },
-      {
-        status: 500,
-      },
-    );
+    return errorResponse(error);
   }
 }

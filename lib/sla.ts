@@ -51,6 +51,7 @@ export interface BusinessCalendarInput {
   workdayStartMinute: number;
   workdayEndMinute: number;
   holidays: Date[];
+  timezone?: string;
 }
 
 export interface SlaInput {
@@ -59,24 +60,70 @@ export interface SlaInput {
   calculationMode: SlaCalculationMode;
 }
 
-function dateKey(date: Date): string {
-  return date.toISOString().slice(0, 10);
+type ZonedDateParts = {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+  weekday: number;
+};
+
+function zonedParts(date: Date, timezone: string): ZonedDateParts {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const value = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find((part) => part.type === type)?.value);
+  const year = value("year");
+  const month = value("month");
+  const day = value("day");
+  const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay() || 7;
+  return { year, month, day, hour: value("hour"), minute: value("minute"), weekday };
 }
 
-function isHoliday(date: Date, holidays: Date[]): boolean {
-  const key = dateKey(date);
-  return holidays.some((holiday) => dateKey(holiday) === key);
+function localDateKey(parts: Pick<ZonedDateParts, "year" | "month" | "day">): string {
+  return `${parts.year}-${String(parts.month).padStart(2, "0")}-${String(parts.day).padStart(2, "0")}`;
 }
 
-function isWorkingDate(date: Date, calendar: BusinessCalendarInput): boolean {
-  const weekday = date.getDay() === 0 ? 7 : date.getDay();
-  return calendar.workingDays.includes(weekday) && !isHoliday(date, calendar.holidays);
+function isHoliday(parts: ZonedDateParts, holidays: Date[]): boolean {
+  const key = localDateKey(parts);
+  return holidays.some((holiday) => holiday.toISOString().slice(0, 10) === key);
 }
 
-function atMinuteOfDay(date: Date, minute: number): Date {
-  const result = new Date(date);
-  result.setHours(Math.floor(minute / 60), minute % 60, 0, 0);
-  return result;
+function isWorkingDate(parts: ZonedDateParts, calendar: BusinessCalendarInput): boolean {
+  return calendar.workingDays.includes(parts.weekday) && !isHoliday(parts, calendar.holidays);
+}
+
+function localDateAtMinute(parts: ZonedDateParts, minute: number, timezone: string): Date {
+  const targetUtc = Date.UTC(parts.year, parts.month - 1, parts.day, Math.floor(minute / 60), minute % 60);
+  let instant = targetUtc;
+  // Two passes cover ordinary offsets and daylight-saving transitions without
+  // coupling the SLA engine to the host process timezone.
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const actual = zonedParts(new Date(instant), timezone);
+    const actualUtc = Date.UTC(actual.year, actual.month - 1, actual.day, actual.hour, actual.minute);
+    instant += targetUtc - actualUtc;
+  }
+  return new Date(instant);
+}
+
+function nextLocalDate(parts: ZonedDateParts): ZonedDateParts {
+  const next = new Date(Date.UTC(parts.year, parts.month - 1, parts.day + 1));
+  const weekday = next.getUTCDay() || 7;
+  return {
+    year: next.getUTCFullYear(),
+    month: next.getUTCMonth() + 1,
+    day: next.getUTCDate(),
+    hour: 0,
+    minute: 0,
+    weekday,
+  };
 }
 
 export function addBusinessMinutes(
@@ -88,21 +135,23 @@ export function addBusinessMinutes(
 
   let cursor = new Date(start);
   let remaining = minutes;
+  const timezone = calendar.timezone ?? "UTC";
 
   while (remaining > 0) {
-    if (!isWorkingDate(cursor, calendar)) {
-      cursor.setDate(cursor.getDate() + 1);
-      cursor = atMinuteOfDay(cursor, calendar.workdayStartMinute);
+    let local = zonedParts(cursor, timezone);
+    if (!isWorkingDate(local, calendar)) {
+      local = nextLocalDate(local);
+      cursor = localDateAtMinute(local, calendar.workdayStartMinute, timezone);
       continue;
     }
 
-    const startOfWork = atMinuteOfDay(cursor, calendar.workdayStartMinute);
-    const endOfWork = atMinuteOfDay(cursor, calendar.workdayEndMinute);
+    const startOfWork = localDateAtMinute(local, calendar.workdayStartMinute, timezone);
+    const endOfWork = localDateAtMinute(local, calendar.workdayEndMinute, timezone);
 
     if (cursor < startOfWork) cursor = startOfWork;
     if (cursor >= endOfWork) {
-      cursor.setDate(cursor.getDate() + 1);
-      cursor = atMinuteOfDay(cursor, calendar.workdayStartMinute);
+      local = nextLocalDate(local);
+      cursor = localDateAtMinute(local, calendar.workdayStartMinute, timezone);
       continue;
     }
 
@@ -142,8 +191,9 @@ export function slaProgressPercent(
   pausedMinutes = 0,
 ): number {
   if (!dueAt) return 0;
-  const total = dueAt.getTime() - start.getTime();
+  const pausedMilliseconds = Math.max(0, pausedMinutes) * 60_000;
+  const total = dueAt.getTime() - start.getTime() - pausedMilliseconds;
   if (total <= 0) return 100;
-  const elapsed = now.getTime() - start.getTime() - pausedMinutes * 60_000;
+  const elapsed = now.getTime() - start.getTime() - pausedMilliseconds;
   return Math.max(0, Math.min(100, (elapsed / total) * 100));
 }

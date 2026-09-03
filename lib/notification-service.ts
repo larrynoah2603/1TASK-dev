@@ -2,6 +2,7 @@ import { NotificationStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import {
   requireCurrentActor,
+  ResourceNotFoundError,
   type UserContext,
 } from "@/lib/server-auth";
 
@@ -98,7 +99,7 @@ export async function markNotificationAsRead(
 
   if (!notification) {
 
-    throw new Error(
+    throw new ResourceNotFoundError(
       "Notification introuvable.",
     );
 

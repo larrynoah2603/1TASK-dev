@@ -192,88 +192,94 @@ async function emitSlaEvent(input: {
 }
 
 export async function runSlaMonitor(now = new Date()) {
-  const tickets = await prisma.ticket.findMany({
-    where: {
-      status: { not: TicketStatus.CLOSED },
-      OR: [
-        { firstResponseDueAt: { not: null }, firstRespondedAt: null },
-        { resolutionDueAt: { not: null }, resolvedAt: null },
-      ],
-    },
-    include: {
-      queue: {
-        select: {
-          id: true,
-          name: true,
-          managerId: true,
-          departmentId: true,
-          teams: { select: { id: true, isActive: true } },
-          escalationRules: {
-            where: { isActive: true },
-            select: { thresholdPercent: true, targetRole: true, isActive: true },
-          },
-        },
-      },
-      serviceCatalogItem: {
-        select: {
-          escalationRules: {
-            where: { isActive: true },
-            select: { thresholdPercent: true, targetRole: true, isActive: true },
-          },
-        },
-      },
-      sla: { select: { alertThresholds: true } },
-      assignedTo: { select: { id: true } },
-    },
-    take: 500,
-  });
+  const batchSize = 500;
+  let cursor: string | undefined;
+  let scanned = 0;
   let alerts = 0;
   let breaches = 0;
 
-  for (const ticket of tickets) {
-    // A blocked ticket pauses both SLA clocks. The pause is materialized when
-    // the ticket leaves BLOCKED, so the monitor must not alert during it.
-    if (ticket.status === TicketStatus.BLOCKED || ticket.slaPausedAt) continue;
+  do {
+    const tickets = await prisma.ticket.findMany({
+      where: {
+        status: { notIn: [TicketStatus.CLOSED, TicketStatus.BLOCKED, TicketStatus.RESOLUTION_PENDING] },
+        slaPausedAt: null,
+        OR: [
+          { firstResponseDueAt: { not: null }, firstRespondedAt: null },
+          { resolutionDueAt: { not: null }, resolvedAt: null },
+        ],
+      },
+      include: {
+        queue: {
+          select: {
+            id: true,
+            name: true,
+            managerId: true,
+            departmentId: true,
+            teams: { select: { id: true, isActive: true } },
+            escalationRules: {
+              where: { isActive: true },
+              select: { thresholdPercent: true, targetRole: true, isActive: true },
+            },
+          },
+        },
+        serviceCatalogItem: {
+          select: {
+            escalationRules: {
+              where: { isActive: true },
+              select: { thresholdPercent: true, targetRole: true, isActive: true },
+            },
+          },
+        },
+        sla: { select: { alertThresholds: true } },
+        assignedTo: { select: { id: true } },
+      },
+      orderBy: { id: "asc" },
+      take: batchSize,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    });
+    scanned += tickets.length;
 
-    const pausedMinutes = ticket.totalPausedMinutes;
-    const metrics: { metric: SlaMetric; dueAt: Date; start: Date }[] = [];
-    if (ticket.firstResponseDueAt && !ticket.firstRespondedAt) {
-      metrics.push({ metric: "FIRST_RESPONSE", dueAt: ticket.firstResponseDueAt, start: ticket.createdAt });
-    }
-    if (
-      ticket.resolutionDueAt &&
-      !ticket.resolvedAt &&
-      ticket.status !== TicketStatus.RESOLUTION_PENDING
-    ) {
-      metrics.push({ metric: "RESOLUTION", dueAt: ticket.resolutionDueAt, start: ticket.createdAt });
-    }
-    const rules = [
-      ...ticket.queue.escalationRules,
-      ...ticket.serviceCatalogItem.escalationRules,
-    ];
-    const thresholds = [...new Set(ticket.sla?.alertThresholds ?? [50, 80, 100])]
-      .sort((left, right) => left - right);
-    for (const metric of metrics) {
-      const progress = slaProgressPercent(now, metric.start, metric.dueAt, pausedMinutes);
-      for (const threshold of thresholds.filter((value) => progress >= value)) {
-        const created = await emitSlaEvent({
-          ticketId: ticket.id,
-          queueId: ticket.queue.id,
-          departmentId: ticket.queue.departmentId,
-          teamIds: ticket.queue.teams.filter((team) => team.isActive).map((team) => team.id),
-          managerId: ticket.queue.managerId,
-          assignedToId: ticket.assignedTo?.id ?? null,
-          reference: ticket.reference,
-          metric: metric.metric,
-          thresholdPercent: threshold,
-          progressPercent: progress,
-          rules,
-        });
-        if (!created) continue;
-        if (threshold >= 100) breaches += 1;
-        else alerts += 1;
+    for (const ticket of tickets) {
+
+      const pausedMinutes = ticket.totalPausedMinutes;
+      const metrics: { metric: SlaMetric; dueAt: Date; start: Date }[] = [];
+      if (ticket.firstResponseDueAt && !ticket.firstRespondedAt) {
+        metrics.push({ metric: "FIRST_RESPONSE", dueAt: ticket.firstResponseDueAt, start: ticket.createdAt });
+      }
+      if (ticket.resolutionDueAt && !ticket.resolvedAt) {
+        metrics.push({ metric: "RESOLUTION", dueAt: ticket.resolutionDueAt, start: ticket.createdAt });
+      }
+      const rules = [
+        ...ticket.queue.escalationRules,
+        ...ticket.serviceCatalogItem.escalationRules,
+      ];
+      const thresholds = [...new Set(ticket.sla?.alertThresholds ?? [50, 80, 100])]
+        .sort((left, right) => left - right);
+      for (const metric of metrics) {
+        const progress = slaProgressPercent(now, metric.start, metric.dueAt, pausedMinutes);
+        for (const threshold of thresholds.filter((value) => progress >= value)) {
+          const created = await emitSlaEvent({
+            ticketId: ticket.id,
+            queueId: ticket.queue.id,
+            departmentId: ticket.queue.departmentId,
+            teamIds: ticket.queue.teams.filter((team) => team.isActive).map((team) => team.id),
+            managerId: ticket.queue.managerId,
+            assignedToId: ticket.assignedTo?.id ?? null,
+            reference: ticket.reference,
+            metric: metric.metric,
+            thresholdPercent: threshold,
+            progressPercent: progress,
+            rules,
+          });
+          if (!created) continue;
+          if (threshold >= 100) breaches += 1;
+          else alerts += 1;
+        }
       }
     }
-  }
-  return { scanned: tickets.length, alerts, breaches };
+    cursor = tickets.at(-1)?.id;
+    if (tickets.length < batchSize) break;
+  } while (cursor);
+
+  return { scanned, alerts, breaches };
 }

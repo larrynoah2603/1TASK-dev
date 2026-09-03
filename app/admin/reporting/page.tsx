@@ -11,7 +11,7 @@ export default async function AdminReportingPage() {
       <AdminPageHeader eyebrow="Indicateurs autorisés" title="Reporting administrateur" description="Les indicateurs sont calculés côté serveur sur les tickets non confidentiels couverts par l’accès fonctionnel. Aucun détail de ticket n’est exposé à un rôle reporting seul." />
       <div className="reporting-kpi-grid grid gap-4 sm:grid-cols-3">
         <AdminStatCard label="Tickets analysés" value={summary.total} detail="Périmètre non confidentiel" />
-        <AdminStatCard label="SLA dépassés" value={summary.overdue} detail="Tickets encore ouverts" tone={summary.overdue ? "rose" : "emerald"} />
+        <AdminStatCard label="SLA dépassés" value={summary.overdue} detail={`${summary.firstResponseBreached} réponse · ${summary.resolutionBreached} résolution`} tone={summary.overdue ? "rose" : "emerald"} />
         <AdminStatCard label="Taux clôturé" value={`${summary.closureRate}%`} detail={`${summary.closed} ticket(s) clôturé(s)`} tone="emerald" />
       </div>
       {!summary.total ? <AdminEmptyState title="Aucune donnée de reporting" description="Aucun ticket non confidentiel n’est disponible dans le périmètre autorisé." /> : (
