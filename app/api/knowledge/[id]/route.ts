@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/http";
 import { transitionKnowledgeArticle } from "@/lib/knowledge-service";
-import { requireSessionUserContext } from "@/lib/server-auth";
+import { AuthorizationError, requireSessionUserContext } from "@/lib/server-auth";
 import { knowledgeArticleStatusSchema } from "@/lib/validation";
 
 
@@ -20,9 +20,7 @@ function requirePermission(
 
 
   if (!permissions.includes(permission)) {
-    throw new Error(
-      "Permission insuffisante.",
-    );
+    throw new AuthorizationError("Permission insuffisante.");
   }
 }
 

@@ -5,13 +5,10 @@ import {
   listUserNotifications,
 } from "@/lib/notification-service";
 import { requireSessionUserContext } from "@/lib/server-auth";
+import { notificationListQuerySchema } from "@/lib/validation";
 
 
 export const dynamic = "force-dynamic";
-
-
-const MAX_NOTIFICATIONS = 100;
-
 
 
 export async function GET(
@@ -24,21 +21,9 @@ export async function GET(
       await requireSessionUserContext();
 
 
-    const rawTake =
-      Number(
-        new URL(request.url)
-          .searchParams
-          .get("take") ?? 50,
-      );
-
-
-    const take =
-      Number.isFinite(rawTake)
-        ? Math.min(
-            Math.max(rawTake, 1),
-            MAX_NOTIFICATIONS,
-          )
-        : 50;
+    const take = notificationListQuerySchema.parse({
+      take: new URL(request.url).searchParams.get("take") ?? undefined,
+    }).take;
 
 
 

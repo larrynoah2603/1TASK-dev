@@ -4,8 +4,8 @@ import {
   createMission,
   listMissionsForViewer,
 } from "@/lib/production-service";
-import { requireSessionUserContext } from "@/lib/server-auth";
-import { missionSchema } from "@/lib/validation";
+import { AuthorizationError, requireSessionUserContext } from "@/lib/server-auth";
+import { missionListQuerySchema, missionSchema } from "@/lib/validation";
 
 
 function requirePermission(
@@ -23,9 +23,7 @@ function requirePermission(
 
 
   if (!permissions.includes(permission)) {
-    throw new Error(
-      "Permission insuffisante.",
-    );
+    throw new AuthorizationError("Permission insuffisante.");
   }
 }
 
@@ -51,27 +49,25 @@ export async function GET(
       new URL(request.url)
         .searchParams;
 
+    const filters = missionListQuerySchema.parse({
+      q: searchParams.get("q") ?? undefined,
+      status: searchParams.get("status") ?? undefined,
+      departmentId: searchParams.get("departmentId") ?? undefined,
+      dossierId: searchParams.get("dossierId") ?? undefined,
+      take: searchParams.get("take") ?? undefined,
+    });
+
 
     return NextResponse.json({
       missions:
         await listMissionsForViewer(
           actor,
           {
-            query:
-              searchParams.get("q")
-              ?? undefined,
-
-            status:
-              searchParams.get("status")
-              ?? undefined,
-
-            departmentId:
-              searchParams.get("departmentId")
-              ?? undefined,
-
-            dossierId:
-              searchParams.get("dossierId")
-              ?? undefined,
+            query: filters.q,
+            status: filters.status,
+            departmentId: filters.departmentId,
+            dossierId: filters.dossierId,
+            take: filters.take,
           },
         ),
     });

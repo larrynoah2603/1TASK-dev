@@ -2,6 +2,7 @@ import {
   BlockReason,
   Impact,
   MessageVisibility,
+  MissionStatus,
   NotificationChannel,
   NotificationType,
   Priority,
@@ -174,6 +175,21 @@ export const notificationPreferenceSchema = z.object({
   eventType: z.enum(NotificationType),
   channel: z.enum(NotificationChannel),
   enabled: z.boolean(),
+}).strict();
+
+export const notificationListQuerySchema = z.object({
+  take: z.coerce.number().int().min(1).max(100).default(50),
+}).strict();
+
+export const productionSearchQuerySchema = z.object({
+  q: z.string().trim().max(120).optional(),
+}).strict();
+
+export const missionListQuerySchema = productionSearchQuerySchema.extend({
+  status: z.enum(MissionStatus).optional(),
+  departmentId: z.string().cuid().optional(),
+  dossierId: z.string().cuid().optional(),
+  take: z.coerce.number().int().min(1).max(100).optional(),
 }).strict();
 
 const workflowStepSchema = z.object({
