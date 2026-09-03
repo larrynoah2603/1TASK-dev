@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
 import { errorResponse } from "@/lib/http";
-import { requireSessionUserContext } from "@/lib/server-auth";
+import {
+  markAllNotificationsAsRead,
+} from "@/lib/notification-service";
+import {
+  requireSessionUserContext,
+} from "@/lib/server-auth";
 
 
 export async function POST() {
@@ -12,32 +16,10 @@ export async function POST() {
       await requireSessionUserContext();
 
 
-
     const result =
-      await prisma.notification.updateMany({
-
-        where: {
-
-          recipientId:
-            actor.id,
-
-          readAt:
-            null,
-
-        },
-
-        data: {
-
-          status:
-            "READ",
-
-          readAt:
-            new Date(),
-
-        },
-
-      });
-
+      await markAllNotificationsAsRead(
+        actor,
+      );
 
 
     return NextResponse.json({
@@ -55,4 +37,5 @@ export async function POST() {
     return errorResponse(error);
 
   }
+
 }
