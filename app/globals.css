@@ -1566,8 +1566,6 @@ html[data-theme="dark"] .combobox-option-selected { color: #bfc4ff; }
 .dashboard-kpi-link:hover { border-color: color-mix(in srgb, var(--line-strong) 70%, var(--brand)); box-shadow: 0 10px 26px rgba(16, 24, 40, 0.08); transform: translateY(-1px); }
 .dashboard-kpi-topline { display: flex; min-height: 1.8rem; align-items: flex-start; justify-content: space-between; gap: 0.75rem; }
 .dashboard-kpi-label { color: var(--text-body); font-size: 0.73rem; font-weight: 550; }
-.dashboard-kpi-icon { display: grid; height: 1.8rem; width: 1.8rem; place-items: center; border-radius: 0.5rem; background: var(--brand-soft); color: var(--brand); font-size: 0.85rem; font-weight: 800; }
-.dashboard-kpi-icon.dashboard-kpi-value-success,
 .dashboard-kpi-value-success + .dashboard-kpi-note { color: #4caf78; }
 .dashboard-kpi-value { margin-top: 0.45rem; font-size: 1.65rem; font-weight: 750; letter-spacing: -0.045em; line-height: 1; }
 .dashboard-kpi-note { margin-top: 0.45rem; color: var(--text-subtle); font-size: 0.67rem; line-height: 1.35; }
@@ -1577,11 +1575,6 @@ html[data-theme="dark"] .combobox-option-selected { color: #bfc4ff; }
 .dashboard-kpi-value-success { color: #43ad73; }
 .dashboard-kpi-value-violet { color: #8b72dc; }
 .dashboard-kpi-value-danger { color: #dc5964; }
-.dashboard-kpi-icon.dashboard-kpi-value-info { background: rgba(75, 130, 214, 0.14); color: #4b82d6; }
-.dashboard-kpi-icon.dashboard-kpi-value-warning { background: rgba(217, 149, 50, 0.15); color: #d99532; }
-.dashboard-kpi-icon.dashboard-kpi-value-success { background: rgba(67, 173, 115, 0.15); color: #43ad73; }
-.dashboard-kpi-icon.dashboard-kpi-value-danger { background: rgba(220, 89, 100, 0.15); color: #dc5964; }
-.dashboard-kpi-icon.dashboard-kpi-value-violet { background: rgba(139, 114, 220, 0.15); color: #8b72dc; }
 .dashboard-widget { min-width: 0; border: 1px solid var(--line); border-radius: 0.8rem; background: var(--surface); padding: 1.05rem; box-shadow: var(--shadow-soft); }
 .dashboard-widget-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; }
 .dashboard-widget-header h2 { margin-top: 0.25rem; color: var(--text-strong); font-size: 0.95rem; font-weight: 700; letter-spacing: -0.02em; }
@@ -2741,7 +2734,6 @@ html[data-theme="dark"] .dashboard-widget,
 html[data-theme="dark"] .dashboard-watch-panel { border-color: var(--line); border-radius: 0.2rem; background: var(--surface); box-shadow: none; }
 html[data-theme="dark"] .dashboard-kpi-card { border-top: 2px solid var(--line-strong); }
 html[data-theme="dark"] .dashboard-kpi-link:hover { border-color: var(--brand); background: var(--surface-muted); box-shadow: none; }
-html[data-theme="dark"] .dashboard-kpi-icon { border: 1px solid var(--line); border-radius: 0.15rem; background: var(--surface-muted); color: var(--brand); }
 html[data-theme="dark"] .dashboard-kpi-value-brand,
 html[data-theme="dark"] .dashboard-kpi-value-info { color: var(--brand); }
 html[data-theme="dark"] .dashboard-kpi-value-warning { color: #e6b55d; }
@@ -3632,13 +3624,11 @@ html[data-theme="light"] {
 .shell-industrial .inbox-operations-industrial .dashboard-muted { color: var(--industrial-muted); }
 
 .shell-industrial .inbox-operations-industrial .dashboard-kpi-value { color: var(--industrial-ink); font-family: "Arial Narrow", Inter, sans-serif; font-weight: 900; }
-.shell-industrial .inbox-operations-industrial .dashboard-kpi-value-brand,
-.shell-industrial .inbox-operations-industrial .dashboard-kpi-icon-brand { color: var(--industrial-gold); }
+.shell-industrial .inbox-operations-industrial .dashboard-kpi-value-brand { color: var(--industrial-gold); }
 .shell-industrial .inbox-operations-industrial .dashboard-kpi-value-info,
 .shell-industrial .inbox-operations-industrial .dashboard-kpi-value-success { color: #9ed7b9; }
 .shell-industrial .inbox-operations-industrial .dashboard-kpi-value-warning { color: #e6b55d; }
 .shell-industrial .inbox-operations-industrial .dashboard-kpi-value-danger { color: #ee8a7d; }
-.shell-industrial .inbox-operations-industrial .dashboard-kpi-icon { border-radius: 0; background: transparent; }
 
 .shell-industrial .inbox-operations-industrial .dashboard-widget,
 .shell-industrial .inbox-operations-industrial .dashboard-watch-panel {
@@ -4908,4 +4898,454 @@ html[data-theme="light"] :is(.shell-industrial, .admin-industrial) :is(.field-co
   }
 
   .shell-industrial .inbox-operations-industrial .inbox-operations-table-complete { min-width: 640px; }
+}
+
+/* Operational Ledger — final visual foundation.
+ * This deliberately maps the historical tokens instead of rewriting legacy
+ * feature layers; screens can migrate incrementally without layout regressions.
+ */
+:root {
+  --ledger-canvas: #F4F5F2;
+  --ledger-surface: #FFFFFF;
+  --ledger-surface-secondary: #F8F9F7;
+  --ledger-ink: #202421;
+  --ledger-text: #5F6862;
+  --ledger-muted: #818A83;
+  --ledger-border: #DDE1DC;
+  --ledger-border-strong: #C9CFC9;
+  --ledger-primary: #3559C7;
+  --ledger-primary-strong: #29469F;
+  --ledger-primary-soft: #EEF2FF;
+  --ledger-operational: #C76B32;
+  --ledger-success: #2F7D57;
+  --ledger-warning: #A86B16;
+  --ledger-danger: #B8424E;
+  --ledger-information: #3D6F91;
+  --ledger-radius-control: 6px;
+  --ledger-radius-panel: 8px;
+  --ledger-radius-overlay: 10px;
+  --ledger-radius-pill: 999px;
+  --ledger-space-1: 4px;
+  --ledger-space-2: 8px;
+  --ledger-space-3: 12px;
+  --ledger-space-4: 16px;
+  --ledger-space-5: 20px;
+  --ledger-space-6: 24px;
+  --ledger-space-8: 32px;
+  --ledger-overlay-shadow: 0 16px 40px rgba(32, 36, 33, 0.14);
+  --background: var(--ledger-canvas);
+  --foreground: var(--ledger-ink);
+  --surface: var(--ledger-surface);
+  --surface-muted: var(--ledger-surface-secondary);
+  --surface-subtle: var(--ledger-surface-secondary);
+  --text-strong: var(--ledger-ink);
+  --text-body: var(--ledger-text);
+  --text-subtle: var(--ledger-muted);
+  --line: var(--ledger-border);
+  --line-strong: var(--ledger-border-strong);
+  --brand: var(--ledger-primary);
+  --brand-dark: var(--ledger-primary-strong);
+  --brand-soft: var(--ledger-primary-soft);
+  --accent: var(--ledger-success);
+  --radius-sm: var(--ledger-radius-control);
+  --radius-md: var(--ledger-radius-panel);
+  --radius-lg: var(--ledger-radius-overlay);
+  --shadow-soft: none;
+  --shadow-popover: var(--ledger-overlay-shadow);
+  --button-primary-bg: var(--ledger-primary);
+  --button-primary-bg-hover: var(--ledger-primary-strong);
+  --button-primary-border: var(--ledger-primary);
+}
+
+html[data-theme="dark"] {
+  --ledger-canvas: #111411;
+  --ledger-surface: #191D1A;
+  --ledger-surface-secondary: #202520;
+  --ledger-ink: #F0F3EF;
+  --ledger-text: #B7C0B8;
+  --ledger-muted: #8F9990;
+  --ledger-border: #323832;
+  --ledger-border-strong: #464E46;
+  --ledger-primary: #7893E8;
+  --ledger-primary-strong: #9AADEC;
+  --ledger-primary-soft: #222B43;
+  --ledger-operational: #E49A66;
+  --ledger-success: #67B38A;
+  --ledger-warning: #D5A45B;
+  --ledger-danger: #E27A83;
+  --ledger-information: #79A6C0;
+  --background: var(--ledger-canvas);
+  --foreground: var(--ledger-ink);
+  --surface: var(--ledger-surface);
+  --surface-muted: var(--ledger-surface-secondary);
+  --surface-subtle: var(--ledger-surface-secondary);
+  --text-strong: var(--ledger-ink);
+  --text-body: var(--ledger-text);
+  --text-subtle: var(--ledger-muted);
+  --line: var(--ledger-border);
+  --line-strong: var(--ledger-border-strong);
+  --brand: var(--ledger-primary);
+  --brand-dark: var(--ledger-primary-strong);
+  --brand-soft: var(--ledger-primary-soft);
+  --shadow-soft: none;
+  --shadow-popover: 0 18px 44px rgba(0, 0, 0, 0.34);
+  --button-primary-bg: var(--ledger-primary);
+  --button-primary-bg-hover: var(--ledger-primary-strong);
+  --button-primary-border: var(--ledger-primary);
+}
+
+:is(.shell-industrial, .admin-industrial) :is(.panel, .metric-card, .admin-stat, .action-card, .filter-panel, .table-shell, .dashboard-widget, .dashboard-kpi-card) {
+  border-color: var(--ledger-border);
+  border-radius: var(--ledger-radius-panel);
+  background: var(--ledger-surface);
+  box-shadow: none;
+}
+
+:is(.shell-industrial, .admin-industrial) :is(.button-primary, .button-secondary, .button-ghost, .button-danger, .field-control, .combobox-trigger, .view-toggle) {
+  border-radius: var(--ledger-radius-control);
+}
+
+:is(.shell-industrial, .admin-industrial) :is(.metric-card, .dashboard-kpi-card):not(a):hover {
+  transform: none;
+  box-shadow: none;
+}
+
+:is(.popover-panel, .notification-popover, .modal-panel, .confirm-dialog, .combobox-listbox) {
+  border-radius: var(--ledger-radius-overlay);
+  box-shadow: var(--ledger-overlay-shadow);
+}
+
+:is(.shell-industrial, .admin-industrial) :is(.status-badge, .status-chip, .notification-count, .nav-notification-count) {
+  border-radius: var(--ledger-radius-pill);
+}
+
+:is(.shell-industrial, .admin-industrial) :is(.button-primary, a.button-primary) {
+  border-color: var(--ledger-primary) !important;
+  background: var(--ledger-primary) !important;
+  color: #FFFFFF !important;
+  box-shadow: none !important;
+}
+
+:is(.shell-industrial, .admin-industrial) :is(.button-primary, a.button-primary):hover {
+  border-color: var(--ledger-primary-strong) !important;
+  background: var(--ledger-primary-strong) !important;
+}
+
+:is(.shell-industrial, .admin-industrial) :is(a, button, input, textarea, select):focus-visible {
+  outline: 2px solid var(--ledger-primary) !important;
+  outline-offset: 2px;
+}
+
+/* Operational Ledger — dashboard. */
+.shell-industrial .dashboard-page { gap: var(--ledger-space-6); }
+.shell-industrial .dashboard-role-hero { padding-block: var(--ledger-space-2); }
+.shell-industrial .dashboard-view-tabs {
+  gap: 0;
+  border-radius: var(--ledger-radius-control);
+  background: var(--ledger-surface-secondary);
+  padding: var(--ledger-space-1);
+}
+.shell-industrial .dashboard-view-tab { min-height: 36px; border-radius: 4px; padding: var(--ledger-space-2) var(--ledger-space-3); font-size: 12px; }
+.shell-industrial .dashboard-view-tab.is-active { color: var(--ledger-primary-strong); box-shadow: none; }
+.shell-industrial .dashboard-kpi-card {
+  min-height: 112px;
+  border-left: 3px solid var(--ledger-border-strong);
+  padding: var(--ledger-space-4);
+}
+.shell-industrial .dashboard-kpi-link:hover { border-color: var(--ledger-primary); box-shadow: 0 4px 12px rgba(32, 36, 33, 0.08); transform: translateY(-1px); }
+.shell-industrial .dashboard-kpi-label,
+.shell-industrial .dashboard-kpi-note,
+.shell-industrial .dashboard-widget-link,
+.shell-industrial .dashboard-chart-axis,
+.shell-industrial .dashboard-priority-row,
+.shell-industrial .dashboard-queue-name :is(strong, small),
+.shell-industrial .dashboard-queue-progress em,
+.shell-industrial .dashboard-sla-row,
+.shell-industrial .dashboard-sla-row strong,
+.shell-industrial .dashboard-team-row,
+.shell-industrial .dashboard-team-row strong,
+.shell-industrial .dashboard-escalation-table :is(th, td),
+.shell-industrial .dashboard-operation-table :is(th, td),
+.shell-industrial .dashboard-ticket-reference,
+.shell-industrial .dashboard-ticket-title,
+.shell-industrial .dashboard-watch-card :is(strong, b, small, em) { font-size: 12px; }
+.shell-industrial .dashboard-kpi-value { color: var(--ledger-ink); font-variant-numeric: tabular-nums; }
+.shell-industrial .dashboard-kpi-value-info { color: var(--ledger-information); }
+.shell-industrial .dashboard-kpi-value-warning { color: var(--ledger-warning); }
+.shell-industrial .dashboard-kpi-value-success { color: var(--ledger-success); }
+.shell-industrial .dashboard-kpi-value-danger { color: var(--ledger-danger); }
+.shell-industrial .dashboard-widget { padding: var(--ledger-space-4); }
+.shell-industrial .dashboard-requester-grid,
+.shell-industrial .dashboard-responsible-grid,
+.shell-industrial .dashboard-operations-grid { gap: var(--ledger-space-4); }
+.shell-industrial .dashboard-priority-list,
+.shell-industrial .dashboard-team-list { gap: var(--ledger-space-3); margin-top: var(--ledger-space-5); }
+.shell-industrial .dashboard-priority-track span,
+.shell-industrial .dashboard-sla-current,
+.shell-industrial .dashboard-queue-progress i { background: var(--ledger-primary); }
+.shell-industrial .dashboard-sla-target,
+.shell-industrial .dashboard-load-success { background: var(--ledger-success); }
+.shell-industrial .dashboard-sla-active,
+.shell-industrial .dashboard-load-warning { background: var(--ledger-warning); }
+.shell-industrial .dashboard-watch-card { border-left-color: var(--ledger-warning); border-radius: var(--ledger-radius-control); }
+.shell-industrial .dashboard-watch-breached { border-left-color: var(--ledger-danger); }
+
+/* Operational Ledger — ticket register. */
+.shell-industrial .ticket-register-page { display: grid; gap: var(--ledger-space-6); }
+.shell-industrial .ticket-register-page > * + * { margin-top: 0 !important; }
+.shell-industrial .ticket-register-page .filter-panel { padding: var(--ledger-space-3); }
+.shell-industrial .ticket-reference-link { color: var(--ledger-primary-strong); }
+.shell-industrial .ticket-register-page .table-shell table { font-size: 13px; }
+.shell-industrial .ticket-register-page .table-shell thead { color: var(--ledger-muted); font-size: 11px; letter-spacing: 0.06em; }
+.shell-industrial .ticket-register-page .table-shell :is(th, td) { padding: 12px 16px; }
+.shell-industrial .ticket-register-page .table-shell tbody tr:hover {
+  background: var(--ledger-primary-soft);
+  box-shadow: inset 2px 0 0 var(--ledger-primary);
+}
+
+@media (max-width: 767px) {
+  .shell-industrial .ticket-register-page .table-shell { overflow: visible; border: 0; background: transparent; }
+  .shell-industrial .ticket-register-page .table-shell > .overflow-x-auto { overflow: visible; }
+  .shell-industrial .ticket-register-page .table-shell table,
+  .shell-industrial .ticket-register-page .table-shell tbody,
+  .shell-industrial .ticket-register-page .table-shell tr { display: block; min-width: 0; width: 100%; }
+  .shell-industrial .ticket-register-page .table-shell thead { display: none; }
+  .shell-industrial .ticket-register-page .table-shell tbody { display: grid; gap: var(--ledger-space-2); }
+  .shell-industrial .ticket-register-page .table-shell tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: var(--ledger-space-2) var(--ledger-space-3);
+    border: 1px solid var(--ledger-border);
+    border-radius: var(--ledger-radius-panel);
+    background: var(--ledger-surface);
+    padding: var(--ledger-space-3);
+  }
+  .shell-industrial .ticket-register-page .table-shell td { display: block; padding: 0; }
+  .shell-industrial .ticket-register-page .table-shell td:first-child { grid-column: 1 / -1; }
+  .shell-industrial .ticket-register-page .table-shell td:nth-child(6),
+  .shell-industrial .ticket-register-page .table-shell td:nth-child(7),
+  .shell-industrial .ticket-register-page .table-shell td:nth-child(8) { grid-row: 2; }
+  .shell-industrial .ticket-register-page .table-shell td:nth-child(2),
+  .shell-industrial .ticket-register-page .table-shell td:nth-child(3),
+  .shell-industrial .ticket-register-page .table-shell td:nth-child(4),
+  .shell-industrial .ticket-register-page .table-shell td:nth-child(5),
+  .shell-industrial .ticket-register-page .table-shell td:nth-child(9),
+.shell-industrial .ticket-register-page .table-shell td:nth-child(10) { display: none; }
+}
+
+/* Operational Ledger — ticket intervention record. */
+.shell-industrial .ticket-detail-shell { display: grid; gap: var(--ledger-space-4); }
+.shell-industrial .ticket-detail-shell > * + * { margin-top: 0 !important; }
+.shell-industrial .ticket-detail-header,
+.shell-industrial .ticket-status-strip,
+.shell-industrial .ticket-detail-main,
+.shell-industrial .ticket-detail-sidebar {
+  border-color: var(--ledger-border);
+  border-radius: var(--ledger-radius-panel);
+  box-shadow: none;
+}
+.shell-industrial .ticket-detail-header { border-bottom: 1px solid var(--ledger-border); padding-bottom: var(--ledger-space-4); }
+.shell-industrial .ticket-status-strip { padding: var(--ledger-space-4); }
+.shell-industrial .ticket-detail-layout { gap: var(--ledger-space-4); }
+.shell-industrial .ticket-detail-main,
+.shell-industrial .ticket-detail-sidebar { gap: var(--ledger-space-4); }
+.shell-industrial .ticket-side-panel-card {
+  border: 1px solid var(--ledger-border);
+  border-radius: var(--ledger-radius-panel);
+  background: var(--ledger-surface);
+  padding: var(--ledger-space-4);
+  box-shadow: none;
+}
+.shell-industrial .ticket-side-panel-card .ticket-side-panel-card {
+  border: 0;
+  border-top: 1px solid var(--ledger-border);
+  border-radius: 0;
+  padding-inline: 0;
+}
+.shell-industrial .ticket-detail-shell :is(.ticket-timeline-item, .ticket-timeline-assignment, .ticket-timeline-message) {
+  border-radius: var(--ledger-radius-control);
+}
+.shell-industrial .ticket-detail-shell :is(.text-\[10px\], .text-\[11px\], .ticket-status-hint, .ticket-side-panel-subtitle, .ticket-side-panel-meta) {
+  font-size: 12px !important;
+  line-height: 1.45;
+}
+.shell-industrial .ticket-status-reference,
+.shell-industrial .ticket-status-current { color: var(--ledger-ink); }
+.shell-industrial .ticket-status-progress { background: var(--ledger-border); }
+.shell-industrial .ticket-status-progress > * { background: var(--ledger-primary); }
+
+@media (max-width: 767px) {
+  .shell-industrial .ticket-detail-layout { grid-template-columns: minmax(0, 1fr); }
+  .shell-industrial .ticket-side-panel-card { padding: var(--ledger-space-3); }
+}
+
+/* Operational Ledger — reporting register. */
+:is(.shell-industrial, .admin-industrial) .reporting-page-shell { display: grid; gap: var(--ledger-space-6); }
+:is(.shell-industrial, .admin-industrial) .reporting-page-shell > * + * { margin-top: 0 !important; }
+:is(.shell-industrial, .admin-industrial) .reporting-kpi-grid { gap: var(--ledger-space-3); }
+:is(.shell-industrial, .admin-industrial) .reporting-kpi {
+  min-height: 104px;
+  border-top: 3px solid var(--ledger-primary);
+  padding: var(--ledger-space-4);
+}
+:is(.shell-industrial, .admin-industrial) .reporting-kpi-danger { border-top-color: var(--ledger-danger); }
+:is(.shell-industrial, .admin-industrial) .reporting-kpi-success { border-top-color: var(--ledger-success); }
+:is(.shell-industrial, .admin-industrial) .reporting-kpi-value {
+  color: var(--ledger-ink);
+  font-size: clamp(28px, 3vw, 36px);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+:is(.shell-industrial, .admin-industrial) .reporting-access-chip {
+  align-items: center;
+  min-height: 36px;
+  border: 1px solid var(--ledger-border);
+  border-radius: var(--ledger-radius-control);
+  padding-inline: var(--ledger-space-3);
+  color: var(--ledger-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+:is(.shell-industrial, .admin-industrial) .reporting-distribution-panel { padding: var(--ledger-space-5); }
+:is(.shell-industrial, .admin-industrial) .reporting-status-track { background: var(--ledger-surface-secondary); }
+:is(.shell-industrial, .admin-industrial) .reporting-status-bar { background: var(--ledger-primary); }
+
+/* Operational Ledger — notification log. */
+:is(.shell-industrial, .admin-industrial) .notification-popover {
+  border-color: var(--ledger-border-strong);
+  background: var(--ledger-surface);
+}
+:is(.shell-industrial, .admin-industrial) .notification-popover-header,
+:is(.shell-industrial, .admin-industrial) .notification-popover-footer { padding: var(--ledger-space-3) var(--ledger-space-4); }
+:is(.shell-industrial, .admin-industrial) .notification-mark-all,
+:is(.shell-industrial, .admin-industrial) .notification-popover-footer { color: var(--ledger-primary-strong); font-size: 12px; }
+:is(.shell-industrial, .admin-industrial) .notification-popover-list { padding: 0; }
+:is(.shell-industrial, .admin-industrial) .notification-row {
+  gap: var(--ledger-space-3);
+  border-bottom: 1px solid var(--ledger-border);
+  border-radius: 0;
+  padding: var(--ledger-space-3) var(--ledger-space-4);
+}
+:is(.shell-industrial, .admin-industrial) .notification-row:last-child { border-bottom: 0; }
+:is(.shell-industrial, .admin-industrial) .notification-row:hover { background: var(--ledger-primary-soft); }
+:is(.shell-industrial, .admin-industrial) .notification-item-title { color: var(--ledger-ink); font-size: 13px; }
+:is(.shell-industrial, .admin-industrial) .notification-item-copy { color: var(--ledger-text); font-size: 12px; line-height: 1.5; }
+:is(.shell-industrial, .admin-industrial) .notification-item-meta { color: var(--ledger-muted); font-size: 12px; }
+:is(.shell-industrial, .admin-industrial) .notification-dot { background: var(--ledger-primary); }
+:is(.shell-industrial, .admin-industrial) .notification-dot-read { background: var(--ledger-border-strong); }
+:is(.shell-industrial, .admin-industrial) .notification-history { box-shadow: none; }
+:is(.shell-industrial, .admin-industrial) .notification-page-row {
+  gap: var(--ledger-space-3);
+  padding: var(--ledger-space-4) var(--ledger-space-5);
+}
+
+/* Operational Ledger — administration register */
+.admin-industrial,
+.admin-dashboard {
+  gap: var(--ledger-space-6);
+}
+
+.admin-stat {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--ledger-border);
+  border-radius: var(--ledger-radius-panel);
+  background: var(--ledger-surface);
+  box-shadow: none;
+  padding: var(--ledger-space-4);
+}
+
+.admin-stat::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--ledger-primary);
+  content: "";
+}
+
+.admin-stat-value {
+  color: var(--ledger-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-stat-value-success { color: var(--ledger-success); }
+.admin-stat-value-warning { color: var(--ledger-warning); }
+.admin-stat-value-danger { color: var(--ledger-danger); }
+.admin-stat:has(.admin-stat-value-success)::before { background: var(--ledger-success); }
+.admin-stat:has(.admin-stat-value-warning)::before { background: var(--ledger-warning); }
+.admin-stat:has(.admin-stat-value-danger)::before { background: var(--ledger-danger); }
+
+.admin-empty-state {
+  border: 1px dashed var(--ledger-border-strong);
+  border-radius: var(--ledger-radius-panel);
+  background: var(--ledger-surface-secondary);
+  padding: var(--ledger-space-8) var(--ledger-space-6);
+  text-align: center;
+}
+
+.admin-empty-state h2 {
+  color: var(--ledger-ink);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.admin-empty-state p {
+  max-width: 32rem;
+  margin: var(--ledger-space-8) auto 0;
+  color: var(--ledger-text);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.admin-configuration-section,
+.admin-user-card,
+.admin-industrial .panel {
+  border-color: var(--ledger-border);
+  border-radius: var(--ledger-radius-panel);
+  background: var(--ledger-surface);
+  box-shadow: none;
+}
+
+.admin-industrial .admin-user-card .panel,
+.admin-industrial .admin-configuration-section .panel {
+  border-inline: 0;
+  border-bottom: 0;
+  border-radius: 0;
+}
+
+/* Operational Ledger — progressive legacy cleanup */
+.operational-link {
+  color: var(--ledger-primary);
+}
+
+.hover\:operational-link-hover:hover {
+  color: var(--ledger-primary-deep);
+}
+
+.app-shell,
+.shell-industrial {
+  background: var(--ledger-canvas);
+  color: var(--ledger-ink);
+}
+
+.sidebar-link[aria-current="page"],
+.sidebar-link-active {
+  border-color: var(--ledger-border-strong);
+  background: var(--ledger-primary-soft);
+  color: var(--ledger-primary);
+}
+
+.new-ticket-launcher,
+.sidebar-new-ticket {
+  border-radius: var(--ledger-radius-control);
+  background: var(--ledger-operational);
+  color: #fff;
+  box-shadow: none;
+}
+
+.new-ticket-launcher:hover,
+.sidebar-new-ticket:hover {
+  filter: brightness(0.94);
 }

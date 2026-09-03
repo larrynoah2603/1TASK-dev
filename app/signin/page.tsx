@@ -108,12 +108,12 @@ function SignInContent() {
             onClick={() => void handleSignIn("microsoft-entra-id")}
             className="mt-8 flex min-h-12 w-full items-center justify-center gap-3 rounded-lg bg-[#5b5bd6] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-[#4546a8]/15 transition hover:bg-[#4546a8] disabled:cursor-wait disabled:opacity-60"
           >
-            <span className="grid h-7 w-7 place-items-center rounded-md bg-white text-sm font-black text-[#4c4dba]">M</span>
+            <span className="grid h-7 w-7 place-items-center rounded-md bg-white text-sm font-black operational-link">M</span>
             {loading === "microsoft-entra-id" ? "Connexion en cours…" : "Continuer avec Microsoft Entra ID"}
           </button>
 
           <div className="mt-6 flex items-start gap-3 rounded-lg bg-slate-50 p-4 text-xs leading-5 text-slate-600">
-            <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md bg-[#f0f0ff] font-bold text-[#4c4dba]">✓</span>
+            <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md bg-[#f0f0ff] font-bold operational-link">✓</span>
             <p>Microsoft Entra ID fournit votre identité. Le nom affiché, le département et le manager applicatif sont validés exclusivement par l’administrateur fonctionnel.</p>
           </div>
           <p className="mt-6 text-center text-[11px] font-medium text-slate-400">1TASK · Service desk interne</p>

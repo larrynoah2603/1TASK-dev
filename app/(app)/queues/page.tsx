@@ -44,7 +44,7 @@ export default async function QueuesPage() {
               <div className="queue-stat queue-stat-warning rounded-lg border border-amber-100 bg-amber-50/70 p-3"><p className="text-[11px] text-amber-800">Urgents</p><p className="mt-1 text-lg font-bold text-amber-800">{queue.operationalStats.urgent}</p></div>
               <div className="queue-stat queue-stat-danger rounded-lg border border-rose-100 bg-rose-50/70 p-3"><p className="text-[11px] text-rose-800">Bloqués · SLA</p><p className="mt-1 text-lg font-bold text-rose-800">{queue.operationalStats.blocked} · {queue.operationalStats.slaAtRisk}</p></div>
             </div>
-            <p className="mt-4 text-xs font-semibold text-[#4c4dba]">Ouvrir la file →</p>
+            <p className="mt-4 text-xs font-semibold operational-link">Ouvrir la file →</p>
           </Link>
         ))}
         {!queues.length ? <div className="panel p-8 text-sm text-slate-500">Aucune file n’est rattachée à votre périmètre de supervision.</div> : null}

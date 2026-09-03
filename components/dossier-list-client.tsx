@@ -124,7 +124,7 @@ export function DossierListClient({
               {dossiers.map((dossier) => {
                 const departments = [...new Set(dossier.missions.map((mission) => mission.department?.name).filter(Boolean))];
                 return <tr key={dossier.id}>
-                  <td><Link href={`/dossiers/${dossier.id}` as Route} className="font-semibold text-[#4c4dba] hover:underline">{dossier.code}</Link><p className="mt-0.5 max-w-[260px] truncate text-xs text-slate-500">{dossier.name}{dossier.confidential ? " · Confidentiel" : ""}</p></td>
+                  <td><Link href={`/dossiers/${dossier.id}` as Route} className="font-semibold operational-link hover:underline">{dossier.code}</Link><p className="mt-0.5 max-w-[260px] truncate text-xs text-slate-500">{dossier.name}{dossier.confidential ? " · Confidentiel" : ""}</p></td>
                   <td><p className="font-medium text-slate-800">{dossier.client.name}</p><p className="font-mono text-[10px] text-slate-400">{dossier.client.code}</p></td>
                   <td><span className="font-semibold text-slate-800">{dossier.missions.length}</span><div className="mt-1 flex flex-wrap gap-1">{dossier.missions.slice(0, 3).map((mission) => <span key={mission.id} className={`status-chip status-chip-${mission.status.toLowerCase()}`}>{missionStatusLabels[mission.status] ?? mission.status}</span>)}</div></td>
                   <td className="text-xs text-slate-600">{departments.length ? departments.join(" · ") : "Non rattaché"}</td>

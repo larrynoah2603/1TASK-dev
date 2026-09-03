@@ -125,13 +125,13 @@ export function NotificationCenter({ initialUnreadCount = 0 }: { initialUnreadCo
       </button>
       {open ? (
         <section className="notification-popover" role="dialog" aria-label="Centre de notifications">
-          <div className="notification-popover-header"><div><p className="eyebrow">Centre de notifications</p><h2 className="mt-1 text-sm font-bold text-slate-900">Vos alertes</h2></div><button type="button" disabled={busy || !unreadCount} onClick={() => void markAllRead()} className="text-[11px] font-semibold text-[#4c4dba] disabled:opacity-40">Tout marquer lu</button></div>
+          <div className="notification-popover-header"><div><p className="eyebrow">Centre de notifications</p><h2 className="mt-1 text-sm font-bold text-slate-900">Vos alertes</h2></div><button type="button" disabled={busy || !unreadCount} onClick={() => void markAllRead()} className="notification-mark-all font-semibold disabled:opacity-40">Tout marquer lu</button></div>
           <div className="notification-popover-list">
             {!loaded ? <p className="px-3 py-6 text-center text-xs text-slate-500">Chargement…</p> : null}
             {error ? <p role="alert" className="px-3 py-3 text-center text-xs font-semibold text-rose-700">{error}</p> : null}
             {loaded && !error && !items.length ? <p className="px-3 py-6 text-center text-xs text-slate-500">Aucune notification.</p> : null}
             {items.map((item) => {
-              const content = <><span className={`notification-dot ${item.status === "READ" ? "notification-dot-read" : ""}`} /><span className="min-w-0 flex-1"><span className="block text-xs font-semibold text-slate-800">{item.title}</span><span className="mt-1 block line-clamp-2 text-[11px] leading-4 text-slate-500">{item.body}</span><span className="mt-1 block text-[10px] text-slate-400">{item.ticketReference ? `${item.ticketReference} · ` : ""}{relativeDate(item.createdAt)}</span></span></>;
+              const content = <><span className={`notification-dot ${item.status === "READ" ? "notification-dot-read" : ""}`} /><span className="min-w-0 flex-1"><span className="notification-item-title block font-semibold">{item.title}</span><span className="notification-item-copy mt-1 block line-clamp-2">{item.body}</span><span className="notification-item-meta mt-1 block">{item.ticketReference ? `${item.ticketReference} · ` : ""}{relativeDate(item.createdAt)}</span></span></>;
               return item.ticketId ? <Link key={item.id} href={`/tickets/${item.ticketId}`} onClick={() => { void markRead(item.id); setOpen(false); }} className={`notification-row ${item.status === "READ" ? "notification-row-read" : ""}`}>{content}</Link> : <button key={item.id} type="button" onClick={() => void markRead(item.id)} className={`notification-row w-full text-left ${item.status === "READ" ? "notification-row-read" : ""}`}>{content}</button>;
             })}
           </div>

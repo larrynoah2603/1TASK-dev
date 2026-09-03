@@ -283,7 +283,7 @@ export function TicketAdvancedPanels(props: Props) {
         {props.canLink ? <form onSubmit={submitLink} className="mt-4 space-y-3">
           <label className="field-label">Rechercher un ticket cible<input value={linkQuery} onChange={(event) => void searchTickets(event.target.value)} className="field-control font-normal" placeholder="Référence ou titre…" /></label>
           {linkResults.length ? <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-200 bg-white p-1">{linkResults.map((ticket) => <button type="button" key={ticket.id} onClick={() => { setSelectedTicket(ticket); setLinkQuery(ticketLabel(ticket)); setLinkResults([]); }} className="block w-full rounded-md px-2 py-2 text-left text-xs hover:bg-slate-50"><strong>{ticket.reference}</strong> · {ticket.title}</button>)}</div> : null}
-          {selectedTicket ? <p className="rounded-md bg-[#f7f7ff] px-2 py-2 text-xs text-[#4c4dba]">Cible : {ticketLabel(selectedTicket)}</p> : null}
+          {selectedTicket ? <p className="rounded-md bg-[#f7f7ff] px-2 py-2 text-xs operational-link">Cible : {ticketLabel(selectedTicket)}</p> : null}
           <label className="field-label">Type de relation<Combobox value={linkType} onChange={setLinkType} options={LINK_TYPES} /></label>
           <label className="field-label">Motif facultatif<input value={linkReason} onChange={(event) => setLinkReason(event.target.value)} className="field-control font-normal" /></label>
           <button disabled={!selectedTicket || busy === "link"} className="button-secondary w-full">{busy === "link" ? "Création…" : "Créer le lien"}</button>
@@ -296,7 +296,7 @@ export function TicketAdvancedPanels(props: Props) {
         <section className="panel p-5">
         <p className="eyebrow">Fichiers</p>
         <h2 className="mt-1 text-base font-semibold text-slate-900">Pièces jointes</h2>
-        {props.canUpload ? <label className="mt-4 flex cursor-pointer items-center justify-center rounded-lg border border-dashed border-[#b9b9eb] bg-[#f7f7ff] px-3 py-4 text-xs font-semibold text-[#4c4dba] hover:bg-[#eeeeff]">{busy === "attachment" ? "Envoi…" : "Ajouter un fichier · 10 Mo maximum"}<input type="file" onChange={(event) => void uploadAttachment(event)} disabled={busy === "attachment"} className="sr-only" /></label> : null}
+        {props.canUpload ? <label className="mt-4 flex cursor-pointer items-center justify-center rounded-lg border border-dashed border-[#b9b9eb] bg-[#f7f7ff] px-3 py-4 text-xs font-semibold operational-link hover:bg-[#eeeeff]">{busy === "attachment" ? "Envoi…" : "Ajouter un fichier · 10 Mo maximum"}<input type="file" onChange={(event) => void uploadAttachment(event)} disabled={busy === "attachment"} className="sr-only" /></label> : null}
           <div className="mt-4 space-y-2">{attachments.map((attachment) => <a key={attachment.id} href={`/api/tickets/${props.ticketId}/attachments/${attachment.id}`} className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 text-xs hover:bg-slate-100"><span className="min-w-0 truncate font-semibold text-slate-800">{attachment.fileName}<span className="ml-2 font-normal text-slate-400">{formatBytes(attachment.sizeBytes)}</span></span><span className="shrink-0 text-slate-500">{attachment.uploadedBy.name}</span></a>)}{!attachments.length ? <p className="text-xs text-slate-500">Aucune pièce jointe visible.</p> : null}</div>
         </section>
       </TicketSidePanel>

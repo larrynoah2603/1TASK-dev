@@ -23,8 +23,8 @@ export default async function AdminDashboardPage() {
         <AdminNotice tone="warning">L’administrateur technique ne peut pas modifier l’auteur, le statut métier, l’affectation ou l’historique d’un ticket.</AdminNotice>
         <div className="grid gap-4 md:grid-cols-3">
           <AdminStatCard label="Accès" value="Technique" detail="Permission technical:manage" />
-          <AdminStatCard label="Données sensibles" value="Bloquées" detail="Aucun accès implicite aux tickets confidentiels" tone="rose" />
-          <AdminStatCard label="Authentification" value="Entra ID" detail="Provider microsoft-entra-id conservé" tone="emerald" />
+          <AdminStatCard label="Données sensibles" value="Bloquées" detail="Aucun accès implicite aux tickets confidentiels" tone="danger" />
+          <AdminStatCard label="Authentification" value="Entra ID" detail="Provider microsoft-entra-id conservé" tone="success" />
         </div>
       </div>
     );
@@ -59,9 +59,9 @@ export default async function AdminDashboardPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <AdminStatCard label="Utilisateurs" value={userSummary.total} detail={`${userSummary.active} actifs`} />
-        <AdminStatCard label="Tickets actifs" value={activeTicketCount} detail={`${ticketCount} tickets non confidentiels visibles`} tone="emerald" />
-        <AdminStatCard label="SLA à surveiller" value={overdueCount} detail="Tickets dépassant l’échéance" tone={overdueCount ? "rose" : "emerald"} />
-        <AdminStatCard label="Règles notification" value={notificationCount} detail="Règles actives" tone="amber" />
+        <AdminStatCard label="Tickets actifs" value={activeTicketCount} detail={`${ticketCount} tickets non confidentiels visibles`} tone="success" />
+        <AdminStatCard label="SLA à surveiller" value={overdueCount} detail="Tickets dépassant l’échéance" tone={overdueCount ? "danger" : "success"} />
+        <AdminStatCard label="Règles notification" value={notificationCount} detail="Règles actives" tone="warning" />
         <AdminStatCard label="Événements d’audit" value={auditCount} detail="Historique conservé" />
       </div>
 
@@ -71,7 +71,7 @@ export default async function AdminDashboardPage() {
             <p className="eyebrow">Administration</p>
             <h2 className="mt-2 text-base font-semibold text-slate-900">{label}</h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
-            <p className="mt-4 text-xs font-semibold text-[#4c4dba]">Ouvrir la rubrique →</p>
+            <p className="mt-4 text-xs font-semibold operational-link">Ouvrir la rubrique →</p>
           </Link>
         ))}
       </section>
