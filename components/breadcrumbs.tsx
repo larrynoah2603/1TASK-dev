@@ -49,7 +49,7 @@ export function Breadcrumbs() {
       {unique.map((item, index) => (
         <span key={item.href} className="flex items-center gap-2">
           {index ? <span aria-hidden="true" className="text-slate-300">/</span> : null}
-          {index === unique.length - 1 ? <span aria-current="page" className="font-semibold text-slate-700">{item.label}</span> : <Link href={item.href as Route} className="text-slate-400 hover:text-[#4c4dba]">{item.label}</Link>}
+          {index === unique.length - 1 ? <span aria-current="page" className="font-semibold text-slate-700">{item.label}</span> : <Link href={item.href as Route} className="text-slate-400 hover:operational-link-hover">{item.label}</Link>}
         </span>
       ))}
     </nav>

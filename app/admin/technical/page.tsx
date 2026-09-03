@@ -8,8 +8,8 @@ export default async function AdminTechnicalPage() {
       <AdminPageHeader eyebrow="Périmètre technique" title="Configuration technique autorisée" description="Cette rubrique est volontairement séparée de la configuration fonctionnelle. Elle ne donne pas accès aux données sensibles des tickets ni à leur historique métier." />
       <AdminNotice tone="warning">Aucune action technique ne peut modifier l’auteur, le département officiel Entra, l’affectation, le workflow ou l’historique d’un ticket.</AdminNotice>
       <div className="grid gap-4 md:grid-cols-3">
-        <AdminStatCard label="Provider" value="Entra ID" detail="microsoft-entra-id uniquement" tone="emerald" />
-        <AdminStatCard label="Accès tickets" value="Aucun implicite" detail="Les dossiers confidentiels restent cloisonnés" tone="rose" />
+        <AdminStatCard label="Provider" value="Entra ID" detail="microsoft-entra-id uniquement" tone="success" />
+        <AdminStatCard label="Accès tickets" value="Aucun implicite" detail="Les dossiers confidentiels restent cloisonnés" tone="danger" />
         <AdminStatCard label="Périmètre" value="Technique" detail="Paramètres explicitement autorisés" />
       </div>
       <section className="panel p-5 sm:p-6">

@@ -2,12 +2,8 @@ import Link from "next/link";
 import { RoleCode, TicketStatus } from "@prisma/client";
 import { TicketTable } from "@/components/ticket-table";
 import { DashboardKpiGrid, DashboardViewTabs, PriorityBreakdown, TicketActivityChart } from "@/components/dashboard-visuals";
-import { listVisibleTickets } from "@/lib/ticket-service";
+import { getRequesterTicketSummary, listVisibleTickets } from "@/lib/ticket-service";
 import { getSessionUserContext, permissionCodes, roleCodes } from "@/lib/server-auth";
-
-function countStatus(tickets: Array<{ status: TicketStatus }>, status: TicketStatus) {
-  return tickets.filter((ticket) => ticket.status === status).length;
-}
 
 export default async function DashboardPage() {
   const user = await getSessionUserContext();
@@ -16,11 +12,15 @@ export default async function DashboardPage() {
   const operationalRoles: RoleCode[] = [RoleCode.AGENT, RoleCode.QUEUE_MANAGER, RoleCode.FUNCTIONAL_ADMIN];
   const canOperate = roleCodes(user).some((role) => operationalRoles.includes(role));
   const canReport = permissionCodes(user).includes("reporting:read");
-  const personalTickets = await listVisibleTickets(user, { scope: "requested", take: 100 });
-  const personalOpen = personalTickets.filter((ticket) => ([TicketStatus.NEW, TicketStatus.TO_QUALIFY, TicketStatus.TO_ASSIGN, TicketStatus.ASSIGNED, TicketStatus.REOPENED] as TicketStatus[]).includes(ticket.status)).length;
-  const personalInProgress = countStatus(personalTickets, TicketStatus.IN_PROGRESS);
-  const personalBlocked = countStatus(personalTickets, TicketStatus.BLOCKED);
-  const personalClosed = countStatus(personalTickets, TicketStatus.CLOSED);
+  const [personalTickets, statusCounts] = await Promise.all([
+    listVisibleTickets(user, { scope: "requested", take: 100 }),
+    getRequesterTicketSummary(user),
+  ]);
+  const personalOpen = ([TicketStatus.NEW, TicketStatus.TO_QUALIFY, TicketStatus.TO_ASSIGN, TicketStatus.ASSIGNED, TicketStatus.REOPENED] as TicketStatus[])
+    .reduce((total, status) => total + statusCounts[status], 0);
+  const personalInProgress = statusCounts[TicketStatus.IN_PROGRESS];
+  const personalBlocked = statusCounts[TicketStatus.BLOCKED];
+  const personalClosed = statusCounts[TicketStatus.CLOSED];
 
   return (
     <div className="dashboard-page dashboard-requester-layout">
@@ -30,7 +30,7 @@ export default async function DashboardPage() {
         <Link href="/tickets" className="button-secondary hidden sm:inline-flex">Voir mes tickets</Link>
       </header>
 
-      <DashboardKpiGrid items={[{ label: "Ouverts", value: personalOpen, note: "à qualifier ou affecter", href: "/tickets?status=NEW", tone: "dashboard-kpi-value-brand", icon: "◫" }, { label: "En cours", value: personalInProgress, note: "traitement en cours", href: "/tickets?status=IN_PROGRESS", tone: "dashboard-kpi-value-info", icon: "◷" }, { label: "Bloqués", value: personalBlocked, note: "information attendue", href: "/tickets?status=BLOCKED", tone: "dashboard-kpi-value-warning", icon: "!" }, { label: "Résolus", value: personalClosed, note: "historique personnel", href: "/tickets?status=CLOSED", tone: "dashboard-kpi-value-success", icon: "✓" }]} />
+      <DashboardKpiGrid items={[{ label: "Ouverts", value: personalOpen, note: "à qualifier ou affecter", href: "/tickets?status=NEW", tone: "dashboard-kpi-value-brand" }, { label: "En cours", value: personalInProgress, note: "traitement en cours", href: "/tickets?status=IN_PROGRESS", tone: "dashboard-kpi-value-info" }, { label: "Bloqués", value: personalBlocked, note: "information attendue", href: "/tickets?status=BLOCKED", tone: "dashboard-kpi-value-warning" }, { label: "Résolus", value: personalClosed, note: "historique personnel", href: "/tickets?status=CLOSED", tone: "dashboard-kpi-value-success" }]} />
 
       <div className="dashboard-requester-grid"><TicketActivityChart tickets={personalTickets} /><PriorityBreakdown tickets={personalTickets} /></div>
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/http";
 import { listMissionWorklogs } from "@/lib/production-service";
-import { requireSessionUserContext } from "@/lib/server-auth";
+import { AuthorizationError, requireSessionUserContext } from "@/lib/server-auth";
 
 
 function requirePermission(
@@ -19,9 +19,7 @@ function requirePermission(
 
 
   if (!permissions.includes(permission)) {
-    throw new Error(
-      "Permission insuffisante.",
-    );
+    throw new AuthorizationError("Permission insuffisante.");
   }
 }
 

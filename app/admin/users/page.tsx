@@ -61,9 +61,9 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
         l’adresse e-mail et l’identifiant unique ne sont jamais modifiables ici.
       </AdminNotice>
       <div className="grid gap-4 sm:grid-cols-3">
-        <AdminStatCard label="Actifs" value={active} detail="Accès à l’espace normal autorisé" tone="emerald" />
-        <AdminStatCard label="À affecter" value={pending} detail="Profil à compléter par l’administrateur" tone="amber" />
-        <AdminStatCard label="Désactivés" value={disabled} detail="Accès applicatif bloqué" tone="rose" />
+        <AdminStatCard label="Actifs" value={active} detail="Accès à l’espace normal autorisé" tone="success" />
+        <AdminStatCard label="À affecter" value={pending} detail="Profil à compléter par l’administrateur" tone="warning" />
+        <AdminStatCard label="Désactivés" value={disabled} detail="Accès applicatif bloqué" tone="danger" />
       </div>
 
       <form method="get" className="filter-panel grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto_auto]"><label className="field-label"><span>Rechercher un utilisateur</span><input name="q" defaultValue={raw.q} className="field-control" placeholder="Nom, e-mail, département…" /></label><label className="field-label"><span>Statut</span><Combobox name="status" defaultValue={statusFilter} options={[{ value: "", label: "Tous" }, { value: "ACTIVE", label: "Actifs" }, { value: "PENDING_ASSIGNMENT", label: "À affecter" }, { value: "PENDING_VALIDATION", label: "À valider" }, { value: "DISABLED", label: "Désactivés" }]} /></label><label className="field-label"><span>Par page</span><Combobox name="pageSize" defaultValue={String(pageSize)} options={[{ value: "10", label: "10" }, { value: "25", label: "25" }, { value: "50", label: "50" }]} /></label><div className="flex items-end gap-2"><button className="button-primary">Rechercher</button><a href="/admin/users" className="button-ghost min-h-10 text-xs">Réinitialiser</a></div></form>

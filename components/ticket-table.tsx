@@ -59,7 +59,7 @@ export function TicketTable({
             {tickets.map((ticket) => (
               <tr key={ticket.id}>
                 <td className="px-4 py-3.5">
-                  <Link href={("/tickets/" + ticket.id) as Route} className="font-semibold text-[#4c4dba] hover:underline">
+                  <Link href={("/tickets/" + ticket.id) as Route} className="ticket-reference-link font-semibold hover:underline">
                     {ticket.reference}
                   </Link>
                   <p className="mt-1 max-w-xs truncate font-medium text-slate-700">{ticket.title}</p>
@@ -83,7 +83,7 @@ export function TicketTable({
                 </td>
                 {showActions ? (
                   <td className="px-4 py-3.5">
-                    {claimable.has(ticket.id) ? <ClaimTicketButton ticketId={ticket.id} /> : <Link href={("/tickets/" + ticket.id) as Route} className="text-xs font-semibold text-[#4c4dba] hover:underline">Ouvrir</Link>}
+                    {claimable.has(ticket.id) ? <ClaimTicketButton ticketId={ticket.id} /> : <Link href={("/tickets/" + ticket.id) as Route} className="ticket-reference-link text-xs font-semibold hover:underline">Ouvrir</Link>}
                   </td>
                 ) : null}
               </tr>

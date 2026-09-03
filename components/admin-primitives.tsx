@@ -21,12 +21,12 @@ export function AdminPageHeader({
   );
 }
 
-export function AdminStatCard({ label, value, detail, tone = "blue" }: { label: string; value: number | string; detail: string; tone?: "blue" | "emerald" | "amber" | "rose" }) {
+export function AdminStatCard({ label, value, detail, tone = "primary" }: { label: string; value: number | string; detail: string; tone?: "primary" | "success" | "warning" | "danger" }) {
   const tones = {
-    blue: "text-[#4c4dba]",
-    emerald: "text-emerald-700",
-    amber: "text-amber-700",
-    rose: "text-rose-700",
+    primary: "admin-stat-value-primary",
+    success: "admin-stat-value-success",
+    warning: "admin-stat-value-warning",
+    danger: "admin-stat-value-danger",
   } as const;
   return (
     <div className="admin-stat">
@@ -39,10 +39,9 @@ export function AdminStatCard({ label, value, detail, tone = "blue" }: { label: 
 
 export function AdminEmptyState({ title, description }: { title: string; description: string }) {
   return (
-    <div className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-      <div className="mx-auto grid h-10 w-10 place-items-center rounded-lg bg-slate-100 text-slate-500">—</div>
-      <h2 className="mt-4 text-sm font-bold text-slate-800">{title}</h2>
-      <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-500">{description}</p>
+    <div className="admin-empty-state">
+      <h2>{title}</h2>
+      <p>{description}</p>
     </div>
   );
 }

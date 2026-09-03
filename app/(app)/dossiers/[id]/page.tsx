@@ -42,7 +42,7 @@ export default async function DossierDetailPage({ params }: { params: Promise<{ 
   return (
     <div className="space-y-5 portfolio-page portfolio-industrial portfolio-dossier-detail-page">
       <div className="portfolio-record-header">
-        <Link href={"/dossiers" as Route} className="text-xs font-semibold text-[#4c4dba] hover:underline">← Retour aux dossiers</Link>
+        <Link href={"/dossiers" as Route} className="text-xs font-semibold operational-link hover:underline">← Retour aux dossiers</Link>
         <header className="mt-4 flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
           <div>
             <p className="eyebrow">{dossier.client.code} · {dossier.code}</p>
@@ -72,9 +72,9 @@ export default async function DossierDetailPage({ params }: { params: Promise<{ 
         </section>
 
         <section className="panel overflow-hidden">
-          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 sm:px-5"><div><p className="eyebrow">Service desk</p><h2 className="mt-1 text-base font-semibold text-slate-900">Tickets liés</h2></div><Link href="/inbox" className="text-[11px] font-semibold text-[#4c4dba] hover:underline">Ouvrir la boîte agent</Link></div>
+          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 sm:px-5"><div><p className="eyebrow">Service desk</p><h2 className="mt-1 text-base font-semibold text-slate-900">Tickets liés</h2></div><Link href="/inbox" className="text-[11px] font-semibold operational-link hover:underline">Ouvrir la boîte agent</Link></div>
           <div className="overflow-x-auto"><table className="data-table min-w-[620px]"><thead><tr><th>Ticket</th><th>État</th><th>Priorité</th><th>File</th><th>Créé le</th></tr></thead><tbody>
-            {dossier.tickets.map((ticket) => <tr key={ticket.id}><td><Link href={`/tickets/${ticket.id}`} className="font-semibold text-[#4c4dba] hover:underline">{ticket.reference}</Link><p className="mt-0.5 max-w-[220px] truncate text-xs text-slate-500">{ticket.title}</p></td><td><StatusBadge status={ticket.status} /></td><td><PriorityBadge priority={ticket.priority} /></td><td className="text-xs text-slate-600">{ticket.queue.name}</td><td className="text-xs text-slate-500">{formatDate(ticket.createdAt)}</td></tr>)}
+            {dossier.tickets.map((ticket) => <tr key={ticket.id}><td><Link href={`/tickets/${ticket.id}`} className="font-semibold operational-link hover:underline">{ticket.reference}</Link><p className="mt-0.5 max-w-[220px] truncate text-xs text-slate-500">{ticket.title}</p></td><td><StatusBadge status={ticket.status} /></td><td><PriorityBadge priority={ticket.priority} /></td><td className="text-xs text-slate-600">{ticket.queue.name}</td><td className="text-xs text-slate-500">{formatDate(ticket.createdAt)}</td></tr>)}
             {!dossier.tickets.length ? <tr><td colSpan={5} className="py-10 text-center text-sm text-slate-500">Aucun ticket lié à ce dossier dans votre périmètre.</td></tr> : null}
           </tbody></table></div>
         </section>

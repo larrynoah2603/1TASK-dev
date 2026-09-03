@@ -36,6 +36,7 @@ export function NotificationCenter({ initialUnreadCount = 0 }: { initialUnreadCo
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
   const [unreadCount, setUnreadCount] = useState(initialUnreadCount);
   const ref = useRef<HTMLDivElement>(null);
   const requestInFlight = useRef(false);
@@ -46,16 +47,20 @@ export function NotificationCenter({ initialUnreadCount = 0 }: { initialUnreadCo
     const loadNotifications = async () => {
       if (requestInFlight.current) return;
       requestInFlight.current = true;
+      setError("");
       try {
         const response = await fetchWithTimeout("/api/notifications?take=8", { cache: "no-store" }, 8_000);
-        if (!response.ok) return;
+        if (!response.ok) throw new Error("Les notifications sont temporairement indisponibles.");
         const data = await response.json() as NotificationResponse;
         if (cancelled) return;
         setItems(data.notifications ?? []);
         setUnreadCount(Number.isFinite(data.unreadCount) ? data.unreadCount : 0);
         setLoaded(true);
       } catch {
-        if (!cancelled) setLoaded(true);
+        if (!cancelled) {
+          setError("Les notifications n’ont pas pu être chargées.");
+          setLoaded(true);
+        }
       } finally {
         requestInFlight.current = false;
       }
@@ -85,17 +90,31 @@ export function NotificationCenter({ initialUnreadCount = 0 }: { initialUnreadCo
 
   async function markRead(id: string) {
     const item = items.find((candidate) => candidate.id === id);
-    await fetch(`/api/notifications/${id}/read`, { method: "POST" });
-    setItems((current) => current.map((notification) => notification.id === id ? { ...notification, status: "READ" } : notification));
-    if (item?.status !== "READ") setUnreadCount((current) => Math.max(0, current - 1));
+    if (item?.status === "READ") return;
+    setError("");
+    try {
+      const response = await fetchWithTimeout(`/api/notifications/${id}/read`, { method: "POST" }, 8_000);
+      if (!response.ok) throw new Error("read-failed");
+      setItems((current) => current.map((notification) => notification.id === id ? { ...notification, status: "READ" } : notification));
+      setUnreadCount((current) => Math.max(0, current - 1));
+    } catch {
+      setError("La notification n’a pas pu être marquée comme lue.");
+    }
   }
 
   async function markAllRead() {
     setBusy(true);
-    await fetch("/api/notifications/read-all", { method: "POST" });
-    setItems((current) => current.map((item) => ({ ...item, status: "READ" })));
-    setUnreadCount(0);
-    setBusy(false);
+    setError("");
+    try {
+      const response = await fetchWithTimeout("/api/notifications/read-all", { method: "POST" }, 8_000);
+      if (!response.ok) throw new Error("read-all-failed");
+      setItems((current) => current.map((item) => ({ ...item, status: "READ" })));
+      setUnreadCount(0);
+    } catch {
+      setError("Les notifications n’ont pas pu être marquées comme lues.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -106,12 +125,13 @@ export function NotificationCenter({ initialUnreadCount = 0 }: { initialUnreadCo
       </button>
       {open ? (
         <section className="notification-popover" role="dialog" aria-label="Centre de notifications">
-          <div className="notification-popover-header"><div><p className="eyebrow">Centre de notifications</p><h2 className="mt-1 text-sm font-bold text-slate-900">Vos alertes</h2></div><button type="button" disabled={busy || !unreadCount} onClick={() => void markAllRead()} className="text-[11px] font-semibold text-[#4c4dba] disabled:opacity-40">Tout marquer lu</button></div>
+          <div className="notification-popover-header"><div><p className="eyebrow">Centre de notifications</p><h2 className="mt-1 text-sm font-bold text-slate-900">Vos alertes</h2></div><button type="button" disabled={busy || !unreadCount} onClick={() => void markAllRead()} className="notification-mark-all font-semibold disabled:opacity-40">Tout marquer lu</button></div>
           <div className="notification-popover-list">
             {!loaded ? <p className="px-3 py-6 text-center text-xs text-slate-500">Chargement…</p> : null}
-            {loaded && !items.length ? <p className="px-3 py-6 text-center text-xs text-slate-500">Aucune notification.</p> : null}
+            {error ? <p role="alert" className="px-3 py-3 text-center text-xs font-semibold text-rose-700">{error}</p> : null}
+            {loaded && !error && !items.length ? <p className="px-3 py-6 text-center text-xs text-slate-500">Aucune notification.</p> : null}
             {items.map((item) => {
-              const content = <><span className={`notification-dot ${item.status === "READ" ? "notification-dot-read" : ""}`} /><span className="min-w-0 flex-1"><span className="block text-xs font-semibold text-slate-800">{item.title}</span><span className="mt-1 block line-clamp-2 text-[11px] leading-4 text-slate-500">{item.body}</span><span className="mt-1 block text-[10px] text-slate-400">{item.ticketReference ? `${item.ticketReference} · ` : ""}{relativeDate(item.createdAt)}</span></span></>;
+              const content = <><span className={`notification-dot ${item.status === "READ" ? "notification-dot-read" : ""}`} /><span className="min-w-0 flex-1"><span className="notification-item-title block font-semibold">{item.title}</span><span className="notification-item-copy mt-1 block line-clamp-2">{item.body}</span><span className="notification-item-meta mt-1 block">{item.ticketReference ? `${item.ticketReference} · ` : ""}{relativeDate(item.createdAt)}</span></span></>;
               return item.ticketId ? <Link key={item.id} href={`/tickets/${item.ticketId}`} onClick={() => { void markRead(item.id); setOpen(false); }} className={`notification-row ${item.status === "READ" ? "notification-row-read" : ""}`}>{content}</Link> : <button key={item.id} type="button" onClick={() => void markRead(item.id)} className={`notification-row w-full text-left ${item.status === "READ" ? "notification-row-read" : ""}`}>{content}</button>;
             })}
           </div>

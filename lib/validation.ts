@@ -2,6 +2,7 @@ import {
   BlockReason,
   Impact,
   MessageVisibility,
+  MissionStatus,
   NotificationChannel,
   NotificationType,
   Priority,
@@ -176,6 +177,21 @@ export const notificationPreferenceSchema = z.object({
   enabled: z.boolean(),
 }).strict();
 
+export const notificationListQuerySchema = z.object({
+  take: z.coerce.number().int().min(1).max(100).default(50),
+}).strict();
+
+export const productionSearchQuerySchema = z.object({
+  q: z.string().trim().max(120).optional(),
+}).strict();
+
+export const missionListQuerySchema = productionSearchQuerySchema.extend({
+  status: z.enum(MissionStatus).optional(),
+  departmentId: z.string().cuid().optional(),
+  dossierId: z.string().cuid().optional(),
+  take: z.coerce.number().int().min(1).max(100).optional(),
+}).strict();
+
 const workflowStepSchema = z.object({
   code: z.string().trim().min(1).max(80),
   name: z.string().trim().min(2).max(180),
@@ -348,7 +364,14 @@ export const calendarAdminSchema = z.object({
   code: z.string().trim().min(2).max(80).regex(/^[A-Za-z0-9][A-Za-z0-9_-]*$/),
   name: z.string().trim().min(2).max(180),
   organizationId: z.string().cuid(),
-  timezone: z.string().trim().min(1).max(80),
+  timezone: z.string().trim().min(1).max(80).refine((timezone) => {
+    try {
+      new Intl.DateTimeFormat("fr-FR", { timeZone: timezone }).format();
+      return true;
+    } catch {
+      return false;
+    }
+  }, "Le fuseau horaire doit être un identifiant IANA valide."),
   workingDays: z.array(z.number().int().min(1).max(7)).min(1).max(7),
   workdayStartMinute: z.number().int().min(0).max(1_439),
   workdayEndMinute: z.number().int().min(1).max(1_440),

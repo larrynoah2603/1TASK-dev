@@ -8,11 +8,11 @@ export default async function AdminReportingPage() {
   const summary = await getReportingSummary(admin);
   return (
     <div className="space-y-6 admin-reporting-industrial sla-reporting-industrial">
-      <AdminPageHeader eyebrow="Indicateurs autorisés" title="Reporting administrateur" description="Les indicateurs sont calculés côté serveur sur les tickets non confidentiels couverts par l’accès fonctionnel. Aucun détail de ticket n’est exposé à un rôle reporting seul." />
+      <AdminPageHeader eyebrow="Indicateurs autorisés" title="Reporting administrateur" description="Les indicateurs sont calculés côté serveur sur les tickets non confidentiels couverts par l’accès fonctionnel. Aucun détail de ticket n’est exposé à un rôle reporting seul." actions={<Link href="/api/reporting/export" className="button-secondary">Exporter en CSV</Link>} />
       <div className="reporting-kpi-grid grid gap-4 sm:grid-cols-3">
         <AdminStatCard label="Tickets analysés" value={summary.total} detail="Périmètre non confidentiel" />
-        <AdminStatCard label="SLA dépassés" value={summary.overdue} detail="Tickets encore ouverts" tone={summary.overdue ? "rose" : "emerald"} />
-        <AdminStatCard label="Taux clôturé" value={`${summary.closureRate}%`} detail={`${summary.closed} ticket(s) clôturé(s)`} tone="emerald" />
+        <AdminStatCard label="SLA dépassés" value={summary.overdue} detail={`${summary.firstResponseBreached} réponse · ${summary.resolutionBreached} résolution`} tone={summary.overdue ? "danger" : "success"} />
+        <AdminStatCard label="Taux clôturé" value={`${summary.closureRate}%`} detail={`${summary.closed} ticket(s) clôturé(s)`} tone="success" />
       </div>
       {!summary.total ? <AdminEmptyState title="Aucune donnée de reporting" description="Aucun ticket non confidentiel n’est disponible dans le périmètre autorisé." /> : (
         <section className="reporting-distribution-panel panel p-5 sm:p-6">
@@ -23,3 +23,4 @@ export default async function AdminReportingPage() {
     </div>
   );
 }
+import Link from "next/link";

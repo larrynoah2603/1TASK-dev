@@ -56,6 +56,8 @@ export async function exportReportingSummary(actor: UserContext) {
     ["Tickets analysés", summary.total],
     ["Tickets clôturés", summary.closed],
     ["SLA en dépassement", summary.overdue],
+    ["Premières réponses dépassées", summary.firstResponseBreached],
+    ["Résolutions dépassées", summary.resolutionBreached],
     ["Taux clôturé", `${summary.closureRate}%`],
     ...summary.byStatus.map((row) => [`Statut ${row.status}`, row.count]),
   ];
