@@ -20,7 +20,7 @@ export default async function ReportingPage() {
       </header>
       <div className="reporting-kpi-grid grid gap-3 sm:grid-cols-3">
         <div className="metric-card"><p className="text-xs font-medium text-slate-500">Tickets analysés</p><p className="mt-2 text-2xl font-bold tracking-tight text-[#4c4dba]">{summary.total}</p></div>
-        <div className="metric-card"><p className="text-xs font-medium text-slate-500">SLA en dépassement</p><p className="mt-2 text-2xl font-bold tracking-tight text-rose-700">{summary.overdue}</p></div>
+        <div className="metric-card"><p className="text-xs font-medium text-slate-500">SLA en dépassement</p><p className="mt-2 text-2xl font-bold tracking-tight text-rose-700">{summary.overdue}</p><p className="mt-1 text-[11px] text-slate-500">{summary.firstResponseBreached} réponse · {summary.resolutionBreached} résolution</p></div>
         <div className="metric-card"><p className="text-xs font-medium text-slate-500">Taux clôturé</p><p className="mt-2 text-2xl font-bold tracking-tight text-emerald-700">{summary.closureRate}%</p></div>
       </div>
       <section className="reporting-distribution-panel panel p-5 sm:p-6">

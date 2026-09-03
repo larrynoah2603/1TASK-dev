@@ -756,6 +756,7 @@ model Ticket {
   @@index([sourceDepartmentId, createdAt])
   @@index([queueId, status, priority, updatedAt])
   @@index([assignedToId, status, updatedAt])
+  @@index([status, firstResponseDueAt])
   @@index([status, resolutionDueAt])
 }
 

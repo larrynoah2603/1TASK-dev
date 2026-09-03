@@ -1,34 +1,42 @@
-import { RoleCode, TicketStatus } from "@prisma/client";
+import { Prisma, TicketStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { AuthorizationError, requireCurrentActor, type UserContext } from "@/lib/server-auth";
+import { AuthorizationError, hasPermission, requireCurrentActor, type UserContext } from "@/lib/server-auth";
 import { visibleTicketWhere } from "@/lib/ticket-service";
 
 export async function getReportingSummary(actor: UserContext) {
   const current = await requireCurrentActor(actor);
-  const reportingRoleCodes: RoleCode[] = [
-    RoleCode.REPORTING_READER,
-    RoleCode.QUEUE_MANAGER,
-    RoleCode.FUNCTIONAL_ADMIN,
-  ];
-  const hasReportingRole = current.roleAssignments.some((assignment) =>
-    reportingRoleCodes.includes(assignment.role.code),
-  );
-  if (!hasReportingRole) throw new AuthorizationError("Vous n’êtes pas habilité à consulter ces rapports.");
+  if (!hasPermission(current, "reporting:read")) {
+    throw new AuthorizationError("Vous n’êtes pas habilité à consulter ces rapports.");
+  }
 
   const where = await visibleTicketWhere(current, { mode: "REPORTING" });
   const now = new Date();
-  const [total, closed, overdue, grouped] = await Promise.all([
+  const activeSlaWhere: Prisma.TicketWhereInput = {
+    status: { notIn: [TicketStatus.CLOSED, TicketStatus.BLOCKED, TicketStatus.RESOLUTION_PENDING] },
+    slaPausedAt: null,
+  };
+  const firstResponseBreachedWhere: Prisma.TicketWhereInput = {
+    firstResponseDueAt: { not: null, lt: now },
+    firstRespondedAt: null,
+  };
+  const resolutionBreachedWhere: Prisma.TicketWhereInput = {
+    resolutionDueAt: { not: null, lt: now },
+    resolvedAt: null,
+  };
+  const [total, closed, overdue, firstResponseBreached, resolutionBreached, grouped] = await Promise.all([
     prisma.ticket.count({ where }),
     prisma.ticket.count({ where: { AND: [where, { status: TicketStatus.CLOSED }] } }),
     prisma.ticket.count({
       where: {
         AND: [
           where,
-          { status: { not: TicketStatus.CLOSED } },
-          { resolutionDueAt: { not: null, lt: now } },
+          activeSlaWhere,
+          { OR: [firstResponseBreachedWhere, resolutionBreachedWhere] },
         ],
       },
     }),
+    prisma.ticket.count({ where: { AND: [where, activeSlaWhere, firstResponseBreachedWhere] } }),
+    prisma.ticket.count({ where: { AND: [where, activeSlaWhere, resolutionBreachedWhere] } }),
     prisma.ticket.groupBy({ by: ["status"], where, _count: { _all: true } }),
   ]);
   const byStatus = Object.values(TicketStatus).map((status) => ({
@@ -39,6 +47,8 @@ export async function getReportingSummary(actor: UserContext) {
     total,
     closed,
     overdue,
+    firstResponseBreached,
+    resolutionBreached,
     closureRate: total ? Math.round((closed / total) * 100) : 0,
     byStatus,
   };
