@@ -16,3 +16,39 @@ export async function countUnreadNotifications(actor: UserContext) {
   const current = await requireCurrentActor(actor);
   return prisma.notification.count({ where: { recipientId: current.id, status: { not: NotificationStatus.READ } } });
 }
+
+export async function markNotificationAsRead(
+  actor: UserContext,
+  notificationId: string,
+) {
+
+  const current =
+    await requireCurrentActor(actor);
+
+
+  const notification =
+    await prisma.notification.findFirst({
+      where: {
+        id: notificationId,
+        recipientId: current.id,
+      },
+    });
+
+
+  if (!notification) {
+    throw new Error(
+      "Notification introuvable.",
+    );
+  }
+
+
+  return prisma.notification.update({
+    where: {
+      id: notification.id,
+    },
+    data: {
+      status: NotificationStatus.READ,
+    },
+  });
+
+}
