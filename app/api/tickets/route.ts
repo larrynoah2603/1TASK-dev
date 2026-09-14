@@ -4,7 +4,7 @@ import {
   requirePermission,
   requireSessionUserContext,
 } from "@/lib/server-auth";
-import { listVisibleTickets, createTicket } from "@/lib/ticket-service";
+import { listVisibleTicketsPage, createTicket } from "@/lib/ticket-service";
 import {
   createTicketSchema,
   ticketListQuerySchema,
@@ -29,12 +29,13 @@ export async function GET(request: Request) {
       missionId: url.searchParams.get("missionId") || undefined,
       q: url.searchParams.get("q") || undefined,
       sort: url.searchParams.get("sort") || undefined,
+      cursor: url.searchParams.get("cursor") || undefined,
       page: url.searchParams.get("page") || undefined,
       pageSize: url.searchParams.get("pageSize") || undefined,
       take: url.searchParams.get("take") || undefined,
     });
     const MAX_PAGE_SIZE = 100;
-    const tickets = await listVisibleTickets(actor, {
+    const ticketPage = await listVisibleTicketsPage(actor, {
       status: parsed.status,
       priority: parsed.priority,
       scope: parsed.scope,
@@ -46,11 +47,15 @@ export async function GET(request: Request) {
       query: parsed.q,
       take: parsed.take,
       sort: parsed.sort,
+      cursor: parsed.cursor,
       page: parsed.page,
       pageSize: parsed.pageSize,
     });
 
-    return NextResponse.json(tickets);
+    const response = NextResponse.json(ticketPage.tickets);
+    response.headers.set("X-Has-More", String(ticketPage.hasMore));
+    if (ticketPage.nextCursor) response.headers.set("X-Next-Cursor", ticketPage.nextCursor);
+    return response;
   } catch (error) {
     return errorResponse(error);
   }

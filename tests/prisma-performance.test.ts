@@ -22,4 +22,33 @@ describe("contrats de performance Prisma", () => {
     expect(schema).toContain("@@index([recipientId, createdAt])");
     expect(schema).toContain("@@index([missionId, startedAt])");
   });
+
+  it("ajoute la pagination curseur sans supprimer le contrat de page existant", () => {
+    const service = source("lib/ticket-service.ts");
+    const route = source("app/api/tickets/route.ts");
+
+    expect(service).toContain("cursor ? { cursor: { id: cursor.id }, skip: 1 }");
+    expect(service).toContain("take: cursor ? pageSize + 1 : pageSize");
+    expect(service).toContain("nextCursor:");
+    expect(service).toContain("hasMore,");
+    expect(service).toContain("totalPages:");
+    expect(service).toContain("decoded.sort !== sort");
+    expect(route).toContain('response.headers.set("X-Has-More"');
+    expect(route).toContain('response.headers.set("X-Next-Cursor"');
+    expect(route).toContain("NextResponse.json(ticketPage.tickets)");
+  });
+
+  it("utilise une recherche ticket FTS paramétrée avec retour arrière contrôlé", () => {
+    const service = source("lib/ticket-service.ts");
+    const migration = source("prisma/migrations/20260914100000_add_ticket_full_text_search/migration.sql");
+
+    expect(service).toContain("Prisma.sql`");
+    expect(service).toContain("plainto_tsquery(");
+    expect(service).toContain('process.env.TICKET_FTS_ENABLED === "false"');
+    expect(service).toContain('"reference" = ${normalizedQuery}');
+    expect(migration).toContain("ADD COLUMN IF NOT EXISTS search_vector tsvector");
+    expect(migration).toContain("CREATE INDEX CONCURRENTLY IF NOT EXISTS");
+    expect(migration).toContain("USING GIN (search_vector)");
+    expect(migration).toContain("immutable_unaccent");
+  });
 });

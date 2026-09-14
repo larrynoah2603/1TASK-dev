@@ -13,14 +13,13 @@ import { slaProgressPercent } from "@/lib/sla";
 
 type SlaMetric = "FIRST_RESPONSE" | "RESOLUTION";
 
-function metadataMatches(
-  metadata: Prisma.JsonValue | null,
+export function makeSlaEventKey(
+  ticketId: string,
+  eventType: TicketEventType,
   metric: SlaMetric,
   thresholdPercent: number,
-): boolean {
-  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return false;
-  const record = metadata as { metric?: unknown; thresholdPercent?: unknown };
-  return record.metric === metric && record.thresholdPercent === thresholdPercent;
+): string {
+  return `sla:${ticketId}:${eventType}:${metric}:${thresholdPercent}`;
 }
 
 async function queueWorkerIds(tx: Prisma.TransactionClient, queueId: string): Promise<string[]> {
@@ -116,21 +115,21 @@ async function emitSlaEvent(input: {
   const eventType = input.thresholdPercent >= 100
     ? TicketEventType.SLA_BREACH
     : TicketEventType.SLA_ALERT;
+  const eventKey = makeSlaEventKey(
+    input.ticketId,
+    eventType,
+    input.metric,
+    input.thresholdPercent,
+  );
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
       return await prisma.$transaction(async (tx) => {
-        const existing = await tx.ticketEvent.findMany({
-          where: { ticketId: input.ticketId, eventType },
-          select: { metadata: true },
+        const existing = await tx.ticketEvent.findUnique({
+          where: { eventKey },
+          select: { id: true },
         });
-        if (
-          existing.some((event) =>
-            metadataMatches(event.metadata, input.metric, input.thresholdPercent),
-          )
-        ) {
-          return false;
-        }
+        if (existing) return false;
 
         const recipients = await escalationRecipients(tx, {
           queueId: input.queueId,
@@ -143,6 +142,7 @@ async function emitSlaEvent(input: {
         });
         await tx.ticketEvent.create({
           data: {
+            eventKey,
             ticketId: input.ticketId,
             queueId: input.queueId,
             eventType,
@@ -182,8 +182,9 @@ async function emitSlaEvent(input: {
     } catch (error) {
       // PostgreSQL can abort one of two concurrent serializable monitors. The
       // second attempt rechecks the event before creating a duplicate alert.
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034" && attempt === 0) {
-        continue;
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === "P2002") return false;
+        if (error.code === "P2034" && attempt === 0) continue;
       }
       throw error;
     }

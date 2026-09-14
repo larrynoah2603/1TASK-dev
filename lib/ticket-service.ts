@@ -659,6 +659,7 @@ export type TicketListOptions = VisibilityOptions & {
   dossierId?: string;
   missionId?: string;
   query?: string;
+  cursor?: string;
   take?: number;
   page?: number;
   pageSize?: number;
@@ -682,6 +683,33 @@ const loadActiveTeamMemberRows = cache(async (teamIdsKey: string) => {
     select: { teamId: true, userId: true },
   });
 });
+
+const MAX_FULL_TEXT_SEARCH_CANDIDATES = 5_000;
+
+async function ticketSearchCandidateIds(query: string): Promise<string[] | null> {
+  if (process.env.TICKET_FTS_ENABLED === "false") return null;
+  const normalizedQuery = query.trim();
+  if (!normalizedQuery) return [];
+  const rows = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+    SELECT "id"
+    FROM "Ticket"
+    WHERE "reference" = ${normalizedQuery}
+       OR search_vector @@ plainto_tsquery(
+         'french',
+         public.immutable_unaccent(${normalizedQuery})
+       )
+    ORDER BY
+      CASE WHEN "reference" = ${normalizedQuery} THEN 0 ELSE 1 END,
+      ts_rank(
+        search_vector,
+        plainto_tsquery('french', public.immutable_unaccent(${normalizedQuery}))
+      ) DESC,
+      "updatedAt" DESC,
+      "id" DESC
+    LIMIT ${MAX_FULL_TEXT_SEARCH_CANDIDATES}
+  `);
+  return rows.map((row) => row.id);
+}
 
 export async function visibleTicketWhere(
   actor: UserContext,
@@ -937,13 +965,16 @@ async function buildTicketListWhere(actor: UserContext, options: TicketListOptio
     });
   }
   if (options.query) {
-    filters.push({
-      OR: [
-        { reference: { contains: options.query, mode: "insensitive" } },
-        { title: { contains: options.query, mode: "insensitive" } },
-        { description: { contains: options.query, mode: "insensitive" } },
-      ],
-    });
+    const candidateIds = await ticketSearchCandidateIds(options.query);
+    filters.push(candidateIds === null
+      ? {
+          OR: [
+            { reference: { contains: options.query, mode: "insensitive" } },
+            { title: { contains: options.query, mode: "insensitive" } },
+            { description: { contains: options.query, mode: "insensitive" } },
+          ],
+        }
+      : { id: { in: candidateIds.length ? candidateIds : ["__no_full_text_match__"] } });
   }
   const baseWhere = await visibleTicketWhere(current, options);
   const where: Prisma.TicketWhereInput = filters.length
@@ -965,7 +996,44 @@ function ticketOrderBy(sort: TicketListSort = "updated_desc"): Prisma.TicketOrde
   }
 }
 
-const ticketListInclude = {
+type TicketListCursor = {
+  id: string;
+  sort: TicketListSort;
+};
+
+function encodeTicketListCursor(cursor: TicketListCursor): string {
+  return Buffer.from(JSON.stringify(cursor), "utf8").toString("base64url");
+}
+
+function decodeTicketListCursor(value: string, sort: TicketListSort): TicketListCursor {
+  try {
+    const decoded = JSON.parse(Buffer.from(value, "base64url").toString("utf8")) as Partial<TicketListCursor>;
+    if (typeof decoded.id !== "string" || !decoded.id || decoded.sort !== sort) throw new Error("invalid cursor");
+    return { id: decoded.id, sort };
+  } catch {
+    throw new DomainError("Le curseur de pagination est invalide pour ce tri.", 400);
+  }
+}
+
+const ticketListSelect = {
+  id: true,
+  reference: true,
+  title: true,
+  status: true,
+  priority: true,
+  requesterId: true,
+  assignedToId: true,
+  queueId: true,
+  confidential: true,
+  category: true,
+  createdAt: true,
+  updatedAt: true,
+  firstResponseDueAt: true,
+  firstRespondedAt: true,
+  resolutionDueAt: true,
+  resolvedAt: true,
+  slaPausedAt: true,
+  totalPausedMinutes: true,
   queue: {
     select: {
       id: true,
@@ -980,9 +1048,7 @@ const ticketListInclude = {
   requester: { select: { id: true, name: true } },
   sourceDepartment: { select: { id: true, name: true, code: true } },
   serviceCatalogItem: { select: { name: true, code: true, category: true } },
-  dossier: { select: { id: true, code: true, name: true, client: { select: { id: true, code: true, name: true } } } },
-  mission: { select: { id: true, code: true, name: true } },
-} as const;
+} satisfies Prisma.TicketSelect;
 
 export function listVisibleTicketsPage(actor: UserContext, options: TicketListOptions = {}) {
   return measureServerOperation("tickets.list", () => listVisibleTicketsPageInternal(actor, options));
@@ -992,17 +1058,21 @@ async function listVisibleTicketsPageInternal(actor: UserContext, options: Ticke
   const { where } = await buildTicketListWhere(actor, options);
   const page = Math.max(1, options.page ?? 1);
   const pageSize = Math.min(Math.max(options.pageSize ?? options.take ?? 25, 1), 100);
+  const sort = options.sort ?? "updated_desc";
+  const cursor = options.cursor ? decodeTicketListCursor(options.cursor, sort) : null;
   const now = new Date();
-  const [tickets, total] = await Promise.all([
+  const [ticketRows, total] = await Promise.all([
     prisma.ticket.findMany({
       where,
-      include: ticketListInclude,
-      orderBy: ticketOrderBy(options.sort),
-      skip: (page - 1) * pageSize,
-      take: pageSize,
+      select: ticketListSelect,
+      orderBy: ticketOrderBy(sort),
+      ...(cursor ? { cursor: { id: cursor.id }, skip: 1 } : { skip: (page - 1) * pageSize }),
+      take: cursor ? pageSize + 1 : pageSize,
     }),
     prisma.ticket.count({ where }),
   ]);
+  const hasMore = cursor ? ticketRows.length > pageSize : page * pageSize < total;
+  const tickets = cursor ? ticketRows.slice(0, pageSize) : ticketRows;
   const mapped = tickets.map((ticket) => {
     const sla = getTicketSlaState(ticket, now);
     return { ...ticket, slaState: sla.state, slaDueAt: sla.dueAt };
@@ -1013,6 +1083,10 @@ async function listVisibleTicketsPageInternal(actor: UserContext, options: Ticke
     page,
     pageSize,
     totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    hasMore,
+    nextCursor: hasMore && tickets.length
+      ? encodeTicketListCursor({ id: tickets.at(-1)!.id, sort })
+      : null,
   };
 }
 
