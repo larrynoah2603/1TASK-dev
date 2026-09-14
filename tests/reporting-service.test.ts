@@ -25,9 +25,11 @@ describe("reporting métier", () => {
     vi.clearAllMocks();
     mocks.hasPermission.mockReturnValue(true);
     mocks.visibleTicketWhere.mockResolvedValue({ confidential: false });
-    mocks.count.mockResolvedValueOnce(10).mockResolvedValueOnce(4).mockResolvedValueOnce(2)
-      .mockResolvedValueOnce(1).mockResolvedValueOnce(2);
-    mocks.groupBy.mockResolvedValue([{ status: TicketStatus.CLOSED, _count: { _all: 4 } }]);
+    mocks.count.mockResolvedValueOnce(2).mockResolvedValueOnce(1).mockResolvedValueOnce(2);
+    mocks.groupBy.mockResolvedValue([
+      { status: TicketStatus.CLOSED, _count: { _all: 4 } },
+      { status: TicketStatus.NEW, _count: { _all: 6 } },
+    ]);
   });
 
   it("compte les dépassements actifs sans doubler un ticket", async () => {
@@ -41,7 +43,7 @@ describe("reporting métier", () => {
       resolutionBreached: 2,
       closureRate: 40,
     });
-    const overdueWhere = mocks.count.mock.calls[2][0].where;
+    const overdueWhere = mocks.count.mock.calls[0][0].where;
     expect(JSON.stringify(overdueWhere)).toContain(TicketStatus.BLOCKED);
     expect(JSON.stringify(overdueWhere)).toContain("firstResponseDueAt");
     expect(JSON.stringify(overdueWhere)).toContain("resolutionDueAt");

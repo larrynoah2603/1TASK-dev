@@ -1,4 +1,6 @@
 import {
+  NotificationChannel,
+  NotificationStatus,
   NotificationType,
   Prisma,
   RoleCode,
@@ -7,8 +9,6 @@ import {
   TicketStatus,
 } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { createInAppNotification } from "@/lib/notifications";
-import { appendAuditLog } from "@/lib/audit";
 import { slaProgressPercent } from "@/lib/sla";
 
 type SlaMetric = "FIRST_RESPONSE" | "RESOLUTION";
@@ -22,84 +22,7 @@ export function makeSlaEventKey(
   return `sla:${ticketId}:${eventType}:${metric}:${thresholdPercent}`;
 }
 
-async function queueWorkerIds(tx: Prisma.TransactionClient, queueId: string): Promise<string[]> {
-  const members = await tx.teamMember.findMany({
-    where: {
-      isActive: true,
-      team: { queueId, isActive: true },
-      user: { status: "ACTIVE", roleAssignments: { some: { role: { code: RoleCode.AGENT } } } },
-    },
-    select: { userId: true },
-  });
-  return [...new Set(members.map((member) => member.userId))];
-}
-
-async function escalationRecipients(
-  tx: Prisma.TransactionClient,
-  input: {
-    queueId: string;
-    departmentId: string;
-    teamIds: string[];
-    assignedToId: string | null;
-    managerId: string | null;
-    rules: { thresholdPercent: number; targetRole: RoleCode; isActive: boolean }[];
-    thresholdPercent: number;
-  },
-): Promise<string[]> {
-  const base = new Set(
-    [input.managerId, input.assignedToId].filter(Boolean) as string[],
-  );
-  const workerIds = await queueWorkerIds(tx, input.queueId);
-  if (!input.assignedToId) {
-    for (const userId of workerIds) base.add(userId);
-  }
-  const rules = input.rules.filter(
-    (rule) => rule.isActive && rule.thresholdPercent === input.thresholdPercent,
-  );
-  if (!rules.length) return [...base];
-
-  for (const rule of rules) {
-    if (rule.targetRole === RoleCode.QUEUE_MANAGER && input.managerId) {
-      base.add(input.managerId);
-      continue;
-    }
-    if (rule.targetRole === RoleCode.AGENT) {
-      for (const userId of workerIds) base.add(userId);
-      continue;
-    }
-
-    const assignments = await tx.userRole.findMany({
-      where: { role: { code: rule.targetRole }, user: { status: "ACTIVE" } },
-      include: {
-        user: { select: { id: true } },
-        scope: {
-          include: {
-            members: { select: { userId: true } },
-            team: { select: { id: true, queueId: true, isActive: true } },
-          },
-        },
-      },
-    });
-    for (const assignment of assignments) {
-      const scope = assignment.scope;
-      const matches =
-        !scope ||
-        scope.type === ScopeType.GLOBAL ||
-        (scope.type === ScopeType.DEPARTMENT && scope.departmentId === input.departmentId) ||
-        (scope.type === ScopeType.QUEUE && scope.queueId === input.queueId) ||
-        (scope.type === ScopeType.TEAM &&
-          scope.teamId &&
-          input.teamIds.includes(scope.teamId) &&
-          scope.team?.isActive) ||
-        (scope.type === ScopeType.USER_LIST &&
-          scope.members.some((member) => member.userId === assignment.user.id));
-      if (matches) base.add(assignment.user.id);
-    }
-  }
-  return [...base];
-}
-
-async function emitSlaEvent(input: {
+type SlaAlert = {
   ticketId: string;
   queueId: string;
   departmentId: string;
@@ -111,89 +34,100 @@ async function emitSlaEvent(input: {
   thresholdPercent: number;
   progressPercent: number;
   rules: { thresholdPercent: number; targetRole: RoleCode; isActive: boolean }[];
-}): Promise<boolean> {
-  const eventType = input.thresholdPercent >= 100
-    ? TicketEventType.SLA_BREACH
-    : TicketEventType.SLA_ALERT;
-  const eventKey = makeSlaEventKey(
-    input.ticketId,
-    eventType,
-    input.metric,
-    input.thresholdPercent,
-  );
+};
 
+function metadataMatches(metadata: Prisma.JsonValue | null, alert: SlaAlert): boolean {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return false;
+  const value = metadata as { metric?: unknown; thresholdPercent?: unknown };
+  return value.metric === alert.metric && value.thresholdPercent === alert.thresholdPercent;
+}
+
+async function processSlaAlertBatch(alerts: SlaAlert[]) {
+  if (!alerts.length) return { alerts: 0, breaches: 0 };
+  const keyed = alerts.map((alert) => ({
+    ...alert,
+    eventType: alert.thresholdPercent >= 100 ? TicketEventType.SLA_BREACH : TicketEventType.SLA_ALERT,
+  })).map((alert) => ({ ...alert, eventKey: makeSlaEventKey(alert.ticketId, alert.eventType, alert.metric, alert.thresholdPercent) }));
+  const queueIds = [...new Set(keyed.map((alert) => alert.queueId))];
+  const ticketIds = [...new Set(keyed.map((alert) => alert.ticketId))];
+  const roleCodes = [...new Set(keyed.flatMap((alert) => alert.rules.map((rule) => rule.targetRole)))];
+  const [existingEvents, members, assignments] = await Promise.all([
+    prisma.ticketEvent.findMany({
+      where: { ticketId: { in: ticketIds }, eventType: { in: [TicketEventType.SLA_ALERT, TicketEventType.SLA_BREACH] } },
+      select: { eventKey: true, ticketId: true, eventType: true, metadata: true },
+    }),
+    prisma.teamMember.findMany({
+      where: { isActive: true, team: { queueId: { in: queueIds }, isActive: true }, user: { status: "ACTIVE", roleAssignments: { some: { role: { code: RoleCode.AGENT } } } } },
+      select: { userId: true, team: { select: { queueId: true } } },
+    }),
+    prisma.userRole.findMany({
+      where: { role: { code: { in: roleCodes } }, user: { status: "ACTIVE" } },
+      select: { user: { select: { id: true } }, role: { select: { code: true } }, scope: { select: { type: true, departmentId: true, queueId: true, teamId: true, members: { select: { userId: true } }, team: { select: { isActive: true } } } } },
+    }),
+  ]);
+  const existingKeys = new Set(existingEvents.flatMap((event) => event.eventKey ? [event.eventKey] : []));
+  const pending = keyed.filter((alert) => !existingKeys.has(alert.eventKey) && !existingEvents.some((event) => event.ticketId === alert.ticketId && event.eventType === alert.eventType && metadataMatches(event.metadata, alert)));
+  if (!pending.length) return { alerts: 0, breaches: 0 };
+  const workersByQueue = new Map<string, Set<string>>();
+  for (const member of members) {
+    const recipients = workersByQueue.get(member.team.queueId) ?? new Set<string>();
+    recipients.add(member.userId);
+    workersByQueue.set(member.team.queueId, recipients);
+  }
+  const recipientsByKey = new Map<string, string[]>();
+  for (const alert of pending) {
+    const workers = workersByQueue.get(alert.queueId) ?? new Set<string>();
+    const recipients = new Set([alert.managerId, alert.assignedToId].filter(Boolean) as string[]);
+    if (!alert.assignedToId) workers.forEach((id) => recipients.add(id));
+    for (const rule of alert.rules.filter((rule) => rule.isActive && rule.thresholdPercent === alert.thresholdPercent)) {
+      if (rule.targetRole === RoleCode.QUEUE_MANAGER && alert.managerId) recipients.add(alert.managerId);
+      else if (rule.targetRole === RoleCode.AGENT) workers.forEach((id) => recipients.add(id));
+      else for (const assignment of assignments.filter((item) => item.role.code === rule.targetRole)) {
+        const scope = assignment.scope;
+        if (!scope || scope.type === ScopeType.GLOBAL ||
+          (scope.type === ScopeType.DEPARTMENT && scope.departmentId === alert.departmentId) ||
+          (scope.type === ScopeType.QUEUE && scope.queueId === alert.queueId) ||
+          (scope.type === ScopeType.TEAM && !!scope.teamId && alert.teamIds.includes(scope.teamId) && scope.team?.isActive) ||
+          (scope.type === ScopeType.USER_LIST && scope.members.some((member) => member.userId === assignment.user.id))) recipients.add(assignment.user.id);
+      }
+    }
+    recipientsByKey.set(alert.eventKey, [...recipients]);
+  }
+  const recipientIds = [...new Set([...recipientsByKey.values()].flat())];
+  const preferences = await prisma.notificationPreference.findMany({
+    where: { userId: { in: recipientIds }, eventType: { in: [NotificationType.SLA_ALERT, NotificationType.SLA_BREACH] }, channel: NotificationChannel.IN_APP },
+    select: { userId: true, eventType: true, enabled: true },
+  });
+  const disabled = new Set(preferences.filter((item) => !item.enabled).map((item) => `${item.userId}:${item.eventType}`));
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
       return await prisma.$transaction(async (tx) => {
-        const existing = await tx.ticketEvent.findUnique({
-          where: { eventKey },
-          select: { id: true },
+        const inserted = await tx.ticketEvent.createManyAndReturn({
+          data: pending.map((alert) => ({ eventKey: alert.eventKey, ticketId: alert.ticketId, queueId: alert.queueId, eventType: alert.eventType, metadata: { metric: alert.metric, thresholdPercent: alert.thresholdPercent, progressPercent: alert.progressPercent } })),
+          skipDuplicates: true,
+          select: { eventKey: true },
         });
-        if (existing) return false;
-
-        const recipients = await escalationRecipients(tx, {
-          queueId: input.queueId,
-          departmentId: input.departmentId,
-          teamIds: input.teamIds,
-          assignedToId: input.assignedToId,
-          managerId: input.managerId,
-          rules: input.rules,
-          thresholdPercent: input.thresholdPercent,
+        const insertedKeys = new Set(inserted.flatMap((event) => event.eventKey ? [event.eventKey] : []));
+        const acquired = pending.filter((alert) => insertedKeys.has(alert.eventKey));
+        if (acquired.length) await tx.auditLog.createMany({ data: acquired.map((alert) => ({ action: alert.eventType, objectType: "Ticket", objectId: alert.ticketId, newValue: { metric: alert.metric, thresholdPercent: alert.thresholdPercent, progressPercent: alert.progressPercent }, reason: "Surveillance SLA" })) });
+        const notifications = acquired.flatMap((alert) => {
+          const type = alert.thresholdPercent >= 100 ? NotificationType.SLA_BREACH : NotificationType.SLA_ALERT;
+          return (recipientsByKey.get(alert.eventKey) ?? []).filter((recipientId) => !disabled.has(`${recipientId}:${type}`)).map((recipientId) => ({ recipientId, ticketId: alert.ticketId, type, title: alert.thresholdPercent >= 100 ? `SLA dépassé — ${alert.metric === "FIRST_RESPONSE" ? "première réponse" : "résolution"}` : `Alerte SLA à ${alert.thresholdPercent} %`, body: `${alert.reference} a atteint ${Math.round(alert.progressPercent)} % de son délai de ${alert.metric === "FIRST_RESPONSE" ? "première réponse" : "résolution"}.`, channel: NotificationChannel.IN_APP, status: NotificationStatus.PENDING }));
         });
-        await tx.ticketEvent.create({
-          data: {
-            eventKey,
-            ticketId: input.ticketId,
-            queueId: input.queueId,
-            eventType,
-            metadata: {
-              metric: input.metric,
-              thresholdPercent: input.thresholdPercent,
-              progressPercent: input.progressPercent,
-            },
-          },
-        });
-        await appendAuditLog(tx, {
-          action: eventType,
-          objectType: "Ticket",
-          objectId: input.ticketId,
-          newValue: {
-            metric: input.metric,
-            thresholdPercent: input.thresholdPercent,
-            progressPercent: input.progressPercent,
-          },
-          reason: "Surveillance SLA",
-        });
-        for (const recipientId of recipients) {
-          await createInAppNotification(tx, {
-            recipientId,
-            ticketId: input.ticketId,
-            type: input.thresholdPercent >= 100
-              ? NotificationType.SLA_BREACH
-              : NotificationType.SLA_ALERT,
-            title: input.thresholdPercent >= 100
-              ? `SLA dépassé — ${input.metric === "FIRST_RESPONSE" ? "première réponse" : "résolution"}`
-              : `Alerte SLA à ${input.thresholdPercent} %`,
-            body: `${input.reference} a atteint ${Math.round(input.progressPercent)} % de son délai de ${input.metric === "FIRST_RESPONSE" ? "première réponse" : "résolution"}.`,
-          });
-        }
-        return true;
+        if (notifications.length) await tx.notification.createMany({ data: notifications });
+        return { alerts: acquired.filter((alert) => alert.thresholdPercent < 100).length, breaches: acquired.filter((alert) => alert.thresholdPercent >= 100).length };
       }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
     } catch (error) {
-      // PostgreSQL can abort one of two concurrent serializable monitors. The
-      // second attempt rechecks the event before creating a duplicate alert.
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === "P2002") return false;
-        if (error.code === "P2034" && attempt === 0) continue;
-      }
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034" && attempt === 0) continue;
       throw error;
     }
   }
-  return false;
+  return { alerts: 0, breaches: 0 };
 }
 
 export async function runSlaMonitor(now = new Date()) {
-  const batchSize = 500;
+  const configuredBatchSize = Number(process.env.SLA_MONITOR_BATCH_SIZE ?? 100);
+  const batchSize = Math.min(500, Math.max(25, Number.isFinite(configuredBatchSize) ? Math.trunc(configuredBatchSize) : 100));
   let cursor: string | undefined;
   let scanned = 0;
   let alerts = 0;
@@ -240,6 +174,7 @@ export async function runSlaMonitor(now = new Date()) {
     });
     scanned += tickets.length;
 
+    const pendingAlerts: SlaAlert[] = [];
     for (const ticket of tickets) {
 
       const pausedMinutes = ticket.totalPausedMinutes;
@@ -259,7 +194,7 @@ export async function runSlaMonitor(now = new Date()) {
       for (const metric of metrics) {
         const progress = slaProgressPercent(now, metric.start, metric.dueAt, pausedMinutes);
         for (const threshold of thresholds.filter((value) => progress >= value)) {
-          const created = await emitSlaEvent({
+          pendingAlerts.push({
             ticketId: ticket.id,
             queueId: ticket.queue.id,
             departmentId: ticket.queue.departmentId,
@@ -272,12 +207,12 @@ export async function runSlaMonitor(now = new Date()) {
             progressPercent: progress,
             rules,
           });
-          if (!created) continue;
-          if (threshold >= 100) breaches += 1;
-          else alerts += 1;
         }
       }
     }
+    const emitted = await processSlaAlertBatch(pendingAlerts);
+    alerts += emitted.alerts;
+    breaches += emitted.breaches;
     cursor = tickets.at(-1)?.id;
     if (tickets.length < batchSize) break;
   } while (cursor);
