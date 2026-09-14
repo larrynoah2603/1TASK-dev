@@ -796,6 +796,7 @@ model TicketAssignment {
 
 model TicketEvent {
   id         String          @id @default(cuid())
+  eventKey   String?         @unique
   ticketId   String
   actorId    String?
   queueId    String?
