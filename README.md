@@ -172,6 +172,25 @@ npm run db:deploy
 
 Cette procédure conserve les utilisateurs, tickets, historiques et journaux.
 
+### Récupération de la migration de recherche plein texte
+
+Si `migrate deploy` a échoué sur
+`20260914100000_add_ticket_full_text_search` avec le code PostgreSQL `25001`
+(`CREATE INDEX CONCURRENTLY` exécuté dans une transaction), récupérez d'abord la
+version corrigée du dépôt. Marquez ensuite **uniquement cette migration** comme
+annulée, puis relancez le déploiement :
+
+```powershell
+npx prisma migrate resolve --rolled-back "20260914100000_add_ticket_full_text_search"
+npx prisma migrate deploy
+npx prisma migrate status
+```
+
+N'utilisez pas `--applied` dans ce cas : la migration n'a pas terminé et les
+migrations suivantes n'ont pas encore été exécutées. Les instructions SQL de la
+migration corrigée sont idempotentes, ce qui permet à Prisma de la rejouer après
+la résolution de l'état échoué.
+
 Après avoir ajouté l’adresse réelle dans `ADMIN_EMAILS`, redémarrer
 l’application, se connecter avec cette adresse Microsoft Entra ID, puis ouvrir
 `/admin/users`. Le compte réel doit apparaître avec le rôle

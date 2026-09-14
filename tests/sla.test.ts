@@ -6,18 +6,18 @@ const calendar = { workingDays: [1, 2, 3, 4, 5], workdayStartMinute: 8 * 60, wor
 
 describe("calcul des SLA", () => {
   it("ne consomme pas les heures hors calendrier ouvré", () => {
-    const fridayAtFour = new Date(2026, 7, 7, 16, 0, 0);
+    const fridayAtFour = new Date("2026-08-07T16:00:00.000Z");
     const result = addBusinessMinutes(fridayAtFour, 120, calendar);
-    expect(result.getDay()).toBe(1);
-    expect(result.getHours()).toBe(9);
+    expect(result.getUTCDay()).toBe(1);
+    expect(result.getUTCHours()).toBe(9);
   });
 
   it("calcule les deux échéances avec le mode glissant", () => {
-    const start = new Date(2026, 7, 3, 8, 0, 0);
+    const start = new Date("2026-08-03T08:00:00.000Z");
     const deadlines = calculateSlaDeadlines(start, { firstResponseMinutes: 60, resolutionMinutes: 480, calculationMode: SlaCalculationMode.ROLLING }, calendar);
-    expect(deadlines.firstResponseDueAt.getHours()).toBe(9);
-    expect(deadlines.resolutionDueAt.getDate()).toBe(3);
-    expect(deadlines.resolutionDueAt.getHours()).toBe(16);
+    expect(deadlines.firstResponseDueAt.getUTCHours()).toBe(9);
+    expect(deadlines.resolutionDueAt.getUTCDate()).toBe(3);
+    expect(deadlines.resolutionDueAt.getUTCHours()).toBe(16);
   });
 
   it("déduit le temps de blocage du pourcentage SLA", () => {

@@ -3,6 +3,7 @@
 ALTER TABLE "TicketEvent"
   ADD COLUMN IF NOT EXISTS "eventKey" TEXT;
 
--- Must run outside an explicit transaction, like the FTS concurrent index.
-CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS "TicketEvent_eventKey_key"
+-- Keep this compatible with transaction-wrapped deployments. PostgreSQL does
+-- not allow concurrent index creation in a transaction (SQLSTATE 25001).
+CREATE UNIQUE INDEX IF NOT EXISTS "TicketEvent_eventKey_key"
   ON "TicketEvent"("eventKey");

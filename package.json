@@ -8,19 +8,21 @@
     "dev": "next dev",
     "predev": "prisma generate",
     "build": "next build",
-    "prebuild": "prisma generate",
+    "prebuild": "npm run clean:next && prisma generate",
     "start": "next start",
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "clean:next": "node -e \"require('node:fs').rmSync('.next', { recursive: true, force: true })\"",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma generate && prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
+    "pretypecheck": "npm run clean:next",
     "typecheck": "prisma generate && tsc --noEmit",
-    "validate": "npm run db:generate && npm test && npm run lint && npx tsc --noEmit && npx prisma validate && npm run build"
+    "validate": "npm run db:generate && npm test && npm run lint && npm run typecheck && npx prisma validate && npm run build"
   },
   "dependencies": {
     "@next-auth/prisma-adapter": "1.0.7",
