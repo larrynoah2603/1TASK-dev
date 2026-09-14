@@ -47,7 +47,8 @@ describe("contrats de performance Prisma", () => {
     expect(service).toContain('process.env.TICKET_FTS_ENABLED === "false"');
     expect(service).toContain('"reference" = ${normalizedQuery}');
     expect(migration).toContain("ADD COLUMN IF NOT EXISTS search_vector tsvector");
-    expect(migration).toContain("CREATE INDEX CONCURRENTLY IF NOT EXISTS");
+    expect(migration).toContain("CREATE INDEX IF NOT EXISTS");
+    expect(migration).not.toContain("CREATE INDEX CONCURRENTLY");
     expect(migration).toContain("USING GIN (search_vector)");
     expect(migration).toContain("immutable_unaccent");
   });

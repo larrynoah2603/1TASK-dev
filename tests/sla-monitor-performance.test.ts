@@ -33,6 +33,7 @@ describe("performance du moniteur SLA", () => {
     expect(monitor).toContain("makeSlaEventKey");
     expect(monitor).toContain("eventKey,");
     expect(migration).toContain('ADD COLUMN IF NOT EXISTS "eventKey" TEXT');
-    expect(migration).toContain('CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS "TicketEvent_eventKey_key"');
+    expect(migration).toContain('CREATE UNIQUE INDEX IF NOT EXISTS "TicketEvent_eventKey_key"');
+    expect(migration).not.toContain("CREATE UNIQUE INDEX CONCURRENTLY");
   });
 });
