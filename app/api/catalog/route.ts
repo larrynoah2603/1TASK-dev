@@ -2,13 +2,14 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/server-auth";
 import { errorResponse } from "@/lib/http";
+import { cacheAside } from "@/lib/distributed-cache";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
     await requirePermission("ticket:create");
-    const services = await prisma.serviceCatalogItem.findMany({
+    const services = await cacheAside("catalog:active:v1", 300, () => prisma.serviceCatalogItem.findMany({
       where: { isActive: true, queue: { isActive: true, department: { isActive: true } } },
       select: {
         id: true,
@@ -47,7 +48,7 @@ export async function GET() {
         },
       },
       orderBy: { name: "asc" },
-    });
+    }));
     return NextResponse.json(
       services
         .filter((service) => service.sla?.isActive && service.sla.calendar.isActive)

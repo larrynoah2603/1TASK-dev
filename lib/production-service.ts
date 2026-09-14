@@ -78,6 +78,7 @@ export async function listDossiersForViewer(actor: UserContext, query?: string) 
     where,
     include: { client: true, missions: { include: { department: true }, orderBy: { dueAt: "asc" } } },
     orderBy: [{ client: { name: "asc" } }, { name: "asc" }],
+    take: 100,
   });
 }
 
@@ -212,7 +213,7 @@ export async function listMissionsForViewer(actor: UserContext, options: Mission
     : undefined;
   const take = typeof options.take === "number" && Number.isFinite(options.take)
     ? Math.min(100, Math.max(1, Math.trunc(options.take)))
-    : undefined;
+    : 100;
   const missions = await prisma.mission.findMany({
     where: {
       ...(departmentId ? { departmentId } : {}),
@@ -405,6 +406,7 @@ export async function listAssetsForViewer(actor: UserContext, query?: string) {
     },
     include: { department: true, assignedTo: { select: { id: true, name: true, email: true } } },
     orderBy: { assetTag: "asc" },
+    take: 100,
   });
 }
 

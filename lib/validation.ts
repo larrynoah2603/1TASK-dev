@@ -273,6 +273,7 @@ export const ticketListQuerySchema = z.object({
   missionId: z.string().cuid().optional(),
   q: z.string().trim().max(120).optional(),
   sort: ticketListSortSchema.default("updated_desc"),
+  cursor: z.string().trim().min(1).max(512).optional(),
   page: z.coerce.number().int().min(1).max(10_000).default(1),
   pageSize: z.coerce.number().int().min(5).max(100).default(25),
   take: z.coerce.number().int().min(1).max(100).optional(),

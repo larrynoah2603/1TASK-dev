@@ -39,6 +39,7 @@ export async function listKnowledgeArticles(actor: UserContext, query?: string) 
     },
     include: { department: true, owner: { select: { id: true, name: true } } },
     orderBy: [{ updatedAt: "desc" }, { title: "asc" }],
+    take: 100,
   });
 }
 

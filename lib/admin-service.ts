@@ -6,6 +6,7 @@ import {
 import { prisma } from "@/lib/db";
 import { appendAuditLog } from "@/lib/audit";
 import { measureServerOperation } from "@/lib/performance";
+import { deleteCacheKey } from "@/lib/distributed-cache";
 import { createInAppNotification } from "@/lib/notifications";
 import {
   requireAdminAccess,
@@ -158,6 +159,7 @@ async function getAdminConfigurationInternal(
         teamMemberships: { select: { isActive: true, team: { select: { id: true, name: true, queue: { select: { name: true } } } } } },
       },
       orderBy: { name: "asc" },
+      take: 100,
     }) : Promise.resolve([]),
     needsServices ? prisma.serviceCatalogItem.findMany({
       include: {
@@ -201,7 +203,7 @@ export async function saveDepartment(actor: UserContext, id: string | undefined,
   const parsed = departmentAdminSchema.parse(input);
   const existing = id ? await prisma.department.findUnique({ where: { id } }) : null;
   if (id && !existing) throw new AdminServiceError("Département introuvable.", 404);
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const department = existing
       ? await tx.department.update({ where: { id }, data: { code: parsed.code, name: parsed.name, isActive: parsed.isActive } })
       : await tx.department.create({ data: { code: parsed.code, name: parsed.name, isActive: parsed.isActive } });
@@ -216,6 +218,8 @@ export async function saveDepartment(actor: UserContext, id: string | undefined,
     });
     return department;
   });
+  await deleteCacheKey("catalog:active:v1");
+  return result;
 }
 
 async function validateManager(managerId: string | null | undefined) {
@@ -239,7 +243,7 @@ export async function saveQueue(actor: UserContext, id: string | undefined, inpu
   const department = await prisma.department.findFirst({ where: { id: parsed.departmentId, isActive: true }, select: { id: true } });
   if (!department) throw new AdminServiceError("La file doit être rattachée à un département actif.", 422);
   await validateManager(parsed.managerId);
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const queue = existing
       ? await tx.queue.update({ where: { id }, data: { code: parsed.code, name: parsed.name, departmentId: parsed.departmentId, managerId: parsed.managerId ?? null, autoAssignment: parsed.autoAssignment, isActive: parsed.isActive } })
       : await tx.queue.create({ data: { code: parsed.code, name: parsed.name, departmentId: parsed.departmentId, managerId: parsed.managerId ?? null, autoAssignment: parsed.autoAssignment, isActive: parsed.isActive } });
@@ -254,6 +258,8 @@ export async function saveQueue(actor: UserContext, id: string | undefined, inpu
     });
     return queue;
   });
+  await deleteCacheKey("catalog:active:v1");
+  return result;
 }
 
 export async function saveTeam(actor: UserContext, id: string | undefined, input: TeamAdminInput) {
@@ -322,7 +328,7 @@ export async function saveCatalogItem(actor: UserContext, id: string | undefined
   const existing = id ? await prisma.serviceCatalogItem.findUnique({ where: { id } }) : null;
   if (id && !existing) throw new AdminServiceError("Service du catalogue introuvable.", 404);
   await validateCatalogReferences(parsed);
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const service = existing
       ? await tx.serviceCatalogItem.update({ where: { id }, data: { code: parsed.code, name: parsed.name, description: parsed.description ?? null, ticketType: parsed.ticketType, category: parsed.category, keywords: parsed.keywords, queueId: parsed.queueId, priorityDefault: parsed.priorityDefault, slaId: parsed.slaId, isActive: parsed.isActive } })
       : await tx.serviceCatalogItem.create({ data: { code: parsed.code, name: parsed.name, description: parsed.description ?? null, ticketType: parsed.ticketType, category: parsed.category, keywords: parsed.keywords, queueId: parsed.queueId, priorityDefault: parsed.priorityDefault, slaId: parsed.slaId, isActive: parsed.isActive } });
@@ -337,6 +343,8 @@ export async function saveCatalogItem(actor: UserContext, id: string | undefined
     });
     return service;
   });
+  await deleteCacheKey("catalog:active:v1");
+  return result;
 }
 
 export async function saveOrganization(actor: UserContext, id: string | undefined, input: OrganizationAdminInput) {
@@ -435,7 +443,7 @@ export async function saveSla(actor: UserContext, id: string | undefined, input:
   if (id && !existing) throw new AdminServiceError("SLA introuvable.", 404);
   const calendar = await prisma.businessCalendar.findFirst({ where: { id: parsed.calendarId, isActive: true }, select: { id: true } });
   if (!calendar) throw new AdminServiceError("Le SLA doit être rattaché à un calendrier actif.", 422);
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const sla = existing
       ? await tx.sLA.update({ where: { id }, data: { code: parsed.code, name: parsed.name, firstResponseMinutes: parsed.firstResponseMinutes, resolutionMinutes: parsed.resolutionMinutes, calendarId: parsed.calendarId, calculationMode: parsed.calculationMode, alertThresholds: parsed.alertThresholds, isActive: parsed.isActive } })
       : await tx.sLA.create({ data: { code: parsed.code, name: parsed.name, firstResponseMinutes: parsed.firstResponseMinutes, resolutionMinutes: parsed.resolutionMinutes, calendarId: parsed.calendarId, calculationMode: parsed.calculationMode, alertThresholds: parsed.alertThresholds, isActive: parsed.isActive } });
@@ -450,6 +458,8 @@ export async function saveSla(actor: UserContext, id: string | undefined, input:
     });
     return sla;
   });
+  await deleteCacheKey("catalog:active:v1");
+  return result;
 }
 
 export async function saveEscalationRule(actor: UserContext, id: string | undefined, input: EscalationRuleAdminInput) {

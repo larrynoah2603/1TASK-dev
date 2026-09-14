@@ -75,10 +75,12 @@ describe("contrats de création et de filtrage", () => {
       priority: "CRITICAL",
       sla: "attention",
       take: "20",
+      cursor: "eyJpZCI6ImMxMjMiLCJzb3J0IjoidXBkYXRlZF9kZXNjIn0",
     });
     expect(result.scope).toBe("team");
     expect(result.priority).toBe("CRITICAL");
     expect(result.sla).toBe("attention");
     expect(result.take).toBe(20);
+    expect(result.cursor).toBe("eyJpZCI6ImMxMjMiLCJzb3J0IjoidXBkYXRlZF9kZXNjIn0");
   });
 });

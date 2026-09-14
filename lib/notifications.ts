@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { PrismaClient, NotificationChannel, NotificationStatus, NotificationType } from "@prisma/client";
+import { enqueueOutboxEvent } from "@/lib/outbox";
 
 type NotificationDb = Prisma.TransactionClient | PrismaClient;
 
@@ -71,7 +72,7 @@ export async function queueEmailNotification(
   },
 ) {
   if (!(await notificationEnabled(db, input.recipientId, input.type, NotificationChannel.EMAIL))) return null;
-  return db.notification.create({
+  const notification = await db.notification.create({
     data: {
       recipientId: input.recipientId,
       ticketId: input.ticketId,
@@ -82,4 +83,12 @@ export async function queueEmailNotification(
       status: NotificationStatus.PENDING,
     },
   });
+  await enqueueOutboxEvent(db, {
+    eventKey: `notification:${notification.id}:email`,
+    type: "NOTIFICATION_EMAIL_REQUESTED",
+    aggregateType: "Notification",
+    aggregateId: notification.id,
+    payload: { notificationId: notification.id, recipientId: input.recipientId, ticketId: input.ticketId ?? null, type: input.type, title: input.title, body: input.body },
+  });
+  return notification;
 }
