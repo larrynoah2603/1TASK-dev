@@ -4,8 +4,8 @@ import { DashboardKpiGrid, DashboardViewTabs, OperationsTicketTable, OperationsW
 import { TicketFilters } from "@/components/ticket-filters";
 import { TicketViewSwitcher } from "@/components/ticket-view-switcher";
 import { Pagination } from "@/components/pagination";
-import { canActorClaimTicket, getOperationalTicketSummary, listVisibleQueues, listVisibleTickets, listVisibleTicketsPage } from "@/lib/ticket-service";
-import { listDossiersForViewer, listMissionsForViewer } from "@/lib/production-service";
+import { canActorClaimTicket, getOperationalTicketSummary, listVisibleQueueFilterOptions, listVisibleTickets, listVisibleTicketsPage } from "@/lib/ticket-service";
+import { listTicketPortfolioFilterOptions } from "@/lib/production-service";
 import { getSessionUserContext, permissionCodes, roleCodes } from "@/lib/server-auth";
 import { ticketListQuerySchema } from "@/lib/validation";
 
@@ -20,11 +20,11 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
   const params = ticketListQuerySchema.parse({ ...rawParams, scope: rawParams.scope ?? "all" });
   const canPortfolio = permissionCodes(user).includes("portfolio:read");
   const [queues, ticketPage, operationalSummary, slaTickets, portfolioOptions] = await Promise.all([
-    listVisibleQueues(user),
+    listVisibleQueueFilterOptions(user),
     listVisibleTicketsPage(user, { page: params.page, pageSize: params.pageSize, sort: params.sort, workQueue: true, query: params.q, status: params.status, priority: params.priority, scope: params.scope, sla: params.sla, departmentId: params.departmentId, queueId: params.queueId, dossierId: params.dossierId, missionId: params.missionId }),
     getOperationalTicketSummary(user),
     listVisibleTickets(user, { workQueue: true, sla: "attention", take: 6, sort: "updated_desc" }),
-    canPortfolio ? Promise.all([listDossiersForViewer(user), listMissionsForViewer(user)]) : Promise.resolve([[], []] as const),
+    canPortfolio ? listTicketPortfolioFilterOptions(user) : Promise.resolve([[], []] as const),
   ]);
   const [dossiers, missions] = portfolioOptions;
 

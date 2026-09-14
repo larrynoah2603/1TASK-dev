@@ -66,4 +66,31 @@ describe("contrats de performance Prisma", () => {
     expect(implementation).toContain("take: TICKET_EVENT_WINDOW");
     expect(implementation).toContain("messages: ticket.messages.toReversed()");
   });
+
+  it("utilise des projections légères pour les filtres portefeuille de la boîte agent", () => {
+    const page = source("app/(app)/inbox/page.tsx");
+    const production = source("lib/production-service.ts");
+    const start = production.indexOf("export async function listTicketPortfolioFilterOptions");
+    const end = production.indexOf("export async function getDossierForViewer", start);
+    const implementation = production.slice(start, end);
+
+    expect(page).toContain("listTicketPortfolioFilterOptions(user)");
+    expect(page).not.toContain("listDossiersForViewer(user), listMissionsForViewer(user)");
+    expect(implementation).toContain("select:");
+    expect(implementation).not.toContain("worklog");
+    expect(implementation).not.toContain("_count");
+  });
+
+  it("ne calcule pas les statistiques des files pour afficher un simple filtre", () => {
+    const page = source("app/(app)/inbox/page.tsx");
+    const service = source("lib/ticket-service.ts");
+    const start = service.indexOf("export async function listVisibleQueueFilterOptions");
+    const end = service.indexOf("const MAX_TICKET_ATTACHMENT_BYTES", start);
+    const implementation = service.slice(start, end);
+
+    expect(page).toContain("listVisibleQueueFilterOptions(user)");
+    expect(page).not.toContain("listVisibleQueues(user)");
+    expect(implementation).not.toContain("groupBy");
+    expect(implementation).not.toContain("_count");
+  });
 });

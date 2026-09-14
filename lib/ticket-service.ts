@@ -2395,6 +2395,34 @@ export async function listVisibleQueues(
   });
 }
 
+/** Queue metadata for ticket filters, without dashboard counters or SLA scans. */
+export async function listVisibleQueueFilterOptions(actor: UserContext) {
+  actor = await requireCurrentActor(actor);
+  const subject = toAccessSubject(actor);
+  const queues = await prisma.queue.findMany({
+    where: { isActive: true, department: { isActive: true } },
+    select: {
+      id: true,
+      name: true,
+      departmentId: true,
+      department: { select: { id: true, name: true } },
+      teams: { select: { id: true, isActive: true } },
+    },
+    orderBy: { name: "asc" },
+  });
+
+  return queues
+    .filter((queue) => canViewTicket(subject, {
+      requesterId: "",
+      assignedToId: null,
+      queueId: queue.id,
+      departmentId: queue.departmentId,
+      confidential: false,
+      teamIds: queue.teams.filter((team) => team.isActive).map((team) => team.id),
+    }))
+    .map(({ id, name, department }) => ({ id, name, department }));
+}
+
 const MAX_TICKET_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 const ALLOWED_TICKET_ATTACHMENT_TYPES = new Set([
   "application/pdf",
