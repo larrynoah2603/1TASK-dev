@@ -23,7 +23,7 @@ ALTER TABLE "Ticket"
     )
   ) STORED;
 
--- Prisma Migrate executes PostgreSQL migration files in a transaction. Do not
--- use CONCURRENTLY here: PostgreSQL rejects it inside that transaction (25001).
+-- Keep this statement compatible with transaction-wrapped deployments:
+-- PostgreSQL rejects concurrent index creation in a transaction (SQLSTATE 25001).
 CREATE INDEX IF NOT EXISTS "Ticket_search_vector_gin_idx"
   ON "Ticket" USING GIN (search_vector);
