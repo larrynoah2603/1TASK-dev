@@ -159,6 +159,14 @@ const ticketAccessInclude = {
   serviceCatalogItem: { select: { id: true, code: true, category: true } },
 } as const;
 
+// A ticket remains usable even after years of activity. Bound every embedded
+// timeline so opening one old ticket cannot allocate its complete history in a
+// single Server Component request. Dedicated pagination can extend these
+// windows without changing the authorization query.
+const TICKET_MESSAGE_WINDOW = 200;
+const TICKET_ASSIGNMENT_WINDOW = 100;
+const TICKET_EVENT_WINDOW = 250;
+
 type AccessTicket = {
   id?: string;
   requesterId: string;
@@ -1176,7 +1184,8 @@ async function getTicketForViewerInternal(actor: UserContext, ticketId: string) 
       messages: {
         ...(canSeeInternalMessages ? {} : { where: { visibility: MessageVisibility.REQUESTER } }),
         include: { author: { select: { id: true, name: true } } },
-        orderBy: { createdAt: "asc" },
+        orderBy: { createdAt: "desc" },
+        take: TICKET_MESSAGE_WINDOW,
       },
       assignments: {
         include: {
@@ -1185,6 +1194,7 @@ async function getTicketForViewerInternal(actor: UserContext, ticketId: string) 
           newAssignee: { select: { name: true } },
         },
         orderBy: { assignedAt: "desc" },
+        take: TICKET_ASSIGNMENT_WINDOW,
       },
       events: {
         ...(canSeeInternalMessages
@@ -1202,6 +1212,7 @@ async function getTicketForViewerInternal(actor: UserContext, ticketId: string) 
             }),
         include: { actor: { select: { name: true } } },
         orderBy: { createdAt: "desc" },
+        take: TICKET_EVENT_WINDOW,
       },
     },
   });
@@ -1232,6 +1243,9 @@ async function getTicketForViewerInternal(actor: UserContext, ticketId: string) 
   // ticket content. Never expose it to the browser.
   return {
     ...ticket,
+    // The thread UI is chronological even though PostgreSQL reads the newest
+    // bounded window first.
+    messages: ticket.messages.toReversed(),
     worklogSummary: {
       minutes: worklogSummary._sum.minutes ?? 0,
       entries: worklogSummary._count._all,
@@ -2317,47 +2331,65 @@ export async function listVisibleQueues(
   );
   const visibleWhere = await visibleTicketWhere(actor, { workQueue: true });
   const visibleQueueIds = visibleQueues.map((queue) => queue.id);
-  const visibleTickets = visibleQueueIds.length
-    ? await prisma.ticket.findMany({
-      where: { AND: [visibleWhere, { queueId: { in: visibleQueueIds } }] },
-      select: {
-        queueId: true,
-        priority: true,
-        status: true,
-        firstResponseDueAt: true,
-        resolutionDueAt: true,
-        firstRespondedAt: true,
-        resolvedAt: true,
-        slaPausedAt: true,
-      },
-    })
-    : [];
-  const ticketsByQueue = new Map<string, typeof visibleTickets>();
-  for (const ticket of visibleTickets) {
-    const queueTickets = ticketsByQueue.get(ticket.queueId) ?? [];
-    queueTickets.push(ticket);
-    ticketsByQueue.set(ticket.queueId, queueTickets);
+  const riskDeadline = new Date(Date.now() + SLA_RISK_WINDOW_MINUTES * 60_000);
+  const [ticketStats, slaStats] = visibleQueueIds.length
+    ? await Promise.all([
+      prisma.ticket.groupBy({
+        by: ["queueId", "status", "priority"],
+        where: { AND: [visibleWhere, { queueId: { in: visibleQueueIds } }] },
+        _count: { _all: true },
+      }),
+      prisma.ticket.groupBy({
+        by: ["queueId"],
+        where: {
+          AND: [
+            visibleWhere,
+            { queueId: { in: visibleQueueIds } },
+            { status: { notIn: [TicketStatus.CLOSED, TicketStatus.BLOCKED] }, slaPausedAt: null },
+            {
+              OR: [
+                { firstResponseDueAt: { not: null, lte: riskDeadline }, firstRespondedAt: null },
+                {
+                  resolutionDueAt: { not: null, lte: riskDeadline },
+                  resolvedAt: null,
+                  status: { not: TicketStatus.RESOLUTION_PENDING },
+                },
+              ],
+            },
+          ],
+        },
+        _count: { _all: true },
+      }),
+    ])
+    : [[], []];
+  const ticketStatsByQueue = new Map<string, typeof ticketStats>();
+  for (const row of ticketStats) {
+    const rows = ticketStatsByQueue.get(row.queueId) ?? [];
+    rows.push(row);
+    ticketStatsByQueue.set(row.queueId, rows);
   }
+  const slaByQueue = new Map(slaStats.map((row) => [row.queueId, row._count._all]));
 
   return visibleQueues.map((queue) => {
-    const queueTickets = ticketsByQueue.get(queue.id) ?? [];
-    const activeTickets = queueTickets.filter((ticket) => ticket.status !== TicketStatus.CLOSED);
-    const slaAtRisk = activeTickets.filter((ticket) => {
-      const state = getTicketSlaState(ticket).state;
-      return state === "AT_RISK" || state === "BREACHED";
-    }).length;
+    const queueStats = ticketStatsByQueue.get(queue.id) ?? [];
+    const ticketCount = queueStats.reduce((sum, row) => sum + row._count._all, 0);
+    const activeStats = queueStats.filter((row) => row.status !== TicketStatus.CLOSED);
     return {
       ...queue,
       _count: {
         ...queue._count,
         // Queue cards must not reveal the number of confidential tickets that
         // fall outside the viewer's effective perimeter.
-        tickets: queueTickets.length,
+        tickets: ticketCount,
       },
       operationalStats: {
-        urgent: activeTickets.filter((ticket) => ticket.priority === Priority.HIGH || ticket.priority === Priority.CRITICAL).length,
-        blocked: activeTickets.filter((ticket) => ticket.status === TicketStatus.BLOCKED).length,
-        slaAtRisk,
+        urgent: activeStats
+          .filter((row) => row.priority === Priority.HIGH || row.priority === Priority.CRITICAL)
+          .reduce((sum, row) => sum + row._count._all, 0),
+        blocked: activeStats
+          .filter((row) => row.status === TicketStatus.BLOCKED)
+          .reduce((sum, row) => sum + row._count._all, 0),
+        slaAtRisk: slaByQueue.get(queue.id) ?? 0,
       },
     };
   });
