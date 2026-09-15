@@ -2,7 +2,7 @@
 
 **Date :** 15 septembre 2026  
 **Périmètre :** dépôt courant, avec priorité à `ticket-service`, SLA, reporting, production et notifications  
-**Décision :** aucune nouvelle optimisation n'est implémentée avant validation de ce classement
+**Décision :** classement validé ; implémentation progressive par lots atomiques
 
 ## Réponse courte : les phases demandées sont-elles présentes ?
 
@@ -92,4 +92,24 @@ Avant tout nouveau code, valider l'ordre proposé :
 4. sinon traiter le `count` exact/pagination ou le chargement du contexte utilisateur selon les mesures ;
 5. seulement ensuite évaluer un index additionnel ou un cache.
 
-À ce stade, la recommandation est **audit validé, implémentation suspendue en attente de validation**.
+## Correction 2 — résumé opérationnel
+
+**Fichier :** `lib/ticket-service.ts`
+**Avant :** six requêtes `count` distinctes pour total, actifs, non affectés, personnels, SLA à surveiller et SLA dépassés.
+**Après :** une agrégation bornée par statut, une agrégation bornée aux deux valeurs d'affectation utiles et deux compteurs SLA.
+
+**Pourquoi plus rapide :** PostgreSQL calcule total/actifs pendant un même groupement et non affectés/personnels pendant un second groupement. Le nombre d'allers-retours Prisma passe de six à quatre, sans transférer les lignes Ticket.
+**Index :** aucun nouvel index. Les prédicats conservent les index Ticket existants ; l'index réellement choisi doit être confirmé par `EXPLAIN (ANALYZE, BUFFERS)`.
+**Impact attendu :** deux requêtes en moins par rendu de `/inbox`, moins de concurrence sur le pool.
+**Risque :** faible à moyen ; le prédicat de visibilité et les définitions SLA sont inchangés.
+**Migration nécessaire :** non.
+**Rollback :** rétablir les six `count` du commit précédent.
+
+Tests :
+
+- [x] Prisma validate
+- [x] Typecheck
+- [x] Tests
+- [x] Build
+
+Le prochain lot reste piloté par les mesures `inbox.*` ajoutées au lot précédent.

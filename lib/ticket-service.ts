@@ -1121,7 +1121,8 @@ export async function getRequesterTicketSummary(actor: UserContext) {
 export async function getOperationalTicketSummary(actor: UserContext) {
   const { actor: current, where } = await buildTicketListWhere(actor, { workQueue: true });
   const activeWhere: Prisma.TicketWhereInput = { AND: [where, { status: { not: TicketStatus.CLOSED } }] };
-  const riskDeadline = new Date(Date.now() + SLA_RISK_WINDOW_MINUTES * 60_000);
+  const now = new Date();
+  const riskDeadline = new Date(now.getTime() + SLA_RISK_WINDOW_MINUTES * 60_000);
   const slaWhere: Prisma.TicketWhereInput = {
     AND: [
       activeWhere,
@@ -1134,23 +1135,40 @@ export async function getOperationalTicketSummary(actor: UserContext) {
       },
     ],
   };
-  const [total, active, unassigned, mine, slaAttention, slaBreached] = await Promise.all([
-    prisma.ticket.count({ where }),
-    prisma.ticket.count({ where: activeWhere }),
-    prisma.ticket.count({ where: { AND: [activeWhere, { assignedToId: null }] } }),
-    prisma.ticket.count({ where: { AND: [activeWhere, { assignedToId: current.id }] } }),
+  const [statusCounts, assignmentCounts, slaAttention, slaBreached] = await Promise.all([
+    prisma.ticket.groupBy({
+      by: ["status"],
+      where,
+      _count: { _all: true },
+    }),
+    prisma.ticket.groupBy({
+      by: ["assignedToId"],
+      where: {
+        AND: [
+          activeWhere,
+          { OR: [{ assignedToId: null }, { assignedToId: current.id }] },
+        ],
+      },
+      _count: { _all: true },
+    }),
     prisma.ticket.count({ where: slaWhere }),
     prisma.ticket.count({ where: {
       AND: [
         activeWhere,
         { status: { not: TicketStatus.BLOCKED }, slaPausedAt: null },
         { OR: [
-          { firstResponseDueAt: { not: null, lt: new Date() }, firstRespondedAt: null },
-          { resolutionDueAt: { not: null, lt: new Date() }, resolvedAt: null, status: { not: TicketStatus.RESOLUTION_PENDING } },
+          { firstResponseDueAt: { not: null, lt: now }, firstRespondedAt: null },
+          { resolutionDueAt: { not: null, lt: now }, resolvedAt: null, status: { not: TicketStatus.RESOLUTION_PENDING } },
         ] },
       ],
     } }),
   ]);
+  const total = statusCounts.reduce((sum, row) => sum + row._count._all, 0);
+  const active = statusCounts
+    .filter((row) => row.status !== TicketStatus.CLOSED)
+    .reduce((sum, row) => sum + row._count._all, 0);
+  const unassigned = assignmentCounts.find((row) => row.assignedToId === null)?._count._all ?? 0;
+  const mine = assignmentCounts.find((row) => row.assignedToId === current.id)?._count._all ?? 0;
   return { total, active, unassigned, mine, slaAttention, slaBreached };
 }
 

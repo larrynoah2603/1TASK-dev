@@ -107,4 +107,16 @@ describe("contrats de performance Prisma", () => {
       expect(page).toContain(`measureServerOperation("${operation}"`);
     }
   });
+
+  it("réduit les six compteurs du résumé opérationnel à quatre agrégations", () => {
+    const service = source("lib/ticket-service.ts");
+    const start = service.indexOf("export async function getOperationalTicketSummary");
+    const end = service.indexOf("export function getTicketForViewer", start);
+    const implementation = service.slice(start, end);
+
+    expect(implementation.match(/prisma\.ticket\.groupBy\(/g)).toHaveLength(2);
+    expect(implementation.match(/prisma\.ticket\.count\(/g)).toHaveLength(2);
+    expect(implementation).toContain('by: ["status"]');
+    expect(implementation).toContain('by: ["assignedToId"]');
+  });
 });
