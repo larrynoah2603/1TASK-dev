@@ -2,15 +2,13 @@ import { NotificationStatus } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const db = vi.hoisted(() => ({
-  findFirst: vi.fn(),
-  update: vi.fn(),
+  updateManyAndReturn: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({
   prisma: {
     notification: {
-      findFirst: db.findFirst,
-      update: db.update,
+      updateManyAndReturn: db.updateManyAndReturn,
     },
   },
 }));
@@ -33,25 +31,21 @@ describe("service de notifications", () => {
   });
 
   it("ne peut lire qu'une notification appartenant à l'acteur courant", async () => {
-    db.findFirst.mockResolvedValue({ id: "notification-1" });
-    db.update.mockResolvedValue({ id: "notification-1", status: NotificationStatus.READ });
+    db.updateManyAndReturn.mockResolvedValue([{ id: "notification-1", status: NotificationStatus.READ }]);
 
     await markNotificationAsRead(actor, "notification-1");
 
-    expect(db.findFirst).toHaveBeenCalledWith({
+    expect(db.updateManyAndReturn).toHaveBeenCalledWith({
       where: { id: "notification-1", recipientId: "user-1" },
-    });
-    expect(db.update).toHaveBeenCalledWith({
-      where: { id: "notification-1" },
       data: { status: NotificationStatus.READ, readAt: expect.any(Date) },
     });
   });
 
-  it("renvoie une erreur 404 sans tenter de modifier une notification absente", async () => {
-    db.findFirst.mockResolvedValue(null);
+  it("renvoie une erreur 404 quand aucune notification de l'acteur ne correspond", async () => {
+    db.updateManyAndReturn.mockResolvedValue([]);
 
     await expect(markNotificationAsRead(actor, "notification-other"))
       .rejects.toBeInstanceOf(ResourceNotFoundError);
-    expect(db.update).not.toHaveBeenCalled();
+    expect(db.updateManyAndReturn).toHaveBeenCalledOnce();
   });
 });

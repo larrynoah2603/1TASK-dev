@@ -82,8 +82,11 @@ export async function markNotificationAsRead(
     await requireCurrentActor(actor);
 
 
-  const notification =
-    await prisma.notification.findFirst({
+  // Keep ownership enforcement in the write predicate. PostgreSQL can update
+  // and return the matching row in one round trip, rather than selecting it
+  // first and racing a second statement.
+  const [notification] =
+    await prisma.notification.updateManyAndReturn({
 
       where: {
 
@@ -91,6 +94,16 @@ export async function markNotificationAsRead(
 
         recipientId:
           current.id,
+
+      },
+
+      data: {
+
+        status:
+          NotificationStatus.READ,
+
+        readAt:
+          new Date(),
 
       },
 
@@ -106,26 +119,7 @@ export async function markNotificationAsRead(
   }
 
 
-  return prisma.notification.update({
-
-    where: {
-
-      id:
-        notification.id,
-
-    },
-
-    data: {
-
-      status:
-        NotificationStatus.READ,
-
-      readAt:
-        new Date(),
-
-    },
-
-  });
+  return notification;
 
 }
 
