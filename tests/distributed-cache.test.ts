@@ -14,6 +14,18 @@ describe("cache distribué optionnel", () => {
     expect(loader).toHaveBeenCalledOnce();
   });
 
+  it("mutualise aussi les lectures concurrentes lorsque Redis est désactivé", async () => {
+    let release!: (value: { value: number }) => void;
+    const loader = vi.fn(() => new Promise<{ value: number }>((resolve) => { release = resolve; }));
+
+    const first = cacheAside("test:local-flight", 30, loader);
+    const second = cacheAside("test:local-flight", 30, loader);
+    expect(loader).toHaveBeenCalledOnce();
+
+    release({ value: 3 });
+    await expect(Promise.all([first, second])).resolves.toEqual([{ value: 3 }, { value: 3 }]);
+  });
+
   it("protège un cache miss concurrent par single-flight", async () => {
     process.env.REDIS_REST_URL = "https://redis.invalid";
     process.env.REDIS_REST_TOKEN = "token";
