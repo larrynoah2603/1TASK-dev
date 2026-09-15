@@ -131,4 +131,84 @@ describe("contrats de performance Prisma", () => {
     expect(implementation).toContain("listVisibleTicketsPageInternal(actor, options, false)");
     expect(implementation).toContain('"tickets.list_without_total"');
   });
+
+  it("agrège les compteurs du portefeuille missions par statut", () => {
+    const service = source("lib/production-service.ts");
+    const start = service.indexOf("export async function getMissionPortfolioSummary");
+    const end = service.indexOf("export async function listMissionsForViewer", start);
+    const implementation = service.slice(start, end);
+
+    expect(implementation).toContain('prisma.mission.groupBy({ by: ["status"]');
+    expect(implementation).toContain("missionsByStatus.reduce");
+    expect(implementation.match(/prisma\.mission\.count\(/g)).toHaveLength(1);
+  });
+
+  it("pagine les worklogs de mission sans modifier le corps JSON historique", () => {
+    const service = source("lib/production-service.ts");
+    const route = source("app/api/production/missions/[id]/worklogs/route.ts");
+    const start = service.indexOf("export async function listMissionWorklogsPage");
+    const end = service.indexOf("export async function completeMission", start);
+    const implementation = service.slice(start, end);
+
+    expect(implementation).toContain("take: pageSize + 1");
+    expect(implementation).toContain("cursor: { id: options.cursor }, skip: 1");
+    expect(implementation).toContain('orderBy: [{ startedAt: "desc" }, { id: "desc" }]');
+    expect(implementation).toContain("rows.length > pageSize");
+    expect(implementation).toContain("worklogs.at(-1)?.id");
+    expect(implementation).not.toContain(".count(");
+    expect(route).toContain('searchParams.get("limit")');
+    expect(route).toContain('searchParams.get("cursor")');
+    expect(route).toContain('response.headers.set("X-Has-More"');
+    expect(route).toContain('response.headers.set("X-Next-Cursor"');
+    expect(route).toContain("NextResponse.json({ worklogs: page.worklogs })");
+  });
+
+  it("utilise des projections spécialisées pour les détails client et dossier", () => {
+    const service = source("lib/production-service.ts");
+    const dossier = service.slice(
+      service.indexOf("export async function getDossierForViewer"),
+      service.indexOf("export async function createClientAccount"),
+    );
+    const client = service.slice(
+      service.indexOf("export async function getClientForViewer"),
+      service.indexOf("export async function getAssetForViewer"),
+    );
+
+    expect(dossier).toContain("select:");
+    expect(dossier).not.toContain("include:");
+    expect(dossier).toContain("_count: { select: { tickets: true, worklogs: true } }");
+    expect(client).toContain("visibleTicketWhere(actor)");
+    expect(client).toContain("select:");
+    expect(client).not.toContain("include:");
+    expect(client).toContain("_count: { _all: true }");
+  });
+
+  it("projette uniquement les champs nécessaires au moniteur SLA", () => {
+    const monitor = source("lib/sla-monitor.ts");
+    const implementation = monitor.slice(monitor.indexOf("export async function runSlaMonitor"));
+
+    expect(implementation).toContain("select: {");
+    expect(implementation).not.toContain("include:");
+    expect(implementation).toContain("assignedToId: true");
+    expect(implementation).toContain("assignedToId: ticket.assignedToId");
+    expect(implementation).not.toContain("ticket.assignedTo?.id");
+    expect(implementation).toContain("alertThresholds: true");
+  });
+
+  it("borne les référentiels imbriqués du contexte d'autorisation", () => {
+    const auth = source("lib/server-auth.ts");
+    const implementation = auth.slice(
+      auth.indexOf("const userContextInclude"),
+      auth.indexOf("export type UserContext"),
+    );
+
+    expect(implementation).toContain("department: { select:");
+    expect(implementation).toContain("roleAssignments: {");
+    expect(implementation).toContain("permissions: {");
+    expect(implementation).toContain("permission: { select:");
+    expect(implementation).toContain("portfolioKey: true");
+    expect(implementation).toContain("members: { select: { userId: true } }");
+    expect(implementation).toContain("teamMemberships: {");
+    expect(implementation).not.toContain("department: true");
+  });
 });

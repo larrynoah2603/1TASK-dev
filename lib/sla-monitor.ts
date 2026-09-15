@@ -143,7 +143,16 @@ export async function runSlaMonitor(now = new Date()) {
           { resolutionDueAt: { not: null }, resolvedAt: null },
         ],
       },
-      include: {
+      select: {
+        id: true,
+        reference: true,
+        createdAt: true,
+        firstResponseDueAt: true,
+        firstRespondedAt: true,
+        resolutionDueAt: true,
+        resolvedAt: true,
+        totalPausedMinutes: true,
+        assignedToId: true,
         queue: {
           select: {
             id: true,
@@ -166,7 +175,6 @@ export async function runSlaMonitor(now = new Date()) {
           },
         },
         sla: { select: { alertThresholds: true } },
-        assignedTo: { select: { id: true } },
       },
       orderBy: { id: "asc" },
       take: batchSize,
@@ -200,7 +208,7 @@ export async function runSlaMonitor(now = new Date()) {
             departmentId: ticket.queue.departmentId,
             teamIds: ticket.queue.teams.filter((team) => team.isActive).map((team) => team.id),
             managerId: ticket.queue.managerId,
-            assignedToId: ticket.assignedTo?.id ?? null,
+            assignedToId: ticket.assignedToId,
             reference: ticket.reference,
             metric: metric.metric,
             thresholdPercent: threshold,
