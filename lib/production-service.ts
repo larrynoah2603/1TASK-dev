@@ -82,6 +82,49 @@ export async function listDossiersForViewer(actor: UserContext, query?: string) 
   });
 }
 
+/** Lightweight projections used only by ticket filter comboboxes. */
+export async function listTicketPortfolioFilterOptions(actor: UserContext) {
+  actor = await requireCurrentActor(actor);
+  ensurePermission(actor, "portfolio:read");
+  const departmentId = actor.departmentId ?? "__none__";
+  const global = isGlobalAdmin(actor);
+
+  return Promise.all([
+    prisma.clientDossier.findMany({
+      where: {
+        isActive: true,
+        ...(global ? {} : { missions: { some: { departmentId } } }),
+      },
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        client: { select: { name: true } },
+      },
+      orderBy: [{ client: { name: "asc" } }, { name: "asc" }],
+      take: 100,
+    }),
+    prisma.mission.findMany({
+      where: global ? {} : { departmentId },
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        dossier: {
+          select: {
+            id: true,
+            code: true,
+            name: true,
+            client: { select: { name: true } },
+          },
+        },
+      },
+      orderBy: [{ dossier: { name: "asc" } }, { name: "asc" }],
+      take: 100,
+    }),
+  ]);
+}
+
 export async function getDossierForViewer(actor: UserContext, dossierId: string) {
   actor = await requireCurrentActor(actor);
   ensurePermission(actor, "portfolio:read");
