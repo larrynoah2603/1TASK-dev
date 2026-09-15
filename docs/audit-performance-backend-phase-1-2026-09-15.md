@@ -112,6 +112,26 @@ Tests :
 - [x] Tests
 - [x] Build
 
+## Correction 5 — API tickets sans total non consommé
+
+**Fichiers :** `lib/ticket-service.ts`, `app/api/tickets/route.ts`
+**Avant :** `GET /api/tickets` exécutait un total exact bien que sa réponse ne retourne que les tickets et les en-têtes de curseur.
+**Après :** la route désactive explicitement le total. Le moteur lit `pageSize + 1` lignes pour déterminer `X-Has-More`, puis ne sérialise que `pageSize` lignes.
+
+**Pourquoi plus rapide :** suppression d'un `COUNT(*)` avec le prédicat complet d'autorisation à chaque requête API, sans perdre l'information de page suivante.
+**Index :** aucun nouvel index ; la lecture conserve les tris et index existants.
+**Impact attendu :** une requête en moins par appel API tickets et coût stable pour détecter la page suivante.
+**Risque :** faible ; la page Server Component qui affiche `totalPages` conserve le total exact par défaut.
+**Migration nécessaire :** non.
+**Rollback :** supprimer `{ includeTotal: false }` de la route.
+
+Tests :
+
+- [x] Prisma validate
+- [x] Typecheck
+- [x] Tests
+- [x] Build
+
 Le prochain lot reste piloté par les mesures `inbox.*` ajoutées au lot précédent.
 
 ## Correction 3 — listes sans total exact

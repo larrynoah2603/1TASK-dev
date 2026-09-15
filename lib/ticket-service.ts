@@ -1058,8 +1058,14 @@ const ticketListSelect = {
   serviceCatalogItem: { select: { name: true, code: true, category: true } },
 } satisfies Prisma.TicketSelect;
 
-export function listVisibleTicketsPage(actor: UserContext, options: TicketListOptions = {}) {
-  return measureServerOperation("tickets.list", () => listVisibleTicketsPageInternal(actor, options, true));
+export function listVisibleTicketsPage(
+  actor: UserContext,
+  options: TicketListOptions = {},
+  settings: { includeTotal?: boolean } = {},
+) {
+  return measureServerOperation("tickets.list",
+    () => listVisibleTicketsPageInternal(actor, options, settings.includeTotal ?? true),
+  );
 }
 
 async function listVisibleTicketsPageInternal(
@@ -1079,13 +1085,13 @@ async function listVisibleTicketsPageInternal(
       select: ticketListSelect,
       orderBy: ticketOrderBy(sort),
       ...(cursor ? { cursor: { id: cursor.id }, skip: 1 } : { skip: (page - 1) * pageSize }),
-      take: cursor ? pageSize + 1 : pageSize,
+      take: cursor || !includeTotal ? pageSize + 1 : pageSize,
     }),
     includeTotal ? prisma.ticket.count({ where }) : Promise.resolve(null),
   ]);
-  const total = exactTotal ?? ticketRows.length;
-  const hasMore = cursor ? ticketRows.length > pageSize : page * pageSize < total;
-  const tickets = cursor ? ticketRows.slice(0, pageSize) : ticketRows;
+  const hasMore = exactTotal === null ? ticketRows.length > pageSize : page * pageSize < exactTotal;
+  const tickets = ticketRows.slice(0, pageSize);
+  const total = exactTotal ?? tickets.length;
   const mapped = tickets.map((ticket) => {
     const sla = getTicketSlaState(ticket, now);
     return { ...ticket, slaState: sla.state, slaDueAt: sla.dueAt };

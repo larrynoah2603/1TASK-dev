@@ -30,7 +30,7 @@ describe("contrats de performance Prisma", () => {
     const route = source("app/api/tickets/route.ts");
 
     expect(service).toContain("cursor ? { cursor: { id: cursor.id }, skip: 1 }");
-    expect(service).toContain("take: cursor ? pageSize + 1 : pageSize");
+    expect(service).toContain("take: cursor || !includeTotal ? pageSize + 1 : pageSize");
     expect(service).toContain("nextCursor:");
     expect(service).toContain("hasMore,");
     expect(service).toContain("totalPages:");
@@ -38,6 +38,7 @@ describe("contrats de performance Prisma", () => {
     expect(route).toContain('response.headers.set("X-Has-More"');
     expect(route).toContain('response.headers.set("X-Next-Cursor"');
     expect(route).toContain("NextResponse.json(ticketPage.tickets)");
+    expect(route).toContain("{ includeTotal: false }");
   });
 
   it("utilise une recherche ticket FTS paramétrée avec retour arrière contrôlé", () => {
