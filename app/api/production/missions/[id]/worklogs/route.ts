@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/http";
-import { listMissionWorklogs } from "@/lib/production-service";
+import { listMissionWorklogsPage } from "@/lib/production-service";
 import { AuthorizationError, requireSessionUserContext } from "@/lib/server-auth";
 
 
@@ -26,7 +26,7 @@ function requirePermission(
 
 
 export async function GET(
-  _request: Request,
+  request: Request,
   context: {
     params: Promise<{ id: string }>;
   },
@@ -48,13 +48,16 @@ export async function GET(
       await context.params;
 
 
-    return NextResponse.json({
-      worklogs:
-        await listMissionWorklogs(
-          actor,
-          id,
-        ),
+    const searchParams = new URL(request.url).searchParams;
+    const limit = searchParams.get("limit");
+    const page = await listMissionWorklogsPage(actor, id, {
+      cursor: searchParams.get("cursor") || undefined,
+      pageSize: limit === null ? undefined : Number(limit),
     });
+    const response = NextResponse.json({ worklogs: page.worklogs });
+    response.headers.set("X-Has-More", String(page.hasMore));
+    if (page.nextCursor) response.headers.set("X-Next-Cursor", page.nextCursor);
+    return response;
 
 
   } catch (error) {

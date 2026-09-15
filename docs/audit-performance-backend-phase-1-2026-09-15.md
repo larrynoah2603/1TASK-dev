@@ -184,3 +184,16 @@ Tests :
 - [x] Typecheck
 - [x] Tests
 - [x] Build
+
+## Correctif de livraison — lots 6 à 11
+
+Le plan initial « lots suivants proposés » a été remplacé par les lots validés et livrés dans `docs/performance-lots-6-11.md` : agrégation du résumé missions, pagination des worklogs, projections client/dossier et SLA, projection du contexte d'autorisation, puis métriques locales p50/p95/p99.
+
+Corrections apportées au diagnostic initial :
+
+- le résumé missions n'utilise plus deux compteurs distincts pour total et actif ;
+- la route worklogs ne réalise plus de lecture non bornée et conserve son corps JSON historique ;
+- les détails client/dossier, le batch SLA et les référentiels imbriqués du contexte utilisateur utilisent des projections dédiées ;
+- le monitoring expose désormais une fenêtre locale bornée de 200 durées par opération avec taux d'erreur et percentiles ;
+- le monitoring reste local à l'instance Node : il ne remplace pas un backend de métriques distribué ;
+- aucune migration et aucun index n'ont été ajoutés, et aucun gain PostgreSQL mesuré n'est revendiqué sans plan représentatif.

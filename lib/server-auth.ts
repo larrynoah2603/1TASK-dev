@@ -42,7 +42,7 @@ export class ResourceNotFoundError extends Error {
 }
 
 const userContextInclude = {
-  department: true,
+  department: { select: { id: true, code: true, name: true, isActive: true } },
   manager: { select: { id: true, name: true, email: true, status: true, departmentId: true } },
   entraManager: { select: { id: true, name: true, email: true, status: true } },
   primaryTeam: {
@@ -57,14 +57,32 @@ const userContextInclude = {
     select: { id: true, name: true, code: true, departmentId: true, isActive: true },
   },
   roleAssignments: {
-    include: {
+    select: {
+      id: true,
+      userId: true,
+      roleId: true,
+      scopeId: true,
+      assignedById: true,
+      createdAt: true,
       role: {
-        include: {
-          permissions: { include: { permission: true } },
+        select: {
+          id: true,
+          code: true,
+          name: true,
+          permissions: {
+            select: { permission: { select: { id: true, code: true, name: true } } },
+          },
         },
       },
       scope: {
-        include: {
+        select: {
+          id: true,
+          name: true,
+          type: true,
+          departmentId: true,
+          queueId: true,
+          teamId: true,
+          portfolioKey: true,
           members: { select: { userId: true } },
           team: { select: { id: true, queueId: true, isActive: true } },
         },
@@ -73,7 +91,11 @@ const userContextInclude = {
   },
   managedQueues: { select: { id: true } },
   teamMemberships: {
-    include: {
+    select: {
+      id: true,
+      userId: true,
+      teamId: true,
+      isActive: true,
       team: { select: { id: true, queueId: true, isActive: true } },
     },
   },
