@@ -93,4 +93,18 @@ describe("contrats de performance Prisma", () => {
     expect(implementation).not.toContain("groupBy");
     expect(implementation).not.toContain("_count");
   });
+
+  it("mesure séparément chaque chargement critique de la boîte agent", () => {
+    const page = source("app/(app)/inbox/page.tsx");
+
+    for (const operation of [
+      "inbox.queue_filters",
+      "inbox.ticket_page",
+      "inbox.summary",
+      "inbox.sla_watch",
+      "inbox.portfolio_filters",
+    ]) {
+      expect(page).toContain(`measureServerOperation("${operation}"`);
+    }
+  });
 });

@@ -7,6 +7,7 @@ import { Pagination } from "@/components/pagination";
 import { canActorClaimTicket, getOperationalTicketSummary, listVisibleQueueFilterOptions, listVisibleTickets, listVisibleTicketsPage } from "@/lib/ticket-service";
 import { listTicketPortfolioFilterOptions } from "@/lib/production-service";
 import { getSessionUserContext, permissionCodes, roleCodes } from "@/lib/server-auth";
+import { measureServerOperation } from "@/lib/performance";
 import { ticketListQuerySchema } from "@/lib/validation";
 
 const operationalRoles: RoleCode[] = [RoleCode.AGENT, RoleCode.QUEUE_MANAGER, RoleCode.FUNCTIONAL_ADMIN];
@@ -20,11 +21,13 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
   const params = ticketListQuerySchema.parse({ ...rawParams, scope: rawParams.scope ?? "all" });
   const canPortfolio = permissionCodes(user).includes("portfolio:read");
   const [queues, ticketPage, operationalSummary, slaTickets, portfolioOptions] = await Promise.all([
-    listVisibleQueueFilterOptions(user),
-    listVisibleTicketsPage(user, { page: params.page, pageSize: params.pageSize, sort: params.sort, workQueue: true, query: params.q, status: params.status, priority: params.priority, scope: params.scope, sla: params.sla, departmentId: params.departmentId, queueId: params.queueId, dossierId: params.dossierId, missionId: params.missionId }),
-    getOperationalTicketSummary(user),
-    listVisibleTickets(user, { workQueue: true, sla: "attention", take: 6, sort: "updated_desc" }),
-    canPortfolio ? listTicketPortfolioFilterOptions(user) : Promise.resolve([[], []] as const),
+    measureServerOperation("inbox.queue_filters", () => listVisibleQueueFilterOptions(user), { route: "/inbox" }),
+    measureServerOperation("inbox.ticket_page", () => listVisibleTicketsPage(user, { page: params.page, pageSize: params.pageSize, sort: params.sort, workQueue: true, query: params.q, status: params.status, priority: params.priority, scope: params.scope, sla: params.sla, departmentId: params.departmentId, queueId: params.queueId, dossierId: params.dossierId, missionId: params.missionId }), { route: "/inbox" }),
+    measureServerOperation("inbox.summary", () => getOperationalTicketSummary(user), { route: "/inbox" }),
+    measureServerOperation("inbox.sla_watch", () => listVisibleTickets(user, { workQueue: true, sla: "attention", take: 6, sort: "updated_desc" }), { route: "/inbox" }),
+    canPortfolio
+      ? measureServerOperation("inbox.portfolio_filters", () => listTicketPortfolioFilterOptions(user), { route: "/inbox" })
+      : Promise.resolve([[], []] as const),
   ]);
   const [dossiers, missions] = portfolioOptions;
 
