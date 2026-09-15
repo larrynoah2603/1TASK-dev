@@ -119,4 +119,15 @@ describe("contrats de performance Prisma", () => {
     expect(implementation).toContain('by: ["status"]');
     expect(implementation).toContain('by: ["assignedToId"]');
   });
+
+  it("n'exécute pas de count exact pour les listes qui ne consomment que les tickets", () => {
+    const service = source("lib/ticket-service.ts");
+    const start = service.indexOf("export function listVisibleTicketsPage");
+    const end = service.indexOf("export async function getRequesterTicketSummary", start);
+    const implementation = service.slice(start, end);
+
+    expect(implementation).toContain("includeTotal ? prisma.ticket.count({ where }) : Promise.resolve(null)");
+    expect(implementation).toContain("listVisibleTicketsPageInternal(actor, options, false)");
+    expect(implementation).toContain('"tickets.list_without_total"');
+  });
 });

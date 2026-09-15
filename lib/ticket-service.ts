@@ -1059,17 +1059,21 @@ const ticketListSelect = {
 } satisfies Prisma.TicketSelect;
 
 export function listVisibleTicketsPage(actor: UserContext, options: TicketListOptions = {}) {
-  return measureServerOperation("tickets.list", () => listVisibleTicketsPageInternal(actor, options));
+  return measureServerOperation("tickets.list", () => listVisibleTicketsPageInternal(actor, options, true));
 }
 
-async function listVisibleTicketsPageInternal(actor: UserContext, options: TicketListOptions = {}) {
+async function listVisibleTicketsPageInternal(
+  actor: UserContext,
+  options: TicketListOptions = {},
+  includeTotal = true,
+) {
   const { where } = await buildTicketListWhere(actor, options);
   const page = Math.max(1, options.page ?? 1);
   const pageSize = Math.min(Math.max(options.pageSize ?? options.take ?? 25, 1), 100);
   const sort = options.sort ?? "updated_desc";
   const cursor = options.cursor ? decodeTicketListCursor(options.cursor, sort) : null;
   const now = new Date();
-  const [ticketRows, total] = await Promise.all([
+  const [ticketRows, exactTotal] = await Promise.all([
     prisma.ticket.findMany({
       where,
       select: ticketListSelect,
@@ -1077,8 +1081,9 @@ async function listVisibleTicketsPageInternal(actor: UserContext, options: Ticke
       ...(cursor ? { cursor: { id: cursor.id }, skip: 1 } : { skip: (page - 1) * pageSize }),
       take: cursor ? pageSize + 1 : pageSize,
     }),
-    prisma.ticket.count({ where }),
+    includeTotal ? prisma.ticket.count({ where }) : Promise.resolve(null),
   ]);
+  const total = exactTotal ?? ticketRows.length;
   const hasMore = cursor ? ticketRows.length > pageSize : page * pageSize < total;
   const tickets = cursor ? ticketRows.slice(0, pageSize) : ticketRows;
   const mapped = tickets.map((ticket) => {
@@ -1099,7 +1104,10 @@ async function listVisibleTicketsPageInternal(actor: UserContext, options: Ticke
 }
 
 export async function listVisibleTickets(actor: UserContext, options: TicketListOptions = {}) {
-  return (await listVisibleTicketsPage(actor, options)).tickets;
+  return (await measureServerOperation(
+    "tickets.list_without_total",
+    () => listVisibleTicketsPageInternal(actor, options, false),
+  )).tickets;
 }
 
 export async function getRequesterTicketSummary(actor: UserContext) {

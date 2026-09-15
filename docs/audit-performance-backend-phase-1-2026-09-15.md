@@ -113,3 +113,34 @@ Tests :
 - [x] Build
 
 Le prochain lot reste piloté par les mesures `inbox.*` ajoutées au lot précédent.
+
+## Correction 3 — listes sans total exact
+
+**Fichier :** `lib/ticket-service.ts`
+**Avant :** `listVisibleTickets` réutilisait la fonction paginée et lançait donc un `count` exact, même lorsque l'appelant ne consommait que le tableau de tickets.
+**Après :** le chemin paginé conserve son total exact ; le chemin liste appelle le même moteur avec `includeTotal=false` et évite le compteur.
+
+**Pourquoi plus rapide :** le panneau SLA de `/inbox` et les autres aperçus bornés économisent un parcours complet du prédicat de visibilité.
+**Index :** aucun nouvel index ; les index de liste existants restent applicables au `findMany`.
+**Impact attendu :** une requête de moins pour chaque appel `listVisibleTickets`, notamment une requête de moins à chaque rendu Opérations.
+**Risque :** faible ; les API paginées gardent `total`, `totalPages` et leur comportement historique.
+**Migration nécessaire :** non.
+**Rollback :** faire repasser `listVisibleTickets` par `listVisibleTicketsPage`.
+
+Tests :
+
+- [x] Prisma validate
+- [x] Typecheck
+- [x] Tests
+- [x] Build
+
+## Lots suivants proposés
+
+1. **Lot 4 — reporting :** réduire les quatre agrégations de `getReportingSummary`, après comparaison des logs et plans.
+2. **Lot 5 — pagination profonde :** rendre le curseur complet prioritaire et différer le total exact lorsque l'interface n'en a pas besoin.
+3. **Lot 6 — contexte d'autorisation :** mesurer le graphe `UserContext` et créer des projections lecture/mutation sans cache de permissions inter-utilisateur.
+4. **Lot 7 — SLA monitor :** réduire le jeu de tickets candidats par échéance et valider le plan des deux branches SLA.
+5. **Lot 8 — production :** agréger le résumé missions et paginer les sous-collections client/dossier.
+6. **Lot 9 — audit et connaissance :** remplacer les recherches `contains` coûteuses par une stratégie FTS/trigram mesurée.
+7. **Lot 10 — résilience Redis :** circuit breaker, métriques hit/miss et invalidation versionnée.
+8. **Lot 11 — observabilité :** exporter p50/p95/p99, pool PostgreSQL, requêtes lentes, cache et outbox vers un dashboard.
