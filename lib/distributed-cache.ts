@@ -31,16 +31,19 @@ export async function deleteCacheKey(key: string) {
 
 export async function cacheAside<T>(key: string, ttlSeconds: number, loader: () => Promise<T>): Promise<T> {
   const config = configuration();
-  if (!config) return loader();
-  const cached = await command<string>(["GET", key]);
-  if (cached) {
-    try { return JSON.parse(cached) as T; } catch { await deleteCacheKey(key); }
+  if (config) {
+    const cached = await command<string>(["GET", key]);
+    if (cached) {
+      try { return JSON.parse(cached) as T; } catch { await deleteCacheKey(key); }
+    }
   }
   const pending = inFlight.get(key) as Promise<T> | undefined;
   if (pending) return pending;
   const load = loader().then(async (value) => {
-    const jitter = Math.floor(ttlSeconds * (0.9 + Math.random() * 0.2));
-    await command(["SET", key, JSON.stringify(value), "EX", Math.max(1, jitter)]);
+    if (config) {
+      const jitter = Math.floor(ttlSeconds * (0.9 + Math.random() * 0.2));
+      await command(["SET", key, JSON.stringify(value), "EX", Math.max(1, jitter)]);
+    }
     return value;
   }).finally(() => inFlight.delete(key));
   inFlight.set(key, load);

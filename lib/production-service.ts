@@ -82,6 +82,49 @@ export async function listDossiersForViewer(actor: UserContext, query?: string) 
   });
 }
 
+/** Lightweight projections used only by ticket filter comboboxes. */
+export async function listTicketPortfolioFilterOptions(actor: UserContext) {
+  actor = await requireCurrentActor(actor);
+  ensurePermission(actor, "portfolio:read");
+  const departmentId = actor.departmentId ?? "__none__";
+  const global = isGlobalAdmin(actor);
+
+  return Promise.all([
+    prisma.clientDossier.findMany({
+      where: {
+        isActive: true,
+        ...(global ? {} : { missions: { some: { departmentId } } }),
+      },
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        client: { select: { name: true } },
+      },
+      orderBy: [{ client: { name: "asc" } }, { name: "asc" }],
+      take: 100,
+    }),
+    prisma.mission.findMany({
+      where: global ? {} : { departmentId },
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        dossier: {
+          select: {
+            id: true,
+            code: true,
+            name: true,
+            client: { select: { name: true } },
+          },
+        },
+      },
+      orderBy: [{ dossier: { name: "asc" } }, { name: "asc" }],
+      take: 100,
+    }),
+  ]);
+}
+
 export async function getDossierForViewer(actor: UserContext, dossierId: string) {
   actor = await requireCurrentActor(actor);
   ensurePermission(actor, "portfolio:read");
@@ -99,11 +142,25 @@ export async function getDossierForViewer(actor: UserContext, dossierId: string)
         ],
       }),
     },
-    include: {
-      client: true,
+    select: {
+      id: true,
+      clientId: true,
+      code: true,
+      name: true,
+      confidential: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true,
+      client: { select: { id: true, code: true, name: true, isActive: true } },
       missions: {
-        include: {
-          department: true,
+        select: {
+          id: true,
+          code: true,
+          name: true,
+          status: true,
+          dueAt: true,
+          budgetMinutes: true,
+          department: { select: { id: true, name: true } },
           _count: { select: { tickets: true, worklogs: true } },
         },
         orderBy: [{ status: "asc" }, { dueAt: "asc" }],
@@ -183,13 +240,14 @@ export async function getMissionPortfolioSummary(actor: UserContext, options: Pi
   const departmentId = isGlobalAdmin(actor) ? requestedDepartmentId : actor.departmentId ?? "__none__";
   const where = departmentId ? { departmentId } : {};
   const now = new Date();
-  const [total, active, late, budget, logged] = await Promise.all([
-    prisma.mission.count({ where }),
-    prisma.mission.count({ where: { ...where, status: MissionStatus.ACTIVE } }),
+  const [missionsByStatus, late, budget, logged] = await Promise.all([
+    prisma.mission.groupBy({ by: ["status"], where, _count: { _all: true } }),
     prisma.mission.count({ where: { ...where, status: { notIn: [MissionStatus.COMPLETED, MissionStatus.ARCHIVED] }, dueAt: { lt: now } } }),
     prisma.mission.aggregate({ where, _sum: { budgetMinutes: true } }),
     prisma.worklog.aggregate({ where: { mission: where }, _sum: { minutes: true } }),
   ]);
+  const total = missionsByStatus.reduce((sum, group) => sum + group._count._all, 0);
+  const active = missionsByStatus.find((group) => group.status === MissionStatus.ACTIVE)?._count._all ?? 0;
   return {
     total,
     active,
@@ -290,7 +348,10 @@ export async function getMissionForViewer(actor: UserContext, missionId: string)
 export async function getClientForViewer(actor: UserContext, clientId: string) {
   actor = await requireCurrentActor(actor);
   ensurePermission(actor, "portfolio:read");
-  const client = await prisma.clientAccount.findUnique({ where: { id: clientId } });
+  const client = await prisma.clientAccount.findUnique({
+    where: { id: clientId },
+    select: { id: true, code: true, name: true, isActive: true, createdAt: true, updatedAt: true },
+  });
   if (!client || !client.isActive) throw new ResourceNotFoundError("Client introuvable.");
 
   const dossiers = await prisma.clientDossier.findMany({
@@ -301,9 +362,28 @@ export async function getClientForViewer(actor: UserContext, clientId: string) {
         missions: { some: { departmentId: actor.departmentId ?? "__none__" } },
       }),
     },
-    include: {
-      client: true,
-      missions: { include: { department: true }, orderBy: { dueAt: "asc" } },
+    select: {
+      id: true,
+      clientId: true,
+      code: true,
+      name: true,
+      confidential: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true,
+      client: { select: { id: true, code: true, name: true } },
+      missions: {
+        select: {
+          id: true,
+          code: true,
+          name: true,
+          status: true,
+          dueAt: true,
+          budgetMinutes: true,
+          department: { select: { id: true, name: true } },
+        },
+        orderBy: { dueAt: "asc" },
+      },
     },
     orderBy: { name: "asc" },
   });
@@ -468,13 +548,47 @@ export async function addWorklog(actor: UserContext, input: WorklogInput) {
   return worklog;
 }
 
-export async function listMissionWorklogs(actor: UserContext, missionId: string) {
+export type MissionWorklogPageOptions = { cursor?: string; pageSize?: number };
+
+export async function listMissionWorklogsPage(
+  actor: UserContext,
+  missionId: string,
+  options: MissionWorklogPageOptions = {},
+) {
   actor = await requireCurrentActor(actor);
   ensurePermission(actor, "portfolio:read");
   const mission = await prisma.mission.findUnique({ where: { id: missionId }, select: { id: true, departmentId: true } });
   if (!mission) throw new ResourceNotFoundError("Mission introuvable.");
   if (!departmentAllowed(actor, mission.departmentId)) throw new AuthorizationError("La mission est hors de votre périmètre.");
-  return prisma.worklog.findMany({ where: { missionId }, include: { user: { select: { id: true, name: true } }, ticket: { select: { id: true, reference: true, title: true } } }, orderBy: { startedAt: "desc" } });
+  const pageSize = typeof options.pageSize === "number" && Number.isFinite(options.pageSize)
+    ? Math.min(100, Math.max(1, Math.trunc(options.pageSize)))
+    : 50;
+  const rows = await prisma.worklog.findMany({
+    where: { missionId },
+    select: {
+      id: true,
+      ticketId: true,
+      missionId: true,
+      userId: true,
+      minutes: true,
+      note: true,
+      startedAt: true,
+      createdAt: true,
+      user: { select: { id: true, name: true } },
+      ticket: { select: { id: true, reference: true, title: true } },
+    },
+    orderBy: [{ startedAt: "desc" }, { id: "desc" }],
+    take: pageSize + 1,
+    ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
+  });
+  const hasMore = rows.length > pageSize;
+  const worklogs = hasMore ? rows.slice(0, pageSize) : rows;
+  return { worklogs, hasMore, nextCursor: hasMore ? worklogs.at(-1)?.id ?? null : null };
+}
+
+/** Backward-compatible result shape for server-side consumers. */
+export async function listMissionWorklogs(actor: UserContext, missionId: string) {
+  return (await listMissionWorklogsPage(actor, missionId)).worklogs;
 }
 
 export async function completeMission(actor: UserContext, missionId: string) {

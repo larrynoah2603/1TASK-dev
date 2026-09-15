@@ -50,7 +50,7 @@ export async function GET(request: Request) {
       cursor: parsed.cursor,
       page: parsed.page,
       pageSize: parsed.pageSize,
-    });
+    }, { includeTotal: false });
 
     const response = NextResponse.json(ticketPage.tickets);
     response.headers.set("X-Has-More", String(ticketPage.hasMore));

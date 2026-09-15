@@ -5,14 +5,16 @@ import { describe, expect, it } from "vitest";
 const source = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("contrats de performance Prisma", () => {
-  it("charge les statistiques de toutes les files visibles en une requête", () => {
+  it("agrège les statistiques des files sans charger chaque ticket en mémoire", () => {
     const service = source("lib/ticket-service.ts");
     const start = service.indexOf("export async function listVisibleQueues");
     const end = service.indexOf("const MAX_TICKET_ATTACHMENT_BYTES", start);
     const implementation = service.slice(start, end);
 
     expect(implementation).toContain("queueId: { in: visibleQueueIds }");
-    expect(implementation).toContain("ticketsByQueue");
+    expect(implementation).toContain('by: ["queueId", "status", "priority"]');
+    expect(implementation).toContain('by: ["queueId"]');
+    expect(implementation).not.toContain("const visibleTickets");
     expect(implementation).not.toContain("visibleQueues.map(async");
   });
 
@@ -28,7 +30,7 @@ describe("contrats de performance Prisma", () => {
     const route = source("app/api/tickets/route.ts");
 
     expect(service).toContain("cursor ? { cursor: { id: cursor.id }, skip: 1 }");
-    expect(service).toContain("take: cursor ? pageSize + 1 : pageSize");
+    expect(service).toContain("take: cursor || !includeTotal ? pageSize + 1 : pageSize");
     expect(service).toContain("nextCursor:");
     expect(service).toContain("hasMore,");
     expect(service).toContain("totalPages:");
@@ -36,6 +38,7 @@ describe("contrats de performance Prisma", () => {
     expect(route).toContain('response.headers.set("X-Has-More"');
     expect(route).toContain('response.headers.set("X-Next-Cursor"');
     expect(route).toContain("NextResponse.json(ticketPage.tickets)");
+    expect(route).toContain("{ includeTotal: false }");
   });
 
   it("utilise une recherche ticket FTS paramétrée avec retour arrière contrôlé", () => {
@@ -51,5 +54,161 @@ describe("contrats de performance Prisma", () => {
     expect(migration).not.toContain("CREATE INDEX CONCURRENTLY");
     expect(migration).toContain("USING GIN (search_vector)");
     expect(migration).toContain("immutable_unaccent");
+  });
+
+  it("borne les historiques incorporés au détail d'un ticket", () => {
+    const service = source("lib/ticket-service.ts");
+    const start = service.indexOf("async function getTicketForViewerInternal");
+    const end = service.indexOf("export function canActorClaimTicket", start);
+    const implementation = service.slice(start, end);
+
+    expect(implementation).toContain("take: TICKET_MESSAGE_WINDOW");
+    expect(implementation).toContain("take: TICKET_ASSIGNMENT_WINDOW");
+    expect(implementation).toContain("take: TICKET_EVENT_WINDOW");
+    expect(implementation).toContain("messages: ticket.messages.toReversed()");
+  });
+
+  it("utilise des projections légères pour les filtres portefeuille de la boîte agent", () => {
+    const page = source("app/(app)/inbox/page.tsx");
+    const production = source("lib/production-service.ts");
+    const start = production.indexOf("export async function listTicketPortfolioFilterOptions");
+    const end = production.indexOf("export async function getDossierForViewer", start);
+    const implementation = production.slice(start, end);
+
+    expect(page).toContain("listTicketPortfolioFilterOptions(user)");
+    expect(page).not.toContain("listDossiersForViewer(user), listMissionsForViewer(user)");
+    expect(implementation).toContain("select:");
+    expect(implementation).not.toContain("worklog");
+    expect(implementation).not.toContain("_count");
+  });
+
+  it("ne calcule pas les statistiques des files pour afficher un simple filtre", () => {
+    const page = source("app/(app)/inbox/page.tsx");
+    const service = source("lib/ticket-service.ts");
+    const start = service.indexOf("export async function listVisibleQueueFilterOptions");
+    const end = service.indexOf("const MAX_TICKET_ATTACHMENT_BYTES", start);
+    const implementation = service.slice(start, end);
+
+    expect(page).toContain("listVisibleQueueFilterOptions(user)");
+    expect(page).not.toContain("listVisibleQueues(user)");
+    expect(implementation).not.toContain("groupBy");
+    expect(implementation).not.toContain("_count");
+  });
+
+  it("mesure séparément chaque chargement critique de la boîte agent", () => {
+    const page = source("app/(app)/inbox/page.tsx");
+
+    for (const operation of [
+      "inbox.queue_filters",
+      "inbox.ticket_page",
+      "inbox.summary",
+      "inbox.sla_watch",
+      "inbox.portfolio_filters",
+    ]) {
+      expect(page).toContain(`measureServerOperation("${operation}"`);
+    }
+  });
+
+  it("réduit les six compteurs du résumé opérationnel à quatre agrégations", () => {
+    const service = source("lib/ticket-service.ts");
+    const start = service.indexOf("export async function getOperationalTicketSummary");
+    const end = service.indexOf("export function getTicketForViewer", start);
+    const implementation = service.slice(start, end);
+
+    expect(implementation.match(/prisma\.ticket\.groupBy\(/g)).toHaveLength(2);
+    expect(implementation.match(/prisma\.ticket\.count\(/g)).toHaveLength(2);
+    expect(implementation).toContain('by: ["status"]');
+    expect(implementation).toContain('by: ["assignedToId"]');
+  });
+
+  it("n'exécute pas de count exact pour les listes qui ne consomment que les tickets", () => {
+    const service = source("lib/ticket-service.ts");
+    const start = service.indexOf("export function listVisibleTicketsPage");
+    const end = service.indexOf("export async function getRequesterTicketSummary", start);
+    const implementation = service.slice(start, end);
+
+    expect(implementation).toContain("includeTotal ? prisma.ticket.count({ where }) : Promise.resolve(null)");
+    expect(implementation).toContain("listVisibleTicketsPageInternal(actor, options, false)");
+    expect(implementation).toContain('"tickets.list_without_total"');
+  });
+
+  it("agrège les compteurs du portefeuille missions par statut", () => {
+    const service = source("lib/production-service.ts");
+    const start = service.indexOf("export async function getMissionPortfolioSummary");
+    const end = service.indexOf("export async function listMissionsForViewer", start);
+    const implementation = service.slice(start, end);
+
+    expect(implementation).toContain('prisma.mission.groupBy({ by: ["status"]');
+    expect(implementation).toContain("missionsByStatus.reduce");
+    expect(implementation.match(/prisma\.mission\.count\(/g)).toHaveLength(1);
+  });
+
+  it("pagine les worklogs de mission sans modifier le corps JSON historique", () => {
+    const service = source("lib/production-service.ts");
+    const route = source("app/api/production/missions/[id]/worklogs/route.ts");
+    const start = service.indexOf("export async function listMissionWorklogsPage");
+    const end = service.indexOf("export async function completeMission", start);
+    const implementation = service.slice(start, end);
+
+    expect(implementation).toContain("take: pageSize + 1");
+    expect(implementation).toContain("cursor: { id: options.cursor }, skip: 1");
+    expect(implementation).toContain('orderBy: [{ startedAt: "desc" }, { id: "desc" }]');
+    expect(implementation).toContain("rows.length > pageSize");
+    expect(implementation).toContain("worklogs.at(-1)?.id");
+    expect(implementation).not.toContain(".count(");
+    expect(route).toContain('searchParams.get("limit")');
+    expect(route).toContain('searchParams.get("cursor")');
+    expect(route).toContain('response.headers.set("X-Has-More"');
+    expect(route).toContain('response.headers.set("X-Next-Cursor"');
+    expect(route).toContain("NextResponse.json({ worklogs: page.worklogs })");
+  });
+
+  it("utilise des projections spécialisées pour les détails client et dossier", () => {
+    const service = source("lib/production-service.ts");
+    const dossier = service.slice(
+      service.indexOf("export async function getDossierForViewer"),
+      service.indexOf("export async function createClientAccount"),
+    );
+    const client = service.slice(
+      service.indexOf("export async function getClientForViewer"),
+      service.indexOf("export async function getAssetForViewer"),
+    );
+
+    expect(dossier).toContain("select:");
+    expect(dossier).not.toContain("include:");
+    expect(dossier).toContain("_count: { select: { tickets: true, worklogs: true } }");
+    expect(client).toContain("visibleTicketWhere(actor)");
+    expect(client).toContain("select:");
+    expect(client).not.toContain("include:");
+    expect(client).toContain("_count: { _all: true }");
+  });
+
+  it("projette uniquement les champs nécessaires au moniteur SLA", () => {
+    const monitor = source("lib/sla-monitor.ts");
+    const implementation = monitor.slice(monitor.indexOf("export async function runSlaMonitor"));
+
+    expect(implementation).toContain("select: {");
+    expect(implementation).not.toContain("include:");
+    expect(implementation).toContain("assignedToId: true");
+    expect(implementation).toContain("assignedToId: ticket.assignedToId");
+    expect(implementation).not.toContain("ticket.assignedTo?.id");
+    expect(implementation).toContain("alertThresholds: true");
+  });
+
+  it("borne les référentiels imbriqués du contexte d'autorisation", () => {
+    const auth = source("lib/server-auth.ts");
+    const implementation = auth.slice(
+      auth.indexOf("const userContextInclude"),
+      auth.indexOf("export type UserContext"),
+    );
+
+    expect(implementation).toContain("department: { select:");
+    expect(implementation).toContain("roleAssignments: {");
+    expect(implementation).toContain("permissions: {");
+    expect(implementation).toContain("permission: { select:");
+    expect(implementation).toContain("portfolioKey: true");
+    expect(implementation).toContain("members: { select: { userId: true } }");
+    expect(implementation).toContain("teamMemberships: {");
+    expect(implementation).not.toContain("department: true");
   });
 });
