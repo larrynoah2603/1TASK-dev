@@ -144,3 +144,23 @@ Tests :
 6. **Lot 9 — audit et connaissance :** remplacer les recherches `contains` coûteuses par une stratégie FTS/trigram mesurée.
 7. **Lot 10 — résilience Redis :** circuit breaker, métriques hit/miss et invalidation versionnée.
 8. **Lot 11 — observabilité :** exporter p50/p95/p99, pool PostgreSQL, requêtes lentes, cache et outbox vers un dashboard.
+
+## Correction 4 — single-flight sans Redis
+
+**Fichier :** `lib/distributed-cache.ts`
+**Avant :** lorsque Redis n'était pas configuré, `cacheAside` appelait immédiatement le loader. Plusieurs rendus simultanés du même reporting exécutaient donc chacun les quatre agrégations PostgreSQL.
+**Après :** la déduplication `inFlight` s'applique avec ou sans Redis. Redis reste le seul stockage partagé et persistant ; sans Redis, seule une promesse concurrente identique est mutualisée dans l'instance Node.
+
+**Pourquoi plus rapide :** un burst de requêtes identiques ne déclenche qu'un chargement PostgreSQL par clé et par instance au lieu d'un chargement par requête HTTP.
+**Invalidation :** aucune donnée n'est conservée après résolution sans Redis ; avec Redis, TTL et invalidation existants restent inchangés.
+**Impact attendu :** réduction importante des agrégations concurrentes lors d'un cold start ou lorsque Redis est volontairement désactivé.
+**Risque :** faible ; les erreurs sont propagées à tous les abonnés puis la clé `inFlight` est supprimée par `finally`.
+**Migration nécessaire :** non.
+**Rollback :** restaurer le retour direct `loader()` quand `configuration()` vaut `null`.
+
+Tests :
+
+- [x] Prisma validate
+- [x] Typecheck
+- [x] Tests
+- [x] Build
