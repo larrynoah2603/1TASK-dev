@@ -11,6 +11,7 @@
     "prebuild": "npm run clean:next && prisma generate",
     "start": "next start",
     "lint": "eslint .",
+    "pretest": "prisma generate",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
