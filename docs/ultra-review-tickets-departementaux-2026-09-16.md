@@ -108,7 +108,25 @@ Le token empêche bien un doublon concurrent, mais une réutilisation accidentel
 
 Les autres améliorations (temps réel, optimisation d'affichage, enrichissement du catalogue) sont utiles mais ne doivent pas précéder ces garanties métier et de sécurité.
 
-## 6. Checklist de validation manuelle
+## 6. Déploiement Vercel et branche `main`
+
+Une pull request **ne modifie pas directement la production**. Elle produit normalement un déploiement Preview isolé. Les corrections deviennent actives sur le projet Vercel de production seulement lorsque toutes les conditions suivantes sont réunies :
+
+1. la pull request est fusionnée dans la branche configurée comme **Production Branch** dans Vercel — généralement `main` ;
+2. le dépôt GitHub connecté à Vercel reçoit effectivement ce commit ;
+3. le déploiement Vercel correspondant termine avec le statut **Ready** ;
+4. les variables d'environnement et migrations requises sont disponibles en production ;
+5. le domaine public pointe bien vers ce déploiement.
+
+Le correctif présenté ici ne contient aucune migration Prisma. Après fusion, il faut néanmoins vérifier dans Vercel que le SHA déployé correspond au commit fusionné, puis réaliser un test départemental et un test inter-départements avec des comptes Entra de test.
+
+La branche de travail locale n'est pas `main` et ne dispose pas, dans cet environnement, d'un remote Git permettant de constater un push ou une fusion. Il serait donc incorrect d'affirmer que la capture de production contient déjà ces changements.
+
+### Comportement après un timeout de 30 secondes
+
+Le navigateur interrompt volontairement la requête initiale après 30 secondes. Cela ne prouve pas que la transaction serveur a échoué : elle peut avoir été validée juste avant ou après l'interruption réseau. L'interface interroge maintenant un endpoint de réconciliation avec le token idempotent du créateur. Si le ticket existe, elle ouvre automatiquement sa fiche ; sinon elle conserve le même token pour qu'un nouvel essai ne crée pas de doublon.
+
+## 7. Checklist de validation manuelle
 
 1. Créer deux départements actifs A et B, chacun avec son service `TRIAGE-*`, sa file, un SLA et un calendrier actifs.
 2. Connecter un demandeur A ayant `ticket:create` mais pas la permission transverse : vérifier que seul A est proposé et qu'un POST forgé vers B retourne 403.

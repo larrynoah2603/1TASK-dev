@@ -35,4 +35,14 @@ describe("routage départemental des tickets", () => {
       'canCreateCrossDepartment ? {} : { id: actor.departmentId ?? "__none__" }',
     );
   });
+
+  it("réconcilie un timeout avec le token du créateur avant d'afficher un échec", () => {
+    const form = source("components/new-ticket-form.tsx");
+    const statusRoute = source("app/api/tickets/creation-status/route.ts");
+
+    expect(form).toContain("RECONCILIATION_ATTEMPTS");
+    expect(form).toContain("/api/tickets/creation-status?token=");
+    expect(form).toContain("Ticket créé. La réponse initiale avait simplement expiré.");
+    expect(statusRoute).toContain("findCreatedTicketByToken(actor, token)");
+  });
 });

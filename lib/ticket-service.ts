@@ -653,6 +653,26 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
   }
 }
 
+/**
+ * Reconciles a client-side timeout without replaying the complete creation
+ * workflow. The creator and token form the database uniqueness boundary, so a
+ * token can never reveal another user's ticket.
+ */
+export async function findCreatedTicketByToken(actor: UserContext, token: string) {
+  actor = await requireCurrentActor(actor);
+  return prisma.ticket.findFirst({
+    where: {
+      createdById: actor.id,
+      creationIdempotencyToken: token,
+    },
+    select: {
+      id: true,
+      reference: true,
+      status: true,
+    },
+  });
+}
+
 type VisibilityOptions = {
   workQueue?: boolean;
   /** Reporting uses the same server-side scope predicates but never returns
