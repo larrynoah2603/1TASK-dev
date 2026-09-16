@@ -448,6 +448,12 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
     "ticket:create:cross-department",
   );
   if (
+    service.queue.departmentId !== actor.departmentId &&
+    !canCreateCrossDepartment
+  ) {
+    throw new AuthorizationError("Vous ne pouvez pas envoyer un ticket vers un autre département.");
+  }
+  if (
     actor.authorizedQueueId &&
     service.queueId !== actor.authorizedQueueId &&
     !canCreateCrossDepartment
@@ -501,6 +507,7 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
         priority: calculatePriorityFromImpactUrgency(parsed.impact, parsed.urgency),
         impact: parsed.impact,
         urgency: parsed.urgency,
+        status: initialStatus,
         legalDueAt: parsed.legalDueAt ?? null,
         dossierId: productionContext.dossierId,
         missionId: productionContext.missionId,
@@ -644,6 +651,26 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
     }
     throw error;
   }
+}
+
+/**
+ * Reconciles a client-side timeout without replaying the complete creation
+ * workflow. The creator and token form the database uniqueness boundary, so a
+ * token can never reveal another user's ticket.
+ */
+export async function findCreatedTicketByToken(actor: UserContext, token: string) {
+  actor = await requireCurrentActor(actor);
+  return prisma.ticket.findFirst({
+    where: {
+      createdById: actor.id,
+      creationIdempotencyToken: token,
+    },
+    select: {
+      id: true,
+      reference: true,
+      status: true,
+    },
+  });
 }
 
 type VisibilityOptions = {

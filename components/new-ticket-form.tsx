@@ -37,6 +37,14 @@ function createClientIdempotencyToken() {
   return `web-${uuid.replace(/[^A-Za-z0-9_-]/g, "")}`;
 }
 
+const CREATION_TIMEOUT_MS = 30_000;
+const RECONCILIATION_ATTEMPTS = 4;
+const RECONCILIATION_DELAY_MS = 1_500;
+
+function wait(milliseconds: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+}
+
 export function NewTicketForm({ onCancel }: { onCancel?: () => void } = {}) {
   const router = useRouter();
   const { toast } = useToast();
@@ -110,26 +118,27 @@ export function NewTicketForm({ onCancel }: { onCancel?: () => void } = {}) {
     setSubmitting(true);
     setError("");
     const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => controller.abort(), 30_000);
+    const timeoutId = window.setTimeout(() => controller.abort(), CREATION_TIMEOUT_MS);
+    const payload = {
+      creationIdempotencyToken,
+      requestedService,
+      targetDepartmentId,
+      type,
+      title,
+      description,
+      confidential,
+      impact,
+      urgency,
+      legalDueAt: legalDueAt ? new Date(`${legalDueAt}T23:59:59`).toISOString() : null,
+      dossierId: dossierId || null,
+      missionId: missionId || null,
+    };
     try {
       const response = await fetch("/api/tickets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
-        body: JSON.stringify({
-          creationIdempotencyToken,
-          requestedService,
-          targetDepartmentId,
-          type,
-          title,
-          description,
-          confidential,
-          impact,
-          urgency,
-          legalDueAt: legalDueAt ? new Date(`${legalDueAt}T23:59:59`).toISOString() : null,
-          dossierId: dossierId || null,
-          missionId: missionId || null,
-        }),
+        body: JSON.stringify(payload),
       });
       const data = await response.json();
       if (!response.ok) {
@@ -140,8 +149,29 @@ export function NewTicketForm({ onCancel }: { onCancel?: () => void } = {}) {
       toast("Ticket créé et envoyé à la file de qualification.");
       router.push(`/tickets/${data.id}`);
     } catch (requestError: unknown) {
+      if (requestError instanceof DOMException && requestError.name === "AbortError") {
+        setError("La réponse tarde. Vérification de la création en cours…");
+        for (let attempt = 0; attempt < RECONCILIATION_ATTEMPTS; attempt += 1) {
+          if (attempt > 0) await wait(RECONCILIATION_DELAY_MS);
+          try {
+            const statusResponse = await fetch(
+              `/api/tickets/creation-status?token=${encodeURIComponent(creationIdempotencyToken)}`,
+              { cache: "no-store" },
+            );
+            if (!statusResponse.ok) continue;
+            const statusData = await statusResponse.json() as { ticket: { id: string } | null };
+            if (statusData.ticket) {
+              toast("Ticket créé. La réponse initiale avait simplement expiré.");
+              router.push(`/tickets/${statusData.ticket.id}`);
+              return;
+            }
+          } catch {
+            // A reconciliation attempt is best-effort; the next one may succeed.
+          }
+        }
+      }
       const message = requestError instanceof DOMException && requestError.name === "AbortError"
-        ? "La création dépasse 30 secondes. Vous pouvez réessayer : la même demande conservera son identifiant et ne créera pas de doublon."
+        ? "La création n’a pas pu être confirmée après 30 secondes. Réessayez : l’identifiant conservé empêchera tout doublon."
         : "La création n’a pas pu être envoyée.";
       setError(message);
       toast(message, "error");
