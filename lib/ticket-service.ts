@@ -448,6 +448,12 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
     "ticket:create:cross-department",
   );
   if (
+    service.queue.departmentId !== actor.departmentId &&
+    !canCreateCrossDepartment
+  ) {
+    throw new AuthorizationError("Vous ne pouvez pas envoyer un ticket vers un autre département.");
+  }
+  if (
     actor.authorizedQueueId &&
     service.queueId !== actor.authorizedQueueId &&
     !canCreateCrossDepartment
@@ -501,6 +507,7 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
         priority: calculatePriorityFromImpactUrgency(parsed.impact, parsed.urgency),
         impact: parsed.impact,
         urgency: parsed.urgency,
+        status: initialStatus,
         legalDueAt: parsed.legalDueAt ?? null,
         dossierId: productionContext.dossierId,
         missionId: productionContext.missionId,
