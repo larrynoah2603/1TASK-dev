@@ -1,29 +1,8 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/http";
 import { transitionKnowledgeArticle } from "@/lib/knowledge-service";
-import { AuthorizationError, requireSessionUserContext } from "@/lib/server-auth";
+import { requirePermission } from "@/lib/server-auth";
 import { knowledgeArticleStatusSchema } from "@/lib/validation";
-
-
-function requirePermission(
-  actor: Awaited<ReturnType<typeof requireSessionUserContext>>,
-  permission: string,
-) {
-
-  const permissions =
-    actor.roleAssignments.flatMap(
-      (assignment) =>
-        assignment.role.permissions.map(
-          (item) => item.permission.code,
-        ),
-    );
-
-
-  if (!permissions.includes(permission)) {
-    throw new AuthorizationError("Permission insuffisante.");
-  }
-}
-
 
 
 export async function PATCH(
@@ -35,14 +14,7 @@ export async function PATCH(
 
   try {
 
-    const actor =
-      await requireSessionUserContext();
-
-
-    requirePermission(
-      actor,
-      "knowledge:manage",
-    );
+    const actor = await requirePermission("knowledge:manage");
 
 
     const { id } =

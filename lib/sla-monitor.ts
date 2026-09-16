@@ -9,6 +9,7 @@ import {
   TicketStatus,
 } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { readServerEnvironment } from "@/lib/env";
 import { slaProgressPercent } from "@/lib/sla";
 
 type SlaMetric = "FIRST_RESPONSE" | "RESOLUTION";
@@ -126,8 +127,7 @@ async function processSlaAlertBatch(alerts: SlaAlert[]) {
 }
 
 export async function runSlaMonitor(now = new Date()) {
-  const configuredBatchSize = Number(process.env.SLA_MONITOR_BATCH_SIZE ?? 100);
-  const batchSize = Math.min(500, Math.max(25, Number.isFinite(configuredBatchSize) ? Math.trunc(configuredBatchSize) : 100));
+  const batchSize = readServerEnvironment().SLA_MONITOR_BATCH_SIZE;
   let cursor: string | undefined;
   let scanned = 0;
   let alerts = 0;

@@ -13,6 +13,7 @@ import {
   TicketStatus,
 } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { readServerEnvironment } from "@/lib/env";
 import {
   canClaimTicket,
   canManageQueue,
@@ -722,7 +723,7 @@ const loadActiveTeamMemberRows = cache(async (teamIdsKey: string) => {
 const MAX_FULL_TEXT_SEARCH_CANDIDATES = 5_000;
 
 async function ticketSearchCandidateIds(query: string): Promise<string[] | null> {
-  if (process.env.TICKET_FTS_ENABLED === "false") return null;
+  if (!readServerEnvironment().TICKET_FTS_ENABLED) return null;
   const normalizedQuery = query.trim();
   if (!normalizedQuery) return [];
   const rows = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`

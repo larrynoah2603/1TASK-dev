@@ -4,43 +4,15 @@ import {
   listNotificationPreferences,
   updateNotificationPreference,
 } from "@/lib/knowledge-service";
-import { AuthorizationError, requireSessionUserContext } from "@/lib/server-auth";
+import { requirePermission } from "@/lib/server-auth";
 import { notificationPreferenceSchema } from "@/lib/validation";
-
-
-function requirePermission(
-  actor: Awaited<ReturnType<typeof requireSessionUserContext>>,
-  permission: string,
-) {
-
-  const permissions =
-    actor.roleAssignments.flatMap(
-      (assignment) =>
-        assignment.role.permissions.map(
-          (item) => item.permission.code,
-        ),
-    );
-
-
-  if (!permissions.includes(permission)) {
-    throw new AuthorizationError("Permission insuffisante.");
-  }
-}
-
 
 
 export async function GET() {
 
   try {
 
-    const actor =
-      await requireSessionUserContext();
-
-
-    requirePermission(
-      actor,
-      "notification:preferences",
-    );
+    const actor = await requirePermission("notification:preferences");
 
 
     return NextResponse.json({
@@ -66,14 +38,7 @@ export async function PUT(
 
   try {
 
-    const actor =
-      await requireSessionUserContext();
-
-
-    requirePermission(
-      actor,
-      "notification:preferences",
-    );
+    const actor = await requirePermission("notification:preferences");
 
 
     const preference =
