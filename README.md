@@ -213,8 +213,9 @@ Le fichier `.env.example` ne contient aucun secret réel :
 
 ## Tests et qualité
 
-Pour éviter d’utiliser un client Prisma généré avant les dernières migrations ou
-modifications du schéma, utilisez la commande `typecheck` plutôt que d’exécuter
+Le script `npm test` génère automatiquement le client Prisma avant de lancer
+Vitest. Pour éviter d’utiliser un client Prisma obsolète lors d’un contrôle de
+types isolé, utilisez également la commande `typecheck` plutôt que d’exécuter
 `tsc` directement :
 
 ```bash
@@ -226,11 +227,17 @@ npx prisma validate
 npm run build
 ```
 
-La commande `npm run typecheck` régénère automatiquement le client Prisma avant
-le contrôle TypeScript. La commande `npm run validate` enchaîne l’ensemble de
-la validation locale dans le bon ordre.
+Les commandes `npm test` et `npm run typecheck` régénèrent automatiquement le
+client Prisma. La commande `npm run validate` enchaîne l’ensemble de la
+validation locale dans le bon ordre.
 
 Les tests couvrent les transitions, le routage Wi-Fi, l’auto-attribution, les SLA et le cloisonnement confidentiel. Le test d’intégration PostgreSQL est activé dans la CI avec `RUN_DB_TESTS=1 npm run test` après application des migrations sur une base de test dédiée.
+
+Le workflow `.github/workflows/ci.yml` exécute la validation complète sur chaque
+pull request et chaque push vers `main`. Il démarre une base PostgreSQL dédiée,
+applique les migrations puis vérifie les tests d’intégration, ESLint, TypeScript,
+le schéma Prisma et le build de production. Les valeurs de secrets utilisées par
+ce workflow sont exclusivement des valeurs de test, définies dans le job CI.
 
 ## Déploiement Vercel
 
