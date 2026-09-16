@@ -1,5 +1,6 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { readServerEnvironment } from "@/lib/env";
 
 type OutboxDb = Prisma.TransactionClient | PrismaClient;
 
@@ -14,7 +15,7 @@ export async function enqueueOutboxEvent(db: OutboxDb, input: {
 }
 
 export async function processOutboxBatch(now = new Date()) {
-  const batchSize = Math.min(100, Math.max(1, Number(process.env.OUTBOX_BATCH_SIZE ?? 25)));
+  const batchSize = readServerEnvironment().OUTBOX_BATCH_SIZE;
   const leaseBefore = new Date(now.getTime() - 5 * 60_000);
   const claimed = await prisma.$transaction(async (tx) => {
     const rows = await tx.$queryRaw<{ id: string }[]>(Prisma.sql`
@@ -34,11 +35,12 @@ export async function processOutboxBatch(now = new Date()) {
   let failed = 0;
   for (const event of claimed) {
     try {
-      const endpoint = process.env.OUTBOX_DELIVERY_URL;
+      const environment = readServerEnvironment();
+      const endpoint = environment.OUTBOX_DELIVERY_URL;
       if (!endpoint) throw new Error("OUTBOX_DELIVERY_URL is not configured");
       const response = await fetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Idempotency-Key": event.eventKey, ...(process.env.OUTBOX_DELIVERY_TOKEN ? { Authorization: `Bearer ${process.env.OUTBOX_DELIVERY_TOKEN}` } : {}) },
+        headers: { "Content-Type": "application/json", "Idempotency-Key": event.eventKey, ...(environment.OUTBOX_DELIVERY_TOKEN ? { Authorization: `Bearer ${environment.OUTBOX_DELIVERY_TOKEN}` } : {}) },
         body: JSON.stringify({ id: event.id, type: event.type, aggregateType: event.aggregateType, aggregateId: event.aggregateId, payload: event.payload }),
         signal: AbortSignal.timeout(5_000),
       });

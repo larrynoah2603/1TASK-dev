@@ -210,6 +210,17 @@ Le fichier `.env.example` ne contient aucun secret réel :
 - `NEXTAUTH_URL` et `NEXTAUTH_SECRET` : session NextAuth ;
 - `MICROSOFT_ENTRA_ID_CLIENT_ID`, `MICROSOFT_ENTRA_ID_CLIENT_SECRET`, `MICROSOFT_ENTRA_ID_TENANT_ID` : Microsoft Entra ID ;
 - `CRON_SECRET` : protection de l’endpoint de surveillance SLA en production.
+- `PERFORMANCE_SLOW_OPERATION_MS` : seuil de journalisation des opérations lentes ;
+- `SLA_MONITOR_BATCH_SIZE` et `OUTBOX_BATCH_SIZE` : tailles bornées des lots de traitements asynchrones ;
+- `TICKET_FTS_ENABLED` : activation de la recherche PostgreSQL plein texte ;
+- `CACHE_ENABLED`, `REDIS_REST_URL` et `REDIS_REST_TOKEN` : cache distribué facultatif, l’URL et le token Redis devant être fournis ensemble ;
+- `OUTBOX_DELIVERY_URL` et `OUTBOX_DELIVERY_TOKEN` : destination facultative des événements d’outbox ;
+- `RUN_DB_TESTS` : activation explicite des tests d’intégration PostgreSQL.
+
+Les paramètres opérationnels sont analysés et bornés par `lib/env.ts`. Une
+configuration Redis incomplète, une URL invalide ou une taille de lot hors des
+limites acceptées provoque une erreur explicite plutôt qu’un comportement
+implicite différent selon le module.
 
 ## Tests et qualité
 

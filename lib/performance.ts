@@ -1,10 +1,8 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { randomUUID } from "node:crypto";
+import { readServerEnvironment } from "@/lib/env";
 
-const configuredSlowOperationMs = Number(process.env.PERFORMANCE_SLOW_OPERATION_MS ?? 750);
-const SLOW_OPERATION_MS = Number.isFinite(configuredSlowOperationMs) && configuredSlowOperationMs >= 0
-  ? configuredSlowOperationMs
-  : 750;
+const SLOW_OPERATION_MS = readServerEnvironment().PERFORMANCE_SLOW_OPERATION_MS;
 type PerformanceStore = { queryCount: number };
 const performanceStorage = new AsyncLocalStorage<PerformanceStore>();
 const MAX_OPERATION_SAMPLES = 200;

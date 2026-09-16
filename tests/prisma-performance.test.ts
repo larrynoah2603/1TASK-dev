@@ -47,7 +47,7 @@ describe("contrats de performance Prisma", () => {
 
     expect(service).toContain("Prisma.sql`");
     expect(service).toContain("plainto_tsquery(");
-    expect(service).toContain('process.env.TICKET_FTS_ENABLED === "false"');
+    expect(service).toContain("readServerEnvironment().TICKET_FTS_ENABLED");
     expect(service).toContain('"reference" = ${normalizedQuery}');
     expect(migration).toContain("ADD COLUMN IF NOT EXISTS search_vector tsvector");
     expect(migration).toContain("CREATE INDEX IF NOT EXISTS");
