@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth";
 import { cache } from "react";
-import { RoleCode, ScopeType, UserStatus } from "@prisma/client";
+import { Prisma, RoleCode, ScopeType, UserStatus } from "@prisma/client";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { PERMISSION_CATALOG } from "@/lib/identity";
@@ -70,7 +70,7 @@ const userContextInclude = {
           code: true,
           name: true,
           permissions: {
-            select: { permission: { select: { id: true, code: true, name: true } } },
+            select: { permission: { select: { id: true, code: true, description: true } } },
           },
         },
       },
@@ -99,7 +99,7 @@ const userContextInclude = {
       team: { select: { id: true, queueId: true, isActive: true } },
     },
   },
-} as const;
+} as const satisfies Prisma.UserInclude;
 
 export type UserContext = NonNullable<Awaited<ReturnType<typeof getUserContext>>>;
 

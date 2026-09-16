@@ -206,6 +206,9 @@ describe("contrats de performance Prisma", () => {
     expect(implementation).toContain("roleAssignments: {");
     expect(implementation).toContain("permissions: {");
     expect(implementation).toContain("permission: { select:");
+    expect(implementation).toContain("description: true");
+    expect(implementation).toContain("satisfies Prisma.UserInclude");
+    expect(implementation).not.toContain("permission: { select: { id: true, code: true, name: true }");
     expect(implementation).toContain("portfolioKey: true");
     expect(implementation).toContain("members: { select: { userId: true } }");
     expect(implementation).toContain("teamMemberships: {");
