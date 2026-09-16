@@ -185,3 +185,13 @@ liste nominative ou accès confidentiel produit `403`.
 Les permissions granulaires de commentaire, traitement, blocage, résolution,
 confirmation, réouverture et export complètent les permissions historiques sans
 remplacer Microsoft Entra ID ni créer de connexion locale.
+
+## 9. Contrat d’erreur API
+
+Les handlers transmettent leurs exceptions à `errorResponse`. Les réponses
+d’erreur conservent le champ historique `error` et ajoutent un `code` stable
+ainsi qu’un `traceId`. Ce même identifiant est renvoyé dans l’en-tête
+`X-Request-Id`, afin que le support puisse relier une réponse client au journal
+serveur sans exposer les détails techniques internes. Les erreurs inattendues
+sont journalisées sous forme JSON structurée ; leur message et leur pile ne sont
+jamais renvoyés au client.
