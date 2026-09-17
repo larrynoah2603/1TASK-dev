@@ -65,6 +65,7 @@ import {
 import { routeTicketFromCatalog } from "@/lib/routing";
 import { measureServerOperation } from "@/lib/performance";
 import { DomainError } from "@/lib/domain-error";
+import { accessTarget, ticketAccessInclude, ticketSecurityInclude, type AccessTicket } from "@/lib/ticket-access";
 
 export { DomainError } from "@/lib/domain-error";
 
@@ -75,33 +76,6 @@ function isTicketCreationIdempotencyConflict(error: unknown): boolean {
   const target = error.meta?.target;
   return Array.isArray(target) && target.includes("creationIdempotencyToken");
 }
-
-const ticketSecurityInclude = {
-  // This is the browser-safe projection used after authorization. The richer
-  // ticketAccessInclude below is kept internal to the access predicate.
-  requester: { select: { id: true, name: true } },
-  sourceDepartment: { select: { id: true, name: true, code: true } },
-  assignedTo: {
-    select: {
-      id: true,
-      name: true,
-    },
-  },
-  queue: {
-    select: {
-      id: true,
-      name: true,
-      code: true,
-      managerId: true,
-      manager: { select: { id: true, name: true } },
-      departmentId: true,
-      department: { select: { id: true, name: true, code: true } },
-    },
-  },
-  serviceCatalogItem: { select: { id: true, name: true, code: true, category: true } },
-  dossier: { select: { id: true, code: true, name: true, client: { select: { id: true, code: true, name: true } } } },
-  mission: { select: { id: true, code: true, name: true, status: true, dueAt: true, budgetMinutes: true } },
-} as const;
 
 async function resolveTicketProductionContext(actor: UserContext, input: CreateTicketInput) {
   if (!input.dossierId && !input.missionId) return { dossierId: null, missionId: null };
@@ -125,75 +99,6 @@ async function resolveTicketProductionContext(actor: UserContext, input: CreateT
     if (!allowed) throw new AuthorizationError("Le dossier ou la mission est hors de votre périmètre.");
   }
   return { dossierId, missionId: requestedMission?.id ?? null };
-}
-
-const ticketAccessInclude = {
-  assignedTo: {
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      teamMemberships: {
-        select: { teamId: true, isActive: true, team: { select: { isActive: true } } },
-      },
-    },
-  },
-  queue: {
-    include: {
-      department: true,
-      manager: { select: { id: true, name: true } },
-      teams: { select: { id: true, isActive: true } },
-    },
-  },
-  accessList: { select: { userId: true } },
-  serviceCatalogItem: { select: { id: true, code: true, category: true } },
-} as const;
-
-// A ticket remains usable even after years of activity. Bound every embedded
-// timeline so opening one old ticket cannot allocate its complete history in a
-// single Server Component request. Dedicated pagination can extend these
-// windows without changing the authorization query.
-const TICKET_MESSAGE_WINDOW = 200;
-const TICKET_ASSIGNMENT_WINDOW = 100;
-const TICKET_EVENT_WINDOW = 250;
-
-type AccessTicket = {
-  id?: string;
-  requesterId: string;
-  assignedToId: string | null;
-  assignedTo?: unknown;
-  queueId: string;
-  confidential: boolean;
-  category?: string;
-  queue: {
-    departmentId: string;
-    teams?: { id: string; isActive: boolean }[];
-  };
-  accessList?: { userId: string }[];
-  serviceCatalogItem?: { code?: string | null; category?: string | null } | null;
-};
-
-function accessTarget(ticket: AccessTicket) {
-  const assignedTo = ticket.assignedTo as {
-    teamMemberships?: { teamId: string; isActive: boolean; team: { isActive: boolean } }[];
-  } | null | undefined;
-  return {
-    requesterId: ticket.requesterId,
-    assignedToId: ticket.assignedToId,
-    queueId: ticket.queueId,
-    departmentId: ticket.queue.departmentId,
-    confidential: ticket.confidential,
-    assignedToTeamIds: assignedTo?.teamMemberships
-      ?.filter((membership) => membership.isActive && membership.team.isActive)
-      .map((membership) => membership.teamId),
-    authorizedUserIds: ticket.accessList?.map((entry) => entry.userId) ?? [],
-    teamIds: ticket.queue.teams?.filter((team) => team.isActive).map((team) => team.id),
-    portfolioKeys: [
-      ticket.category,
-      ticket.serviceCatalogItem?.code,
-      ticket.serviceCatalogItem?.category,
-    ].filter((value): value is string => Boolean(value)),
-  };
 }
 
 function ensureActorDepartment(actor: UserContext) {
@@ -677,105 +582,7 @@ export type {
   TicketListSort,
 } from "@/lib/ticket-query-service";
 
-export function getTicketForViewer(actor: UserContext, ticketId: string) {
-  return measureServerOperation("tickets.detail", () => getTicketForViewerInternal(actor, ticketId));
-}
-
-async function getTicketForViewerInternal(actor: UserContext, ticketId: string) {
-  actor = await requireCurrentActor(actor);
-
-  // Resolve only the authorization target first. Ticket content, internal
-  // messages and history are fetched only after the scope check succeeds.
-  const accessRecord = await prisma.ticket.findUnique({
-    where: { id: ticketId },
-    include: ticketAccessInclude,
-  });
-  if (!accessRecord) throw new DomainError("Ticket introuvable.", 404);
-
-  const subject = toAccessSubject(actor);
-  if (!canViewTicket(subject, accessTarget(accessRecord))) {
-    throw new AuthorizationError("Vous n’avez pas accès à ce ticket.");
-  }
-
-  const canSeeInternalMessages =
-    canPostInternalMessage(roleCodes(actor)) &&
-    hasPermission(actor, "ticket:internal-comment", accessTarget(accessRecord));
-  const ticket = await prisma.ticket.findUnique({
-    where: { id: ticketId },
-    include: {
-      ...ticketSecurityInclude,
-      messages: {
-        ...(canSeeInternalMessages ? {} : { where: { visibility: MessageVisibility.REQUESTER } }),
-        include: { author: { select: { id: true, name: true } } },
-        orderBy: { createdAt: "desc" },
-        take: TICKET_MESSAGE_WINDOW,
-      },
-      assignments: {
-        include: {
-          assignedBy: { select: { name: true } },
-          previousAssignee: { select: { name: true } },
-          newAssignee: { select: { name: true } },
-        },
-        orderBy: { assignedAt: "desc" },
-        take: TICKET_ASSIGNMENT_WINDOW,
-      },
-      events: {
-        ...(canSeeInternalMessages
-          ? {}
-          : {
-              where: {
-                eventType: {
-                  notIn: [
-                    TicketEventType.MESSAGE_ADDED,
-                    TicketEventType.CONFIDENTIAL_ACCESS_GRANTED,
-                    TicketEventType.CONFIDENTIAL_ACCESS_REVOKED,
-                  ],
-                },
-              },
-            }),
-        include: { actor: { select: { name: true } } },
-        orderBy: { createdAt: "desc" },
-        take: TICKET_EVENT_WINDOW,
-      },
-    },
-  });
-  if (!ticket) throw new DomainError("Ticket introuvable.", 404);
-
-  // Re-check the target after the second read so a concurrent revocation or
-  // reassignment cannot turn the detailed response into an unauthorized one.
-  const latestAccess = await prisma.ticket.findUnique({
-    where: { id: ticketId },
-    include: ticketAccessInclude,
-  });
-  if (!latestAccess || !canViewTicket(subject, accessTarget(latestAccess))) {
-    throw new AuthorizationError("Vous n’avez plus accès à ce ticket.");
-  }
-
-  const [worklogSummary, missionWorklogSummary] = await Promise.all([
-    prisma.worklog.aggregate({
-      where: { ticketId },
-      _sum: { minutes: true },
-      _count: { _all: true },
-    }),
-    ticket.missionId ? prisma.worklog.aggregate({
-      where: { missionId: ticket.missionId },
-      _sum: { minutes: true },
-    }) : Promise.resolve({ _sum: { minutes: 0 } }),
-  ]);
-  // The named confidential-access list is an authorization primitive, not
-  // ticket content. Never expose it to the browser.
-  return {
-    ...ticket,
-    // The thread UI is chronological even though PostgreSQL reads the newest
-    // bounded window first.
-    messages: ticket.messages.toReversed(),
-    worklogSummary: {
-      minutes: worklogSummary._sum.minutes ?? 0,
-      entries: worklogSummary._count._all,
-    },
-    missionWorklogMinutes: missionWorklogSummary._sum.minutes ?? 0,
-  };
-}
+export { getTicketForViewer } from "@/lib/ticket-detail-service";
 
 export function canActorClaimTicket(
   actor: UserContext,

@@ -212,3 +212,8 @@ les résumés de tickets sont regroupés dans `lib/ticket-query-service.ts`. Le
 service historique réexporte temporairement ces fonctions pour préserver la
 compatibilité, tandis que les nouveaux consommateurs dépendent directement du
 module de lecture.
+La projection détaillée d’un ticket et les fenêtres bornées de messages,
+affectations et événements sont isolées dans `lib/ticket-detail-service.ts`.
+Les projections Prisma et la transformation commune vers une cible
+d’autorisation sont partagées par `lib/ticket-access.ts`, afin que les lectures
+et les mutations appliquent exactement les mêmes attributs de sécurité.

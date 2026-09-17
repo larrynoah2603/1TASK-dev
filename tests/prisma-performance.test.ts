@@ -57,9 +57,9 @@ describe("contrats de performance Prisma", () => {
   });
 
   it("borne les historiques incorporés au détail d'un ticket", () => {
-    const service = source("lib/ticket-service.ts");
+    const service = source("lib/ticket-detail-service.ts");
     const start = service.indexOf("async function getTicketForViewerInternal");
-    const end = service.indexOf("export function canActorClaimTicket", start);
+    const end = service.length;
     const implementation = service.slice(start, end);
 
     expect(implementation).toContain("take: TICKET_MESSAGE_WINDOW");
@@ -112,7 +112,7 @@ describe("contrats de performance Prisma", () => {
   it("réduit les six compteurs du résumé opérationnel à quatre agrégations", () => {
     const service = source("lib/ticket-query-service.ts");
     const start = service.indexOf("export async function getOperationalTicketSummary");
-    const end = service.indexOf("export function getTicketForViewer", start);
+    const end = service.length;
     const implementation = service.slice(start, end);
 
     expect(implementation.match(/prisma\.ticket\.groupBy\(/g)).toHaveLength(2);
