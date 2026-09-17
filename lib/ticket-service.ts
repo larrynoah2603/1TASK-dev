@@ -9,6 +9,7 @@ import {
   TicketStatus,
 } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { readServerEnvironment } from "@/lib/env";
 import {
   canClaimTicket,
   canManageQueue,
