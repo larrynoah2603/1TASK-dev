@@ -38,4 +38,13 @@ describe("contrat d’autorisation des routes API", () => {
     expect(route).not.toContain("ticket:create:cross-department");
     expect(authorization).toContain('hasPermission(actor, "ticket:create:cross-department")');
   });
+
+  it("interdit les enveloppes d’erreur ad hoc dans les routes", () => {
+    const apiDirectory = path.resolve(process.cwd(), "app/api");
+    const adHocErrorResponses = findRouteFiles(apiDirectory).filter((routeFile) =>
+      /NextResponse\.json\s*\(\s*\{\s*error\s*:/.test(readFileSync(routeFile, "utf8")),
+    );
+
+    expect(adHocErrorResponses).toEqual([]);
+  });
 });

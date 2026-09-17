@@ -65,6 +65,7 @@ import {
 import { routeTicketFromCatalog } from "@/lib/routing";
 import { measureServerOperation } from "@/lib/performance";
 import { DomainError } from "@/lib/domain-error";
+import { logServerError } from "@/lib/http";
 import { accessTarget, ticketAccessInclude, ticketSecurityInclude, type AccessTicket } from "@/lib/ticket-access";
 
 export { DomainError } from "@/lib/domain-error";
@@ -528,7 +529,7 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
         });
       }
     } catch (notificationError) {
-      console.error("Ticket créé, mais la diffusion des notifications a échoué.", notificationError);
+      logServerError("ticket_creation_notification_failed", notificationError, { ticketId: result.ticket.id });
     }
   });
 
@@ -1324,7 +1325,7 @@ export async function transitionTicket(
       try {
         await createInAppNotifications(prisma, notificationInputs);
       } catch (notificationError) {
-        console.error("Ticket transition committed, but notification delivery failed.", notificationError);
+        logServerError("ticket_transition_notification_failed", notificationError, { ticketId });
       }
     });
   }

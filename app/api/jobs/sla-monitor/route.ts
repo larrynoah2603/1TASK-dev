@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { errorResponse } from "@/lib/http";
+import { httpErrorResponse, errorResponse } from "@/lib/http";
 import { runSlaMonitor } from "@/lib/sla-monitor";
 import { readServerEnvironment } from "@/lib/env";
 
@@ -54,14 +54,7 @@ export async function POST(
 
 
   if (authError) {
-    return NextResponse.json(
-      {
-        error: authError.error,
-      },
-      {
-        status: authError.status,
-      },
-    );
+    return httpErrorResponse(authError.error, authError.status);
   }
 
 
