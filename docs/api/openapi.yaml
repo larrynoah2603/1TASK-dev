@@ -1,15 +1,173 @@
 openapi: 3.0.3
-
 info:
   title: 1TASK API
   version: 1.0.0
-
+  description: Contrat public versionné. Les routes historiques `/api/tickets` restent disponibles pour le frontend web.
+servers:
+  - url: /
 paths:
-
- /api/v1/tickets:
-
-   get:
-     summary: Liste des tickets
-
-   post:
-     summary: Création ticket
+  /api/v1/tickets:
+    get:
+      operationId: listTicketsV1
+      summary: Liste paginée des tickets visibles
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }
+        - { name: cursor, in: query, schema: { type: string } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: priority, in: query, schema: { type: string } }
+        - { name: q, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: Page de tickets autorisés
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TicketList" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+    post:
+      operationId: createTicketV1
+      summary: Crée un ticket
+      security: [{ sessionCookie: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, description]
+              additionalProperties: true
+              properties:
+                title: { type: string }
+                description: { type: string }
+      responses:
+        "201":
+          description: Ticket créé
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Ticket" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+  /api/v1/tickets/{id}:
+    get:
+      operationId: getTicketV1
+      summary: Détail d’un ticket visible
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Détail du ticket
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TicketDetail" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: next-auth.session-token
+  responses:
+    BadRequest: { description: Requête invalide, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+    Unauthorized: { description: Authentification requise, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+    Forbidden: { description: Accès refusé, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+    NotFound: { description: Ressource introuvable, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+    ValidationError: { description: Données invalides, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  schemas:
+    Pagination:
+      type: object
+      required: [page, pageSize, total, totalPages, hasMore, nextCursor]
+      properties:
+        page: { type: integer }
+        pageSize: { type: integer }
+        total: { type: integer }
+        totalPages: { type: integer }
+        hasMore: { type: boolean }
+        nextCursor: { type: string, nullable: true }
+    Error:
+      type: object
+      required: [message, error, code, traceId, context]
+      properties:
+        message: { type: string }
+        error: { type: string, deprecated: true }
+        code: { type: string }
+        traceId: { type: string, format: uuid }
+        context:
+          type: object
+          required: [status, category]
+          properties:
+            status: { type: integer }
+            category: { type: string }
+            details: {}
+    Ticket:
+      type: object
+      required: [id, reference, title, description, type, category, priority, impact, urgency, status, requesterId, queueId, serviceCatalogItemId, confidential, totalPausedMinutes, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        reference: { type: string }
+        title: { type: string }
+        description: { type: string }
+        requestedService: { type: string, nullable: true }
+        type: { type: string }
+        category: { type: string }
+        priority: { type: string }
+        impact: { type: string }
+        urgency: { type: string }
+        legalDueAt: { type: string, format: date-time, nullable: true }
+        status: { type: string }
+        requesterId: { type: string }
+        sourceDepartmentId: { type: string, nullable: true }
+        assignedToId: { type: string, nullable: true }
+        queueId: { type: string }
+        serviceCatalogItemId: { type: string }
+        dossierId: { type: string, nullable: true }
+        missionId: { type: string, nullable: true }
+        assetId: { type: string, nullable: true }
+        confidential: { type: boolean }
+        firstResponseDueAt: { type: string, format: date-time, nullable: true }
+        resolutionDueAt: { type: string, format: date-time, nullable: true }
+        totalPausedMinutes: { type: integer }
+        blockReason: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    TicketListItem:
+      type: object
+      required: [id, reference, title, status, priority, confidential, category, createdAt, updatedAt, slaState, queue, requester, serviceCatalogItem]
+      properties:
+        id: { type: string }
+        reference: { type: string }
+        title: { type: string }
+        status: { type: string }
+        priority: { type: string }
+        confidential: { type: boolean }
+        category: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        slaState: { type: string }
+        slaDueAt: { type: string, format: date-time, nullable: true }
+        queue: { type: object, additionalProperties: true }
+        requester: { type: object, additionalProperties: true }
+        assignedTo: { type: object, nullable: true, additionalProperties: true }
+        sourceDepartment: { type: object, nullable: true, additionalProperties: true }
+        serviceCatalogItem: { type: object, additionalProperties: true }
+    TicketList:
+      type: object
+      required: [data, pagination]
+      properties:
+        data: { type: array, items: { $ref: "#/components/schemas/TicketListItem" } }
+        pagination: { $ref: "#/components/schemas/Pagination" }
+    TicketDetail:
+      allOf:
+        - $ref: "#/components/schemas/Ticket"
+        - type: object
+          additionalProperties: true

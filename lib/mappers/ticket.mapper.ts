@@ -67,13 +67,40 @@ function serializeDTO<T>(value: T): JsonDTO<T> {
 }
 
 export function toTicketDTO(ticket: TicketDomain): TicketDTO {
-  return serializeDTO(ticket);
+  return {
+    id: ticket.id, reference: ticket.reference, title: ticket.title, description: ticket.description,
+    requestedService: ticket.requestedService, type: ticket.type, category: ticket.category,
+    priority: ticket.priority, impact: ticket.impact, urgency: ticket.urgency,
+    legalDueAt: ticket.legalDueAt?.toISOString() ?? null, status: ticket.status,
+    requesterId: ticket.requesterId, sourceDepartmentId: ticket.sourceDepartmentId,
+    assignedToId: ticket.assignedToId, queueId: ticket.queueId,
+    serviceCatalogItemId: ticket.serviceCatalogItemId, dossierId: ticket.dossierId,
+    missionId: ticket.missionId, assetId: ticket.assetId, confidential: ticket.confidential,
+    firstResponseDueAt: ticket.firstResponseDueAt?.toISOString() ?? null,
+    resolutionDueAt: ticket.resolutionDueAt?.toISOString() ?? null,
+    firstRespondedAt: ticket.firstRespondedAt?.toISOString() ?? null,
+    resolvedAt: ticket.resolvedAt?.toISOString() ?? null, closedAt: ticket.closedAt?.toISOString() ?? null,
+    slaPausedAt: ticket.slaPausedAt?.toISOString() ?? null, totalPausedMinutes: ticket.totalPausedMinutes,
+    blockReason: ticket.blockReason, createdAt: ticket.createdAt.toISOString(), updatedAt: ticket.updatedAt.toISOString(),
+  };
 }
 
 export function toTicketListItemDTO(ticket: TicketListItemDomain): TicketListItemDTO {
-  return serializeDTO(ticket);
+  return {
+    id: ticket.id, reference: ticket.reference, title: ticket.title, status: ticket.status,
+    priority: ticket.priority, confidential: ticket.confidential, category: ticket.category,
+    createdAt: ticket.createdAt.toISOString(), updatedAt: ticket.updatedAt.toISOString(),
+    slaState: ticket.slaState, slaDueAt: ticket.slaDueAt?.toISOString() ?? null,
+    queue: {
+      id: ticket.queue.id, name: ticket.queue.name, departmentId: ticket.queue.departmentId,
+      department: ticket.queue.department,
+    },
+    assignedTo: ticket.assignedTo, requester: ticket.requester,
+    sourceDepartment: ticket.sourceDepartment, serviceCatalogItem: ticket.serviceCatalogItem,
+  };
 }
 
 export function toTicketDetailDTO(ticket: TicketDetailDomain): TicketDetailDTO {
-  return serializeDTO(ticket);
+  const { creationIdempotencyToken: _token, createdById: _createdById, slaId: _slaId, priorityOverrideReason: _override, ...publicTicket } = ticket;
+  return serializeDTO(publicTicket);
 }
