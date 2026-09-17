@@ -20,7 +20,27 @@ const nonNegativeNumber = (fallback: number) => z.preprocess(
   z.coerce.number().min(0),
 );
 
+const emailList = z.preprocess(
+  (value) => typeof value === "string"
+    ? value.split(/[;,]/).map((email) => email.trim().toLowerCase()).filter(Boolean)
+    : value,
+  z.array(z.email()).default([]),
+);
+
+/** Unique inventory and validation policy for all server-side configuration. */
 export const serverEnvironmentSchema = z.object({
+  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  VERCEL_ENV: z.enum(["development", "preview", "production"]).optional(),
+  DATABASE_URL: z.url(),
+  NEXTAUTH_URL: optionalUrl,
+  NEXTAUTH_SECRET: optionalString,
+  MICROSOFT_ENTRA_ID_CLIENT_ID: optionalString,
+  MICROSOFT_ENTRA_ID_CLIENT_SECRET: optionalString,
+  MICROSOFT_ENTRA_ID_TENANT_ID: optionalString,
+  ALLOWED_EMAIL_DOMAIN: optionalString,
+  ADMIN_EMAILS: emailList,
+  CRON_SECRET: optionalString,
+  RUN_DB_TESTS: z.enum(["0", "1"]).default("0").transform((value) => value === "1"),
   CACHE_ENABLED: z.enum(["true", "false"]).default("true").transform((value) => value === "true"),
   OUTBOX_BATCH_SIZE: boundedInteger(25, 1, 100),
   OUTBOX_DELIVERY_TOKEN: optionalString,
@@ -31,32 +51,50 @@ export const serverEnvironmentSchema = z.object({
   SLA_MONITOR_BATCH_SIZE: boundedInteger(100, 25, 500),
   TICKET_FTS_ENABLED: z.enum(["true", "false"]).default("true").transform((value) => value === "true"),
 }).superRefine((environment, context) => {
-  if (Boolean(environment.REDIS_REST_URL) !== Boolean(environment.REDIS_REST_TOKEN)) {
-    context.addIssue({
-      code: "custom",
-      path: [environment.REDIS_REST_URL ? "REDIS_REST_TOKEN" : "REDIS_REST_URL"],
-      message: "REDIS_REST_URL et REDIS_REST_TOKEN doivent être configurées ensemble.",
-    });
+  // Vercel intentionally withholds production-only secrets from Preview
+  // deployments. Optional integrations remain disabled there; Production and
+  // local runtime keep the strict fail-fast policy.
+  const strictRuntime = environment.VERCEL_ENV !== "preview";
+
+  if (strictRuntime && Boolean(environment.REDIS_REST_URL) !== Boolean(environment.REDIS_REST_TOKEN)) {
+    context.addIssue({ code: "custom", path: [environment.REDIS_REST_URL ? "REDIS_REST_TOKEN" : "REDIS_REST_URL"], message: "REDIS_REST_URL et REDIS_REST_TOKEN doivent être configurées ensemble." });
   }
-  if (environment.OUTBOX_DELIVERY_TOKEN && !environment.OUTBOX_DELIVERY_URL) {
-    context.addIssue({
-      code: "custom",
-      path: ["OUTBOX_DELIVERY_URL"],
-      message: "OUTBOX_DELIVERY_URL est obligatoire lorsqu’un token de livraison est configuré.",
-    });
+  if (strictRuntime && environment.OUTBOX_DELIVERY_TOKEN && !environment.OUTBOX_DELIVERY_URL) {
+    context.addIssue({ code: "custom", path: ["OUTBOX_DELIVERY_URL"], message: "OUTBOX_DELIVERY_URL est obligatoire lorsqu’un token de livraison est configuré." });
+  }
+
+  const entraValues = [environment.MICROSOFT_ENTRA_ID_CLIENT_ID, environment.MICROSOFT_ENTRA_ID_CLIENT_SECRET, environment.MICROSOFT_ENTRA_ID_TENANT_ID];
+  if (strictRuntime && entraValues.some(Boolean) && !entraValues.every(Boolean)) {
+    context.addIssue({ code: "custom", path: ["MICROSOFT_ENTRA_ID_CLIENT_ID"], message: "Les trois variables Microsoft Entra ID doivent être configurées ensemble." });
+  }
+
+  if (environment.NODE_ENV === "production" && strictRuntime) {
+    const requiredProductionValues = {
+      NEXTAUTH_URL: environment.NEXTAUTH_URL,
+      NEXTAUTH_SECRET: environment.NEXTAUTH_SECRET,
+      MICROSOFT_ENTRA_ID_CLIENT_ID: environment.MICROSOFT_ENTRA_ID_CLIENT_ID,
+      MICROSOFT_ENTRA_ID_CLIENT_SECRET: environment.MICROSOFT_ENTRA_ID_CLIENT_SECRET,
+      MICROSOFT_ENTRA_ID_TENANT_ID: environment.MICROSOFT_ENTRA_ID_TENANT_ID,
+      ALLOWED_EMAIL_DOMAIN: environment.ALLOWED_EMAIL_DOMAIN,
+      CRON_SECRET: environment.CRON_SECRET,
+    };
+    for (const [name, value] of Object.entries(requiredProductionValues)) {
+      if (!value) context.addIssue({ code: "custom", path: [name], message: "Variable obligatoire en production." });
+    }
+    if (environment.NEXTAUTH_SECRET && environment.NEXTAUTH_SECRET.length < 32) {
+      context.addIssue({ code: "custom", path: ["NEXTAUTH_SECRET"], message: "Le secret NextAuth doit contenir au moins 32 caractères en production." });
+    }
+    if (environment.CRON_SECRET && environment.CRON_SECRET.length < 32) {
+      context.addIssue({ code: "custom", path: ["CRON_SECRET"], message: "Le secret des jobs doit contenir au moins 32 caractères en production." });
+    }
   }
 });
 
 export type ServerEnvironment = z.infer<typeof serverEnvironmentSchema>;
 
-export function readServerEnvironment(
-  source: Record<string, string | undefined> = process.env,
-): ServerEnvironment {
+export function readServerEnvironment(source: Record<string, string | undefined> = process.env): ServerEnvironment {
   const result = serverEnvironmentSchema.safeParse(source);
   if (result.success) return result.data;
-
-  const details = result.error.issues
-    .map((issue) => `${issue.path.join(".") || "environment"}: ${issue.message}`)
-    .join("; ");
+  const details = result.error.issues.map((issue) => `${issue.path.join(".") || "environment"}: ${issue.message}`).join("; ");
   throw new Error(`Configuration d’environnement invalide : ${details}`);
 }

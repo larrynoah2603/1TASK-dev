@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/http";
 import {
   requirePermission,
-  requireSessionUserContext,
 } from "@/lib/server-auth";
 import { createTicket } from "@/lib/ticket-service";
 import { listVisibleTicketsPage } from "@/lib/ticket-query-service";
+import { toTicketListItemDTO } from "@/lib/mappers/ticket.mapper";
 import {
   createTicketSchema,
   ticketListQuerySchema,
@@ -53,7 +53,7 @@ export async function GET(request: Request) {
       pageSize: parsed.pageSize,
     }, { includeTotal: false });
 
-    const response = NextResponse.json(ticketPage.tickets);
+    const response = NextResponse.json(ticketPage.tickets.map(toTicketListItemDTO));
     response.headers.set("X-Has-More", String(ticketPage.hasMore));
     if (ticketPage.nextCursor) response.headers.set("X-Next-Cursor", ticketPage.nextCursor);
     return response;

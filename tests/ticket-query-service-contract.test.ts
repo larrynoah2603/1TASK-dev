@@ -14,6 +14,7 @@ describe("module de lecture des tickets", () => {
     expect(queryService).toContain("export async function getOperationalTicketSummary");
     expect(ticketService).not.toContain("async function listVisibleTicketsPageInternal");
     expect(ticketService).toContain('from "@/lib/ticket-query-service"');
+    expect(queryService).toContain("toTicketListItemDomain");
   });
 
   it("branche les lectures API et métier sur le module dédié", () => {
@@ -27,5 +28,10 @@ describe("module de lecture des tickets", () => {
     ]) {
       expect(source(file)).toContain('from "@/lib/ticket-query-service"');
     }
+  });
+
+  it("maps the optimized Prisma projection to DTOs only at the API boundary", () => {
+    const route = source("app/api/tickets/route.ts");
+    expect(route).toContain("ticketPage.tickets.map(toTicketListItemDTO)");
   });
 });

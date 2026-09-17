@@ -21,16 +21,13 @@ import {
   allowedNextStatuses,
   calculatePriorityFromImpactUrgency,
   canAssignTicket as canAssignWithRoles,
-  canConfirmResolution,
   canPostInternalMessage,
-  canReopenResolution,
-  canTransitionStatus,
   isClaimableStatus,
   isStaffRole,
   makeTicketReference,
 } from "@/lib/domain";
 import { calculateSlaDeadlines } from "@/lib/sla";
-import { createInAppNotification, createInAppNotifications } from "@/lib/notifications";
+import { createInAppNotification } from "@/lib/notifications";
 import { appendAuditLog } from "@/lib/audit";
 import {
   toAccessSubject,
@@ -47,25 +44,25 @@ import {
   confidentialAccessSchema,
   createTicketSchema,
   queueTransferSchema,
-  slaExceptionSchema,
   ticketLinkSchema,
-  ticketQualificationSchema,
-  transitionTicketSchema,
   type AddMessageInput,
   type AssignmentInput,
   type ClaimTicketInput,
   type ConfidentialAccessInput,
   type CreateTicketInput,
   type QueueTransferInput,
-  type SlaExceptionInput,
   type TicketLinkInput,
-  type TicketQualificationInput,
-  type TransitionTicketInput,
 } from "@/lib/validation";
 import { routeTicketFromCatalog } from "@/lib/routing";
 import { measureServerOperation } from "@/lib/performance";
 import { DomainError } from "@/lib/domain-error";
+import { logServerError } from "@/lib/http";
 import { accessTarget, ticketAccessInclude, ticketSecurityInclude, type AccessTicket } from "@/lib/ticket-access";
+import { chooseAutoAssignee, recordAssignment } from "@/lib/ticket-assignment-service";
+import { notifyQueueWorkers, queueWorkerIds } from "@/lib/ticket-notification-service";
+
+export { addSlaException } from "@/lib/ticket-sla-service";
+export { qualifyTicket, transitionTicket } from "@/lib/ticket-workflow-service";
 
 export { DomainError } from "@/lib/domain-error";
 
@@ -119,173 +116,6 @@ function requireAdministrativeReason(actor: UserContext, reason: string | undefi
       422,
     );
   }
-}
-
-async function queueWorkerIds(db: Prisma.TransactionClient | typeof prisma, queueId: string): Promise<string[]> {
-  const members = await db.teamMember.findMany({
-    where: {
-      isActive: true,
-      team: { queueId, isActive: true },
-      user: {
-        status: "ACTIVE",
-        administrativelyDisabled: false,
-        OR: [{ authorizedQueueId: null }, { authorizedQueueId: queueId }],
-        roleAssignments: { some: { role: { code: RoleCode.AGENT } } },
-      },
-    },
-    select: { userId: true },
-  });
-  return [...new Set(members.map((member) => member.userId))];
-}
-
-async function notifyQueueWorkers(
-  db: Prisma.TransactionClient | typeof prisma,
-  input: {
-    queueId: string;
-    managerId?: string | null;
-    ticketId: string;
-    type: NotificationType;
-    title: string;
-    body: string;
-    excludeUserIds?: string[];
-  },
-) {
-  const manager = input.managerId
-    ? await db.user.findFirst({
-        where: {
-          id: input.managerId,
-          status: "ACTIVE",
-          administrativelyDisabled: false,
-          OR: [{ authorizedQueueId: null }, { authorizedQueueId: input.queueId }],
-          roleAssignments: {
-            some: { role: { code: { in: [RoleCode.QUEUE_MANAGER, RoleCode.FUNCTIONAL_ADMIN] } } },
-          },
-        },
-        select: { id: true },
-      })
-    : null;
-  const recipients = new Set([
-    manager?.id,
-    ...(await queueWorkerIds(db, input.queueId)),
-  ].filter(Boolean) as string[]);
-  for (const recipientId of input.excludeUserIds ?? []) recipients.delete(recipientId);
-  await createInAppNotifications(db, [...recipients].map((recipientId) => ({
-    recipientId,
-    ticketId: input.ticketId,
-    type: input.type,
-    title: input.title,
-    body: input.body,
-  })));
-
-}
-
-async function chooseAutoAssignee(
-  db: Prisma.TransactionClient,
-  queueId: string,
-  requiredSkills: string[],
-) {
-  const members = await db.teamMember.findMany({
-    where: {
-      isActive: true,
-      team: { queueId, isActive: true },
-      user: { status: "ACTIVE", roleAssignments: { some: { role: { code: RoleCode.AGENT } } } },
-    },
-    select: { userId: true, isActive: true, isAvailable: true, skills: true },
-  });
-  if (!members.length) return null;
-
-  const counts = await db.ticket.groupBy({
-    by: ["assignedToId"],
-    where: {
-      queueId,
-      assignedToId: { in: members.map((member) => member.userId) },
-      status: { not: TicketStatus.CLOSED },
-    },
-    _count: { _all: true },
-  });
-  const countByUser = new Map(
-    counts.map((entry) => [entry.assignedToId, entry._count._all]),
-  );
-  const normalizedSkills = requiredSkills.map((skill) => skill.toLowerCase());
-  return members
-    .filter((member) => {
-      const skills = member.skills.map((skill) => skill.toLowerCase());
-      return (
-        member.isActive &&
-        member.isAvailable &&
-        normalizedSkills.every((skill) => skills.includes(skill))
-      );
-    })
-    .sort(
-      (left, right) =>
-        (countByUser.get(left.userId) ?? 0) - (countByUser.get(right.userId) ?? 0) ||
-        left.userId.localeCompare(right.userId),
-    )[0] ?? null;
-}
-
-async function recordAssignment(
-  tx: Prisma.TransactionClient,
-  input: {
-    ticketId: string;
-    queueId: string;
-    previousAssigneeId: string | null;
-    newAssigneeId: string | null;
-    assignedById: string;
-    reason?: string;
-    fromStatus: TicketStatus;
-    toStatus: TicketStatus;
-    assignmentMode: "MANUAL" | "AUTO" | "CLAIM" | "UNASSIGN" | "TRANSFER";
-    actorName?: string;
-    reference?: string;
-  },
-) {
-  await tx.ticketAssignment.create({
-    data: {
-      ticketId: input.ticketId,
-      queueId: input.queueId,
-      previousAssigneeId: input.previousAssigneeId,
-      newAssigneeId: input.newAssigneeId,
-      assignedById: input.assignedById,
-      reason: input.reason,
-    },
-  });
-  await tx.ticketEvent.create({
-    data: {
-      ticketId: input.ticketId,
-      actorId: input.assignedById,
-      queueId: input.queueId,
-      eventType: TicketEventType.ASSIGNED,
-      fromStatus: input.fromStatus,
-      toStatus: input.toStatus,
-      metadata: {
-        assignmentMode: input.assignmentMode,
-        previousAssigneeId: input.previousAssigneeId,
-        newAssigneeId: input.newAssigneeId,
-      },
-    },
-  });
-  await appendAuditLog(tx, {
-    actorId: input.assignedById,
-    action: input.assignmentMode === "CLAIM"
-      ? "TICKET_CLAIMED"
-      : input.assignmentMode === "UNASSIGN"
-        ? "TICKET_UNASSIGNED"
-        : input.previousAssigneeId
-          ? "TICKET_REASSIGNED"
-          : "TICKET_ASSIGNED",
-    objectType: "Ticket",
-    objectId: input.ticketId,
-    oldValue: {
-      assignedToId: input.previousAssigneeId,
-      status: input.fromStatus,
-    },
-    newValue: {
-      assignedToId: input.newAssigneeId,
-      status: input.toStatus,
-      assignmentMode: input.assignmentMode,
-    },
-    reason: input.reason,
-  });
 }
 
 export async function createTicket(actor: UserContext, input: CreateTicketInput) {
@@ -528,7 +358,7 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
         });
       }
     } catch (notificationError) {
-      console.error("Ticket créé, mais la diffusion des notifications a échoué.", notificationError);
+      logServerError("ticket_creation_notification_failed", notificationError, { ticketId: result.ticket.id });
     }
   });
 
@@ -702,56 +532,6 @@ export async function getTicketActionContext(actor: UserContext, ticket: AccessT
   };
 }
 
-export async function qualifyTicket(actor: UserContext, ticketId: string, input: TicketQualificationInput) {
-  actor = await requireCurrentActor(actor);
-  const parsed = ticketQualificationSchema.parse(input);
-  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId }, include: ticketAccessInclude });
-  if (!ticket) throw new DomainError("Ticket introuvable.", 404);
-  const target = accessTarget(ticket);
-  const subject = toAccessSubject(actor);
-  if (!canViewTicket(subject, target) || !hasPermission(actor, "ticket:update", target) || !roleCodes(actor).some((role) => isStaffRole(role))) {
-    throw new AuthorizationError("La qualification n’est pas autorisée dans ce périmètre.");
-  }
-  if (ticket.status === TicketStatus.CLOSED) throw new DomainError("Un ticket clôturé ne peut plus être qualifié.", 409);
-  const priority = parsed.priority ?? calculatePriorityFromImpactUrgency(parsed.impact, parsed.urgency);
-  return prisma.$transaction(async (tx) => {
-    const changed = await tx.ticket.updateMany({
-      where: { id: ticketId, status: ticket.status },
-      data: {
-        impact: parsed.impact,
-        urgency: parsed.urgency,
-        priority,
-        priorityOverrideReason: parsed.priority ? parsed.reason : null,
-        legalDueAt: parsed.legalDueAt ?? null,
-      },
-    });
-    if (changed.count !== 1) throw new DomainError("Le ticket a changé avant la qualification. Rechargez la fiche puis réessayez.", 409);
-    const updated = await tx.ticket.findUnique({ where: { id: ticketId }, include: ticketSecurityInclude });
-    if (!updated) throw new DomainError("Ticket introuvable après la qualification.", 404);
-    await tx.ticketEvent.create({
-      data: {
-        ticketId,
-        actorId: actor.id,
-        queueId: ticket.queueId,
-        eventType: TicketEventType.QUALIFIED,
-        fromStatus: ticket.status,
-        toStatus: ticket.status,
-        metadata: { impact: parsed.impact, urgency: parsed.urgency, priority, legalDueAt: parsed.legalDueAt, reason: parsed.reason },
-      },
-    });
-    await appendAuditLog(tx, {
-      actorId: actor.id,
-      action: "TICKET_QUALIFIED",
-      objectType: "Ticket",
-      objectId: ticketId,
-      oldValue: { impact: ticket.impact, urgency: ticket.urgency, priority: ticket.priority, legalDueAt: ticket.legalDueAt },
-      newValue: { impact: parsed.impact, urgency: parsed.urgency, priority, legalDueAt: parsed.legalDueAt ?? null },
-      reason: parsed.reason,
-    });
-    return updated;
-  });
-}
-
 export async function createTicketLink(actor: UserContext, ticketId: string, input: TicketLinkInput) {
   actor = await requireCurrentActor(actor);
   const parsed = ticketLinkSchema.parse(input);
@@ -791,38 +571,6 @@ export async function listTicketLinksForViewer(actor: UserContext, ticketId: str
     orderBy: { createdAt: "desc" },
   });
   return links;
-}
-
-export async function addSlaException(actor: UserContext, ticketId: string, input: SlaExceptionInput) {
-  actor = await requireCurrentActor(actor);
-  const parsed = slaExceptionSchema.parse(input);
-  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId }, include: ticketAccessInclude });
-  if (!ticket) throw new DomainError("Ticket introuvable.", 404);
-  const target = accessTarget(ticket);
-  const subject = toAccessSubject(actor);
-  if (!canViewTicket(subject, target) || !hasPermission(actor, "ticket:update", target) || !canManageQueue(subject, target)) {
-    throw new AuthorizationError("Seul un responsable habilité peut accorder une dérogation SLA.");
-  }
-  if (ticket.status === TicketStatus.CLOSED) throw new DomainError("Un ticket clôturé ne peut pas recevoir de dérogation SLA.", 409);
-  const extension = parsed.addedMinutes * 60_000;
-  const firstResponseDueAt = ticket.firstResponseDueAt ? new Date(ticket.firstResponseDueAt.getTime() + extension) : null;
-  const resolutionDueAt = ticket.resolutionDueAt ? new Date(ticket.resolutionDueAt.getTime() + extension) : null;
-  const exception = await prisma.$transaction(async (tx) => {
-    await tx.ticket.update({ where: { id: ticketId }, data: { firstResponseDueAt, resolutionDueAt } });
-    const created = await tx.slaException.create({ data: { ticketId, createdById: actor.id, reason: parsed.reason, addedMinutes: parsed.addedMinutes, firstResponseDueAt, resolutionDueAt } });
-    await tx.ticketEvent.create({ data: { ticketId, actorId: actor.id, queueId: ticket.queueId, eventType: TicketEventType.SLA_EXCEPTION_CREATED, metadata: { addedMinutes: parsed.addedMinutes, reason: parsed.reason, firstResponseDueAt, resolutionDueAt } } });
-    await appendAuditLog(tx, {
-      actorId: actor.id,
-      action: "SLA_EXCEPTION_CREATED",
-      objectType: "Ticket",
-      objectId: ticketId,
-      oldValue: { firstResponseDueAt: ticket.firstResponseDueAt, resolutionDueAt: ticket.resolutionDueAt },
-      newValue: { addedMinutes: parsed.addedMinutes, firstResponseDueAt, resolutionDueAt },
-      reason: parsed.reason,
-    });
-    return created;
-  });
-  return exception;
 }
 
 export async function assignTicket(
@@ -1046,290 +794,6 @@ export async function claimTicket(
     }
     return updated;
   });
-}
-
-export async function transitionTicket(
-  actor: UserContext,
-  ticketId: string,
-  input: TransitionTicketInput,
-) {
-  actor = await requireCurrentActor(actor);
-  const parsed = transitionTicketSchema.parse(input);
-  const ticket = await prisma.ticket.findUnique({
-    where: { id: ticketId },
-    include: {
-      ...ticketAccessInclude,
-      requester: true,
-      assignedTo: true,
-    },
-  });
-  if (!ticket) throw new DomainError("Ticket introuvable.", 404);
-  if (!canViewTicket(toAccessSubject(actor), accessTarget(ticket))) {
-    throw new AuthorizationError("Vous n’avez pas accès à ce ticket.");
-  }
-
-  const requesterAction = actor.id === ticket.requesterId;
-  if (!hasPermission(actor, "ticket:update")) {
-    throw new AuthorizationError("La permission de faire évoluer ce ticket n’est pas accordée.");
-  }
-  if (!canTransitionStatus(ticket.status, parsed.status, roleCodes(actor), requesterAction)) {
-    throw new AuthorizationError("Cette transition n’est pas autorisée pour votre rôle ou ce ticket.");
-  }
-  const actorRoles = roleCodes(actor);
-  const transitionTarget = accessTarget(ticket);
-  const isFunctionalAdminActor = actorRoles.includes(RoleCode.FUNCTIONAL_ADMIN);
-  if (parsed.status === TicketStatus.CLOSED) {
-    if (!canConfirmResolution(actorRoles, requesterAction)) {
-      throw new AuthorizationError("Seul le demandeur peut confirmer la résolution.");
-    }
-    if (requesterAction && !hasPermission(actor, "ticket:confirm-resolution", transitionTarget) && !isFunctionalAdminActor) {
-      throw new AuthorizationError("La confirmation de résolution n’est pas autorisée.");
-    }
-  }
-  if (parsed.status === TicketStatus.REOPENED) {
-    if (!canReopenResolution(actorRoles, requesterAction)) {
-      throw new AuthorizationError("Seul le demandeur ou un administrateur fonctionnel peut rouvrir ce ticket.");
-    }
-    if (requesterAction && !hasPermission(actor, "ticket:reopen", transitionTarget) && !isFunctionalAdminActor) {
-      throw new AuthorizationError("La réouverture n’est pas autorisée.");
-    }
-  }
-  if (parsed.status === TicketStatus.IN_PROGRESS && !hasPermission(actor, "ticket:process", transitionTarget) && !isFunctionalAdminActor) {
-    throw new AuthorizationError("La permission de démarrer le traitement n’est pas accordée.");
-  }
-  if (parsed.status === TicketStatus.BLOCKED && !hasPermission(actor, "ticket:block", transitionTarget) && !isFunctionalAdminActor) {
-    throw new AuthorizationError("La permission de bloquer ce ticket n’est pas accordée.");
-  }
-  if (parsed.status === TicketStatus.RESOLUTION_PENDING && !hasPermission(actor, "ticket:resolve", transitionTarget) && !isFunctionalAdminActor) {
-    throw new AuthorizationError("La permission de soumettre une résolution n’est pas accordée.");
-  }
-  const isAgentOnly = actorRoles.includes(RoleCode.AGENT) &&
-    !actorRoles.includes(RoleCode.QUEUE_MANAGER) &&
-    !actorRoles.includes(RoleCode.FUNCTIONAL_ADMIN);
-  if (
-    isAgentOnly &&
-    parsed.status !== TicketStatus.TO_QUALIFY &&
-    parsed.status !== TicketStatus.TO_ASSIGN &&
-    ticket.assignedToId !== actor.id
-  ) {
-    throw new AuthorizationError("Un agent ne peut traiter que le ticket qui lui est affecté.");
-  }
-  const administrativeOverride = isFunctionalAdministrator(actor);
-  requireAdministrativeReason(actor, parsed.reason);
-  if (
-    !requesterAction &&
-    (parsed.status === TicketStatus.IN_PROGRESS || parsed.status === TicketStatus.BLOCKED || parsed.status === TicketStatus.RESOLUTION_PENDING) &&
-    !ticket.assignedToId
-  ) {
-    throw new DomainError("Un agent doit être affecté avant cette transition.", 422);
-  }
-  if (parsed.status === TicketStatus.RESOLUTION_PENDING) {
-    if (!parsed.resolutionCause || !parsed.resolutionAction || !parsed.resolutionSolution) {
-      throw new DomainError("La cause, l’action réalisée et la solution sont obligatoires.", 422);
-    }
-  }
-  if (parsed.status === TicketStatus.BLOCKED && (!parsed.blockReason || !parsed.blockDetails)) {
-    throw new DomainError("Le motif et le détail du blocage sont obligatoires.", 422);
-  }
-  if (parsed.status === TicketStatus.REOPENED && !parsed.reopenedReason) {
-    throw new DomainError("Le motif de réouverture est obligatoire.", 422);
-  }
-
-  const now = new Date();
-  let totalPausedMinutes = ticket.totalPausedMinutes;
-  let pauseDurationMinutes = 0;
-  if (ticket.status === TicketStatus.BLOCKED && parsed.status !== TicketStatus.BLOCKED && ticket.slaPausedAt) {
-    pauseDurationMinutes = Math.max(
-      0,
-      Math.floor((now.getTime() - ticket.slaPausedAt.getTime()) / 60_000),
-    );
-    totalPausedMinutes += pauseDurationMinutes;
-  }
-  const pauseExtension = pauseDurationMinutes * 60_000;
-
-  const data: Prisma.TicketUncheckedUpdateInput = {
-    status: parsed.status,
-    assignedToId: parsed.status === TicketStatus.TO_ASSIGN ? null : undefined,
-    blockReason: parsed.status === TicketStatus.BLOCKED ? parsed.blockReason : null,
-    blockDetails: parsed.status === TicketStatus.BLOCKED ? parsed.blockDetails : null,
-    resolutionCause: parsed.resolutionCause ?? undefined,
-    resolutionAction: parsed.resolutionAction ?? undefined,
-    resolutionSolution: parsed.resolutionSolution ?? undefined,
-    preventiveAction: parsed.preventiveAction ?? undefined,
-    reopenedReason: parsed.status === TicketStatus.REOPENED ? parsed.reopenedReason : undefined,
-    resolvedAt:
-      parsed.status === TicketStatus.RESOLUTION_PENDING
-        ? now
-        : parsed.status === TicketStatus.REOPENED
-          ? null
-          : undefined,
-    closedAt:
-      parsed.status === TicketStatus.CLOSED
-        ? now
-        : parsed.status === TicketStatus.REOPENED
-          ? null
-          : undefined,
-    slaPausedAt:
-      parsed.status === TicketStatus.BLOCKED
-        ? ticket.slaPausedAt ?? now
-        : ticket.status === TicketStatus.BLOCKED
-          ? null
-          : undefined,
-    totalPausedMinutes,
-    firstResponseDueAt: pauseExtension && ticket.firstResponseDueAt && !ticket.firstRespondedAt
-      ? new Date(ticket.firstResponseDueAt.getTime() + pauseExtension)
-      : undefined,
-    resolutionDueAt: pauseExtension && ticket.resolutionDueAt && !ticket.resolvedAt
-      ? new Date(ticket.resolutionDueAt.getTime() + pauseExtension)
-      : undefined,
-  };
-
-  const notificationInputs: Parameters<typeof createInAppNotifications>[1] = [];
-  const updated = await prisma.$transaction(async (tx) => {
-    const changed = await tx.ticket.updateMany({
-      where: {
-        id: ticketId,
-        status: ticket.status,
-        assignedToId: ticket.assignedToId,
-      },
-      data,
-    });
-    if (changed.count !== 1) {
-      throw new DomainError("Le ticket a changé avant la transition. Rechargez la fiche puis réessayez.", 409);
-    }
-    const updated = await tx.ticket.findUnique({
-      where: { id: ticketId },
-      include: ticketSecurityInclude,
-    });
-    if (!updated) throw new DomainError("Ticket introuvable après la transition.", 404);
-    const eventType = parsed.status === TicketStatus.REOPENED
-      ? TicketEventType.REOPENED
-      : parsed.status === TicketStatus.CLOSED
-        ? TicketEventType.CLOSED
-        : parsed.status === TicketStatus.RESOLUTION_PENDING
-          ? TicketEventType.RESOLUTION_SUBMITTED
-          : TicketEventType.STATUS_CHANGED;
-    await tx.ticketEvent.create({
-      data: {
-        ticketId,
-        actorId: actor.id,
-        queueId: ticket.queueId,
-        eventType,
-        fromStatus: ticket.status,
-        toStatus: parsed.status,
-        metadata: {
-          blockReason: parsed.blockReason,
-          reopenedReason: parsed.reopenedReason,
-          reason: parsed.reason,
-          administrativeOverride,
-          pauseDurationMinutes,
-          totalPausedMinutes,
-          firstResponseDueAt: updated.firstResponseDueAt,
-          resolutionDueAt: updated.resolutionDueAt,
-        },
-      },
-    });
-    await appendAuditLog(tx, {
-      actorId: actor.id,
-      action: administrativeOverride ? "ADMINISTRATIVE_WORKFLOW_OVERRIDE" : "TICKET_STATUS_CHANGED",
-      objectType: "Ticket",
-      objectId: ticketId,
-      oldValue: {
-        status: ticket.status,
-        assignedToId: ticket.assignedToId,
-        totalPausedMinutes: ticket.totalPausedMinutes,
-        firstResponseDueAt: ticket.firstResponseDueAt,
-        resolutionDueAt: ticket.resolutionDueAt,
-      },
-      newValue: {
-        status: parsed.status,
-        assignedToId: updated.assignedTo?.id ?? null,
-        totalPausedMinutes,
-        firstResponseDueAt: updated.firstResponseDueAt,
-        resolutionDueAt: updated.resolutionDueAt,
-      },
-      reason: parsed.reason ?? parsed.reopenedReason ?? parsed.blockDetails,
-    });
-    if (parsed.status === TicketStatus.TO_ASSIGN && ticket.assignedToId) {
-      await recordAssignment(tx, {
-        ticketId,
-        queueId: ticket.queueId,
-        previousAssigneeId: ticket.assignedToId,
-        newAssigneeId: null,
-        assignedById: actor.id,
-        reason: parsed.reason ?? "Ticket retourné à la file pour affectation.",
-        fromStatus: ticket.status,
-        toStatus: parsed.status,
-        assignmentMode: "UNASSIGN",
-      });
-    }
-
-    if (administrativeOverride) {
-      const recipients = new Set(
-        [ticket.requesterId, ticket.assignedToId, ticket.queue.managerId]
-          .filter(Boolean)
-          .filter((recipientId) => recipientId !== actor.id) as string[],
-      );
-      for (const recipientId of recipients) {
-        notificationInputs.push({
-          recipientId,
-          ticketId,
-          type: NotificationType.ADMINISTRATIVE_ACTION,
-          title: "Action administrative sur un ticket",
-          body: `${actor.name} a fait évoluer ${ticket.reference} vers « ${parsed.status} ». Motif : ${parsed.reason}`,
-        });
-      }
-    }
-
-    if (parsed.status === TicketStatus.RESOLUTION_PENDING) {
-      notificationInputs.push({
-        recipientId: ticket.requesterId,
-        ticketId,
-        type: NotificationType.TICKET_RESOLVED,
-        title: "Résolution à confirmer",
-        body: `${ticket.reference} est marqué comme résolu. Confirmez la résolution ou demandez une reprise.`,
-      });
-    }
-    if (parsed.status === TicketStatus.CLOSED) {
-      notificationInputs.push({
-        recipientId: ticket.requesterId,
-        ticketId,
-        type: NotificationType.TICKET_RESOLVED,
-        title: "Ticket clôturé",
-        body: `${ticket.reference} a été clôturé.`,
-      });
-    }
-    if (parsed.status === TicketStatus.REOPENED) {
-      const recipients = new Set(
-        [ticket.assignedToId, ticket.queue.managerId].filter(Boolean) as string[],
-      );
-      for (const recipientId of recipients) {
-        notificationInputs.push({
-          recipientId,
-          ticketId,
-          type: NotificationType.TICKET_REOPENED,
-          title: "Ticket réouvert",
-          body: `${ticket.reference} a été réouvert : ${parsed.reopenedReason}`,
-        });
-      }
-    }
-    return updated;
-  }, {
-    maxWait: 10_000,
-    timeout: 15_000,
-  });
-
-  if (notificationInputs.length) {
-    after(async () => {
-      try {
-        await createInAppNotifications(prisma, notificationInputs);
-      } catch (notificationError) {
-        console.error("Ticket transition committed, but notification delivery failed.", notificationError);
-      }
-    });
-  }
-
-  return updated;
 }
 
 export async function addTicketMessage(actor: UserContext, ticketId: string, input: AddMessageInput) {

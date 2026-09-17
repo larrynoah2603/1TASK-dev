@@ -27,13 +27,16 @@ describe("routage départemental des tickets", () => {
 
   it("ne propose que le département local sans permission transverse", () => {
     const departmentsRoute = source("app/api/departments/route.ts");
+    const authorization = source("lib/server-auth.ts");
 
-    expect(departmentsRoute).toContain(
+    expect(authorization).toContain(
       'hasPermission(actor, "ticket:create:cross-department")',
     );
-    expect(departmentsRoute).toContain(
+    expect(authorization).toContain(
       'canCreateCrossDepartment ? {} : { id: actor.departmentId ?? "__none__" }',
     );
+    expect(departmentsRoute).toContain("requirePermissionForTicketCreationDepartments");
+    expect(departmentsRoute).not.toContain("hasPermission");
   });
 
   it("réconcilie un timeout avec le token du créateur avant d'afficher un échec", () => {
