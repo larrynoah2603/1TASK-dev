@@ -204,3 +204,6 @@ sont extraites progressivement sans modifier ces workflows : le stockage, la
 validation et la consultation des pièces jointes sont regroupés dans
 `lib/ticket-attachment-service.ts`. Ce module réutilise le contrôle d’accès
 central au ticket avant toute lecture ou écriture et conserve l’audit des ajouts.
+Les lectures de files et leurs agrégats opérationnels sont regroupés séparément
+dans `lib/ticket-queue-service.ts`, afin que les pages de listes et tableaux de
+bord ne dépendent plus du service qui exécute les mutations du workflow.

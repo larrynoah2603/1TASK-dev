@@ -6,7 +6,7 @@ const source = (path: string) => readFileSync(resolve(process.cwd(), path), "utf
 
 describe("contrats de performance Prisma", () => {
   it("agrège les statistiques des files sans charger chaque ticket en mémoire", () => {
-    const service = source("lib/ticket-service.ts");
+    const service = source("lib/ticket-queue-service.ts");
     const start = service.indexOf("export async function listVisibleQueues");
     const end = service.length;
     const implementation = service.slice(start, end);
@@ -84,7 +84,7 @@ describe("contrats de performance Prisma", () => {
 
   it("ne calcule pas les statistiques des files pour afficher un simple filtre", () => {
     const page = source("app/(app)/inbox/page.tsx");
-    const service = source("lib/ticket-service.ts");
+    const service = source("lib/ticket-queue-service.ts");
     const start = service.indexOf("export async function listVisibleQueueFilterOptions");
     const end = service.length;
     const implementation = service.slice(start, end);
