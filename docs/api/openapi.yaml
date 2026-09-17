@@ -1,0 +1,15 @@
+openapi: 3.0.3
+
+info:
+  title: 1TASK API
+  version: 1.0.0
+
+paths:
+
+ /api/v1/tickets:
+
+   get:
+     summary: Liste des tickets
+
+   post:
+     summary: Création ticket
