@@ -6,9 +6,9 @@ const source = (path: string) => readFileSync(resolve(process.cwd(), path), "utf
 
 describe("contrats de performance Prisma", () => {
   it("agrège les statistiques des files sans charger chaque ticket en mémoire", () => {
-    const service = source("lib/ticket-service.ts");
+    const service = source("lib/ticket-queue-service.ts");
     const start = service.indexOf("export async function listVisibleQueues");
-    const end = service.indexOf("const MAX_TICKET_ATTACHMENT_BYTES", start);
+    const end = service.length;
     const implementation = service.slice(start, end);
 
     expect(implementation).toContain("queueId: { in: visibleQueueIds }");
@@ -26,7 +26,7 @@ describe("contrats de performance Prisma", () => {
   });
 
   it("ajoute la pagination curseur sans supprimer le contrat de page existant", () => {
-    const service = source("lib/ticket-service.ts");
+    const service = source("lib/ticket-query-service.ts");
     const route = source("app/api/tickets/route.ts");
 
     expect(service).toContain("cursor ? { cursor: { id: cursor.id }, skip: 1 }");
@@ -42,12 +42,12 @@ describe("contrats de performance Prisma", () => {
   });
 
   it("utilise une recherche ticket FTS paramétrée avec retour arrière contrôlé", () => {
-    const service = source("lib/ticket-service.ts");
+    const service = source("lib/ticket-query-service.ts");
     const migration = source("prisma/migrations/20260914100000_add_ticket_full_text_search/migration.sql");
 
     expect(service).toContain("Prisma.sql`");
     expect(service).toContain("plainto_tsquery(");
-    expect(service).toContain('process.env.TICKET_FTS_ENABLED === "false"');
+    expect(service).toContain("readServerEnvironment().TICKET_FTS_ENABLED");
     expect(service).toContain('"reference" = ${normalizedQuery}');
     expect(migration).toContain("ADD COLUMN IF NOT EXISTS search_vector tsvector");
     expect(migration).toContain("CREATE INDEX IF NOT EXISTS");
@@ -57,9 +57,9 @@ describe("contrats de performance Prisma", () => {
   });
 
   it("borne les historiques incorporés au détail d'un ticket", () => {
-    const service = source("lib/ticket-service.ts");
+    const service = source("lib/ticket-detail-service.ts");
     const start = service.indexOf("async function getTicketForViewerInternal");
-    const end = service.indexOf("export function canActorClaimTicket", start);
+    const end = service.length;
     const implementation = service.slice(start, end);
 
     expect(implementation).toContain("take: TICKET_MESSAGE_WINDOW");
@@ -84,9 +84,9 @@ describe("contrats de performance Prisma", () => {
 
   it("ne calcule pas les statistiques des files pour afficher un simple filtre", () => {
     const page = source("app/(app)/inbox/page.tsx");
-    const service = source("lib/ticket-service.ts");
+    const service = source("lib/ticket-queue-service.ts");
     const start = service.indexOf("export async function listVisibleQueueFilterOptions");
-    const end = service.indexOf("const MAX_TICKET_ATTACHMENT_BYTES", start);
+    const end = service.length;
     const implementation = service.slice(start, end);
 
     expect(page).toContain("listVisibleQueueFilterOptions(user)");
@@ -110,9 +110,9 @@ describe("contrats de performance Prisma", () => {
   });
 
   it("réduit les six compteurs du résumé opérationnel à quatre agrégations", () => {
-    const service = source("lib/ticket-service.ts");
+    const service = source("lib/ticket-query-service.ts");
     const start = service.indexOf("export async function getOperationalTicketSummary");
-    const end = service.indexOf("export function getTicketForViewer", start);
+    const end = service.length;
     const implementation = service.slice(start, end);
 
     expect(implementation.match(/prisma\.ticket\.groupBy\(/g)).toHaveLength(2);
@@ -122,7 +122,7 @@ describe("contrats de performance Prisma", () => {
   });
 
   it("n'exécute pas de count exact pour les listes qui ne consomment que les tickets", () => {
-    const service = source("lib/ticket-service.ts");
+    const service = source("lib/ticket-query-service.ts");
     const start = service.indexOf("export function listVisibleTicketsPage");
     const end = service.indexOf("export async function getRequesterTicketSummary", start);
     const implementation = service.slice(start, end);

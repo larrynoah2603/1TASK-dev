@@ -9,7 +9,8 @@ import { TicketSidePanel } from "@/components/ticket-side-panel";
 import { TicketStatusStrip } from "@/components/ticket-status-strip";
 import { BLOCK_REASON_LABELS, STATUS_LABELS, TYPE_LABELS } from "@/lib/domain";
 import { getTicketSlaState } from "@/lib/sla";
-import { getTicketActionContext, getTicketForViewer } from "@/lib/ticket-service";
+import { getTicketActionContext } from "@/lib/ticket-service";
+import { getTicketForViewer } from "@/lib/ticket-detail-service";
 import { getSessionUserContext, roleCodes } from "@/lib/server-auth";
 
 const eventLabels: Record<string, string> = {

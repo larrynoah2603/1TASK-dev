@@ -7,7 +7,7 @@ const source = (path: string) => readFileSync(resolve(process.cwd(), path), "utf
 describe("raffinement du dashboard opérationnel", () => {
   it("calcule les KPI demandeur avec un agrégat non plafonné", () => {
     const page = source("app/(app)/dashboard/page.tsx");
-    const service = source("lib/ticket-service.ts");
+    const service = source("lib/ticket-query-service.ts");
 
     expect(page).toContain("getRequesterTicketSummary(user)");
     expect(page).toContain("statusCounts[TicketStatus.CLOSED]");

@@ -185,3 +185,35 @@ liste nominative ou accès confidentiel produit `403`.
 Les permissions granulaires de commentaire, traitement, blocage, résolution,
 confirmation, réouverture et export complètent les permissions historiques sans
 remplacer Microsoft Entra ID ni créer de connexion locale.
+
+## 9. Contrat d’erreur API
+
+Les handlers transmettent leurs exceptions à `errorResponse`. Les réponses
+d’erreur conservent le champ historique `error` et ajoutent un `code` stable
+ainsi qu’un `traceId`. Ce même identifiant est renvoyé dans l’en-tête
+`X-Request-Id`, afin que le support puisse relier une réponse client au journal
+serveur sans exposer les détails techniques internes. Les erreurs inattendues
+sont journalisées sous forme JSON structurée ; leur message et leur pile ne sont
+jamais renvoyés au client.
+
+## 10. Découpage progressif du domaine ticket
+
+Le service ticket historique reste la façade des workflows de création,
+qualification, affectation et transition. Les responsabilités d’infrastructure
+sont extraites progressivement sans modifier ces workflows : le stockage, la
+validation et la consultation des pièces jointes sont regroupés dans
+`lib/ticket-attachment-service.ts`. Ce module réutilise le contrôle d’accès
+central au ticket avant toute lecture ou écriture et conserve l’audit des ajouts.
+Les lectures de files et leurs agrégats opérationnels sont regroupés séparément
+dans `lib/ticket-queue-service.ts`, afin que les pages de listes et tableaux de
+bord ne dépendent plus du service qui exécute les mutations du workflow.
+La construction des périmètres de visibilité, la recherche, la pagination et
+les résumés de tickets sont regroupés dans `lib/ticket-query-service.ts`. Le
+service historique réexporte temporairement ces fonctions pour préserver la
+compatibilité, tandis que les nouveaux consommateurs dépendent directement du
+module de lecture.
+La projection détaillée d’un ticket et les fenêtres bornées de messages,
+affectations et événements sont isolées dans `lib/ticket-detail-service.ts`.
+Les projections Prisma et la transformation commune vers une cible
+d’autorisation sont partagées par `lib/ticket-access.ts`, afin que les lectures
+et les mutations appliquent exactement les mêmes attributs de sécurité.

@@ -19,7 +19,7 @@ describe("contrats de stabilisation des chargements serveur", () => {
   });
 
   it("utilise les compteurs tickets ciblés pour l’inbox", () => {
-    const ticketService = source("lib/ticket-service.ts");
+    const ticketService = source("lib/ticket-query-service.ts");
     const inbox = source("app/(app)/inbox/page.tsx");
 
     expect(ticketService).toContain("getOperationalTicketSummary");

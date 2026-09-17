@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/http";
 import {
   getTicketAttachmentForViewer,
-} from "@/lib/ticket-service";
+} from "@/lib/ticket-attachment-service";
 import {
   requireSessionUserContext,
 } from "@/lib/server-auth";

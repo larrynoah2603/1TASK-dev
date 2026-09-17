@@ -8,7 +8,7 @@ const migration = readFileSync(resolve(process.cwd(), "prisma/migrations/2026091
 
 describe("performance du moniteur SLA", () => {
   it("parcourt tous les tickets éligibles par lots déterministes", () => {
-    expect(monitor).toContain("SLA_MONITOR_BATCH_SIZE");
+    expect(monitor).toContain("readServerEnvironment().SLA_MONITOR_BATCH_SIZE");
     expect(monitor).toContain('orderBy: { id: "asc" }');
     expect(monitor).toContain("cursor: { id: cursor }");
     expect(monitor).toContain("scanned += tickets.length");

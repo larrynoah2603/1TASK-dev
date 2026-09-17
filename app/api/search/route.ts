@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/http";
-import { listVisibleTickets } from "@/lib/ticket-service";
+import { listVisibleTickets } from "@/lib/ticket-query-service";
 import { requireSessionUserContext } from "@/lib/server-auth";
 
 

@@ -11,7 +11,7 @@ import {
   type UserContext,
 } from "@/lib/server-auth";
 import { appendAuditLog } from "@/lib/audit";
-import { visibleTicketWhere } from "@/lib/ticket-service";
+import { visibleTicketWhere } from "@/lib/ticket-query-service";
 import {
   assetMovementSchema,
   assetSchema,
