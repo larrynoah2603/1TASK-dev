@@ -375,7 +375,7 @@ describe("Prompt 8 — routes, espaces et rôles", () => {
     }
 
     const job = source("app/api/jobs/sla-monitor/route.ts");
-    expect(job).toContain("process.env.CRON_SECRET");
+    expect(job).toContain("readServerEnvironment().CRON_SECRET");
     expect(job).toContain("authorization");
     expect(job).toContain("status: 403");
   });
