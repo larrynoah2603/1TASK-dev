@@ -6,6 +6,13 @@ async function responseBody(response: Response) {
   return response.json() as Promise<Record<string, unknown>>;
 }
 
+async function expectErrorEnvelope(response: Response, expected: Record<string, unknown>) {
+  const body = await responseBody(response);
+  expect(body).toMatchObject(expected);
+  expect(body.traceId).toEqual(expect.any(String));
+  expect(response.headers.get("X-Request-Id")).toBe(body.traceId);
+}
+
 describe("réponses d'erreur API", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -18,14 +25,14 @@ describe("réponses d'erreur API", () => {
     const response = errorResponse(result.error);
 
     expect(response.status).toBe(422);
-    expect(await responseBody(response)).toMatchObject({ error: "Données invalides." });
+    await expectErrorEnvelope(response, { error: "Données invalides.", code: "VALIDATION_ERROR" });
   });
 
   it("classe un corps JSON mal formé comme une erreur client", async () => {
     const response = errorResponse(new SyntaxError("Unexpected token"));
 
     expect(response.status).toBe(400);
-    expect(await responseBody(response)).toEqual({ error: "Corps JSON invalide." });
+    await expectErrorEnvelope(response, { error: "Corps JSON invalide.", code: "INVALID_JSON" });
   });
 
   it("conserve le statut et le message des erreurs métier explicites", async () => {
@@ -33,7 +40,7 @@ describe("réponses d'erreur API", () => {
     const response = errorResponse(error);
 
     expect(response.status).toBe(403);
-    expect(await responseBody(response)).toEqual({ error: "Accès refusé." });
+    await expectErrorEnvelope(response, { error: "Accès refusé.", code: "ACCESS_DENIED" });
   });
 
   it("traduit les conflits Prisma sans divulguer leurs détails", async () => {
@@ -41,7 +48,7 @@ describe("réponses d'erreur API", () => {
     const response = errorResponse(error);
 
     expect(response.status).toBe(409);
-    expect(await responseBody(response)).toEqual({ error: "Cette ressource existe déjà." });
+    await expectErrorEnvelope(response, { error: "Cette ressource existe déjà.", code: "RESOURCE_CONFLICT" });
   });
 
   it("masque les erreurs internes et les pseudo-statuts invalides", async () => {
@@ -50,6 +57,9 @@ describe("réponses d'erreur API", () => {
     const response = errorResponse(error);
 
     expect(response.status).toBe(500);
-    expect(await responseBody(response)).toEqual({ error: "Une erreur inattendue est survenue." });
+    await expectErrorEnvelope(response, { error: "Une erreur inattendue est survenue.", code: "INTERNAL_ERROR" });
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('"type":"unhandled_api_error"'));
+    expect(console.error).not.toHaveBeenCalledWith(expect.stringContaining("password=secret"));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining("password=[REDACTED]"));
   });
 });

@@ -4,7 +4,8 @@ import { DashboardKpiGrid, DashboardViewTabs, OperationsTicketTable, OperationsW
 import { TicketFilters } from "@/components/ticket-filters";
 import { TicketViewSwitcher } from "@/components/ticket-view-switcher";
 import { Pagination } from "@/components/pagination";
-import { canActorClaimTicket, getOperationalTicketSummary, listVisibleQueueFilterOptions, listVisibleTickets, listVisibleTicketsPage } from "@/lib/ticket-service";
+import { canActorClaimTicket, getOperationalTicketSummary, listVisibleTickets, listVisibleTicketsPage } from "@/lib/ticket-service";
+import { listVisibleQueueFilterOptions } from "@/lib/ticket-queue-service";
 import { listTicketPortfolioFilterOptions } from "@/lib/production-service";
 import { getSessionUserContext, permissionCodes, roleCodes } from "@/lib/server-auth";
 import { measureServerOperation } from "@/lib/performance";

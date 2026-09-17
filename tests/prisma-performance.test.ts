@@ -6,9 +6,9 @@ const source = (path: string) => readFileSync(resolve(process.cwd(), path), "utf
 
 describe("contrats de performance Prisma", () => {
   it("agrège les statistiques des files sans charger chaque ticket en mémoire", () => {
-    const service = source("lib/ticket-service.ts");
+    const service = source("lib/ticket-queue-service.ts");
     const start = service.indexOf("export async function listVisibleQueues");
-    const end = service.indexOf("const MAX_TICKET_ATTACHMENT_BYTES", start);
+    const end = service.length;
     const implementation = service.slice(start, end);
 
     expect(implementation).toContain("queueId: { in: visibleQueueIds }");
@@ -47,7 +47,7 @@ describe("contrats de performance Prisma", () => {
 
     expect(service).toContain("Prisma.sql`");
     expect(service).toContain("plainto_tsquery(");
-    expect(service).toContain('process.env.TICKET_FTS_ENABLED === "false"');
+    expect(service).toContain("readServerEnvironment().TICKET_FTS_ENABLED");
     expect(service).toContain('"reference" = ${normalizedQuery}');
     expect(migration).toContain("ADD COLUMN IF NOT EXISTS search_vector tsvector");
     expect(migration).toContain("CREATE INDEX IF NOT EXISTS");
@@ -84,9 +84,9 @@ describe("contrats de performance Prisma", () => {
 
   it("ne calcule pas les statistiques des files pour afficher un simple filtre", () => {
     const page = source("app/(app)/inbox/page.tsx");
-    const service = source("lib/ticket-service.ts");
+    const service = source("lib/ticket-queue-service.ts");
     const start = service.indexOf("export async function listVisibleQueueFilterOptions");
-    const end = service.indexOf("const MAX_TICKET_ATTACHMENT_BYTES", start);
+    const end = service.length;
     const implementation = service.slice(start, end);
 
     expect(page).toContain("listVisibleQueueFilterOptions(user)");

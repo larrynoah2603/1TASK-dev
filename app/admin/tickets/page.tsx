@@ -3,7 +3,8 @@ import { TicketTable } from "@/components/ticket-table";
 import { TicketFilters } from "@/components/ticket-filters";
 import { AdminNotice, AdminPageHeader } from "@/components/admin-primitives";
 import { Pagination } from "@/components/pagination";
-import { listVisibleQueues, listVisibleTicketsPage } from "@/lib/ticket-service";
+import { listVisibleTicketsPage } from "@/lib/ticket-service";
+import { listVisibleQueues } from "@/lib/ticket-queue-service";
 import { requireAdminAccess } from "@/lib/server-auth";
 import { ticketListQuerySchema } from "@/lib/validation";
 
