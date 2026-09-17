@@ -25,10 +25,9 @@ describe("régression boîte agent — lecture desktop", () => {
 
 describe("régression résolution — transaction Prisma", () => {
   it("garde le ticket, son événement et son audit atomiques, puis notifie après le commit", () => {
-    const ticketService = read("lib/ticket-service.ts");
-    const start = ticketService.indexOf("export async function transitionTicket");
-    const end = ticketService.indexOf("export async function addTicketMessage");
-    const transition = ticketService.slice(start, end);
+    const workflowService = read("lib/ticket-workflow-service.ts");
+    const start = workflowService.indexOf("export async function transitionTicket");
+    const transition = workflowService.slice(start);
 
     expect(transition).toContain("await tx.ticketEvent.create");
     expect(transition).toContain("await appendAuditLog(tx");

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { errorResponse } from "@/lib/http";
+import { apiErrorResponse, errorResponse } from "@/lib/http";
 import {
   listWorkflowDefinitions,
   publishWorkflowDefinition,
@@ -76,15 +76,7 @@ export async function POST(
 
 
     if (!body.code?.trim()) {
-      return NextResponse.json(
-        {
-          error:
-            "Le code du workflow est obligatoire.",
-        },
-        {
-          status: 422,
-        },
-      );
+      return apiErrorResponse({ message: "Le code du workflow est obligatoire.", code: "VALIDATION_ERROR", status: 422 });
     }
 
 

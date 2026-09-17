@@ -275,6 +275,21 @@ export async function requirePermission(
   return user;
 }
 
+/**
+ * Central authorization policy for the department directory shown during
+ * ticket creation. The API route receives an already-scoped Prisma predicate
+ * and cannot accidentally turn the optional cross-department permission into
+ * unrestricted access.
+ */
+export async function requirePermissionForTicketCreationDepartments(): Promise<Prisma.DepartmentWhereInput> {
+  const actor = await requirePermission("ticket:create");
+  const canCreateCrossDepartment = hasPermission(actor, "ticket:create:cross-department");
+  return {
+    isActive: true,
+    ...(canCreateCrossDepartment ? {} : { id: actor.departmentId ?? "__none__" }),
+  };
+}
+
 export async function requireTicketAccess(ticketId: string): Promise<{
   actor: UserContext;
   target: TicketAccessTarget;

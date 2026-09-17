@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { errorResponse } from "@/lib/http";
+import { apiErrorResponse, errorResponse } from "@/lib/http";
 import {
   createTicketLink,
   listTicketLinksForViewer,
@@ -36,15 +36,7 @@ export async function GET(
 
     if (!isValidTicketId(id)) {
 
-      return NextResponse.json(
-        {
-          error:
-            "Identifiant ticket invalide.",
-        },
-        {
-          status:400,
-        },
-      );
+      return apiErrorResponse({ message: "Identifiant ticket invalide.", code: "INVALID_IDENTIFIER", status: 400 });
 
     }
 
@@ -87,15 +79,7 @@ export async function POST(
 
     if (!isValidTicketId(id)) {
 
-      return NextResponse.json(
-        {
-          error:
-            "Identifiant ticket invalide.",
-        },
-        {
-          status:400,
-        },
-      );
+      return apiErrorResponse({ message: "Identifiant ticket invalide.", code: "INVALID_IDENTIFIER", status: 400 });
 
     }
 
