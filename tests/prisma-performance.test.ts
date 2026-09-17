@@ -26,7 +26,7 @@ describe("contrats de performance Prisma", () => {
   });
 
   it("ajoute la pagination curseur sans supprimer le contrat de page existant", () => {
-    const service = source("lib/ticket-service.ts");
+    const service = source("lib/ticket-query-service.ts");
     const route = source("app/api/tickets/route.ts");
 
     expect(service).toContain("cursor ? { cursor: { id: cursor.id }, skip: 1 }");
@@ -42,7 +42,7 @@ describe("contrats de performance Prisma", () => {
   });
 
   it("utilise une recherche ticket FTS paramétrée avec retour arrière contrôlé", () => {
-    const service = source("lib/ticket-service.ts");
+    const service = source("lib/ticket-query-service.ts");
     const migration = source("prisma/migrations/20260914100000_add_ticket_full_text_search/migration.sql");
 
     expect(service).toContain("Prisma.sql`");
@@ -110,7 +110,7 @@ describe("contrats de performance Prisma", () => {
   });
 
   it("réduit les six compteurs du résumé opérationnel à quatre agrégations", () => {
-    const service = source("lib/ticket-service.ts");
+    const service = source("lib/ticket-query-service.ts");
     const start = service.indexOf("export async function getOperationalTicketSummary");
     const end = service.indexOf("export function getTicketForViewer", start);
     const implementation = service.slice(start, end);
@@ -122,7 +122,7 @@ describe("contrats de performance Prisma", () => {
   });
 
   it("n'exécute pas de count exact pour les listes qui ne consomment que les tickets", () => {
-    const service = source("lib/ticket-service.ts");
+    const service = source("lib/ticket-query-service.ts");
     const start = service.indexOf("export function listVisibleTicketsPage");
     const end = service.indexOf("export async function getRequesterTicketSummary", start);
     const implementation = service.slice(start, end);

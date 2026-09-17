@@ -2,7 +2,7 @@ import Link from "next/link";
 import { RoleCode, TicketStatus } from "@prisma/client";
 import { TicketTable } from "@/components/ticket-table";
 import { DashboardKpiGrid, DashboardViewTabs, PriorityBreakdown, TicketActivityChart } from "@/components/dashboard-visuals";
-import { getRequesterTicketSummary, listVisibleTickets } from "@/lib/ticket-service";
+import { getRequesterTicketSummary, listVisibleTickets } from "@/lib/ticket-query-service";
 import { getSessionUserContext, permissionCodes, roleCodes } from "@/lib/server-auth";
 
 export default async function DashboardPage() {

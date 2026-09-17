@@ -1,7 +1,7 @@
 import { AuthorizationError, hasPermission, requireCurrentActor, type UserContext } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
 import { getReportingSummary } from "@/lib/reporting-service";
-import { listVisibleTickets, type TicketListOptions } from "@/lib/ticket-service";
+import { listVisibleTickets, type TicketListOptions } from "@/lib/ticket-query-service";
 
 function csvCell(value: unknown): string {
   const text = value instanceof Date ? value.toISOString() : String(value ?? "");

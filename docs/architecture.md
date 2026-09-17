@@ -207,3 +207,8 @@ central au ticket avant toute lecture ou écriture et conserve l’audit des ajo
 Les lectures de files et leurs agrégats opérationnels sont regroupés séparément
 dans `lib/ticket-queue-service.ts`, afin que les pages de listes et tableaux de
 bord ne dépendent plus du service qui exécute les mutations du workflow.
+La construction des périmètres de visibilité, la recherche, la pagination et
+les résumés de tickets sont regroupés dans `lib/ticket-query-service.ts`. Le
+service historique réexporte temporairement ces fonctions pour préserver la
+compatibilité, tandis que les nouveaux consommateurs dépendent directement du
+module de lecture.

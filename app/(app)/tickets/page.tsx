@@ -4,7 +4,7 @@ import { TicketTable } from "@/components/ticket-table";
 import { TicketFilters } from "@/components/ticket-filters";
 import { TicketViewSwitcher } from "@/components/ticket-view-switcher";
 import { Pagination } from "@/components/pagination";
-import { listVisibleTicketsPage } from "@/lib/ticket-service";
+import { listVisibleTicketsPage } from "@/lib/ticket-query-service";
 import { listVisibleQueues } from "@/lib/ticket-queue-service";
 import { getSessionUserContext, roleCodes } from "@/lib/server-auth";
 import { ticketListQuerySchema } from "@/lib/validation";

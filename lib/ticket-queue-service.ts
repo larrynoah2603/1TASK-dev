@@ -3,7 +3,7 @@ import { canViewTicket } from "@/lib/access-control";
 import { prisma } from "@/lib/db";
 import { toAccessSubject, requireCurrentActor, type UserContext } from "@/lib/server-auth";
 import { SLA_RISK_WINDOW_MINUTES } from "@/lib/sla";
-import { visibleTicketWhere } from "@/lib/ticket-service";
+import { visibleTicketWhere } from "@/lib/ticket-query-service";
 
 export async function listVisibleQueues(
   actor: UserContext,
