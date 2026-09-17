@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/http";
 import { runSlaMonitor } from "@/lib/sla-monitor";
+import { readServerEnvironment } from "@/lib/env";
 
 
 export const dynamic = "force-dynamic";
 
 
 function authorizeJob(request: Request) {
-  const expected = process.env.CRON_SECRET;
+  const expected = readServerEnvironment().CRON_SECRET;
 
   const authorization =
     request.headers.get("authorization");
