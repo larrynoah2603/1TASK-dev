@@ -3,6 +3,10 @@ import { canViewTicket } from "@/lib/access-control";
 import { DomainError } from "@/lib/domain-error";
 import { canPostInternalMessage } from "@/lib/domain";
 import { prisma } from "@/lib/db";
+import {
+  toTicketDomain,
+
+} from "@/lib/mappers/ticket.mapper";
 import { measureServerOperation } from "@/lib/performance";
 import {
   AuthorizationError,
@@ -82,10 +86,24 @@ async function getTicketForViewerInternal(actor: UserContext, ticketId: string) 
       ? prisma.worklog.aggregate({ where: { missionId: ticket.missionId }, _sum: { minutes: true } })
       : Promise.resolve({ _sum: { minutes: 0 } }),
   ]);
-  return {
-    ...ticket,
-    messages: ticket.messages.toReversed(),
-    worklogSummary: { minutes: worklogSummary._sum.minutes ?? 0, entries: worklogSummary._count._all },
-    missionWorklogMinutes: missionWorklogSummary._sum.minutes ?? 0,
-  };
+ const ticketDomain = toTicketDomain(ticket);
+
+
+return {
+  ...ticketDomain,
+
+  messages: ticket.messages.toReversed(),
+
+  assignments: ticket.assignments,
+
+  events: ticket.events,
+
+  worklogSummary: {
+    minutes: worklogSummary._sum.minutes ?? 0,
+    entries: worklogSummary._count._all,
+  },
+
+  missionWorklogMinutes:
+    missionWorklogSummary._sum.minutes ?? 0,
+};
 }
