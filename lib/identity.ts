@@ -1,5 +1,6 @@
 import { RoleCode, UserStatus } from "@prisma/client";
 import type { Prisma } from "@prisma/client";
+import { readServerEnvironment } from "@/lib/env";
 
 /**
  * Primary bootstrap administrator for the 1TASK prototype.
@@ -185,11 +186,12 @@ function bootstrapAdminEmails(): Set<string> {
   // Never ship a source-controlled privileged identity as an implicit
   // production administrator. Production bootstrap must be explicitly
   // configured through ADMIN_EMAILS.
-  const developmentDefaults = process.env.NODE_ENV === "production"
+  const environment = readServerEnvironment();
+  const developmentDefaults = environment.NODE_ENV === "production"
     ? []
     : [DEFAULT_BOOTSTRAP_ADMIN_EMAIL];
   return new Set(
-    [...developmentDefaults, ...(process.env.ADMIN_EMAILS ?? "").split(/[;,]/)]
+    [...developmentDefaults, ...environment.ADMIN_EMAILS]
       .map((email) => email.trim().toLowerCase())
       .filter(Boolean),
   );
