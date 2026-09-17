@@ -5,6 +5,7 @@ import type { NextAuthOptions } from "next-auth";
 import { prisma } from "@/lib/db";
 import { fetchEntraProfile, syncUserFromEntraProfile } from "@/lib/entra";
 import MicrosoftEntraIDProvider from "@/lib/microsoft-entra-id-provider";
+import { readServerEnvironment } from "@/lib/env";
 import {
   getProfileEmail,
   isEmailAllowed,
@@ -38,16 +39,17 @@ function createSafePrismaAdapter(): Adapter {
   };
 }
 
+const environment = readServerEnvironment();
 const providers: NextAuthOptions["providers"] = [];
-const clientId = process.env.MICROSOFT_ENTRA_ID_CLIENT_ID;
-const clientSecret = process.env.MICROSOFT_ENTRA_ID_CLIENT_SECRET;
+const clientId = environment.MICROSOFT_ENTRA_ID_CLIENT_ID;
+const clientSecret = environment.MICROSOFT_ENTRA_ID_CLIENT_SECRET;
 
 if (clientId && clientSecret) {
   providers.push(
     MicrosoftEntraIDProvider({
       clientId,
       clientSecret,
-      tenantId: process.env.MICROSOFT_ENTRA_ID_TENANT_ID || "common",
+      tenantId: environment.MICROSOFT_ENTRA_ID_TENANT_ID || "common",
       authorization: {
         params: {
           scope: "openid profile email User.Read",
@@ -113,5 +115,5 @@ export const authOptions: NextAuthOptions = {
     },
   },
   pages: { signIn: "/signin" },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: environment.NEXTAUTH_SECRET,
 };

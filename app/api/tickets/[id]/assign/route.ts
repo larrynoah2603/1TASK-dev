@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { errorResponse } from "@/lib/http";
+import { apiErrorResponse, errorResponse } from "@/lib/http";
 import { assignTicket } from "@/lib/ticket-service";
 import { requirePermission } from "@/lib/server-auth";
 import { assignmentSchema } from "@/lib/validation";
@@ -17,14 +17,7 @@ export async function POST(
       await request.json(),
     );
        if (!id || id.trim().length === 0) {
-  return NextResponse.json(
-    {
-      error: "Identifiant ticket invalide."
-    },
-    {
-      status:400
-    }
-  );
+  return apiErrorResponse({ message: "Identifiant ticket invalide.", code: "INVALID_IDENTIFIER", status: 400 });
 }
     const ticket = await assignTicket(
       actor,

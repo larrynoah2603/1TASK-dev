@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { errorResponse } from "@/lib/http";
+import { apiErrorResponse, errorResponse } from "@/lib/http";
 import { qualifyTicket } from "@/lib/ticket-service";
 import { requireSessionUserContext } from "@/lib/server-auth";
 import { ticketQualificationSchema } from "@/lib/validation";
@@ -34,15 +34,7 @@ export async function PATCH(
 
     if (!isValidTicketId(id)) {
 
-      return NextResponse.json(
-        {
-          error:
-            "Identifiant ticket invalide.",
-        },
-        {
-          status:400,
-        },
-      );
+      return apiErrorResponse({ message: "Identifiant ticket invalide.", code: "INVALID_IDENTIFIER", status: 400 });
 
     }
 
