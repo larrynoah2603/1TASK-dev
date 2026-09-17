@@ -1,27 +1,8 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/http";
 import { createAsset, listAssetsForViewer } from "@/lib/production-service";
-import { AuthorizationError, requireSessionUserContext } from "@/lib/server-auth";
+import { requirePermission } from "@/lib/server-auth";
 import { assetSchema, productionSearchQuerySchema } from "@/lib/validation";
-
-
-function requirePermission(
-  actor: Awaited<ReturnType<typeof requireSessionUserContext>>,
-  permission: string,
-) {
-  const permissions =
-    actor.roleAssignments.flatMap(
-      (assignment) =>
-        assignment.role.permissions.map(
-          (item) => item.permission.code,
-        ),
-    );
-
-
-  if (!permissions.includes(permission)) {
-    throw new AuthorizationError("Permission insuffisante.");
-  }
-}
 
 
 export async function GET(
@@ -29,14 +10,7 @@ export async function GET(
 ) {
   try {
 
-    const actor =
-      await requireSessionUserContext();
-
-
-    requirePermission(
-      actor,
-      "asset:read",
-    );
+    const actor = await requirePermission("asset:read");
 
 
     const { q: query } = productionSearchQuerySchema.parse({
@@ -67,14 +41,7 @@ export async function POST(
 ) {
   try {
 
-    const actor =
-      await requireSessionUserContext();
-
-
-    requirePermission(
-      actor,
-      "asset:manage",
-    );
+    const actor = await requirePermission("asset:manage");
 
 
     const asset =

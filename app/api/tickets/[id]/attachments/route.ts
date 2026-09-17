@@ -3,7 +3,7 @@ import { errorResponse } from "@/lib/http";
 import {
   listTicketAttachmentsForViewer,
   uploadTicketAttachment,
-} from "@/lib/ticket-service";
+} from "@/lib/ticket-attachment-service";
 import { requireSessionUserContext } from "@/lib/server-auth";
 
 

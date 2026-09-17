@@ -9,13 +9,19 @@ describe("contrat des réponses d’accès serveur", () => {
   it("renvoie 401 quand la session Entra est absente", async () => {
     const response = errorResponse(new AuthenticationError());
     expect(response.status).toBe(401);
-    expect((await response.json()).error).toContain("Authentification");
+    const body = await response.json();
+    expect(body.error).toContain("Authentification");
+    expect(body.code).toBe("AUTHENTICATION_REQUIRED");
+    expect(body.traceId).toBe(response.headers.get("X-Request-Id"));
   });
 
   it("renvoie 403 quand la session existe mais que le périmètre interdit l’action", async () => {
     const response = errorResponse(new AuthorizationError());
     expect(response.status).toBe(403);
-    expect((await response.json()).error).toContain("Accès");
+    const body = await response.json();
+    expect(body.error).toContain("Accès");
+    expect(body.code).toBe("ACCESS_DENIED");
+    expect(body.traceId).toBe(response.headers.get("X-Request-Id"));
   });
 
   it("ne transforme pas un identifiant de ticket connu en droit d’accès", () => {
