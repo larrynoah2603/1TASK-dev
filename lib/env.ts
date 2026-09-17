@@ -30,6 +30,7 @@ const emailList = z.preprocess(
 /** Unique inventory and validation policy for all server-side configuration. */
 export const serverEnvironmentSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  VERCEL_ENV: z.enum(["development", "preview", "production"]).optional(),
   DATABASE_URL: z.url(),
   NEXTAUTH_URL: optionalUrl,
   NEXTAUTH_SECRET: optionalString,
@@ -50,19 +51,24 @@ export const serverEnvironmentSchema = z.object({
   SLA_MONITOR_BATCH_SIZE: boundedInteger(100, 25, 500),
   TICKET_FTS_ENABLED: z.enum(["true", "false"]).default("true").transform((value) => value === "true"),
 }).superRefine((environment, context) => {
-  if (Boolean(environment.REDIS_REST_URL) !== Boolean(environment.REDIS_REST_TOKEN)) {
+  // Vercel intentionally withholds production-only secrets from Preview
+  // deployments. Optional integrations remain disabled there; Production and
+  // local runtime keep the strict fail-fast policy.
+  const strictRuntime = environment.VERCEL_ENV !== "preview";
+
+  if (strictRuntime && Boolean(environment.REDIS_REST_URL) !== Boolean(environment.REDIS_REST_TOKEN)) {
     context.addIssue({ code: "custom", path: [environment.REDIS_REST_URL ? "REDIS_REST_TOKEN" : "REDIS_REST_URL"], message: "REDIS_REST_URL et REDIS_REST_TOKEN doivent être configurées ensemble." });
   }
-  if (environment.OUTBOX_DELIVERY_TOKEN && !environment.OUTBOX_DELIVERY_URL) {
+  if (strictRuntime && environment.OUTBOX_DELIVERY_TOKEN && !environment.OUTBOX_DELIVERY_URL) {
     context.addIssue({ code: "custom", path: ["OUTBOX_DELIVERY_URL"], message: "OUTBOX_DELIVERY_URL est obligatoire lorsqu’un token de livraison est configuré." });
   }
 
   const entraValues = [environment.MICROSOFT_ENTRA_ID_CLIENT_ID, environment.MICROSOFT_ENTRA_ID_CLIENT_SECRET, environment.MICROSOFT_ENTRA_ID_TENANT_ID];
-  if (entraValues.some(Boolean) && !entraValues.every(Boolean)) {
+  if (strictRuntime && entraValues.some(Boolean) && !entraValues.every(Boolean)) {
     context.addIssue({ code: "custom", path: ["MICROSOFT_ENTRA_ID_CLIENT_ID"], message: "Les trois variables Microsoft Entra ID doivent être configurées ensemble." });
   }
 
-  if (environment.NODE_ENV === "production") {
+  if (environment.NODE_ENV === "production" && strictRuntime) {
     const requiredProductionValues = {
       NEXTAUTH_URL: environment.NEXTAUTH_URL,
       NEXTAUTH_SECRET: environment.NEXTAUTH_SECRET,

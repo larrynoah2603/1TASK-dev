@@ -26,9 +26,21 @@ describe("configuration serveur", () => {
       .toThrow(/NEXTAUTH_SECRET.*MICROSOFT_ENTRA_ID_CLIENT_ID.*CRON_SECRET/);
   });
 
-  it("refuse une configuration Entra partielle dans tous les environnements", () => {
+  it("refuse une configuration Entra partielle hors Preview Vercel", () => {
     expect(() => readServerEnvironment({ ...databaseEnvironment, MICROSOFT_ENTRA_ID_CLIENT_ID: "client" }))
       .toThrow(/trois variables Microsoft Entra ID/);
+  });
+
+  it("autorise une Preview Vercel sans secrets réservés à la production", () => {
+    const environment = readServerEnvironment({
+      ...databaseEnvironment,
+      NODE_ENV: "production",
+      VERCEL_ENV: "preview",
+    });
+
+    expect(environment.VERCEL_ENV).toBe("preview");
+    expect(environment.NEXTAUTH_SECRET).toBeUndefined();
+    expect(environment.CRON_SECRET).toBeUndefined();
   });
 
   it("convertit les valeurs configurées", () => {
