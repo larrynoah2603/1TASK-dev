@@ -4,7 +4,8 @@ import {
   requirePermission,
   requireSessionUserContext,
 } from "@/lib/server-auth";
-import { listVisibleTicketsPage, createTicket } from "@/lib/ticket-service";
+import { createTicket } from "@/lib/ticket-service";
+import { listVisibleTicketsPage } from "@/lib/ticket-query-service";
 import {
   createTicketSchema,
   ticketListQuerySchema,

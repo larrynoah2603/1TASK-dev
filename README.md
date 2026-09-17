@@ -210,11 +210,23 @@ Le fichier `.env.example` ne contient aucun secret réel :
 - `NEXTAUTH_URL` et `NEXTAUTH_SECRET` : session NextAuth ;
 - `MICROSOFT_ENTRA_ID_CLIENT_ID`, `MICROSOFT_ENTRA_ID_CLIENT_SECRET`, `MICROSOFT_ENTRA_ID_TENANT_ID` : Microsoft Entra ID ;
 - `CRON_SECRET` : protection de l’endpoint de surveillance SLA en production.
+- `PERFORMANCE_SLOW_OPERATION_MS` : seuil de journalisation des opérations lentes ;
+- `SLA_MONITOR_BATCH_SIZE` et `OUTBOX_BATCH_SIZE` : tailles bornées des lots de traitements asynchrones ;
+- `TICKET_FTS_ENABLED` : activation de la recherche PostgreSQL plein texte ;
+- `CACHE_ENABLED`, `REDIS_REST_URL` et `REDIS_REST_TOKEN` : cache distribué facultatif, l’URL et le token Redis devant être fournis ensemble ;
+- `OUTBOX_DELIVERY_URL` et `OUTBOX_DELIVERY_TOKEN` : destination facultative des événements d’outbox ;
+- `RUN_DB_TESTS` : activation explicite des tests d’intégration PostgreSQL.
+
+Les paramètres opérationnels sont analysés et bornés par `lib/env.ts`. Une
+configuration Redis incomplète, une URL invalide ou une taille de lot hors des
+limites acceptées provoque une erreur explicite plutôt qu’un comportement
+implicite différent selon le module.
 
 ## Tests et qualité
 
-Pour éviter d’utiliser un client Prisma généré avant les dernières migrations ou
-modifications du schéma, utilisez la commande `typecheck` plutôt que d’exécuter
+Le script `npm test` génère automatiquement le client Prisma avant de lancer
+Vitest. Pour éviter d’utiliser un client Prisma obsolète lors d’un contrôle de
+types isolé, utilisez également la commande `typecheck` plutôt que d’exécuter
 `tsc` directement :
 
 ```bash
@@ -226,11 +238,17 @@ npx prisma validate
 npm run build
 ```
 
-La commande `npm run typecheck` régénère automatiquement le client Prisma avant
-le contrôle TypeScript. La commande `npm run validate` enchaîne l’ensemble de
-la validation locale dans le bon ordre.
+Les commandes `npm test` et `npm run typecheck` régénèrent automatiquement le
+client Prisma. La commande `npm run validate` enchaîne l’ensemble de la
+validation locale dans le bon ordre.
 
 Les tests couvrent les transitions, le routage Wi-Fi, l’auto-attribution, les SLA et le cloisonnement confidentiel. Le test d’intégration PostgreSQL est activé dans la CI avec `RUN_DB_TESTS=1 npm run test` après application des migrations sur une base de test dédiée.
+
+Le workflow `.github/workflows/ci.yml` exécute la validation complète sur chaque
+pull request et chaque push vers `main`. Il démarre une base PostgreSQL dédiée,
+applique les migrations puis vérifie les tests d’intégration, ESLint, TypeScript,
+le schéma Prisma et le build de production. Les valeurs de secrets utilisées par
+ce workflow sont exclusivement des valeurs de test, définies dans le job CI.
 
 ## Déploiement Vercel
 

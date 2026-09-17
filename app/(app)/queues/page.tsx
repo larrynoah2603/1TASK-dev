@@ -3,7 +3,7 @@ import type { Route } from "next";
 import { redirect } from "next/navigation";
 import { RoleCode } from "@prisma/client";
 import { TicketViewSwitcher } from "@/components/ticket-view-switcher";
-import { listVisibleQueues } from "@/lib/ticket-service";
+import { listVisibleQueues } from "@/lib/ticket-queue-service";
 import { getSessionUserContext, roleCodes } from "@/lib/server-auth";
 
 export default async function QueuesPage() {

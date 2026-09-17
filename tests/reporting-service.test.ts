@@ -16,7 +16,7 @@ vi.mock("@/lib/server-auth", () => ({
   hasPermission: mocks.hasPermission,
   requireCurrentActor: vi.fn(async (actor: unknown) => actor),
 }));
-vi.mock("@/lib/ticket-service", () => ({ visibleTicketWhere: mocks.visibleTicketWhere }));
+vi.mock("@/lib/ticket-query-service", () => ({ visibleTicketWhere: mocks.visibleTicketWhere }));
 
 import { getReportingSummary } from "@/lib/reporting-service";
 

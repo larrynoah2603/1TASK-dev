@@ -277,6 +277,7 @@ export async function requirePermission(
 
 export async function requireTicketAccess(ticketId: string): Promise<{
   actor: UserContext;
+  target: TicketAccessTarget;
   ticket: {
     id: string;
     requesterId: string;
@@ -330,7 +331,7 @@ export async function requireTicketAccess(ticketId: string): Promise<{
   if (!canViewTicket(toAccessSubject(actor), target)) {
     throw new AuthorizationError("Vous n’avez pas accès à ce ticket.");
   }
-  return { actor, ticket };
+  return { actor, target, ticket };
 }
 
 export type AdminArea = "FUNCTIONAL" | "TECHNICAL" | "ANY";

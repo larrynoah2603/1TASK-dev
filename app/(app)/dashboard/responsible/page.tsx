@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { DashboardViewTabs, ResponsibleDashboard } from "@/components/dashboard-visuals";
 import { getReportingSummary } from "@/lib/reporting-service";
-import { listVisibleQueues, listVisibleTickets } from "@/lib/ticket-service";
+import { listVisibleTickets } from "@/lib/ticket-query-service";
+import { listVisibleQueues } from "@/lib/ticket-queue-service";
 import { getMissionPortfolioSummary, getProductionTimestamp, listMissionsForViewer } from "@/lib/production-service";
 import { getSessionUserContext, permissionCodes, roleCodes } from "@/lib/server-auth";
 import { RoleCode } from "@prisma/client";

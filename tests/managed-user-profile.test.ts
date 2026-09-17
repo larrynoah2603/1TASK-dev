@@ -104,7 +104,7 @@ describe("profil utilisateur géré par l’administration fonctionnelle", () =>
   });
 
   it("borne la visibilité des agents à leur équipe active et à leur file autorisée", () => {
-    const ticketService = source("lib/ticket-service.ts");
+    const ticketService = source("lib/ticket-query-service.ts");
     const access = source("lib/access-control.ts");
 
     expect(ticketService).toContain("activeTeamQueueIds");

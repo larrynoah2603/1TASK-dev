@@ -1,7 +1,7 @@
 import { Prisma, TicketStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { AuthorizationError, hasPermission, requireCurrentActor, type UserContext } from "@/lib/server-auth";
-import { visibleTicketWhere } from "@/lib/ticket-service";
+import { visibleTicketWhere } from "@/lib/ticket-query-service";
 import { cacheAside } from "@/lib/distributed-cache";
 
 export async function getReportingSummary(actor: UserContext) {

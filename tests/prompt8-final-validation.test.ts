@@ -175,7 +175,7 @@ describe("Prompt 8 — création, catalogue et département Entra", () => {
     });
 
     expect(result.success).toBe(false);
-    const create = section(ticketService, "export async function createTicket", "export async function visibleTicketWhere");
+    const create = section(ticketService, "export async function createTicket", "export async function findCreatedTicketByToken");
     expect(create).not.toContain("parsed.departmentId");
     expect(create).not.toContain("parsed.queueId");
     expect(create).not.toContain("parsed.assignedToId");
@@ -333,7 +333,7 @@ describe("Prompt 8 — confidentialité, permissions et traçabilité", () => {
 
   it("crée les événements, audits et notifications nécessaires pour les actions sensibles", () => {
     const actions = [
-      ["export async function createTicket", "export async function visibleTicketWhere"],
+      ["export async function createTicket", "export async function findCreatedTicketByToken"],
       ["export async function assignTicket", "export async function claimTicket"],
       ["export async function claimTicket", "export async function transitionTicket"],
       ["export async function transitionTicket", "export async function addTicketMessage"],
