@@ -8,7 +8,7 @@ describe("contrats de performance Prisma", () => {
   it("agrège les statistiques des files sans charger chaque ticket en mémoire", () => {
     const service = source("lib/ticket-service.ts");
     const start = service.indexOf("export async function listVisibleQueues");
-    const end = service.indexOf("const MAX_TICKET_ATTACHMENT_BYTES", start);
+    const end = service.length;
     const implementation = service.slice(start, end);
 
     expect(implementation).toContain("queueId: { in: visibleQueueIds }");
@@ -86,7 +86,7 @@ describe("contrats de performance Prisma", () => {
     const page = source("app/(app)/inbox/page.tsx");
     const service = source("lib/ticket-service.ts");
     const start = service.indexOf("export async function listVisibleQueueFilterOptions");
-    const end = service.indexOf("const MAX_TICKET_ATTACHMENT_BYTES", start);
+    const end = service.length;
     const implementation = service.slice(start, end);
 
     expect(page).toContain("listVisibleQueueFilterOptions(user)");

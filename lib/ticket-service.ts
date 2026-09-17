@@ -1,6 +1,3 @@
-import { randomUUID } from "node:crypto";
-import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { after } from "next/server";
 import { cache } from "react";
 import {
@@ -68,16 +65,9 @@ import {
 } from "@/lib/validation";
 import { routeTicketFromCatalog } from "@/lib/routing";
 import { measureServerOperation } from "@/lib/performance";
+import { DomainError } from "@/lib/domain-error";
 
-export class DomainError extends Error {
-  statusCode: number;
-
-  constructor(message: string, statusCode = 400) {
-    super(message);
-    this.name = "DomainError";
-    this.statusCode = statusCode;
-  }
-}
+export { DomainError } from "@/lib/domain-error";
 
 function isTicketCreationIdempotencyConflict(error: unknown): boolean {
   if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2002") {
@@ -2481,150 +2471,4 @@ export async function listVisibleQueueFilterOptions(actor: UserContext) {
       teamIds: queue.teams.filter((team) => team.isActive).map((team) => team.id),
     }))
     .map(({ id, name, department }) => ({ id, name, department }));
-}
-
-const MAX_TICKET_ATTACHMENT_BYTES = 10 * 1024 * 1024;
-const ALLOWED_TICKET_ATTACHMENT_TYPES = new Set([
-  "application/pdf",
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "text/plain",
-  "text/csv",
-  "application/zip",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-]);
-
-function ticketAttachmentRoot() {
-  return path.join(process.cwd(), "var", "ticket-attachments");
-}
-
-function safeAttachmentFileName(name: string) {
-  const sanitized = name.normalize("NFKC").replace(/[\\/\\u0000-\\u001f]/g, "_").trim();
-  return sanitized.slice(0, 180) || "piece-jointe";
-}
-
-async function getAuthorizedTicketForAttachment(actor: UserContext, ticketId: string) {
-  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId }, include: ticketAccessInclude });
-  if (!ticket) throw new DomainError("Ticket introuvable.", 404);
-  const target = accessTarget(ticket);
-  if (!canViewTicket(toAccessSubject(actor), target)) {
-    throw new AuthorizationError("Vous n’avez pas accès aux pièces jointes de ce ticket.");
-  }
-  const canUpload =
-    hasPermission(actor, "ticket:comment:public", target) ||
-    hasPermission(actor, "ticket:update", target);
-  if (!canUpload) throw new AuthorizationError("Vous ne pouvez pas ajouter de pièce jointe à ce ticket.");
-  return ticket;
-}
-
-export async function uploadTicketAttachment(
-  actor: UserContext,
-  ticketId: string,
-  input: { name: string; type: string; size: number; arrayBuffer: () => Promise<ArrayBuffer> },
-) {
-  actor = await requireCurrentActor(actor);
-  const ticket = await getAuthorizedTicketForAttachment(actor, ticketId);
-  if (!input.name.trim()) throw new DomainError("Le nom du fichier est obligatoire.", 422);
-  if (!Number.isFinite(input.size) || input.size < 1 || input.size > MAX_TICKET_ATTACHMENT_BYTES) {
-    throw new DomainError("La pièce jointe doit peser entre 1 octet et 10 Mo.", 422);
-  }
-  if (!ALLOWED_TICKET_ATTACHMENT_TYPES.has(input.type)) {
-    throw new DomainError("Ce type de fichier n’est pas autorisé.", 422);
-  }
-  const storageKey = `${ticketId}/${randomUUID()}`;
-  const storagePath = path.join(ticketAttachmentRoot(), storageKey);
-  await mkdir(path.dirname(storagePath), { recursive: true });
-  await writeFile(storagePath, Buffer.from(await input.arrayBuffer()));
-  try {
-    const attachment = await prisma.attachment.create({
-      data: {
-        ticketId,
-        uploadedById: actor.id,
-        fileName: safeAttachmentFileName(input.name),
-        storageKey,
-        mimeType: input.type,
-        sizeBytes: input.size,
-      },
-      select: {
-        id: true,
-        fileName: true,
-        mimeType: true,
-        sizeBytes: true,
-        createdAt: true,
-        messageId: true,
-        uploadedBy: { select: { id: true, name: true } },
-      },
-    });
-    await appendAuditLog(prisma, {
-      actorId: actor.id,
-      action: "TICKET_ATTACHMENT_ADDED",
-      objectType: "Attachment",
-      objectId: attachment.id,
-      newValue: { ticketId, fileName: attachment.fileName, mimeType: attachment.mimeType, sizeBytes: attachment.sizeBytes },
-      reason: "Ajout d’une pièce jointe au ticket.",
-    });
-    return attachment;
-  } catch (error) {
-    await unlink(storagePath).catch(() => undefined);
-    throw error;
-  }
-}
-
-export async function getTicketAttachmentForViewer(actor: UserContext, ticketId: string, attachmentId: string) {
-  actor = await requireCurrentActor(actor);
-  const attachment = await prisma.attachment.findFirst({
-    where: { id: attachmentId, ticketId },
-    include: { ticket: { include: ticketAccessInclude }, message: { select: { visibility: true } } },
-  });
-  if (!attachment) throw new DomainError("Pièce jointe introuvable.", 404);
-  const ticket = attachment.ticket;
-  const target = accessTarget(ticket);
-  if (!canViewTicket(toAccessSubject(actor), target)) throw new AuthorizationError("Vous n’avez pas accès à cette pièce jointe.");
-  const canSeeInternal = canPostInternalMessage(roleCodes(actor)) && hasPermission(actor, "ticket:internal-comment", target);
-  if (attachment.message?.visibility === MessageVisibility.INTERNAL && !canSeeInternal) {
-    throw new AuthorizationError("Cette pièce jointe est réservée à l’équipe de traitement.");
-  }
-  const storagePath = path.join(ticketAttachmentRoot(), attachment.storageKey);
-  let content: Buffer;
-  try {
-    content = await readFile(storagePath);
-  } catch {
-    throw new DomainError("Le fichier n’est plus disponible dans le stockage local.", 410);
-  }
-  return { content, fileName: attachment.fileName, mimeType: attachment.mimeType, sizeBytes: attachment.sizeBytes };
-}
-
-export async function listTicketAttachmentsForViewer(actor: UserContext, ticketId: string) {
-  actor = await requireCurrentActor(actor);
-  const accessRecord = await prisma.ticket.findUnique({
-    where: { id: ticketId },
-    include: ticketAccessInclude,
-  });
-  if (!accessRecord) throw new DomainError("Ticket introuvable.", 404);
-  if (!canViewTicket(toAccessSubject(actor), accessTarget(accessRecord))) {
-    throw new AuthorizationError("Vous n’avez pas accès aux pièces jointes de ce ticket.");
-  }
-  const canSeeInternal =
-    canPostInternalMessage(roleCodes(actor)) &&
-    hasPermission(actor, "ticket:internal-comment", accessTarget(accessRecord));
-  return prisma.attachment.findMany({
-    where: {
-      ticketId,
-      ...(canSeeInternal
-        ? {}
-        : { OR: [{ messageId: null }, { message: { visibility: MessageVisibility.REQUESTER } }] }),
-    },
-    select: {
-      id: true,
-      fileName: true,
-      mimeType: true,
-      sizeBytes: true,
-      createdAt: true,
-      uploadedBy: { select: { id: true, name: true } },
-      messageId: true,
-    },
-    orderBy: { createdAt: "asc" },
-  });
 }

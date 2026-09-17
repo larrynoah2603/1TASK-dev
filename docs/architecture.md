@@ -195,3 +195,12 @@ ainsi qu’un `traceId`. Ce même identifiant est renvoyé dans l’en-tête
 serveur sans exposer les détails techniques internes. Les erreurs inattendues
 sont journalisées sous forme JSON structurée ; leur message et leur pile ne sont
 jamais renvoyés au client.
+
+## 10. Découpage progressif du domaine ticket
+
+Le service ticket historique reste la façade des workflows de création,
+qualification, affectation et transition. Les responsabilités d’infrastructure
+sont extraites progressivement sans modifier ces workflows : le stockage, la
+validation et la consultation des pièces jointes sont regroupés dans
+`lib/ticket-attachment-service.ts`. Ce module réutilise le contrôle d’accès
+central au ticket avant toute lecture ou écriture et conserve l’audit des ajouts.
