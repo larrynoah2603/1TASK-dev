@@ -21,6 +21,7 @@ describe("module de détail ticket", () => {
     expect(access).toContain("export function accessTarget");
     expect(access).toContain("export const ticketAccessInclude");
     expect(source("app/api/tickets/[id]/route.ts")).toContain('from "@/lib/ticket-detail-service"');
+    expect(source("app/api/tickets/[id]/route.ts")).toContain("toTicketDetailDTO(ticket)");
     expect(source("app/(app)/tickets/[id]/page.tsx")).toContain('from "@/lib/ticket-detail-service"');
   });
 });

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { errorResponse } from "@/lib/http";
+import { apiErrorResponse, errorResponse } from "@/lib/http";
 import {
   listTicketAttachmentsForViewer,
   uploadTicketAttachment,
@@ -38,15 +38,7 @@ export async function POST(
 
     if (!isValidTicketId(id)) {
 
-      return NextResponse.json(
-        {
-          error:
-            "Identifiant ticket invalide.",
-        },
-        {
-          status: 400,
-        },
-      );
+      return apiErrorResponse({ message: "Identifiant ticket invalide.", code: "INVALID_IDENTIFIER", status: 400 });
 
     }
 
@@ -63,15 +55,7 @@ export async function POST(
 
     if (!(file instanceof File)) {
 
-      return NextResponse.json(
-        {
-          error:
-            "Un fichier est obligatoire.",
-        },
-        {
-          status:422,
-        },
-      );
+      return apiErrorResponse({ message: "Un fichier est obligatoire.", code: "VALIDATION_ERROR", status: 422 });
 
     }
 
@@ -121,15 +105,7 @@ export async function GET(
 
     if (!isValidTicketId(id)) {
 
-      return NextResponse.json(
-        {
-          error:
-            "Identifiant ticket invalide.",
-        },
-        {
-          status:400,
-        },
-      );
+      return apiErrorResponse({ message: "Identifiant ticket invalide.", code: "INVALID_IDENTIFIER", status: 400 });
 
     }
 
