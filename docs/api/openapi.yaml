@@ -1,17 +1,32 @@
 openapi: 3.0.3
 info:
   title: 1TASK API
-  version: 1.0.0
-  description: Contrat public versionné. Les routes historiques `/api/tickets` restent disponibles pour le frontend web.
+  version: 1.1.0
+  description: Contrat public versionné pour les clients web, mobile et partenaires. Les routes historiques `/api/tickets` restent disponibles pour le frontend web. La session Entra est active ; OAuth2 Bearer est réservé à une activation future.
+x-supported-clients: [web, mobile, partner]
 servers:
   - url: /
 paths:
+  /api/v1:
+    get:
+      operationId: discoverApiV1
+      summary: Découvre la version et les capacités de l’API
+      security: [{ sessionCookie: [] }]
+      responses:
+        "200":
+          description: Capacités publiques
+          headers:
+            X-API-Version: { $ref: "#/components/headers/ApiVersion" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiDiscovery" }
   /api/v1/tickets:
     get:
       operationId: listTicketsV1
       summary: Liste paginée des tickets visibles
       security: [{ sessionCookie: [] }]
       parameters:
+        - { $ref: "#/components/parameters/ApiClient" }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
         - { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }
         - { name: cursor, in: query, schema: { type: string } }
@@ -21,6 +36,8 @@ paths:
       responses:
         "200":
           description: Page de tickets autorisés
+          headers:
+            X-API-Version: { $ref: "#/components/headers/ApiVersion" }
           content:
             application/json:
               schema: { $ref: "#/components/schemas/TicketList" }
@@ -31,6 +48,8 @@ paths:
       operationId: createTicketV1
       summary: Crée un ticket
       security: [{ sessionCookie: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ApiClient" }
       requestBody:
         required: true
         content:
@@ -45,6 +64,8 @@ paths:
       responses:
         "201":
           description: Ticket créé
+          headers:
+            X-API-Version: { $ref: "#/components/headers/ApiVersion" }
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Ticket" }
@@ -57,6 +78,7 @@ paths:
       summary: Détail d’un ticket visible
       security: [{ sessionCookie: [] }]
       parameters:
+        - { $ref: "#/components/parameters/ApiClient" }
         - name: id
           in: path
           required: true
@@ -64,6 +86,8 @@ paths:
       responses:
         "200":
           description: Détail du ticket
+          headers:
+            X-API-Version: { $ref: "#/components/headers/ApiVersion" }
           content:
             application/json:
               schema: { $ref: "#/components/schemas/TicketDetail" }
@@ -72,11 +96,32 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
 components:
+  headers:
+    ApiVersion:
+      description: Version majeure du contrat servi.
+      schema: { type: string, enum: ["1"] }
+  parameters:
+    ApiClient:
+      name: X-1TASK-Client
+      in: header
+      required: false
+      description: Type de consommateur ; `web` est utilisé par défaut.
+      schema: { type: string, enum: [web, mobile, partner], default: web }
   securitySchemes:
     sessionCookie:
       type: apiKey
       in: cookie
       name: next-auth.session-token
+    oauth2Bearer:
+      type: oauth2
+      description: Schéma réservé aux futurs clients mobiles et partenaires ; non activé en v1.1.
+      flows:
+        authorizationCode:
+          authorizationUrl: https://login.microsoftonline.com/common/oauth2/v2.0/authorize
+          tokenUrl: https://login.microsoftonline.com/common/oauth2/v2.0/token
+          scopes:
+            api://1task/tickets.read: Lire les tickets autorisés
+            api://1task/tickets.write: Créer et modifier des tickets
   responses:
     BadRequest: { description: Requête invalide, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
     Unauthorized: { description: Authentification requise, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
@@ -84,6 +129,22 @@ components:
     NotFound: { description: Ressource introuvable, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
     ValidationError: { description: Données invalides, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
   schemas:
+    ApiDiscovery:
+      type: object
+      additionalProperties: false
+      required: [version, status, authentication, clients, documentation]
+      properties:
+        version: { type: string, enum: [v1] }
+        status: { type: string, enum: [available] }
+        authentication:
+          type: object
+          additionalProperties: false
+          required: [active, planned]
+          properties:
+            active: { type: string, enum: [sessionCookie] }
+            planned: { type: array, items: { type: string, enum: [oauth2Bearer] } }
+        clients: { type: array, items: { type: string, enum: [web, mobile, partner] } }
+        documentation: { type: string, enum: [/docs/api/openapi.yaml] }
     Pagination:
       type: object
       required: [page, pageSize, total, totalPages, hasMore, nextCursor]

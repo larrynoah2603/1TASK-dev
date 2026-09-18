@@ -101,6 +101,25 @@ export function toTicketListItemDTO(ticket: TicketListItemDomain): TicketListIte
 }
 
 export function toTicketDetailDTO(ticket: TicketDetailDomain): TicketDetailDTO {
-  const { creationIdempotencyToken: _token, createdById: _createdById, slaId: _slaId, priorityOverrideReason: _override, ...publicTicket } = ticket;
-  return serializeDTO(publicTicket);
+  return {
+    ...toTicketDTO(ticket),
+    blockDetails: ticket.blockDetails,
+    resolutionCause: ticket.resolutionCause,
+    resolutionAction: ticket.resolutionAction,
+    resolutionSolution: ticket.resolutionSolution,
+    preventiveAction: ticket.preventiveAction,
+    reopenedReason: ticket.reopenedReason,
+    requester: ticket.requester,
+    sourceDepartment: ticket.sourceDepartment,
+    assignedTo: ticket.assignedTo,
+    queue: ticket.queue,
+    serviceCatalogItem: ticket.serviceCatalogItem,
+    dossier: ticket.dossier,
+    mission: ticket.mission ? { ...ticket.mission, dueAt: ticket.mission.dueAt?.toISOString() ?? null } : null,
+    messages: serializeDTO(ticket.messages),
+    assignments: serializeDTO(ticket.assignments),
+    events: serializeDTO(ticket.events),
+    worklogSummary: ticket.worklogSummary,
+    missionWorklogMinutes: ticket.missionWorklogMinutes,
+  };
 }

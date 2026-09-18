@@ -376,7 +376,7 @@ describe("Prompt 8 — routes, espaces et rôles", () => {
 
     for (const path of routes) {
       const content = readFileSync(path, "utf8");
-      expect(content, relative(projectRoot, path)).toMatch(/require(?:SessionUserContext|AdminAccess|Permission|Role|TicketAccess)/);
+      expect(content, relative(projectRoot, path)).toMatch(/require(?:SessionUserContext|AdminAccess|ApiPermission|Permission|Role|TicketAccess)/);
     }
 
     const job = source("app/api/jobs/sla-monitor/route.ts");

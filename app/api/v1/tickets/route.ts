@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import type { TicketListDTO } from "@/contracts/ticket.dto";
-import { errorResponse, withApiObservability } from "@/lib/http";
+import { errorResponse } from "@/lib/http";
+import { requireApiPermission } from "@/lib/api-auth";
 import { toTicketDTO, toTicketDomain, toTicketListItemDTO } from "@/lib/mappers/ticket.mapper";
-import { requirePermission } from "@/lib/server-auth";
+import { withPublicApiV1 } from "@/lib/public-api";
 import { listVisibleTicketsPage } from "@/lib/ticket-query-service";
 import { createTicket } from "@/lib/ticket-service";
 import { createTicketSchema, ticketListQuerySchema } from "@/lib/validation";
@@ -11,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 async function listTickets(request: Request) {
   try {
-    const actor = await requirePermission("ticket:read");
+    const { actor } = await requireApiPermission(request, "ticket:read");
     const url = new URL(request.url);
     const parsed = ticketListQuerySchema.parse({
       status: url.searchParams.get("status") || undefined,
@@ -64,7 +65,7 @@ async function listTickets(request: Request) {
 
 async function createTicketRoute(request: Request) {
   try {
-    const actor = await requirePermission("ticket:create");
+    const { actor } = await requireApiPermission(request, "ticket:create");
     const ticket = await createTicket(actor, createTicketSchema.parse(await request.json()));
     return NextResponse.json(toTicketDTO(toTicketDomain(ticket)), { status: 201 });
   } catch (error) {
@@ -72,5 +73,5 @@ async function createTicketRoute(request: Request) {
   }
 }
 
-export const GET = withApiObservability("/api/v1/tickets", listTickets);
-export const POST = withApiObservability("/api/v1/tickets", createTicketRoute);
+export const GET = withPublicApiV1("/api/v1/tickets", listTickets);
+export const POST = withPublicApiV1("/api/v1/tickets", createTicketRoute);
