@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/http";
 import {
   createDossier,
-  listDossiersForViewer,
+  listDossiersForViewerPage,
 } from "@/lib/production-service";
 import { requirePermission } from "@/lib/server-auth";
 import { dossierSchema, productionSearchQuerySchema } from "@/lib/validation";
@@ -17,17 +17,24 @@ export async function GET(
     const actor = await requirePermission("portfolio:read");
 
 
-    const { q: query } = productionSearchQuerySchema.parse({
-      q: new URL(request.url).searchParams.get("q") ?? undefined,
+    const searchParams = new URL(request.url).searchParams;
+    const filters = productionSearchQuerySchema.parse({
+      q: searchParams.get("q") ?? undefined,
+      cursor: searchParams.get("cursor") ?? undefined,
+      pageSize: searchParams.get("pageSize") ?? undefined,
     });
+
+    const page = await listDossiersForViewerPage(actor, filters.q, filters);
 
 
     return NextResponse.json({
       dossiers:
-        await listDossiersForViewer(
-          actor,
-          query,
-        ),
+        page.items,
+      pagination: {
+        pageSize: page.pageSize,
+        hasMore: page.hasMore,
+        nextCursor: page.nextCursor,
+      },
     });
 
 

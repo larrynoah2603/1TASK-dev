@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/http";
 import {
   countUnreadNotifications,
-  listUserNotifications,
+  listUserNotificationsPage,
 } from "@/lib/notification-service";
 import { requireSessionUserContext } from "@/lib/server-auth";
 import { notificationListQuerySchema } from "@/lib/validation";
@@ -21,21 +21,19 @@ export async function GET(
       await requireSessionUserContext();
 
 
-    const take = notificationListQuerySchema.parse({
+    const filters = notificationListQuerySchema.parse({
       take: new URL(request.url).searchParams.get("take") ?? undefined,
-    }).take;
+      cursor: new URL(request.url).searchParams.get("cursor") ?? undefined,
+    });
 
 
 
     const [
-      notifications,
+      notificationPage,
       unreadCount,
     ] = await Promise.all([
 
-      listUserNotifications(
-        actor,
-        take,
-      ),
+      listUserNotificationsPage(actor, { pageSize: filters.take, cursor: filters.cursor }),
 
       countUnreadNotifications(
         actor,
@@ -50,7 +48,7 @@ export async function GET(
       unreadCount,
 
       notifications:
-        notifications.map(
+        notificationPage.items.map(
           (item) => ({
 
             id:
@@ -79,6 +77,11 @@ export async function GET(
           }),
         ),
 
+      pagination: {
+        pageSize: notificationPage.pageSize,
+        hasMore: notificationPage.hasMore,
+        nextCursor: notificationPage.nextCursor,
+      },
     });
 
 
