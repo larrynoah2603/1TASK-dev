@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import type { ErrorDTO } from "@/contracts/error.dto";
+import { currentTraceId, logTelemetry, runWithRequestTrace, sanitizeTelemetry } from "@/lib/observability";
+import { measureServerOperation } from "@/lib/performance";
 
 type ErrorWithStatus = Error & {
   statusCode: number;
@@ -30,29 +32,17 @@ type ApiErrorOptions = {
   traceId?: string;
 };
 
-function sanitizeContext(value: unknown, key = "", depth = 0): unknown {
-  if (/password|token|secret|authorization|cookie/i.test(key)) return "[REDACTED]";
-  if (depth > 5) return "[TRUNCATED]";
-  if (Array.isArray(value)) return value.map((item) => sanitizeContext(item, key, depth + 1));
-  if (value && typeof value === "object") {
-    return Object.fromEntries(
-      Object.entries(value).map(([nestedKey, item]) => [nestedKey, sanitizeContext(item, nestedKey, depth + 1)]),
-    );
-  }
-  return value;
-}
-
 function safeContext(status: number, code: ApiErrorCode, context?: Record<string, unknown>): ErrorDTO["context"] {
   return {
     status,
     category: code,
-    ...(context ? { details: sanitizeContext(context) } : {}),
+    ...(context ? { details: sanitizeTelemetry(context) } : {}),
   };
 }
 
 /** The single response factory for every expected API error. */
 export function apiErrorResponse(options: ApiErrorOptions) {
-  const traceId = options.traceId ?? randomUUID();
+  const traceId = options.traceId ?? currentTraceId() ?? randomUUID();
   const body: ErrorDTO = {
     message: options.message,
     error: options.message,
@@ -90,11 +80,35 @@ export function logServerError(
   error: unknown,
   context?: Record<string, unknown>,
 ) {
-  console.error(JSON.stringify({
+  logTelemetry("error", type, {
     type,
     errorName: error instanceof Error ? error.name : "UnknownError",
-    ...(context ? { context: sanitizeContext(context) } : {}),
-  }));
+    ...(context ? { context } : {}),
+  });
+}
+
+type ApiHandler<Context> = (request: Request, context: Context) => Promise<Response>;
+
+/** Adds trace propagation, latency/query metrics and safe failure logging to an API handler. */
+export function withApiObservability<Context>(route: string, handler: ApiHandler<Context>): ApiHandler<Context> {
+  return (request, context) => runWithRequestTrace(request, async () => {
+    const traceId = currentTraceId() ?? randomUUID();
+    const startedAt = performance.now();
+    const response = await measureServerOperation(
+      `http.${request.method.toLowerCase()} ${route}`,
+      async () => {
+        try {
+          return await handler(request, context);
+        } catch (error) {
+          return errorResponse(error);
+        }
+      },
+      { route, traceId, isFailure: (result) => result.status >= 500 },
+    );
+    response.headers.set("X-Request-Id", traceId);
+    response.headers.set("Server-Timing", `app;dur=${Math.max(0, performance.now() - startedAt).toFixed(1)}`);
+    return response;
+  });
 }
 
 function hasValidStatusCode(error: unknown): error is ErrorWithStatus {

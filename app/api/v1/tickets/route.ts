@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { TicketListDTO } from "@/contracts/ticket.dto";
-import { errorResponse } from "@/lib/http";
+import { errorResponse, withApiObservability } from "@/lib/http";
 import { toTicketDTO, toTicketDomain, toTicketListItemDTO } from "@/lib/mappers/ticket.mapper";
 import { requirePermission } from "@/lib/server-auth";
 import { listVisibleTicketsPage } from "@/lib/ticket-query-service";
@@ -9,7 +9,7 @@ import { createTicketSchema, ticketListQuerySchema } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: Request) {
+async function listTickets(request: Request) {
   try {
     const actor = await requirePermission("ticket:read");
     const url = new URL(request.url);
@@ -62,7 +62,7 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+async function createTicketRoute(request: Request) {
   try {
     const actor = await requirePermission("ticket:create");
     const ticket = await createTicket(actor, createTicketSchema.parse(await request.json()));
@@ -71,3 +71,6 @@ export async function POST(request: Request) {
     return errorResponse(error);
   }
 }
+
+export const GET = withApiObservability("/api/v1/tickets", listTickets);
+export const POST = withApiObservability("/api/v1/tickets", createTicketRoute);

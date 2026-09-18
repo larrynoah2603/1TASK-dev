@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { apiErrorResponse, errorResponse } from "@/lib/http";
+import { apiErrorResponse, errorResponse, withApiObservability } from "@/lib/http";
 import { toTicketDetailDTO } from "@/lib/mappers/ticket.mapper";
 import { requireSessionUserContext } from "@/lib/server-auth";
 import { getTicketForViewer } from "@/lib/ticket-detail-service";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
+async function getTicket(_request: Request, context: { params: Promise<{ id: string }> }) {
   try {
     const actor = await requireSessionUserContext();
     const { id } = await context.params;
@@ -18,3 +18,5 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     return errorResponse(error);
   }
 }
+
+export const GET = withApiObservability("/api/v1/tickets/:id", getTicket);
