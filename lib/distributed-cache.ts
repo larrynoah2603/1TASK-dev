@@ -1,12 +1,15 @@
-import { readServerEnvironment } from "@/lib/env";
+
 
 const inFlight = new Map<string, Promise<unknown>>();
 
 function configuration() {
-  const environment = readServerEnvironment();
-  const url = environment.REDIS_REST_URL?.replace(/\/$/, "");
-  const token = environment.REDIS_REST_TOKEN;
-  return !environment.CACHE_ENABLED || !url || !token ? null : { url, token };
+  const cacheEnabled = process.env.CACHE_ENABLED !== "false";
+  const url = process.env.REDIS_REST_URL?.replace(/\/$/, "");
+  const token = process.env.REDIS_REST_TOKEN;
+
+  return !cacheEnabled || !url || !token
+    ? null
+    : { url, token };
 }
 
 async function command<T>(parts: (string | number)[]): Promise<T | null> {

@@ -8,7 +8,7 @@
     "dev": "next dev",
     "predev": "npm run env:check && prisma generate",
     "build": "next build",
-    "prebuild": "npm run env:check -- production && npm run clean:next && prisma generate",
+    "prebuild": "npm run env:check && npm run clean:next && prisma generate",
     "prestart": "npm run env:check -- production",
     "start": "next start",
     "lint": "eslint .",

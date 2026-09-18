@@ -1,9 +1,10 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { randomUUID } from "node:crypto";
-import { readServerEnvironment } from "@/lib/env";
 import { logTelemetry } from "@/lib/observability";
 
-const SLOW_OPERATION_MS = readServerEnvironment().PERFORMANCE_SLOW_OPERATION_MS;
+function getSlowOperationThreshold() {
+  return Number(process.env.PERFORMANCE_SLOW_OPERATION_MS ?? 750);
+}
 type PerformanceStore = { queryCount: number };
 const performanceStorage = new AsyncLocalStorage<PerformanceStore>();
 const MAX_OPERATION_SAMPLES = 200;
@@ -78,7 +79,7 @@ export async function measureServerOperation<T>(
   } finally {
     const durationMs = Date.now() - startedAt;
     recordServerOperation(label, durationMs, status === "error");
-    if (status === "error" || durationMs >= SLOW_OPERATION_MS) {
+    if (status === "error" || durationMs >= getSlowOperationThreshold()) {
       logTelemetry("warn", "server_operation", {
         type: "server_operation",
         operation: label,
@@ -92,4 +93,4 @@ export async function measureServerOperation<T>(
   }
 }
 
-export { MAX_OPERATION_SAMPLES, SLOW_OPERATION_MS };
+export { MAX_OPERATION_SAMPLES };
