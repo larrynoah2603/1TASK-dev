@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { errorResponse } from "@/lib/http";
+import { apiErrorResponse, errorResponse } from "@/lib/http";
 import {
   getTicketAttachmentForViewer,
 } from "@/lib/ticket-attachment-service";
@@ -49,15 +49,7 @@ export async function GET(
       !isValidId(attachmentId)
     ) {
 
-      return NextResponse.json(
-        {
-          error:
-            "Identifiant invalide.",
-        },
-        {
-          status:400,
-        },
-      );
+      return apiErrorResponse({ message: "Identifiant invalide.", code: "INVALID_IDENTIFIER", status: 400 });
 
     }
 

@@ -8,6 +8,7 @@ import { appendAuditLog } from "@/lib/audit";
 import { measureServerOperation } from "@/lib/performance";
 import { deleteCacheKey } from "@/lib/distributed-cache";
 import { createInAppNotification } from "@/lib/notifications";
+import { normalizePageSize, toCursorPage, type CursorPageOptions } from "@/lib/cursor-pagination";
 import {
   requireAdminAccess,
   permissionCodes,
@@ -85,13 +86,15 @@ export type AdminConfigurationSection = "departments" | "queues" | "teams" | "ca
 export function getAdminConfiguration(
   actor: UserContext,
   sections?: readonly AdminConfigurationSection[],
+  pagination: { users?: CursorPageOptions } = {},
 ) {
-  return measureServerOperation("admin.configuration", () => getAdminConfigurationInternal(actor, sections));
+  return measureServerOperation("admin.configuration", () => getAdminConfigurationInternal(actor, sections, pagination));
 }
 
 async function getAdminConfigurationInternal(
   actor: UserContext,
   sections?: readonly AdminConfigurationSection[],
+  pagination: { users?: CursorPageOptions } = {},
 ) {
   await requireFunctionalAdminFor(actor);
   const selected = new Set(sections ?? ["departments", "queues", "teams", "catalog", "sla", "roles", "users"]);
@@ -103,6 +106,7 @@ async function getAdminConfigurationInternal(
   const needsServices = needs("catalog", "sla");
   const needsSlas = needs("catalog", "sla");
   const needsSlaData = selected.has("sla");
+  const userPageSize = normalizePageSize(pagination.users?.pageSize, 50);
 
   const [organizations, departments, queues, teams, users, services, slas, calendars, escalationRules, roles, entraMappings, pendingUsers] = await Promise.all([
     needsSlaData ? prisma.organization.findMany({ orderBy: { name: "asc" } }) : Promise.resolve([]),
@@ -159,7 +163,8 @@ async function getAdminConfigurationInternal(
         teamMemberships: { select: { isActive: true, team: { select: { id: true, name: true, queue: { select: { name: true } } } } } },
       },
       orderBy: { name: "asc" },
-      take: 100,
+      take: userPageSize + 1,
+      ...(pagination.users?.cursor ? { cursor: { id: pagination.users.cursor }, skip: 1 } : {}),
     }) : Promise.resolve([]),
     needsServices ? prisma.serviceCatalogItem.findMany({
       include: {
@@ -182,7 +187,12 @@ async function getAdminConfigurationInternal(
     selected.has("departments") || !sections ? prisma.entraDepartmentMapping.findMany({ include: { department: true }, orderBy: { externalValue: "asc" } }) : Promise.resolve([]),
     selected.has("departments") || !sections ? prisma.user.findMany({ where: { status: { in: [UserStatus.PENDING_ASSIGNMENT, UserStatus.PENDING_VALIDATION] } }, select: { id: true, name: true, email: true, entraDepartmentValue: true }, orderBy: { createdAt: "asc" } }) : Promise.resolve([]),
   ]);
-  return { organizations, departments, queues, teams, users, services, slas, calendars, escalationRules, roles, entraMappings, pendingUsers };
+  const userPage = toCursorPage(users, userPageSize);
+  return {
+    organizations, departments, queues, teams, users: userPage.items, services, slas, calendars,
+    escalationRules, roles, entraMappings, pendingUsers,
+    pagination: { users: { pageSize: userPage.pageSize, hasMore: userPage.hasMore, nextCursor: userPage.nextCursor } },
+  };
 }
 
 export async function getAdminUserSummary(actor: UserContext) {

@@ -1,5 +1,6 @@
 import { NotificationStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { normalizePageSize, toCursorPage, type CursorPageOptions } from "@/lib/cursor-pagination";
 import {
   requireCurrentActor,
   ResourceNotFoundError,
@@ -42,6 +43,22 @@ export async function listUserNotifications(
 
   });
 
+}
+
+export async function listUserNotificationsPage(
+  actor: UserContext,
+  options: CursorPageOptions = {},
+) {
+  const current = await requireCurrentActor(actor);
+  const pageSize = normalizePageSize(options.pageSize);
+  const rows = await prisma.notification.findMany({
+    where: { recipientId: current.id },
+    include: { ticket: { select: { id: true, reference: true } } },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: pageSize + 1,
+    ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
+  });
+  return toCursorPage(rows, pageSize);
 }
 
 

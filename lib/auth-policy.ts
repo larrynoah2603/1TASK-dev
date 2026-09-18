@@ -1,3 +1,5 @@
+import { readServerEnvironment } from "@/lib/env";
+
 export type SupportedAuthProvider = "microsoft-entra-id";
 
 export interface SignInAccountState {
@@ -33,8 +35,9 @@ export function isEmailAllowedForDomain(email: string, allowedDomain: string): b
 }
 
 export function isEmailAllowed(email: string): boolean {
-  const allowedDomain = process.env.ALLOWED_EMAIL_DOMAIN?.trim();
-  if (!allowedDomain) return process.env.NODE_ENV !== "production";
+  const environment = readServerEnvironment();
+  const allowedDomain = environment.ALLOWED_EMAIL_DOMAIN;
+  if (!allowedDomain) return environment.NODE_ENV !== "production";
   return isEmailAllowedForDomain(email, allowedDomain);
 }
 

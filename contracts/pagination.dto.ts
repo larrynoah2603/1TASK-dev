@@ -1,5 +1,8 @@
 export interface PaginationDTO {
- pageSize:number;
- hasMore:boolean;
- nextCursor?:string;
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  hasMore: boolean;
+  nextCursor: string | null;
 }

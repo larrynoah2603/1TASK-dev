@@ -37,7 +37,7 @@ describe("contrats de performance Prisma", () => {
     expect(service).toContain("decoded.sort !== sort");
     expect(route).toContain('response.headers.set("X-Has-More"');
     expect(route).toContain('response.headers.set("X-Next-Cursor"');
-    expect(route).toContain("NextResponse.json(ticketPage.tickets)");
+    expect(route).toContain("NextResponse.json(ticketPage.tickets.map(toTicketListItemDTO))");
     expect(route).toContain("{ includeTotal: false }");
   });
 

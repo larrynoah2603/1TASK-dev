@@ -24,6 +24,13 @@ describe("bootstrap administrateur 1TASK", () => {
 
   it("exige une configuration explicite du bootstrap en production", () => {
     vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("NEXTAUTH_URL", "https://1task.example");
+    vi.stubEnv("NEXTAUTH_SECRET", "nextauth-secret-with-at-least-32-characters");
+    vi.stubEnv("MICROSOFT_ENTRA_ID_CLIENT_ID", "client-id");
+    vi.stubEnv("MICROSOFT_ENTRA_ID_CLIENT_SECRET", "client-secret");
+    vi.stubEnv("MICROSOFT_ENTRA_ID_TENANT_ID", "tenant-id");
+    vi.stubEnv("ALLOWED_EMAIL_DOMAIN", "bios-expertise.com");
+    vi.stubEnv("CRON_SECRET", "cron-secret-with-at-least-32-characters");
     vi.stubEnv("ADMIN_EMAILS", "");
     expect(isBootstrapFunctionalAdminEmail(DEFAULT_BOOTSTRAP_ADMIN_EMAIL)).toBe(false);
 

@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { randomUUID } from "node:crypto";
 import { readServerEnvironment } from "@/lib/env";
+import { logTelemetry } from "@/lib/observability";
 
 const SLOW_OPERATION_MS = readServerEnvironment().PERFORMANCE_SLOW_OPERATION_MS;
 type PerformanceStore = { queryCount: number };
@@ -62,13 +63,15 @@ export function recordPrismaQuery() {
 export async function measureServerOperation<T>(
   label: string,
   operation: () => Promise<T>,
-  context: { route?: string; traceId?: string } = {},
+  context: { route?: string; traceId?: string; isFailure?: (result: T) => boolean } = {},
 ): Promise<T> {
   const startedAt = Date.now();
   const store: PerformanceStore = { queryCount: 0 };
   let status: "ok" | "error" = "ok";
   try {
-    return await performanceStorage.run(store, operation);
+    const result = await performanceStorage.run(store, operation);
+    if (context.isFailure?.(result)) status = "error";
+    return result;
   } catch (error) {
     status = "error";
     throw error;
@@ -76,7 +79,7 @@ export async function measureServerOperation<T>(
     const durationMs = Date.now() - startedAt;
     recordServerOperation(label, durationMs, status === "error");
     if (status === "error" || durationMs >= SLOW_OPERATION_MS) {
-      console.warn(JSON.stringify({
+      logTelemetry("warn", "server_operation", {
         type: "server_operation",
         operation: label,
         route: context.route ?? label,
@@ -84,7 +87,7 @@ export async function measureServerOperation<T>(
         durationMs,
         queryCount: store.queryCount,
         status,
-      }));
+      });
     }
   }
 }
