@@ -181,11 +181,17 @@ export const notificationPreferenceSchema = z.object({
 
 export const notificationListQuerySchema = z.object({
   take: z.coerce.number().int().min(1).max(100).default(50),
+  cursor: z.string().trim().min(1).max(128).optional(),
 }).strict();
 
-export const productionSearchQuerySchema = z.object({
-  q: z.string().trim().max(120).optional(),
+export const cursorPageQuerySchema = z.object({
+  cursor: z.string().trim().min(1).max(128).optional(),
+  pageSize: z.coerce.number().int().min(1).max(100).default(50),
 }).strict();
+
+export const productionSearchQuerySchema = cursorPageQuerySchema.extend({
+  q: z.string().trim().max(120).optional(),
+});
 
 export const missionListQuerySchema = productionSearchQuerySchema.extend({
   status: z.enum(MissionStatus).optional(),

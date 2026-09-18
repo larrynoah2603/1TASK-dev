@@ -12,6 +12,7 @@ import {
   type NotificationPreferenceInput,
 } from "@/lib/validation";
 import { KnowledgeArticleStatus } from "@prisma/client";
+import { normalizePageSize, toCursorPage, type CursorPageOptions } from "@/lib/cursor-pagination";
 
 function canManage(actor: UserContext) {
   return permissionCodes(actor).includes("knowledge:manage");
@@ -26,10 +27,15 @@ function isGlobalAdmin(actor: UserContext) {
 }
 
 export async function listKnowledgeArticles(actor: UserContext, query?: string) {
+  return (await listKnowledgeArticlesPage(actor, query, { pageSize: 100 })).items;
+}
+
+export async function listKnowledgeArticlesPage(actor: UserContext, query?: string, options: CursorPageOptions = {}) {
   actor = await requireCurrentActor(actor);
   if (!canRead(actor) && !canManage(actor)) throw new AuthorizationError("La lecture de la base de connaissances n’est pas autorisée.");
   const q = query?.trim();
-  return prisma.knowledgeArticle.findMany({
+  const pageSize = normalizePageSize(options.pageSize);
+  const rows = await prisma.knowledgeArticle.findMany({
     where: {
       ...(canManage(actor)
         ? {}
@@ -38,9 +44,11 @@ export async function listKnowledgeArticles(actor: UserContext, query?: string) 
       ...(q ? { OR: [{ title: { contains: q, mode: "insensitive" as const } }, { body: { contains: q, mode: "insensitive" as const } }, { tags: { has: q.toLowerCase() } }] } : {}),
     },
     include: { department: true, owner: { select: { id: true, name: true } } },
-    orderBy: [{ updatedAt: "desc" }, { title: "asc" }],
-    take: 100,
+    orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+    take: pageSize + 1,
+    ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
   });
+  return toCursorPage(rows, pageSize);
 }
 
 export async function createKnowledgeArticle(actor: UserContext, input: KnowledgeArticleInput) {

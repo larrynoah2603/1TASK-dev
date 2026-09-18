@@ -3,6 +3,8 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const service = readFileSync(resolve(process.cwd(), "lib/ticket-service.ts"), "utf8");
+const slaService = readFileSync(resolve(process.cwd(), "lib/ticket-sla-service.ts"), "utf8");
+const workflowService = readFileSync(resolve(process.cwd(), "lib/ticket-workflow-service.ts"), "utf8");
 
 function implementation(name: string, nextName: string) {
   return service.slice(service.indexOf(`export async function ${name}`), service.indexOf(`export async function ${nextName}`));
@@ -10,8 +12,8 @@ function implementation(name: string, nextName: string) {
 
 describe("atomicité de la traçabilité ticket", () => {
   it("journalise qualification et dérogation SLA dans leurs transactions", () => {
-    const qualification = implementation("qualifyTicket", "createTicketLink");
-    const exception = implementation("addSlaException", "assignTicket");
+    const qualification = workflowService.slice(workflowService.indexOf("export async function qualifyTicket"));
+    const exception = slaService.slice(slaService.indexOf("export async function addSlaException"));
 
     expect(qualification).toContain("prisma.$transaction");
     expect(qualification).toContain("tx.ticketEvent.create");
@@ -22,7 +24,7 @@ describe("atomicité de la traçabilité ticket", () => {
   });
 
   it("conserve les échéances SLA avant et après une reprise", () => {
-    const transition = implementation("transitionTicket", "addMessage");
+    const transition = workflowService.slice(workflowService.indexOf("export async function transitionTicket"));
 
     expect(transition).toContain("firstResponseDueAt: ticket.firstResponseDueAt");
     expect(transition).toContain("firstResponseDueAt: updated.firstResponseDueAt");

@@ -12,6 +12,7 @@ import {
 } from "@/lib/server-auth";
 import { appendAuditLog } from "@/lib/audit";
 import { visibleTicketWhere } from "@/lib/ticket-query-service";
+import { normalizePageSize, toCursorPage, type CursorPageOptions } from "@/lib/cursor-pagination";
 import {
   assetMovementSchema,
   assetSchema,
@@ -45,10 +46,15 @@ function departmentAllowed(actor: UserContext, departmentId: string | null | und
 }
 
 export async function listClientAccounts(actor: UserContext, query?: string) {
+  return (await listClientAccountsPage(actor, query, { pageSize: 100 })).items;
+}
+
+export async function listClientAccountsPage(actor: UserContext, query?: string, options: CursorPageOptions = {}) {
   actor = await requireCurrentActor(actor);
   ensurePermission(actor, "portfolio:read");
   const normalizedQuery = query?.trim();
-  return prisma.clientAccount.findMany({
+  const pageSize = normalizePageSize(options.pageSize);
+  const rows = await prisma.clientAccount.findMany({
     where: {
       isActive: true,
       ...(normalizedQuery ? { OR: [
@@ -57,11 +63,18 @@ export async function listClientAccounts(actor: UserContext, query?: string) {
       ] } : {}),
     },
     include: { _count: { select: { dossiers: true } } },
-    orderBy: { name: "asc" },
+    orderBy: [{ name: "asc" }, { id: "asc" }],
+    take: pageSize + 1,
+    ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
   });
+  return toCursorPage(rows, pageSize);
 }
 
 export async function listDossiersForViewer(actor: UserContext, query?: string) {
+  return (await listDossiersForViewerPage(actor, query, { pageSize: 100 })).items;
+}
+
+export async function listDossiersForViewerPage(actor: UserContext, query?: string, options: CursorPageOptions = {}) {
   actor = await requireCurrentActor(actor);
   ensurePermission(actor, "portfolio:read");
   const normalizedQuery = query?.trim();
@@ -74,12 +87,15 @@ export async function listDossiersForViewer(actor: UserContext, query?: string) 
     ] } : {}),
     ...(isGlobalAdmin(actor) ? {} : { missions: { some: { departmentId: actor.departmentId ?? "__none__" } } }),
   };
-  return prisma.clientDossier.findMany({
+  const pageSize = normalizePageSize(options.pageSize);
+  const rows = await prisma.clientDossier.findMany({
     where,
     include: { client: true, missions: { include: { department: true }, orderBy: { dueAt: "asc" } } },
-    orderBy: [{ client: { name: "asc" } }, { name: "asc" }],
-    take: 100,
+    orderBy: [{ client: { name: "asc" } }, { name: "asc" }, { id: "asc" }],
+    take: pageSize + 1,
+    ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
   });
+  return toCursorPage(rows, pageSize);
 }
 
 /** Lightweight projections used only by ticket filter comboboxes. */
@@ -472,10 +488,15 @@ export async function listAssetMoveTargets(actor: UserContext) {
 }
 
 export async function listAssetsForViewer(actor: UserContext, query?: string) {
+  return (await listAssetsForViewerPage(actor, query, { pageSize: 100 })).items;
+}
+
+export async function listAssetsForViewerPage(actor: UserContext, query?: string, options: CursorPageOptions = {}) {
   actor = await requireCurrentActor(actor);
   assertFunctionalAssetAdministrator(actor);
   const normalizedQuery = query?.trim();
-  return prisma.asset.findMany({
+  const pageSize = normalizePageSize(options.pageSize);
+  const rows = await prisma.asset.findMany({
     where: {
       ...(isGlobalAdmin(actor) ? {} : { departmentId: actor.departmentId ?? "__none__" }),
       ...(normalizedQuery ? { OR: [
@@ -485,9 +506,11 @@ export async function listAssetsForViewer(actor: UserContext, query?: string) {
       ] } : {}),
     },
     include: { department: true, assignedTo: { select: { id: true, name: true, email: true } } },
-    orderBy: { assetTag: "asc" },
-    take: 100,
+    orderBy: [{ assetTag: "asc" }, { id: "asc" }],
+    take: pageSize + 1,
+    ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
   });
+  return toCursorPage(rows, pageSize);
 }
 
 export async function createAsset(actor: UserContext, input: AssetInput) {

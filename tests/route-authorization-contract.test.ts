@@ -19,4 +19,32 @@ describe("contrat d’autorisation des routes API", () => {
 
     expect(localPermissionGuards).toEqual([]);
   });
+
+  it("interdit aux handlers d’évaluer eux-mêmes permissions et rôles", () => {
+    const apiDirectory = path.resolve(process.cwd(), "app/api");
+    const forbiddenAuthorizationLogic = findRouteFiles(apiDirectory).filter((routeFile) => {
+      const route = readFileSync(routeFile, "utf8");
+      return /\bhasPermission\s*\(|\bpermissionCodes\s*\(|roleAssignments|\.role\.code/.test(route);
+    });
+
+    expect(forbiddenAuthorizationLogic).toEqual([]);
+  });
+
+  it("centralise le périmètre du répertoire départemental", () => {
+    const route = readFileSync(path.resolve(process.cwd(), "app/api/departments/route.ts"), "utf8");
+    const authorization = readFileSync(path.resolve(process.cwd(), "lib/server-auth.ts"), "utf8");
+
+    expect(route).toContain("requirePermissionForTicketCreationDepartments");
+    expect(route).not.toContain("ticket:create:cross-department");
+    expect(authorization).toContain('hasPermission(actor, "ticket:create:cross-department")');
+  });
+
+  it("interdit les enveloppes d’erreur ad hoc dans les routes", () => {
+    const apiDirectory = path.resolve(process.cwd(), "app/api");
+    const adHocErrorResponses = findRouteFiles(apiDirectory).filter((routeFile) =>
+      /NextResponse\.json\s*\(\s*\{\s*error\s*:/.test(readFileSync(routeFile, "utf8")),
+    );
+
+    expect(adHocErrorResponses).toEqual([]);
+  });
 });

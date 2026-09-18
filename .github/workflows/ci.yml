@@ -40,6 +40,10 @@ jobs:
       NEXTAUTH_URL: http://localhost:3000
       NEXTAUTH_SECRET: ci-only-nextauth-secret-not-used-in-production
       CRON_SECRET: ci-only-cron-secret-not-used-in-production
+      MICROSOFT_ENTRA_ID_CLIENT_ID: ci-client-id
+      MICROSOFT_ENTRA_ID_CLIENT_SECRET: ci-client-secret
+      MICROSOFT_ENTRA_ID_TENANT_ID: ci-tenant-id
+      ALLOWED_EMAIL_DOMAIN: example.test
 
     steps:
       - name: Check out repository

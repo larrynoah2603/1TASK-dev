@@ -51,6 +51,7 @@ function walkTextSources(directory: string): string[] {
 }
 
 const ticketService = source("lib/ticket-service.ts");
+const ticketWorkflowService = source("lib/ticket-workflow-service.ts");
 const productionService = source("lib/production-service.ts");
 const notificationCenter = source("components/notification-center.tsx");
 const ticketSchema = source("prisma/schema.prisma");
@@ -145,9 +146,10 @@ describe("Prompt 8 — création, catalogue et département Entra", () => {
   });
 
   it("aligne les notifications de file sur la visibilité opérationnelle", () => {
-    expect(ticketService).toContain("administrativelyDisabled: false");
-    expect(ticketService).toContain("authorizedQueueId: queueId");
-    expect(ticketService).toContain("RoleCode.QUEUE_MANAGER");
+    const notificationService = source("lib/ticket-notification-service.ts");
+    expect(notificationService).toContain("administrativelyDisabled: false");
+    expect(notificationService).toContain("authorizedQueueId: queueId");
+    expect(notificationService).toContain("RoleCode.QUEUE_MANAGER");
   });
 
   it("reprend le département et le manager depuis le profil Microsoft Entra", () => {
@@ -315,7 +317,7 @@ describe("Prompt 8 — transitions, commentaires et SLA", () => {
     }, now);
 
     expect(paused.state).toBe("PAUSED");
-    const transition = section(ticketService, "export async function transitionTicket", "export async function addTicketMessage");
+    const transition = ticketWorkflowService.slice(ticketWorkflowService.indexOf("export async function transitionTicket"));
     expect(transition).toContain("pauseDurationMinutes");
     expect(transition).toContain("totalPausedMinutes");
     expect(transition).toContain("slaPausedAt");
@@ -335,8 +337,7 @@ describe("Prompt 8 — confidentialité, permissions et traçabilité", () => {
     const actions = [
       ["export async function createTicket", "export async function findCreatedTicketByToken"],
       ["export async function assignTicket", "export async function claimTicket"],
-      ["export async function claimTicket", "export async function transitionTicket"],
-      ["export async function transitionTicket", "export async function addTicketMessage"],
+      ["export async function claimTicket", "export async function addTicketMessage"],
       ["export async function transferTicket", "export async function grantConfidentialAccess"],
       ["export async function grantConfidentialAccess", "export async function listVisibleQueues"],
     ];
@@ -346,6 +347,10 @@ describe("Prompt 8 — confidentialité, permissions et traçabilité", () => {
       expect(action).toMatch(index === 0 ? /events:/ : /ticketEvent|recordAssignment/);
       expect(action).toMatch(/appendAuditLog|recordAssignment/);
     }
+
+    const transition = ticketWorkflowService.slice(ticketWorkflowService.indexOf("export async function transitionTicket"));
+    expect(transition).toContain("ticketEvent.create");
+    expect(transition).toContain("appendAuditLog");
 
     expect(ticketService).toContain("createInAppNotification");
     expect(source("lib/notifications.ts")).toContain("status: NotificationStatus.PENDING");
@@ -371,11 +376,11 @@ describe("Prompt 8 — routes, espaces et rôles", () => {
 
     for (const path of routes) {
       const content = readFileSync(path, "utf8");
-      expect(content, relative(projectRoot, path)).toMatch(/require(?:SessionUserContext|AdminAccess|Permission|Role|TicketAccess)/);
+      expect(content, relative(projectRoot, path)).toMatch(/require(?:SessionUserContext|AdminAccess|ApiPermission|Permission|Role|TicketAccess)/);
     }
 
     const job = source("app/api/jobs/sla-monitor/route.ts");
-    expect(job).toContain("process.env.CRON_SECRET");
+    expect(job).toContain("readServerEnvironment().CRON_SECRET");
     expect(job).toContain("authorization");
     expect(job).toContain("status: 403");
   });

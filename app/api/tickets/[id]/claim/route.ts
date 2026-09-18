@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { errorResponse } from "@/lib/http";
+import { apiErrorResponse, errorResponse } from "@/lib/http";
 import { claimTicket } from "@/lib/ticket-service";
 import { requireSessionUserContext } from "@/lib/server-auth";
 import { claimTicketSchema } from "@/lib/validation";
@@ -33,15 +33,7 @@ export async function POST(
 
     if (!isValidTicketId(id)) {
 
-      return NextResponse.json(
-        {
-          error:
-            "Identifiant ticket invalide.",
-        },
-        {
-          status: 400,
-        },
-      );
+      return apiErrorResponse({ message: "Identifiant ticket invalide.", code: "INVALID_IDENTIFIER", status: 400 });
 
     }
 
@@ -64,15 +56,7 @@ export async function POST(
 
       } catch {
 
-        return NextResponse.json(
-          {
-            error:
-              "Données invalides.",
-          },
-          {
-            status: 422,
-          },
-        );
+        return apiErrorResponse({ message: "Données invalides.", code: "VALIDATION_ERROR", status: 422 });
 
       }
 
