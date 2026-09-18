@@ -1,39 +1,114 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
+import type { ErrorDTO } from "@/contracts/error.dto";
+import { currentTraceId, logTelemetry, runWithRequestTrace, sanitizeTelemetry } from "@/lib/observability";
+import { measureServerOperation } from "@/lib/performance";
 
-type ErrorWithStatus = Error & { statusCode: number };
+type ErrorWithStatus = Error & {
+  statusCode: number;
+  code?: string;
+  context?: Record<string, unknown>;
+};
 type PrismaError = Error & { code: string };
 
 export type ApiErrorCode =
   | "VALIDATION_ERROR"
   | "INVALID_JSON"
+  | "INVALID_IDENTIFIER"
   | "AUTHENTICATION_REQUIRED"
   | "ACCESS_DENIED"
   | "RESOURCE_NOT_FOUND"
   | "RESOURCE_CONFLICT"
+  | "CONFIGURATION_ERROR"
   | "HTTP_ERROR"
   | "INTERNAL_ERROR";
 
-function jsonError(message: string, code: ApiErrorCode, status: number, traceId: string, details?: unknown) {
-  return NextResponse.json(
-    { error: message, code, traceId, ...(details === undefined ? {} : { details }) },
-    { status, headers: { "X-Request-Id": traceId } },
-  );
+type ApiErrorOptions = {
+  message: string;
+  code: ApiErrorCode;
+  status: number;
+  context?: Record<string, unknown>;
+  traceId?: string;
+};
+
+function safeContext(status: number, code: ApiErrorCode, context?: Record<string, unknown>): ErrorDTO["context"] {
+  return {
+    status,
+    category: code,
+    ...(context ? { details: sanitizeTelemetry(context) } : {}),
+  };
+}
+
+/** The single response factory for every expected API error. */
+export function apiErrorResponse(options: ApiErrorOptions) {
+  const traceId = options.traceId ?? currentTraceId() ?? randomUUID();
+  const body: ErrorDTO = {
+    message: options.message,
+    error: options.message,
+    code: options.code,
+    traceId,
+    context: safeContext(options.status, options.code, options.context),
+  };
+  return NextResponse.json(body, {
+    status: options.status,
+    headers: { "X-Request-Id": traceId },
+  });
 }
 
 function codeForStatus(status: number): ApiErrorCode {
+  if (status === 400) return "INVALID_IDENTIFIER";
   if (status === 401) return "AUTHENTICATION_REQUIRED";
   if (status === 403) return "ACCESS_DENIED";
   if (status === 404) return "RESOURCE_NOT_FOUND";
   if (status === 409) return "RESOURCE_CONFLICT";
+  if (status === 422) return "VALIDATION_ERROR";
+  if (status === 503) return "CONFIGURATION_ERROR";
   return "HTTP_ERROR";
 }
 
-function redactSensitive(value: string | undefined): string | undefined {
-  return value
-    ?.replace(/\b(password|token|secret)=([^\s&]+)/gi, "$1=[REDACTED]")
-    .replace(/Bearer\s+[^\s]+/gi, "Bearer [REDACTED]");
+export function httpErrorResponse(
+  message: string,
+  status: number,
+  context?: Record<string, unknown>,
+) {
+  return apiErrorResponse({ message, code: codeForStatus(status), status, context });
+}
+
+export function logServerError(
+  type: string,
+  error: unknown,
+  context?: Record<string, unknown>,
+) {
+  logTelemetry("error", type, {
+    type,
+    errorName: error instanceof Error ? error.name : "UnknownError",
+    ...(context ? { context } : {}),
+  });
+}
+
+type ApiHandler<Context> = (request: Request, context: Context) => Promise<Response>;
+
+/** Adds trace propagation, latency/query metrics and safe failure logging to an API handler. */
+export function withApiObservability<Context>(route: string, handler: ApiHandler<Context>): ApiHandler<Context> {
+  return (request, context) => runWithRequestTrace(request, async () => {
+    const traceId = currentTraceId() ?? randomUUID();
+    const startedAt = performance.now();
+    const response = await measureServerOperation(
+      `http.${request.method.toLowerCase()} ${route}`,
+      async () => {
+        try {
+          return await handler(request, context);
+        } catch (error) {
+          return errorResponse(error);
+        }
+      },
+      { route, traceId, isFailure: (result) => result.status >= 500 },
+    );
+    response.headers.set("X-Request-Id", traceId);
+    response.headers.set("Server-Timing", `app;dur=${Math.max(0, performance.now() - startedAt).toFixed(1)}`);
+    return response;
+  });
 }
 
 function hasValidStatusCode(error: unknown): error is ErrorWithStatus {
@@ -51,36 +126,57 @@ function isPrismaError(error: unknown): error is PrismaError {
     && typeof (error as { code?: unknown }).code === "string";
 }
 
+function isApiErrorCode(value: string | undefined): value is ApiErrorCode {
+  return [
+    "VALIDATION_ERROR", "INVALID_JSON", "INVALID_IDENTIFIER", "AUTHENTICATION_REQUIRED",
+    "ACCESS_DENIED", "RESOURCE_NOT_FOUND", "RESOURCE_CONFLICT", "CONFIGURATION_ERROR",
+    "HTTP_ERROR", "INTERNAL_ERROR",
+  ].includes(value ?? "");
+}
+
 export function errorResponse(error: unknown) {
   const traceId = randomUUID();
 
   if (error instanceof ZodError) {
-    return jsonError("Données invalides.", "VALIDATION_ERROR", 422, traceId, error.flatten());
+    return apiErrorResponse({
+      message: "Données invalides.",
+      code: "VALIDATION_ERROR",
+      status: 422,
+      traceId,
+      context: { fields: error.flatten() },
+    });
   }
 
   if (error instanceof SyntaxError) {
-    return jsonError("Corps JSON invalide.", "INVALID_JSON", 400, traceId);
+    return apiErrorResponse({ message: "Corps JSON invalide.", code: "INVALID_JSON", status: 400, traceId });
   }
 
   if (hasValidStatusCode(error)) {
-    return jsonError(error.message, codeForStatus(error.statusCode), error.statusCode, traceId);
+    return apiErrorResponse({
+      message: error.message,
+      code: isApiErrorCode(error.code) ? error.code : codeForStatus(error.statusCode),
+      status: error.statusCode,
+      traceId,
+      context: error.context,
+    });
   }
 
   if (isPrismaError(error)) {
     if (error.code === "P2002") {
-      return jsonError("Cette ressource existe déjà.", "RESOURCE_CONFLICT", 409, traceId);
+      return apiErrorResponse({ message: "Cette ressource existe déjà.", code: "RESOURCE_CONFLICT", status: 409, traceId });
     }
     if (error.code === "P2025") {
-      return jsonError("Ressource introuvable.", "RESOURCE_NOT_FOUND", 404, traceId);
+      return apiErrorResponse({ message: "Ressource introuvable.", code: "RESOURCE_NOT_FOUND", status: 404, traceId });
     }
   }
 
-  console.error(JSON.stringify({
-    type: "unhandled_api_error",
+  // Logs contain only classification data. Error messages, payloads, secrets
+  // and stack traces are deliberately excluded from monitoring output.
+  logServerError("unhandled_api_error", error, { traceId, code: "INTERNAL_ERROR" });
+  return apiErrorResponse({
+    message: "Une erreur inattendue est survenue.",
+    code: "INTERNAL_ERROR",
+    status: 500,
     traceId,
-    errorName: error instanceof Error ? error.name : "UnknownError",
-    message: redactSensitive(error instanceof Error ? error.message : String(error)),
-    stack: redactSensitive(error instanceof Error ? error.stack : undefined),
-  }));
-  return jsonError("Une erreur inattendue est survenue.", "INTERNAL_ERROR", 500, traceId);
+  });
 }

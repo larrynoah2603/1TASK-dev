@@ -1,0 +1,373 @@
+import { after } from "next/server";
+import { NotificationType, Prisma, RoleCode, TicketEventType, TicketStatus } from "@prisma/client";
+import { canViewTicket } from "@/lib/access-control";
+import { appendAuditLog } from "@/lib/audit";
+import { prisma } from "@/lib/db";
+import {
+  calculatePriorityFromImpactUrgency,
+  canConfirmResolution,
+  canReopenResolution,
+  canTransitionStatus,
+  isStaffRole,
+} from "@/lib/domain";
+import { DomainError } from "@/lib/domain-error";
+import { AuthorizationError, hasPermission, requireCurrentActor, roleCodes, toAccessSubject, type UserContext } from "@/lib/server-auth";
+import { createInAppNotifications } from "@/lib/notifications";
+import { logServerError } from "@/lib/http";
+import { recordAssignment } from "@/lib/ticket-assignment-service";
+import { accessTarget, ticketAccessInclude, ticketSecurityInclude } from "@/lib/ticket-access";
+import {
+  ticketQualificationSchema,
+  transitionTicketSchema,
+  type TicketQualificationInput,
+  type TransitionTicketInput,
+} from "@/lib/validation";
+
+function isFunctionalAdministrator(actor: UserContext): boolean {
+  return roleCodes(actor).includes(RoleCode.FUNCTIONAL_ADMIN);
+}
+
+function requireAdministrativeReason(actor: UserContext, reason: string | undefined) {
+  if (!isFunctionalAdministrator(actor)) return;
+  if (!reason || reason.trim().length < 10) {
+    throw new DomainError(
+      "Toute action exceptionnelle de l’administrateur fonctionnel doit comporter un motif d’au moins 10 caractères.",
+      422,
+    );
+  }
+}
+
+export async function qualifyTicket(actor: UserContext, ticketId: string, input: TicketQualificationInput) {
+  actor = await requireCurrentActor(actor);
+  const parsed = ticketQualificationSchema.parse(input);
+  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId }, include: ticketAccessInclude });
+  if (!ticket) throw new DomainError("Ticket introuvable.", 404);
+  const target = accessTarget(ticket);
+  const subject = toAccessSubject(actor);
+  if (!canViewTicket(subject, target) || !hasPermission(actor, "ticket:update", target) || !roleCodes(actor).some((role) => isStaffRole(role))) {
+    throw new AuthorizationError("La qualification n’est pas autorisée dans ce périmètre.");
+  }
+  if (ticket.status === TicketStatus.CLOSED) throw new DomainError("Un ticket clôturé ne peut plus être qualifié.", 409);
+  const priority = parsed.priority ?? calculatePriorityFromImpactUrgency(parsed.impact, parsed.urgency);
+  return prisma.$transaction(async (tx) => {
+    const changed = await tx.ticket.updateMany({
+      where: { id: ticketId, status: ticket.status },
+      data: {
+        impact: parsed.impact,
+        urgency: parsed.urgency,
+        priority,
+        priorityOverrideReason: parsed.priority ? parsed.reason : null,
+        legalDueAt: parsed.legalDueAt ?? null,
+      },
+    });
+    if (changed.count !== 1) throw new DomainError("Le ticket a changé avant la qualification. Rechargez la fiche puis réessayez.", 409);
+    const updated = await tx.ticket.findUnique({ where: { id: ticketId }, include: ticketSecurityInclude });
+    if (!updated) throw new DomainError("Ticket introuvable après la qualification.", 404);
+    await tx.ticketEvent.create({
+      data: {
+        ticketId,
+        actorId: actor.id,
+        queueId: ticket.queueId,
+        eventType: TicketEventType.QUALIFIED,
+        fromStatus: ticket.status,
+        toStatus: ticket.status,
+        metadata: { impact: parsed.impact, urgency: parsed.urgency, priority, legalDueAt: parsed.legalDueAt, reason: parsed.reason },
+      },
+    });
+    await appendAuditLog(tx, {
+      actorId: actor.id,
+      action: "TICKET_QUALIFIED",
+      objectType: "Ticket",
+      objectId: ticketId,
+      oldValue: { impact: ticket.impact, urgency: ticket.urgency, priority: ticket.priority, legalDueAt: ticket.legalDueAt },
+      newValue: { impact: parsed.impact, urgency: parsed.urgency, priority, legalDueAt: parsed.legalDueAt ?? null },
+      reason: parsed.reason,
+    });
+    return updated;
+  });
+}
+
+
+export async function transitionTicket(
+  actor: UserContext,
+  ticketId: string,
+  input: TransitionTicketInput,
+) {
+  actor = await requireCurrentActor(actor);
+  const parsed = transitionTicketSchema.parse(input);
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    include: {
+      ...ticketAccessInclude,
+      requester: true,
+      assignedTo: true,
+    },
+  });
+  if (!ticket) throw new DomainError("Ticket introuvable.", 404);
+  if (!canViewTicket(toAccessSubject(actor), accessTarget(ticket))) {
+    throw new AuthorizationError("Vous n’avez pas accès à ce ticket.");
+  }
+
+  const requesterAction = actor.id === ticket.requesterId;
+  if (!hasPermission(actor, "ticket:update")) {
+    throw new AuthorizationError("La permission de faire évoluer ce ticket n’est pas accordée.");
+  }
+  if (!canTransitionStatus(ticket.status, parsed.status, roleCodes(actor), requesterAction)) {
+    throw new AuthorizationError("Cette transition n’est pas autorisée pour votre rôle ou ce ticket.");
+  }
+  const actorRoles = roleCodes(actor);
+  const transitionTarget = accessTarget(ticket);
+  const isFunctionalAdminActor = actorRoles.includes(RoleCode.FUNCTIONAL_ADMIN);
+  if (parsed.status === TicketStatus.CLOSED) {
+    if (!canConfirmResolution(actorRoles, requesterAction)) {
+      throw new AuthorizationError("Seul le demandeur peut confirmer la résolution.");
+    }
+    if (requesterAction && !hasPermission(actor, "ticket:confirm-resolution", transitionTarget) && !isFunctionalAdminActor) {
+      throw new AuthorizationError("La confirmation de résolution n’est pas autorisée.");
+    }
+  }
+  if (parsed.status === TicketStatus.REOPENED) {
+    if (!canReopenResolution(actorRoles, requesterAction)) {
+      throw new AuthorizationError("Seul le demandeur ou un administrateur fonctionnel peut rouvrir ce ticket.");
+    }
+    if (requesterAction && !hasPermission(actor, "ticket:reopen", transitionTarget) && !isFunctionalAdminActor) {
+      throw new AuthorizationError("La réouverture n’est pas autorisée.");
+    }
+  }
+  if (parsed.status === TicketStatus.IN_PROGRESS && !hasPermission(actor, "ticket:process", transitionTarget) && !isFunctionalAdminActor) {
+    throw new AuthorizationError("La permission de démarrer le traitement n’est pas accordée.");
+  }
+  if (parsed.status === TicketStatus.BLOCKED && !hasPermission(actor, "ticket:block", transitionTarget) && !isFunctionalAdminActor) {
+    throw new AuthorizationError("La permission de bloquer ce ticket n’est pas accordée.");
+  }
+  if (parsed.status === TicketStatus.RESOLUTION_PENDING && !hasPermission(actor, "ticket:resolve", transitionTarget) && !isFunctionalAdminActor) {
+    throw new AuthorizationError("La permission de soumettre une résolution n’est pas accordée.");
+  }
+  const isAgentOnly = actorRoles.includes(RoleCode.AGENT) &&
+    !actorRoles.includes(RoleCode.QUEUE_MANAGER) &&
+    !actorRoles.includes(RoleCode.FUNCTIONAL_ADMIN);
+  if (
+    isAgentOnly &&
+    parsed.status !== TicketStatus.TO_QUALIFY &&
+    parsed.status !== TicketStatus.TO_ASSIGN &&
+    ticket.assignedToId !== actor.id
+  ) {
+    throw new AuthorizationError("Un agent ne peut traiter que le ticket qui lui est affecté.");
+  }
+  const administrativeOverride = isFunctionalAdministrator(actor);
+  requireAdministrativeReason(actor, parsed.reason);
+  if (
+    !requesterAction &&
+    (parsed.status === TicketStatus.IN_PROGRESS || parsed.status === TicketStatus.BLOCKED || parsed.status === TicketStatus.RESOLUTION_PENDING) &&
+    !ticket.assignedToId
+  ) {
+    throw new DomainError("Un agent doit être affecté avant cette transition.", 422);
+  }
+  if (parsed.status === TicketStatus.RESOLUTION_PENDING) {
+    if (!parsed.resolutionCause || !parsed.resolutionAction || !parsed.resolutionSolution) {
+      throw new DomainError("La cause, l’action réalisée et la solution sont obligatoires.", 422);
+    }
+  }
+  if (parsed.status === TicketStatus.BLOCKED && (!parsed.blockReason || !parsed.blockDetails)) {
+    throw new DomainError("Le motif et le détail du blocage sont obligatoires.", 422);
+  }
+  if (parsed.status === TicketStatus.REOPENED && !parsed.reopenedReason) {
+    throw new DomainError("Le motif de réouverture est obligatoire.", 422);
+  }
+
+  const now = new Date();
+  let totalPausedMinutes = ticket.totalPausedMinutes;
+  let pauseDurationMinutes = 0;
+  if (ticket.status === TicketStatus.BLOCKED && parsed.status !== TicketStatus.BLOCKED && ticket.slaPausedAt) {
+    pauseDurationMinutes = Math.max(
+      0,
+      Math.floor((now.getTime() - ticket.slaPausedAt.getTime()) / 60_000),
+    );
+    totalPausedMinutes += pauseDurationMinutes;
+  }
+  const pauseExtension = pauseDurationMinutes * 60_000;
+
+  const data: Prisma.TicketUncheckedUpdateInput = {
+    status: parsed.status,
+    assignedToId: parsed.status === TicketStatus.TO_ASSIGN ? null : undefined,
+    blockReason: parsed.status === TicketStatus.BLOCKED ? parsed.blockReason : null,
+    blockDetails: parsed.status === TicketStatus.BLOCKED ? parsed.blockDetails : null,
+    resolutionCause: parsed.resolutionCause ?? undefined,
+    resolutionAction: parsed.resolutionAction ?? undefined,
+    resolutionSolution: parsed.resolutionSolution ?? undefined,
+    preventiveAction: parsed.preventiveAction ?? undefined,
+    reopenedReason: parsed.status === TicketStatus.REOPENED ? parsed.reopenedReason : undefined,
+    resolvedAt:
+      parsed.status === TicketStatus.RESOLUTION_PENDING
+        ? now
+        : parsed.status === TicketStatus.REOPENED
+          ? null
+          : undefined,
+    closedAt:
+      parsed.status === TicketStatus.CLOSED
+        ? now
+        : parsed.status === TicketStatus.REOPENED
+          ? null
+          : undefined,
+    slaPausedAt:
+      parsed.status === TicketStatus.BLOCKED
+        ? ticket.slaPausedAt ?? now
+        : ticket.status === TicketStatus.BLOCKED
+          ? null
+          : undefined,
+    totalPausedMinutes,
+    firstResponseDueAt: pauseExtension && ticket.firstResponseDueAt && !ticket.firstRespondedAt
+      ? new Date(ticket.firstResponseDueAt.getTime() + pauseExtension)
+      : undefined,
+    resolutionDueAt: pauseExtension && ticket.resolutionDueAt && !ticket.resolvedAt
+      ? new Date(ticket.resolutionDueAt.getTime() + pauseExtension)
+      : undefined,
+  };
+
+  const notificationInputs: Parameters<typeof createInAppNotifications>[1] = [];
+  const updated = await prisma.$transaction(async (tx) => {
+    const changed = await tx.ticket.updateMany({
+      where: {
+        id: ticketId,
+        status: ticket.status,
+        assignedToId: ticket.assignedToId,
+      },
+      data,
+    });
+    if (changed.count !== 1) {
+      throw new DomainError("Le ticket a changé avant la transition. Rechargez la fiche puis réessayez.", 409);
+    }
+    const updated = await tx.ticket.findUnique({
+      where: { id: ticketId },
+      include: ticketSecurityInclude,
+    });
+    if (!updated) throw new DomainError("Ticket introuvable après la transition.", 404);
+    const eventType = parsed.status === TicketStatus.REOPENED
+      ? TicketEventType.REOPENED
+      : parsed.status === TicketStatus.CLOSED
+        ? TicketEventType.CLOSED
+        : parsed.status === TicketStatus.RESOLUTION_PENDING
+          ? TicketEventType.RESOLUTION_SUBMITTED
+          : TicketEventType.STATUS_CHANGED;
+    await tx.ticketEvent.create({
+      data: {
+        ticketId,
+        actorId: actor.id,
+        queueId: ticket.queueId,
+        eventType,
+        fromStatus: ticket.status,
+        toStatus: parsed.status,
+        metadata: {
+          blockReason: parsed.blockReason,
+          reopenedReason: parsed.reopenedReason,
+          reason: parsed.reason,
+          administrativeOverride,
+          pauseDurationMinutes,
+          totalPausedMinutes,
+          firstResponseDueAt: updated.firstResponseDueAt,
+          resolutionDueAt: updated.resolutionDueAt,
+        },
+      },
+    });
+    await appendAuditLog(tx, {
+      actorId: actor.id,
+      action: administrativeOverride ? "ADMINISTRATIVE_WORKFLOW_OVERRIDE" : "TICKET_STATUS_CHANGED",
+      objectType: "Ticket",
+      objectId: ticketId,
+      oldValue: {
+        status: ticket.status,
+        assignedToId: ticket.assignedToId,
+        totalPausedMinutes: ticket.totalPausedMinutes,
+        firstResponseDueAt: ticket.firstResponseDueAt,
+        resolutionDueAt: ticket.resolutionDueAt,
+      },
+      newValue: {
+        status: parsed.status,
+        assignedToId: updated.assignedTo?.id ?? null,
+        totalPausedMinutes,
+        firstResponseDueAt: updated.firstResponseDueAt,
+        resolutionDueAt: updated.resolutionDueAt,
+      },
+      reason: parsed.reason ?? parsed.reopenedReason ?? parsed.blockDetails,
+    });
+    if (parsed.status === TicketStatus.TO_ASSIGN && ticket.assignedToId) {
+      await recordAssignment(tx, {
+        ticketId,
+        queueId: ticket.queueId,
+        previousAssigneeId: ticket.assignedToId,
+        newAssigneeId: null,
+        assignedById: actor.id,
+        reason: parsed.reason ?? "Ticket retourné à la file pour affectation.",
+        fromStatus: ticket.status,
+        toStatus: parsed.status,
+        assignmentMode: "UNASSIGN",
+      });
+    }
+
+    if (administrativeOverride) {
+      const recipients = new Set(
+        [ticket.requesterId, ticket.assignedToId, ticket.queue.managerId]
+          .filter(Boolean)
+          .filter((recipientId) => recipientId !== actor.id) as string[],
+      );
+      for (const recipientId of recipients) {
+        notificationInputs.push({
+          recipientId,
+          ticketId,
+          type: NotificationType.ADMINISTRATIVE_ACTION,
+          title: "Action administrative sur un ticket",
+          body: `${actor.name} a fait évoluer ${ticket.reference} vers « ${parsed.status} ». Motif : ${parsed.reason}`,
+        });
+      }
+    }
+
+    if (parsed.status === TicketStatus.RESOLUTION_PENDING) {
+      notificationInputs.push({
+        recipientId: ticket.requesterId,
+        ticketId,
+        type: NotificationType.TICKET_RESOLVED,
+        title: "Résolution à confirmer",
+        body: `${ticket.reference} est marqué comme résolu. Confirmez la résolution ou demandez une reprise.`,
+      });
+    }
+    if (parsed.status === TicketStatus.CLOSED) {
+      notificationInputs.push({
+        recipientId: ticket.requesterId,
+        ticketId,
+        type: NotificationType.TICKET_RESOLVED,
+        title: "Ticket clôturé",
+        body: `${ticket.reference} a été clôturé.`,
+      });
+    }
+    if (parsed.status === TicketStatus.REOPENED) {
+      const recipients = new Set(
+        [ticket.assignedToId, ticket.queue.managerId].filter(Boolean) as string[],
+      );
+      for (const recipientId of recipients) {
+        notificationInputs.push({
+          recipientId,
+          ticketId,
+          type: NotificationType.TICKET_REOPENED,
+          title: "Ticket réouvert",
+          body: `${ticket.reference} a été réouvert : ${parsed.reopenedReason}`,
+        });
+      }
+    }
+    return updated;
+  }, {
+    maxWait: 10_000,
+    timeout: 15_000,
+  });
+
+  if (notificationInputs.length) {
+    after(async () => {
+      try {
+        await createInAppNotifications(prisma, notificationInputs);
+      } catch (notificationError) {
+        logServerError("ticket_transition_notification_failed", notificationError, { ticketId });
+      }
+    });
+  }
+
+  return updated;
+}

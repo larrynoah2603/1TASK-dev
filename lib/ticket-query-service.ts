@@ -6,6 +6,7 @@ import { readServerEnvironment } from "@/lib/env";
 import { measureServerOperation } from "@/lib/performance";
 import { requireCurrentActor, type UserContext } from "@/lib/server-auth";
 import { getTicketSlaState, SLA_RISK_WINDOW_MINUTES } from "@/lib/sla";
+import { toTicketListItemDomain } from "@/lib/mappers/ticket.mapper";
 
 type VisibilityOptions = {
   workQueue?: boolean;
@@ -455,7 +456,7 @@ async function listVisibleTicketsPageInternal(
   const total = exactTotal ?? tickets.length;
   const mapped = tickets.map((ticket) => {
     const sla = getTicketSlaState(ticket, now);
-    return { ...ticket, slaState: sla.state, slaDueAt: sla.dueAt };
+    return toTicketListItemDomain({ ...ticket, slaState: sla.state, slaDueAt: sla.dueAt });
   });
   return {
     tickets: mapped,
