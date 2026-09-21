@@ -65,7 +65,8 @@ describe("contrats de performance Prisma", () => {
     expect(implementation).toContain("take: TICKET_MESSAGE_WINDOW");
     expect(implementation).toContain("take: TICKET_ASSIGNMENT_WINDOW");
     expect(implementation).toContain("take: TICKET_EVENT_WINDOW");
-    expect(implementation).toContain("messages: ticket.messages.toReversed()");
+    expect(implementation).toContain("messages: [...ticket.messages].reverse()");
+    expect(implementation).not.toContain("ticket.messages.toReversed()");
   });
 
   it("utilise des projections légères pour les filtres portefeuille de la boîte agent", () => {

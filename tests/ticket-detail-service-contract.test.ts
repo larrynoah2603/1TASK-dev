@@ -24,4 +24,13 @@ describe("module de détail ticket", () => {
     expect(source("app/api/tickets/[id]/route.ts")).toContain("toTicketDetailDTO(ticket)");
     expect(source("app/(app)/tickets/[id]/page.tsx")).toContain('from "@/lib/ticket-detail-service"');
   });
+
+  it("ne transforme pas les erreurs techniques du détail en page introuvable", () => {
+    const page = source("app/(app)/tickets/[id]/page.tsx");
+
+    expect(page).toContain("error instanceof DomainError && error.statusCode === 404");
+    expect(page).toContain("error instanceof AuthorizationError");
+    expect(page).toContain("throw error");
+    expect(page).not.toContain("} catch {\n    notFound();");
+  });
 });
