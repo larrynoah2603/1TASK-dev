@@ -133,32 +133,79 @@ export function addBusinessMinutes(
 ): Date {
   if (minutes <= 0) return new Date(start);
 
+  if (
+    !calendar.workingDays.length ||
+    calendar.workdayEndMinute <= calendar.workdayStartMinute
+  ) {
+    throw new Error("Le calendrier SLA est invalide.");
+  }
+
   let cursor = new Date(start);
-  let remaining = minutes;
+  let remainingMs = minutes * 60_000;
   const timezone = calendar.timezone ?? "UTC";
 
-  while (remaining > 0) {
+  while (remainingMs > 0) {
     let local = zonedParts(cursor, timezone);
+
     if (!isWorkingDate(local, calendar)) {
       local = nextLocalDate(local);
-      cursor = localDateAtMinute(local, calendar.workdayStartMinute, timezone);
+      cursor = localDateAtMinute(
+        local,
+        calendar.workdayStartMinute,
+        timezone,
+      );
       continue;
     }
 
-    const startOfWork = localDateAtMinute(local, calendar.workdayStartMinute, timezone);
-    const endOfWork = localDateAtMinute(local, calendar.workdayEndMinute, timezone);
+    const startOfWork = localDateAtMinute(
+      local,
+      calendar.workdayStartMinute,
+      timezone,
+    );
 
-    if (cursor < startOfWork) cursor = startOfWork;
+    const endOfWork = localDateAtMinute(
+      local,
+      calendar.workdayEndMinute,
+      timezone,
+    );
+
+    if (cursor < startOfWork) {
+      cursor = startOfWork;
+    }
+
     if (cursor >= endOfWork) {
       local = nextLocalDate(local);
-      cursor = localDateAtMinute(local, calendar.workdayStartMinute, timezone);
+      cursor = localDateAtMinute(
+        local,
+        calendar.workdayStartMinute,
+        timezone,
+      );
       continue;
     }
 
-    const available = Math.floor((endOfWork.getTime() - cursor.getTime()) / 60_000);
-    const consumed = Math.min(available, remaining);
-    cursor = new Date(cursor.getTime() + consumed * 60_000);
-    remaining -= consumed;
+    const availableMs =
+      endOfWork.getTime() - cursor.getTime();
+
+    if (availableMs <= 0) {
+      local = nextLocalDate(local);
+      cursor = localDateAtMinute(
+        local,
+        calendar.workdayStartMinute,
+        timezone,
+      );
+      continue;
+    }
+
+    const consumedMs = Math.min(
+      availableMs,
+      remainingMs,
+    );
+
+    cursor = new Date(
+      cursor.getTime() + consumedMs,
+    );
+
+    remainingMs -= consumedMs;
   }
 
   return cursor;

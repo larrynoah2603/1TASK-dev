@@ -47,6 +47,54 @@ describe("calcul des SLA", () => {
     expect(result.toISOString()).toBe("2026-08-04T09:00:00.000Z");
   });
 
+  it("ne boucle pas avec des secondes et millisecondes en fin de journée", () => {
+  const result = addBusinessMinutes(
+    new Date("2026-09-21T16:59:32.381Z"),
+    2,
+    {
+      ...calendar,
+      timezone: "UTC",
+    },
+  );
+
+  expect(result.toISOString()).toBe(
+    "2026-09-22T08:01:32.381Z",
+  );
+});
+        it("calcule un SLA long depuis un timestamp réel de production", () => {
+  const start =
+    new Date("2026-09-21T07:59:32.381Z");
+
+  const deadlines = calculateSlaDeadlines(
+    start,
+    {
+      firstResponseMinutes: 480,
+      resolutionMinutes: 960,
+      calculationMode: SlaCalculationMode.ROLLING,
+    },
+    {
+      ...calendar,
+      timezone: "Indian/Antananarivo",
+    },
+  );
+
+  expect(deadlines.firstResponseDueAt)
+    .toBeInstanceOf(Date);
+
+  expect(deadlines.resolutionDueAt)
+    .toBeInstanceOf(Date);
+
+  expect(
+    deadlines.firstResponseDueAt.getTime(),
+  ).toBeGreaterThan(start.getTime());
+
+  expect(
+    deadlines.resolutionDueAt.getTime(),
+  ).toBeGreaterThan(
+    deadlines.firstResponseDueAt.getTime(),
+  );
+});
+
   it("distingue un SLA proche, dépassé et en pause", () => {
     const now = new Date(2026, 7, 3, 10, 0, 0);
     const base = {
