@@ -181,6 +181,7 @@ export function toAccessSubject(user: UserContext): AccessSubject {
     id: user.id,
     departmentId: user.departmentId,
     authorizedQueueId: user.authorizedQueueId,
+    managedQueueIds: user.managedQueues?.map((queue) => queue.id) ?? [],
     teamIds: user.teamMemberships
       .filter((membership) => membership.isActive && membership.team.isActive)
       .map((membership) => membership.team.id),

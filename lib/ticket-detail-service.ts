@@ -28,11 +28,15 @@ export function getTicketForViewer(actor: UserContext, ticketId: string) {
 
 async function getTicketForViewerInternal(actor: UserContext, ticketId: string): Promise<TicketDetailDomain> {
   actor = await requireCurrentActor(actor);
+  console.log({ ticketId, userId: actor.id, operation: "ticket.detail.start" });
   const accessRecord = await prisma.ticket.findUnique({ where: { id: ticketId }, include: ticketAccessInclude });
+  console.log({ found: Boolean(accessRecord), ticketId });
   if (!accessRecord) throw new DomainError("Ticket introuvable.", 404);
 
   const subject = toAccessSubject(actor);
-  if (!canViewTicket(subject, accessTarget(accessRecord))) {
+  const allowed = canViewTicket(subject, accessTarget(accessRecord));
+  console.log({ allowed, ticketId });
+  if (!allowed) {
     throw new AuthorizationError("Vous n’avez pas accès à ce ticket.");
   }
   const canSeeInternalMessages = canPostInternalMessage(roleCodes(actor)) &&
