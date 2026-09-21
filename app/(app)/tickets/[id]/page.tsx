@@ -8,10 +8,11 @@ import { TicketCommentThread } from "@/components/ticket-comment-thread";
 import { TicketSidePanel } from "@/components/ticket-side-panel";
 import { TicketStatusStrip } from "@/components/ticket-status-strip";
 import { BLOCK_REASON_LABELS, STATUS_LABELS, TYPE_LABELS } from "@/lib/domain";
+import { DomainError } from "@/lib/domain-error";
 import { getTicketSlaState } from "@/lib/sla";
 import { getTicketActionContext } from "@/lib/ticket-service";
 import { getTicketForViewer } from "@/lib/ticket-detail-service";
-import { getSessionUserContext, roleCodes } from "@/lib/server-auth";
+import { AuthorizationError, getSessionUserContext, roleCodes } from "@/lib/server-auth";
 
 const eventLabels: Record<string, string> = {
   CREATED: "Ticket créé",
@@ -50,12 +51,19 @@ function assignmentMode(metadata: unknown) {
 export default async function TicketDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUserContext();
   if (!user) return null;
+  const { id: ticketId } = await params;
 
   let ticket;
   try {
-    ticket = await getTicketForViewer(user, (await params).id);
-  } catch {
-    notFound();
+    ticket = await getTicketForViewer(user, ticketId);
+  } catch (error) {
+    if (
+      (error instanceof DomainError && error.statusCode === 404) ||
+      error instanceof AuthorizationError
+    ) {
+      notFound();
+    }
+    throw error;
   }
   if (!ticket) notFound();
 

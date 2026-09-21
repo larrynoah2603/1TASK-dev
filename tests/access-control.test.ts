@@ -50,6 +50,14 @@ describe("cloisonnement", () => {
     expect(canViewTicket({ id: "technical", roles: [{ code: RoleCode.TECHNICAL_ADMIN }] }, confidential)).toBe(false);
   });
 
+  it("aligne le détail sur la visibilité de la file gérée sans élargir les tickets confidentiels", () => {
+    const manager = { id: "manager", managedQueueIds: ["queue-network"], roles: [] };
+
+    expect(canViewTicket(manager, target)).toBe(true);
+    expect(canViewTicket(manager, { ...target, queueId: "queue-other" })).toBe(false);
+    expect(canViewTicket(manager, { ...target, confidential: true, authorizedUserIds: [] })).toBe(false);
+  });
+
   it("borne un agent global à ses équipes actives", () => {
     const agent = { id: "agent-global", roles: [{ code: RoleCode.AGENT }] };
     expect(canViewTicket(agent, { ...target, teamIds: ["team-network"] })).toBe(false);

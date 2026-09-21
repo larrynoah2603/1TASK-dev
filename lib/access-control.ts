@@ -16,6 +16,7 @@ export interface AccessSubject {
   id: string;
   departmentId?: string | null;
   authorizedQueueId?: string | null;
+  managedQueueIds?: string[];
   teamIds?: string[];
   roles: RoleScope[];
 }
@@ -97,6 +98,10 @@ export function canViewTicket(subject: AccessSubject, target: TicketAccessTarget
   if (target.confidential) {
     return target.authorizedUserIds?.includes(subject.id) ?? false;
   }
+
+  // Queue managers explicitly attached to a queue have the same operational
+  // visibility in ticket details as in ticket lists.
+  if (subject.managedQueueIds?.includes(target.queueId)) return true;
 
   const hasOperationalScope = hasScopedRole(
     subject,
