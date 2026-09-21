@@ -78,6 +78,7 @@ async function getTicketForViewerInternal(actor: UserContext, ticketId: string):
       },
     },
   });
+  console.log({ found: Boolean(ticket), ticketId, operation: "ticket.detail.content" });
   if (!ticket) throw new DomainError("Ticket introuvable.", 404);
 
   const latestAccess = await prisma.ticket.findUnique({ where: { id: ticketId }, include: ticketAccessInclude });
@@ -90,6 +91,7 @@ async function getTicketForViewerInternal(actor: UserContext, ticketId: string):
       ? prisma.worklog.aggregate({ where: { missionId: ticket.missionId }, _sum: { minutes: true } })
       : Promise.resolve({ _sum: { minutes: 0 } }),
   ]);
+  console.log({ ticketId, operation: "ticket.detail.worklogs.loaded" });
   const ticketDomain = toTicketDomain(ticket);
 
   return {
@@ -101,7 +103,9 @@ async function getTicketForViewerInternal(actor: UserContext, ticketId: string):
     serviceCatalogItem: ticket.serviceCatalogItem,
     dossier: ticket.dossier,
     mission: ticket.mission,
-    messages: ticket.messages.toReversed(),
+    // Keep the Prisma result immutable without relying on the deployment
+    // runtime implementing Array.prototype.toReversed.
+    messages: [...ticket.messages].reverse(),
     assignments: ticket.assignments,
     events: ticket.events,
     worklogSummary: {
