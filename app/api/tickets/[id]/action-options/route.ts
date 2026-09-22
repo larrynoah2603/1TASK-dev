@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { errorResponse } from "@/lib/http";
+import { apiErrorResponse, errorResponse } from "@/lib/http";
 import { listTicketAssignmentOptions, listTicketTransferOptions } from "@/lib/ticket-service";
 import { requireSessionUserContext } from "@/lib/server-auth";
 
@@ -19,10 +19,11 @@ export async function GET(
     if (kind === "transfer") {
       return NextResponse.json({ queues: await listTicketTransferOptions(actor, id) });
     }
-    return NextResponse.json(
-      { error: "Type d’options invalide." },
-      { status: 400 },
-    );
+    return apiErrorResponse({
+      message: "Type d’options invalide.",
+      code: "VALIDATION_ERROR",
+      status: 400,
+    });
   } catch (error) {
     return errorResponse(error);
   }
