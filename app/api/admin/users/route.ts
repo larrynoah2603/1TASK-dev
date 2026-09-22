@@ -1,43 +1,21 @@
 import { NextResponse } from "next/server";
+import { UserStatus } from "@prisma/client";
 import { errorResponse } from "@/lib/http";
-import { getAdminConfiguration } from "@/lib/admin-service";
+import { listAdminUsersPage } from "@/lib/admin-user-query-service";
 import { requireAdminAccess } from "@/lib/server-auth";
-import { cursorPageQuerySchema } from "@/lib/validation";
-
 export const dynamic = "force-dynamic";
-
-
 export async function GET(request: Request) {
   try {
-    const actor = await requireAdminAccess(
-      "FUNCTIONAL",
-    );
-
-    const searchParams = new URL(request.url).searchParams;
-    const page = cursorPageQuerySchema.parse({
-      cursor: searchParams.get("cursor") ?? undefined,
-      pageSize: searchParams.get("pageSize") ?? undefined,
+    const actor = await requireAdminAccess("FUNCTIONAL");
+    const params = new URL(request.url).searchParams;
+    const statusRaw = params.get("status");
+    const status = statusRaw && Object.values(UserStatus).includes(statusRaw as UserStatus) ? statusRaw as UserStatus : undefined;
+    const result = await listAdminUsersPage(actor, {
+      q: params.get("q") ?? undefined,
+      status,
+      page: Number(params.get("page") ?? "1") || 1,
+      pageSize: Number(params.get("pageSize") ?? "50") || 50,
     });
-    const configuration = await getAdminConfiguration(actor, ["users"], { users: page });
-
-
-    return NextResponse.json(
-      {
-        users: configuration.users,
-        pagination: {
-          pageSize: configuration.pagination.users.pageSize,
-          hasMore: configuration.pagination.users.hasMore,
-          nextCursor: configuration.pagination.users.nextCursor,
-        },
-      },
-      {
-        headers: {
-          "Cache-Control": "no-store",
-        },
-      },
-    );
-
-  } catch (error) {
-    return errorResponse(error);
-  }
+    return NextResponse.json(result, { headers: { "Cache-Control": "no-store" } });
+  } catch (error) { return errorResponse(error); }
 }
