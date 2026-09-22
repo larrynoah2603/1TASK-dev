@@ -3,7 +3,7 @@ import { RoleCode } from "@prisma/client";
 import { TicketTable } from "@/components/ticket-table";
 import { TicketFilters } from "@/components/ticket-filters";
 import { TicketViewSwitcher } from "@/components/ticket-view-switcher";
-import { Pagination } from "@/components/pagination";
+import { TicketCursorPagination } from "@/components/ticket-cursor-pagination";
 import { listVisibleTicketsPage } from "@/lib/ticket-query-service";
 import { listTicketQueueFilterOptions } from "@/lib/ticket-queue-service";
 import { getSessionUserContext, roleCodes } from "@/lib/server-auth";
@@ -16,7 +16,7 @@ export default async function TicketsPage({ searchParams }: { searchParams: Prom
   const params = ticketListQuerySchema.parse({ ...rawParams, scope: rawParams.scope ?? "requested" });
   const [queues, tickets] = await Promise.all([
     listTicketQueueFilterOptions(user, { includePersonal: true }),
-    listVisibleTicketsPage(user, { query: params.q, status: params.status, priority: params.priority, scope: params.scope, sla: params.sla, departmentId: params.departmentId, queueId: params.queueId, sort: params.sort, page: params.page, pageSize: params.pageSize }),
+    listVisibleTicketsPage(user, { query: params.q, status: params.status, priority: params.priority, scope: params.scope, sla: params.sla, departmentId: params.departmentId, queueId: params.queueId, sort: params.sort, cursor: params.cursor, pageSize: params.pageSize }, { includeTotal: false }),
   ]);
   const operationalRoles: RoleCode[] = [RoleCode.AGENT, RoleCode.QUEUE_MANAGER, RoleCode.FUNCTIONAL_ADMIN];
   const operational = roleCodes(user).some((role) => operationalRoles.includes(role));
@@ -34,7 +34,7 @@ export default async function TicketsPage({ searchParams }: { searchParams: Prom
       {operational ? <TicketViewSwitcher basePath="/inbox" scope="requested" includeRequested /> : null}
       <TicketFilters queues={queues} values={params} scopeOptions={["requested"]} />
       <TicketTable tickets={tickets.tickets} showActions={false} empty="Vous n’avez encore créé aucun ticket." />
-      <Pagination basePath="/tickets" query={{ q: params.q, status: params.status, priority: params.priority, scope: params.scope, sla: params.sla, departmentId: params.departmentId, queueId: params.queueId, sort: params.sort, pageSize: String(params.pageSize) }} page={tickets.page} totalPages={tickets.totalPages} total={tickets.total} pageSize={tickets.pageSize} />
+      <TicketCursorPagination basePath="/tickets" query={{ q: params.q, status: params.status, priority: params.priority, scope: params.scope, sla: params.sla, departmentId: params.departmentId, queueId: params.queueId, sort: params.sort, pageSize: String(params.pageSize) }} currentCursor={params.cursor} nextCursor={tickets.nextCursor} itemCount={tickets.tickets.length} pageSize={tickets.pageSize} />
     </div>
   );
 }

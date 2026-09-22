@@ -4,7 +4,7 @@ import { RoleCode } from "@prisma/client";
 import { DashboardKpiGrid, DashboardViewTabs, OperationsTicketTable, OperationsWatchPanel } from "@/components/dashboard-visuals";
 import { TicketFilters } from "@/components/ticket-filters";
 import { TicketViewSwitcher } from "@/components/ticket-view-switcher";
-import { Pagination } from "@/components/pagination";
+import { TicketCursorPagination } from "@/components/ticket-cursor-pagination";
 import { canActorClaimTicket } from "@/lib/ticket-service";
 import { getOperationalTicketSummary, listVisibleTickets, listVisibleTicketsPage } from "@/lib/ticket-query-service";
 import { listVisibleQueueFilterOptions } from "@/lib/ticket-queue-service";
@@ -58,7 +58,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
   const canPortfolio = permissionCodes(user).includes("portfolio:read");
   const [queues, ticketPage, portfolioOptions] = await Promise.all([
     measureServerOperation("inbox.queue_filters", () => listVisibleQueueFilterOptions(user), { route: "/inbox", section: "critical" }),
-    measureServerOperation("inbox.ticket_page", () => listVisibleTicketsPage(user, { page: params.page, pageSize: params.pageSize, sort: params.sort, workQueue: true, query: params.q, status: params.status, priority: params.priority, scope: params.scope, sla: params.sla, departmentId: params.departmentId, queueId: params.queueId, dossierId: params.dossierId, missionId: params.missionId }), { route: "/inbox", section: "critical" }),
+    measureServerOperation("inbox.ticket_page", () => listVisibleTicketsPage(user, { cursor: params.cursor, pageSize: params.pageSize, sort: params.sort, workQueue: true, query: params.q, status: params.status, priority: params.priority, scope: params.scope, sla: params.sla, departmentId: params.departmentId, queueId: params.queueId, dossierId: params.dossierId, missionId: params.missionId }, { includeTotal: false }), { route: "/inbox", section: "critical" }),
     canPortfolio
       ? measureServerOperation("inbox.portfolio_filters", () => listTicketPortfolioFilterOptions(user), { route: "/inbox", section: "filters" })
       : Promise.resolve([[], []] as const),
@@ -74,18 +74,18 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
       <DashboardViewTabs active="operations" canOperate canReport={canReport} />
       <header className="dashboard-hero dashboard-role-hero">
         <div><p className="eyebrow">Opérations</p><h1>File opérationnelle</h1><p className="page-header-description">Tickets à traiter dans votre périmètre.</p></div>
-        <span className="dashboard-hero-counter">{ticketPage.total} visibles</span>
+        <span className="dashboard-hero-counter">{ticketPage.tickets.length} sur cette page</span>
       </header>
 
       <Suspense fallback={<InboxKpiSkeleton />}><InboxKpis user={user} /></Suspense>
 
       <div className="dashboard-operations-grid">
         <section className="dashboard-widget dashboard-operations-table-card" aria-labelledby="operations-table-title">
-          <div className="dashboard-widget-header"><div><p className="eyebrow">Boîte agent</p><h2 id="operations-table-title">Tickets à traiter</h2></div><span className="dashboard-widget-total">{ticketPage.total} visibles</span></div>
+          <div className="dashboard-widget-header"><div><p className="eyebrow">Boîte agent</p><h2 id="operations-table-title">Tickets à traiter</h2></div><span className="dashboard-widget-total">{ticketPage.tickets.length} chargés</span></div>
           <TicketViewSwitcher scope={params.scope} sla={params.sla} basePath="/inbox" />
           <TicketFilters queues={queues} dossiers={dossiers} missions={missions} values={params} resetHref="/inbox" scopeOptions={["all", "unassigned", "mine", "team"]} />
           <OperationsTicketTable tickets={currentRows} claimableTicketIds={claimableTicketIds} />
-          <Pagination basePath="/inbox" query={{ q: params.q, status: params.status, priority: params.priority, scope: params.scope, sla: params.sla, departmentId: params.departmentId, queueId: params.queueId, dossierId: params.dossierId, missionId: params.missionId, sort: params.sort, pageSize: String(params.pageSize) }} page={ticketPage.page} totalPages={ticketPage.totalPages} total={ticketPage.total} pageSize={ticketPage.pageSize} />
+          <TicketCursorPagination basePath="/inbox" query={{ q: params.q, status: params.status, priority: params.priority, scope: params.scope, sla: params.sla, departmentId: params.departmentId, queueId: params.queueId, dossierId: params.dossierId, missionId: params.missionId, sort: params.sort, pageSize: String(params.pageSize) }} currentCursor={params.cursor} nextCursor={ticketPage.nextCursor} itemCount={currentRows.length} pageSize={ticketPage.pageSize} />
         </section>
         <Suspense fallback={<InboxWatchSkeleton />}><InboxSlaWatch user={user} /></Suspense>
       </div>

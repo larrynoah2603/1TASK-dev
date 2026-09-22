@@ -511,7 +511,7 @@ async function listVisibleTicketsPageInternal(
     }),
     includeTotal ? prisma.ticket.count({ where }) : Promise.resolve(null),
   ]);
-  const hasMore = exactTotal === null ? ticketRows.length > pageSize : page * pageSize < exactTotal;
+  const hasMore = cursor || exactTotal === null ? ticketRows.length > pageSize : page * pageSize < exactTotal;
   const tickets = ticketRows.slice(0, pageSize);
   const total = exactTotal ?? tickets.length;
   const mapped = tickets.map((ticket) => {
