@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import type { Route } from "next";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchWithTimeout } from "@/lib/client-http";
+import { useNotificationState } from "@/components/notification-state";
 
 type NotificationItem = {
   id: string;
@@ -15,10 +16,7 @@ type NotificationItem = {
   createdAt: string;
 };
 
-type NotificationResponse = {
-  unreadCount: number;
-  notifications: NotificationItem[];
-};
+type NotificationResponse = { notifications: NotificationItem[] };
 
 function relativeDate(value: string) {
   const date = new Date(value);
@@ -31,46 +29,33 @@ function relativeDate(value: string) {
   return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
 }
 
-export function NotificationCenter({ initialUnreadCount = 0 }: { initialUnreadCount?: number }) {
+export function NotificationCenter() {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [unreadCount, setUnreadCount] = useState(initialUnreadCount);
+  const { unreadCount, setUnreadCount } = useNotificationState();
   const ref = useRef<HTMLDivElement>(null);
   const requestInFlight = useRef(false);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadNotifications = async () => {
-      if (requestInFlight.current) return;
-      requestInFlight.current = true;
-      setError("");
-      try {
-        const response = await fetchWithTimeout("/api/notifications?take=8", { cache: "no-store" }, 8_000);
-        if (!response.ok) throw new Error("Les notifications sont temporairement indisponibles.");
-        const data = await response.json() as NotificationResponse;
-        if (cancelled) return;
-        setItems(data.notifications ?? []);
-        setUnreadCount(Number.isFinite(data.unreadCount) ? data.unreadCount : 0);
-        setLoaded(true);
-      } catch {
-        if (!cancelled) {
-          setError("Les notifications n’ont pas pu être chargées.");
-          setLoaded(true);
-        }
-      } finally {
-        requestInFlight.current = false;
-      }
-    };
-
-    void loadNotifications();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const loadNotifications = useCallback(async () => {
+    if (loaded || requestInFlight.current) return;
+    requestInFlight.current = true;
+    setError("");
+    try {
+      const response = await fetchWithTimeout("/api/notifications?take=8", { cache: "no-store" }, 8_000);
+      if (!response.ok) throw new Error("Les notifications sont temporairement indisponibles.");
+      const data = await response.json() as NotificationResponse;
+      setItems(data.notifications ?? []);
+      setLoaded(true);
+    } catch {
+      setError("Les notifications n’ont pas pu être chargées.");
+      setLoaded(true);
+    } finally {
+      requestInFlight.current = false;
+    }
+  }, [loaded]);
 
   useEffect(() => {
     if (!open) return;
@@ -119,7 +104,7 @@ export function NotificationCenter({ initialUnreadCount = 0 }: { initialUnreadCo
 
   return (
     <div ref={ref} className="notification-anchor notification-center-industrial">
-      <button type="button" onClick={() => setOpen((value) => !value)} className="topbar-icon-button notification-trigger relative" aria-label={`Notifications${unreadCount ? `, ${unreadCount} non lue(s)` : ""}`} aria-expanded={open} aria-haspopup="dialog" title="Notifications">
+      <button type="button" onClick={() => setOpen((value) => { const next = !value; if (next) void loadNotifications(); return next; })} className="topbar-icon-button notification-trigger relative" aria-label={`Notifications${unreadCount ? `, ${unreadCount} non lue(s)` : ""}`} aria-expanded={open} aria-haspopup="dialog" title="Notifications">
         <span aria-hidden="true" className="notification-trigger-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path strokeLinecap="round" strokeLinejoin="round" d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-7-3-9M10 21h4" /></svg></span>
         {unreadCount ? <span className="notification-count">{unreadCount > 9 ? "9+" : unreadCount}</span> : null}
       </button>
