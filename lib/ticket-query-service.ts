@@ -297,15 +297,13 @@ async function buildTicketListWhere(actor: UserContext, options: TicketListOptio
         filters.push({ id: "__no_active_team_membership__" });
         break;
       }
-      const teamMembers = await prisma.teamMember.findMany({
-        where: {
-          teamId: { in: teamIds },
-          isActive: true,
-          user: { status: "ACTIVE" },
-        },
-        select: { userId: true },
-      });
-      const userIds = [...new Set(teamMembers.map((member) => member.userId))];
+      const teamIdsKey = [...teamIds].sort().join("|");
+      const teamMembers = await loadActiveTeamMemberRows(teamIdsKey);
+      const userIds = [...new Set(
+        teamMembers
+          .filter((member) => teamIds.includes(member.teamId))
+          .map((member) => member.userId),
+      )];
       filters.push(userIds.length ? { assignedToId: { in: userIds } } : { id: "__no_active_team_members__" });
       break;
     }
