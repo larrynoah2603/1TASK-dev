@@ -50,12 +50,16 @@ describe("pagination des listes à forte cardinalité", () => {
       "app/api/production/clients/route.ts",
       "app/api/production/dossiers/route.ts",
       "app/api/production/assets/route.ts",
-      "app/api/admin/users/route.ts",
     ]) {
       const route = source(path);
       expect(route, path).toContain("pagination");
       expect(route, path).toContain("nextCursor");
     }
+
+    const adminUsers = source("app/api/admin/users/route.ts");
+    expect(adminUsers).toContain("listAdminUsersPage");
+    expect(adminUsers).toContain("pageSize");
+    expect(adminUsers).toContain("page:");
   });
 
   it("laisse le reporting sur des agrégats SQL sans charger les tickets", () => {

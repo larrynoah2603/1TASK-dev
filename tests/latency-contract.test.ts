@@ -15,7 +15,9 @@ describe("contrats de stabilisation des chargements serveur", () => {
     expect(admin).toContain('measureServerOperation("admin.configuration"');
     expect(admin).toContain("getAdminUserSummary");
     expect(page).toContain('["sla"]');
-    expect(usersPage).toContain('["users"]');
+    expect(usersPage).toContain("listAdminUsersPage(admin");
+    expect(usersPage).toContain("getAdminUserStatusSummary(admin)");
+    expect(usersPage).toContain("getAdminUserFormReferences(admin)");
   });
 
   it("utilise les compteurs tickets ciblés pour l’inbox", () => {

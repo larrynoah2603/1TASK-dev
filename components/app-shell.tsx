@@ -7,7 +7,7 @@ import { GlobalSearch } from "@/components/global-search";
 import { HelpMenu } from "@/components/help-menu";
 import { NewTicketLauncher } from "@/components/new-ticket-launcher";
 import { NotificationCenter } from "@/components/notification-center";
-import { NotificationBadge, NotificationStateProvider } from "@/components/notification-state";
+import { NotificationBadge, NotificationProvider } from "@/components/notification-state";
 import { ProfileMenu } from "@/components/profile-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ShellNavLink } from "@/components/shell-nav-link";
@@ -91,7 +91,7 @@ export async function AppShell({ user, children }: { user: UserContext; children
         {groups.map((group) => {
           const groupLinks = visibleLinks.filter((link) => link.group === group);
           if (!groupLinks.length) return null;
-          return <div key={group} className="sidebar-nav-group"><p className="sidebar-label">{group}</p>{groupLinks.map((link) => <ShellNavLink key={link.href} href={link.href} icon={<AppIcon kind={link.icon} />}><span className="flex min-w-0 items-center gap-2 truncate">{link.label}{link.href === "/notifications" ? <NotificationBadge compact /> : null}</span></ShellNavLink>)}</div>;
+          return <div key={group} className="sidebar-nav-group"><p className="sidebar-label">{group}</p>{groupLinks.map((link) => <ShellNavLink key={link.href} href={link.href} icon={<AppIcon kind={link.icon} />}><span className="flex min-w-0 items-center gap-2 truncate">{link.label}{link.href === "/notifications" ? <NotificationBadge /> : null}</span></ShellNavLink>)}</div>;
         })}
       </nav>}
     user={<div className="sidebar-user-block sidebar-user-block-industrial sidebar-extra hidden md:block"><div className="sidebar-user-avatar">{user.image ? <img src={user.image} alt="" /> : initials(user.name)}</div><div className="min-w-0"><p className="sidebar-user-name truncate">{user.name}</p><p className="sidebar-user-context truncate">{user.department?.name ?? "Service desk interne"}</p></div></div>}
@@ -99,5 +99,5 @@ export async function AppShell({ user, children }: { user: UserContext; children
   // TopHeader owns the topbar-layout-industrial presentation while this server component keeps access and data concerns.
   const topbar = <TopHeader context={<TopbarContext />} search={<GlobalSearch />} actions={<>{canCreate ? <NewTicketLauncher /> : null}<NotificationCenter /><HelpMenu /><ThemeToggle /><ProfileMenu name={user.name} email={user.email} image={user.image} department={user.department?.name ?? "Département non renseigné"} roles={roleLabel} admin={isAdmin} /></>} />;
   const mobileNavigation = <MobileNavigation links={visibleLinks.map((link) => ({ ...link, icon: <AppIcon kind={link.icon} /> }))} canCreate={canCreate} />;
-  return <NotificationStateProvider><CollapsibleShell variant="app" sidebar={sidebar} topbar={topbar} mobileNavigation={mobileNavigation}>{children}</CollapsibleShell></NotificationStateProvider>;
+  return <NotificationProvider><CollapsibleShell variant="app" sidebar={sidebar} topbar={topbar} mobileNavigation={mobileNavigation}>{children}</CollapsibleShell></NotificationProvider>;
 }

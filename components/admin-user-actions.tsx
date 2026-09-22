@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { AdminManagerSearch } from "@/components/admin-manager-search";
 import { Combobox } from "@/components/combobox";
 import { useToast } from "@/components/toast-provider";
 
@@ -36,7 +37,6 @@ type Options = {
   queues: { id: string; name: string; isActive: boolean; department: { id: string; name: string } }[];
   teams: { id: string; name: string; isActive: boolean; queue: { id: string; name: string; departmentId: string } }[];
   roles: { code: string; name: string }[];
-  managers: { id: string; name: string; email: string; status: Status; departmentId: string | null }[];
 };
 
 function statusLabel(status: Status) {
@@ -145,9 +145,6 @@ export function AdminUserActions({
   }
 
   const displayName = user.managedDisplayName ?? user.entraDisplayName ?? user.name;
-  const filteredManagers = options.managers.filter(
-    (item) => item.id !== user.id && item.status === "ACTIVE" && Boolean(departmentId) && item.departmentId === departmentId,
-  );
   const filteredTeams = options.teams.filter(
     (item) => item.isActive && Boolean(departmentId) && item.queue.departmentId === departmentId,
   );
@@ -206,7 +203,14 @@ export function AdminUserActions({
             </label>
             <label className="grid gap-1 text-xs font-semibold text-slate-600">
               Manager applicatif
-              <Combobox name="managerId" value={managerId} onChange={setManagerId} disabled={!departmentId} options={[{ value: "", label: departmentId ? "Non affecté" : "Sélectionnez d’abord un département" }, ...filteredManagers.map((item) => ({ value: item.id, label: `${item.name} — ${item.email}` }))]} />
+              <AdminManagerSearch
+                name="managerId"
+                value={managerId}
+                onChange={setManagerId}
+                departmentId={departmentId}
+                excludeId={user.id}
+                currentManager={user.manager}
+              />
             </label>
             <label className="grid gap-1 text-xs font-semibold text-slate-600">
               Rôle principal

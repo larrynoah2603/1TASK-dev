@@ -9,10 +9,7 @@ export async function GET() {
   try {
     const actor = await requireSessionUserContext();
     const unreadCount = await countUnreadNotifications(actor);
-    return NextResponse.json(
-      { unreadCount },
-      { headers: { "Cache-Control": "no-store" } },
-    );
+    return NextResponse.json({ unreadCount });
   } catch (error) {
     return errorResponse(error);
   }

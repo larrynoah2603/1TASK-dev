@@ -15,8 +15,10 @@ describe("lot 4 identity industrial visual contract", () => {
     const center = source("components/notification-center.tsx");
 
     expect(page).toContain("requireAuthenticatedUser()");
-    expect(page).toContain("listUserNotifications(user, 100)");
-    expect(list).toContain('fetchWithTimeout("/api/notifications?take=100"');
+    expect(page).toContain("listUserNotificationsPage(user, { pageSize: 25 })");
+    expect(list).toContain("loadMore");
+    expect(list).toContain("nextCursor");
+    expect(list).toContain("`/api/notifications?take=${pageSize}`");
     expect(list).toContain('fetchWithTimeout("/api/notifications/read-all"');
     expect(center).toContain('fetchWithTimeout("/api/notifications?take=8"');
     expect(center).toContain('fetchWithTimeout("/api/notifications/read-all"');

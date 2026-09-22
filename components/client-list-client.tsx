@@ -53,7 +53,6 @@ export function ClientListClient({ initialClients, canManage }: { initialClients
       }
       toast("Client créé avec succès.");
       router.push(`/clients/${data.id}` as Route);
-      router.refresh();
     } catch {
       setError("Le serveur n’a pas pu créer le client.");
     } finally {

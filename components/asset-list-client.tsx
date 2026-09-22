@@ -49,7 +49,6 @@ export function AssetListClient({ initialAssets, departments, users, canManage }
       if (!response.ok || !data.id) { setError(data.error ?? "La création de l’actif a échoué."); return; }
       toast("Actif créé avec succès.");
       router.push(`/assets/${data.id}` as Route);
-      router.refresh();
     } catch { setError("Le serveur n’a pas pu créer l’actif."); } finally { setSubmitting(false); }
   }
 

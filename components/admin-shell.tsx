@@ -6,7 +6,7 @@ import { CollapsibleShell } from "@/components/collapsible-shell";
 import { GlobalSearch } from "@/components/global-search";
 import { HelpMenu } from "@/components/help-menu";
 import { NotificationCenter } from "@/components/notification-center";
-import { NotificationStateProvider } from "@/components/notification-state";
+import { NotificationProvider } from "@/components/notification-state";
 import { ProfileMenu } from "@/components/profile-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ShellNavLink } from "@/components/shell-nav-link";
@@ -123,5 +123,5 @@ export async function AdminShell({ user, children }: { user: UserContext; childr
     </div>
   );
 
-  return <NotificationStateProvider><div className="admin-industrial"><CollapsibleShell variant="admin" sidebar={sidebar} topbar={topbar}>{children}</CollapsibleShell></div></NotificationStateProvider>;
+  return <NotificationProvider><div className="admin-industrial"><CollapsibleShell variant="admin" sidebar={sidebar} topbar={topbar}>{children}</CollapsibleShell></div></NotificationProvider>;
 }

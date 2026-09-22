@@ -92,7 +92,6 @@ export function DossierListClient({
       setName("");
       setConfidential(false);
       router.push(`/dossiers/${data.id}` as Route);
-      router.refresh();
     } catch {
       setError("Le serveur n’a pas pu créer le dossier.");
     } finally {

@@ -64,7 +64,13 @@ export function recordPrismaQuery() {
 export async function measureServerOperation<T>(
   label: string,
   operation: () => Promise<T>,
-  context: { route?: string; traceId?: string; isFailure?: (result: T) => boolean } = {},
+  context: {
+    route?: string;
+    traceId?: string;
+    section?: "critical" | "secondary" | "filters" | "shell" | "mutation" | string;
+    payloadBytes?: number;
+    isFailure?: (result: T) => boolean;
+  } = {},
 ): Promise<T> {
   const startedAt = Date.now();
   const store: PerformanceStore = { queryCount: 0 };
@@ -79,17 +85,19 @@ export async function measureServerOperation<T>(
   } finally {
     const durationMs = Date.now() - startedAt;
     recordServerOperation(label, durationMs, status === "error");
-    if (status === "error" || durationMs >= getSlowOperationThreshold()) {
-      logTelemetry("warn", "server_operation", {
-        type: "server_operation",
-        operation: label,
-        route: context.route ?? label,
-        traceId: context.traceId ?? randomUUID(),
-        durationMs,
-        queryCount: store.queryCount,
-        status,
-      });
-    }
+    const slow = durationMs >= getSlowOperationThreshold();
+    logTelemetry(status === "error" || slow ? "warn" : "info", "server_operation", {
+      type: "server_operation",
+      operation: label,
+      route: context.route ?? label,
+      section: context.section,
+      traceId: context.traceId ?? randomUUID(),
+      durationMs,
+      queryCount: store.queryCount,
+      payloadBytes: context.payloadBytes,
+      status,
+      slow,
+    });
   }
 }
 

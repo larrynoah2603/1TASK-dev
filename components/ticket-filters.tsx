@@ -1,12 +1,12 @@
 "use client";
 
-import type { Route } from "next";
 import { Priority, TicketStatus } from "@prisma/client";
+import { useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { type FormEvent, useTransition } from "react";
 import { PRIORITY_LABELS, STATUS_LABELS } from "@/lib/domain";
 import type { TicketListScope, TicketListSlaFilter, TicketListSort } from "@/lib/ticket-service";
 import { Combobox } from "@/components/combobox";
+import { buildTicketFilterHref } from "@/lib/ticket-filter-navigation";
 
 type QueueOption = {
   id: string;
@@ -55,9 +55,26 @@ export function TicketFilters({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const nextValues = Object.fromEntries(
+      ["q", "scope", "status", "priority", "sla", "sort", "departmentId", "queueId", "dossierId", "missionId"]
+        .map((name) => [name, String(formData.get(name) ?? "")]),
+    );
+    const href = buildTicketFilterHref(pathname, searchParams.toString(), nextValues);
+    startTransition(() => router.replace(href, { scroll: false }));
+  }
+
+  function handleReset() {
+    startTransition(() => router.replace(resetHref, { scroll: false }));
+  }
+
   const departments = [...new Map(queues.map((queue) => [queue.department.id, queue.department])).values()]
     .sort((left, right) => left.name.localeCompare(right.name));
   const availableMissions = values.dossierId ? missions.filter((mission) => mission.dossier.id === values.dossierId) : missions;
+  const filterStateKey = JSON.stringify(values);
 
   function submitFilters(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -80,7 +97,7 @@ export function TicketFilters({
   }
 
   return (
-    <form aria-label="Filtres de tickets" className="filter-panel grid gap-3 md:grid-cols-2 xl:grid-cols-4" onSubmit={submitFilters}>
+    <form key={filterStateKey} aria-label="Filtres de tickets" className="filter-panel grid gap-3 md:grid-cols-2 xl:grid-cols-4" onSubmit={handleSubmit}>
       <div className="filter-heading md:col-span-2 xl:col-span-4">
         <div><p className="eyebrow">Affiner la vue</p><p className="mt-1 text-xs text-slate-500">Recherchez et réduisez la liste selon votre périmètre autorisé.</p></div>
         <span className="filter-heading-hint">{isPending ? "Mise à jour…" : "Filtres persistants dans l’URL"}</span>
@@ -133,9 +150,9 @@ export function TicketFilters({
         <Combobox name="missionId" defaultValue={values.missionId ?? ""} placeholder="Toutes les missions autorisées" options={[{ value: "", label: "Toutes les missions autorisées" }, ...availableMissions.map((mission) => ({ value: mission.id, label: `${mission.code} · ${mission.name}` }))]} />
       </label> : null}
       <div className="flex flex-wrap items-center gap-3 md:col-span-2 xl:col-span-4">
-        <button type="submit" disabled={isPending} className="button-primary disabled:opacity-60">{isPending ? "Filtrage…" : "Filtrer"}</button>
-        <button type="button" disabled={isPending} onClick={resetFilters} className="button-ghost min-h-10 text-xs disabled:opacity-60">Réinitialiser</button>
-        <span className="text-[11px] text-slate-400">Départements et files limités à votre périmètre serveur.</span>
+        <button type="submit" disabled={isPending} className="button-primary disabled:opacity-60">{isPending ? "Mise à jour…" : "Filtrer"}</button>
+        <button type="button" disabled={isPending} onClick={handleReset} className="button-ghost min-h-10 text-xs disabled:opacity-60">Réinitialiser</button>
+        <span aria-live="polite" className="text-[11px] text-slate-400">{isPending ? "Actualisation des résultats…" : "Départements et files limités à votre périmètre serveur."}</span>
       </div>
     </form>
   );

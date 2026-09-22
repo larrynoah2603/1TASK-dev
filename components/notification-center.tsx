@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import type { Route } from "next";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useNotificationState } from "@/components/notification-state";
 import { fetchWithTimeout } from "@/lib/client-http";
 import { useNotificationState } from "@/components/notification-state";
 
@@ -39,8 +40,8 @@ export function NotificationCenter() {
   const ref = useRef<HTMLDivElement>(null);
   const requestInFlight = useRef(false);
 
-  const loadNotifications = useCallback(async () => {
-    if (loaded || requestInFlight.current) return;
+  async function loadNotifications() {
+    if (requestInFlight.current) return;
     requestInFlight.current = true;
     setError("");
     try {
@@ -48,6 +49,7 @@ export function NotificationCenter() {
       if (!response.ok) throw new Error("Les notifications sont temporairement indisponibles.");
       const data = await response.json() as NotificationResponse;
       setItems(data.notifications ?? []);
+      setUnreadCount(Number.isFinite(data.unreadCount) ? data.unreadCount : 0);
       setLoaded(true);
     } catch {
       setError("Les notifications n’ont pas pu être chargées.");
@@ -55,7 +57,15 @@ export function NotificationCenter() {
     } finally {
       requestInFlight.current = false;
     }
-  }, [loaded]);
+  }
+
+  function toggleOpen() {
+    setOpen((current) => {
+      const next = !current;
+      if (next && !loaded) void loadNotifications();
+      return next;
+    });
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -104,7 +114,7 @@ export function NotificationCenter() {
 
   return (
     <div ref={ref} className="notification-anchor notification-center-industrial">
-      <button type="button" onClick={() => setOpen((value) => { const next = !value; if (next) void loadNotifications(); return next; })} className="topbar-icon-button notification-trigger relative" aria-label={`Notifications${unreadCount ? `, ${unreadCount} non lue(s)` : ""}`} aria-expanded={open} aria-haspopup="dialog" title="Notifications">
+      <button type="button" onClick={toggleOpen} className="topbar-icon-button notification-trigger relative" aria-label={`Notifications${unreadCount ? `, ${unreadCount} non lue(s)` : ""}`} aria-expanded={open} aria-haspopup="dialog" title="Notifications">
         <span aria-hidden="true" className="notification-trigger-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path strokeLinecap="round" strokeLinejoin="round" d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-7-3-9M10 21h4" /></svg></span>
         {unreadCount ? <span className="notification-count">{unreadCount > 9 ? "9+" : unreadCount}</span> : null}
       </button>

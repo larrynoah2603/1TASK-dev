@@ -136,32 +136,41 @@ export async function listVisibleQueueFilterOptions(actor: UserContext) {
 }
 
 
-/** Lightweight queue metadata for ticket filters, including queues containing tickets personally visible to the actor. */
+/**
+ * Lightweight queue metadata for /tickets filters.
+ * It preserves the historical includePersonal behavior without loading queue
+ * counters, priority groupings or SLA statistics.
+ */
 export async function listTicketQueueFilterOptions(
   actor: UserContext,
   options: { includePersonal?: boolean } = {},
 ) {
   actor = await requireCurrentActor(actor);
   const subject = toAccessSubject(actor);
+
+  const queuesPromise = prisma.queue.findMany({
+    where: { isActive: true, department: { isActive: true } },
+    select: {
+      id: true,
+      name: true,
+      departmentId: true,
+      department: { select: { id: true, name: true } },
+      teams: { select: { id: true, isActive: true } },
+    },
+    orderBy: { name: "asc" },
+  });
+
+  const personalQueueRowsPromise: Promise<Array<{ queueId: string }>> = options.includePersonal
+    ? visibleTicketWhere(actor).then((where) => prisma.ticket.findMany({
+        where,
+        select: { queueId: true },
+        distinct: ["queueId"],
+      }))
+    : Promise.resolve([]);
+
   const [queues, personalQueueRows] = await Promise.all([
-    prisma.queue.findMany({
-      where: { isActive: true, department: { isActive: true } },
-      select: {
-        id: true,
-        name: true,
-        departmentId: true,
-        department: { select: { id: true, name: true } },
-        teams: { select: { id: true, isActive: true } },
-      },
-      orderBy: { name: "asc" },
-    }),
-    options.includePersonal
-      ? prisma.ticket.findMany({
-          where: await visibleTicketWhere(actor),
-          select: { queueId: true },
-          distinct: ["queueId"],
-        })
-      : Promise.resolve([]),
+    queuesPromise,
+    personalQueueRowsPromise,
   ]);
   const personalQueueIds = new Set(personalQueueRows.map((ticket) => ticket.queueId));
 
