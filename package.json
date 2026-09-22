@@ -5,8 +5,7 @@
   "type": "module",
   "packageManager": "npm@11.4.2",
   "scripts": {
-    "dev": "next dev",
-    "predev": "prisma generate",
+    "dev": "prisma generate && next dev",
     "postinstall": "prisma generate",
     "build": "next build",
     "prebuild": "npm run env:check && npm run clean:next && prisma generate",
