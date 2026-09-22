@@ -5,7 +5,7 @@ import { ClaimTicketButton } from "@/components/claim-ticket-button";
 import { SlaIndicator } from "@/components/sla-indicator";
 import { PriorityBadge, StatusBadge } from "@/components/status-badge";
 
-type TicketRow = {
+export type TicketRow = {
   id: string;
   reference: string;
   title: string;

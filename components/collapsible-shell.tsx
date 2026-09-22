@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 
-export function CollapsibleShell({ variant, sidebar, topbar, children }: { variant: "app" | "admin"; sidebar: React.ReactNode; topbar: React.ReactNode; children: React.ReactNode }) {
+export function CollapsibleShell({ variant, sidebar, topbar, mobileNavigation, children }: { variant: "app" | "admin"; sidebar: React.ReactNode; topbar: React.ReactNode; mobileNavigation?: React.ReactNode; children: React.ReactNode }) {
   const storageKey = `1task-${variant}-sidebar-collapsed`;
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -65,6 +65,7 @@ export function CollapsibleShell({ variant, sidebar, topbar, children }: { varia
           <Breadcrumbs />
           {children}
         </main>
+        {mobileNavigation}
       </div>
     </div>
   );
