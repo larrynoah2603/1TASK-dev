@@ -1,4 +1,9 @@
+"use client";
+
+import type { Route } from "next";
 import { Priority, TicketStatus } from "@prisma/client";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { type FormEvent, useTransition } from "react";
 import { PRIORITY_LABELS, STATUS_LABELS } from "@/lib/domain";
 import type { TicketListScope, TicketListSlaFilter, TicketListSort } from "@/lib/ticket-service";
 import { Combobox } from "@/components/combobox";
@@ -46,15 +51,39 @@ export function TicketFilters({
   resetHref?: string;
   scopeOptions?: readonly TicketListScope[];
 }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
   const departments = [...new Map(queues.map((queue) => [queue.department.id, queue.department])).values()]
     .sort((left, right) => left.name.localeCompare(right.name));
   const availableMissions = values.dossierId ? missions.filter((mission) => mission.dossier.id === values.dossierId) : missions;
 
+  function submitFilters(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete("page");
+    for (const [key, rawValue] of formData.entries()) {
+      if (typeof rawValue !== "string") continue;
+      const value = rawValue.trim();
+      if (value) next.set(key, value);
+      else next.delete(key);
+    }
+    const query = next.toString();
+    const href = `${pathname}${query ? `?${query}` : ""}` as Route;
+    startTransition(() => router.replace(href, { scroll: false }));
+  }
+
+  function resetFilters() {
+    startTransition(() => router.replace(resetHref as Route, { scroll: false }));
+  }
+
   return (
-    <form aria-label="Filtres de tickets" className="filter-panel grid gap-3 md:grid-cols-2 xl:grid-cols-4" method="get">
+    <form aria-label="Filtres de tickets" className="filter-panel grid gap-3 md:grid-cols-2 xl:grid-cols-4" onSubmit={submitFilters}>
       <div className="filter-heading md:col-span-2 xl:col-span-4">
         <div><p className="eyebrow">Affiner la vue</p><p className="mt-1 text-xs text-slate-500">Recherchez et réduisez la liste selon votre périmètre autorisé.</p></div>
-        <span className="filter-heading-hint">Filtres persistants dans l’URL</span>
+        <span className="filter-heading-hint">{isPending ? "Mise à jour…" : "Filtres persistants dans l’URL"}</span>
       </div>
       <label className="sr-only" htmlFor="ticket-search">Recherche</label>
       <input
@@ -104,8 +133,8 @@ export function TicketFilters({
         <Combobox name="missionId" defaultValue={values.missionId ?? ""} placeholder="Toutes les missions autorisées" options={[{ value: "", label: "Toutes les missions autorisées" }, ...availableMissions.map((mission) => ({ value: mission.id, label: `${mission.code} · ${mission.name}` }))]} />
       </label> : null}
       <div className="flex flex-wrap items-center gap-3 md:col-span-2 xl:col-span-4">
-        <button className="button-primary">Filtrer</button>
-        <a href={resetHref} className="button-ghost min-h-10 text-xs">Réinitialiser</a>
+        <button type="submit" disabled={isPending} className="button-primary disabled:opacity-60">{isPending ? "Filtrage…" : "Filtrer"}</button>
+        <button type="button" disabled={isPending} onClick={resetFilters} className="button-ghost min-h-10 text-xs disabled:opacity-60">Réinitialiser</button>
         <span className="text-[11px] text-slate-400">Départements et files limités à votre périmètre serveur.</span>
       </div>
     </form>

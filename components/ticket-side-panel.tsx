@@ -8,12 +8,14 @@ export function TicketSidePanel({
   count,
   defaultOpen = false,
   children,
+  onOpen,
 }: {
   title: string;
   subtitle?: string;
   count?: number;
   defaultOpen?: boolean;
   children: React.ReactNode;
+  onOpen?: () => void;
 }) {
   const [open, setOpen] = useState(defaultOpen);
 
@@ -23,7 +25,7 @@ export function TicketSidePanel({
         type="button"
         className="ticket-side-panel-trigger"
         aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
+        onClick={() => setOpen((value) => { const next = !value; if (next) onOpen?.(); return next; })}
       >
         <span className="min-w-0 text-left">
           <span className="ticket-side-panel-title">{title}</span>

@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { RoleCode } from "@prisma/client";
-import { prisma } from "@/lib/db";
 import { hasGlobalRole } from "@/lib/access-control";
 import { ROLE_LABELS } from "@/lib/identity";
 import { CollapsibleShell } from "@/components/collapsible-shell";
 import { GlobalSearch } from "@/components/global-search";
 import { HelpMenu } from "@/components/help-menu";
 import { NotificationCenter } from "@/components/notification-center";
+import { NotificationStateProvider } from "@/components/notification-state";
 import { ProfileMenu } from "@/components/profile-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ShellNavLink } from "@/components/shell-nav-link";
@@ -70,7 +70,6 @@ function AdminIcon({ kind }: { kind: AdminIconKind }) {
 }
 
 export async function AdminShell({ user, children }: { user: UserContext; children: React.ReactNode }) {
-  const unreadCount = await prisma.notification.count({ where: { recipientId: user.id, readAt: null } });
   const subject = toAccessSubject(user);
   const codes = roleCodes(user);
   const permissions = permissionCodes(user);
@@ -115,7 +114,7 @@ export async function AdminShell({ user, children }: { user: UserContext; childr
       <GlobalSearch />
       <div className="topbar-actions">
         <NewTicketLauncher />
-        <NotificationCenter initialUnreadCount={unreadCount} />
+        <NotificationCenter />
         <HelpMenu />
         <ThemeToggle />
         <Link href="/dashboard" className="button-secondary hidden min-h-8 px-2.5 text-xs sm:inline-flex">Espace normal</Link>
@@ -124,5 +123,5 @@ export async function AdminShell({ user, children }: { user: UserContext; childr
     </div>
   );
 
-  return <div className="admin-industrial"><CollapsibleShell variant="admin" sidebar={sidebar} topbar={topbar}>{children}</CollapsibleShell></div>;
+  return <NotificationStateProvider><div className="admin-industrial"><CollapsibleShell variant="admin" sidebar={sidebar} topbar={topbar}>{children}</CollapsibleShell></div></NotificationStateProvider>;
 }
