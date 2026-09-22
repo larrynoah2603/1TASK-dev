@@ -436,22 +436,26 @@ export function canActorClaimTicket(
   return canClaimTicket(toAccessSubject(actor), target);
 }
 
-export async function getTicketActionContext(actor: UserContext, ticket: AccessTicket & { status: TicketStatus }) {
+export async function getTicketActionContext(
+  actor: UserContext,
+  ticket: AccessTicket & { status: TicketStatus; actionAccess?: AccessTicket },
+) {
   actor = await requireCurrentActor(actor);
-  const authorizationTicket = ticket.id
-    ? await prisma.ticket.findUnique({ where: { id: ticket.id }, include: ticketAccessInclude })
-    : ticket;
-  if (!authorizationTicket) throw new DomainError("Ticket introuvable.", 404);
-  const authorizationList = authorizationTicket.accessList?.length
-    ? authorizationTicket.accessList
-    : ticket.accessList ?? [];
+  // The detail service already performed a final authorization recheck and
+  // provides the exact access snapshot used here. Mutations still reauthorize
+  // independently in their own server handlers.
+  const authorizationTicket = ticket.actionAccess ?? ticket;
   const subject = toAccessSubject(actor);
-  const target = accessTarget({ ...authorizationTicket, accessList: authorizationList });
+  const target = accessTarget(authorizationTicket);
   if (!canViewTicket(subject, target)) {
     throw new AuthorizationError("Vous n’avez pas accès aux actions de ce ticket.");
   }
-  const canAssign = hasPermission(actor, "ticket:assign", target) && canAssignWithRoles(roleCodes(actor)) && canManageQueue(subject, target);
-  const canTransfer = hasPermission(actor, "ticket:transfer", target) && canManageQueue(subject, target);
+
+  const canAssign = hasPermission(actor, "ticket:assign", target) &&
+    canAssignWithRoles(roleCodes(actor)) &&
+    canManageQueue(subject, target);
+  const canTransfer = hasPermission(actor, "ticket:transfer", target) &&
+    canManageQueue(subject, target);
   const canPostPublic =
     hasPermission(actor, "ticket:comment:public", target) ||
     hasPermission(actor, "ticket:update", target);
@@ -466,57 +470,6 @@ export async function getTicketActionContext(actor: UserContext, ticket: AccessT
     );
   }
 
-  const agents: { id: string; name: string; email: string }[] = [];
-  const transferableQueues: { id: string; name: string; departmentName: string }[] = [];
-  if (canAssign) {
-    const memberships = await prisma.teamMember.findMany({
-      where: {
-        isActive: true,
-        team: { queueId: ticket.queueId, isActive: true },
-        user: { status: "ACTIVE", roleAssignments: { some: { role: { code: RoleCode.AGENT } } } },
-      },
-      select: { user: { select: { id: true, name: true, email: true } } },
-    });
-    const unique = new Map(memberships.map((membership) => [membership.user.id, membership.user]));
-    agents.push(...unique.values());
-  }
-  if (canTransfer && ticket.status !== TicketStatus.CLOSED && ticket.status !== TicketStatus.RESOLUTION_PENDING) {
-    const globalFunctionalAdmin = hasGlobalRole(subject, RoleCode.FUNCTIONAL_ADMIN);
-    const queues = await prisma.queue.findMany({
-      where: {
-        isActive: true,
-        id: { not: ticket.queueId },
-        department: { isActive: true },
-        ...(globalFunctionalAdmin ? {} : { departmentId: actor.departmentId ?? "" }),
-      },
-      select: {
-        id: true,
-        name: true,
-        departmentId: true,
-        department: { select: { name: true } },
-        teams: { select: { id: true, isActive: true } },
-      },
-      orderBy: { name: "asc" },
-    });
-    for (const queue of queues) {
-      if (
-        canManageQueue(subject, {
-          requesterId: "",
-          assignedToId: null,
-          queueId: queue.id,
-          departmentId: queue.departmentId,
-          confidential: false,
-          teamIds: queue.teams.filter((team) => team.isActive).map((team) => team.id),
-        })
-      ) {
-        transferableQueues.push({
-          id: queue.id,
-          name: queue.name,
-          departmentName: queue.department.name,
-        });
-      }
-    }
-  }
   return {
     canClaim: canActorClaimTicket(actor, { ...authorizationTicket, status: ticket.status }),
     canAssign,
@@ -527,9 +480,90 @@ export async function getTicketActionContext(actor: UserContext, ticket: AccessT
       canPostInternalMessage(roleCodes(actor)) &&
       hasPermission(actor, "ticket:internal-comment", target),
     allowedStatuses,
-    agents,
-    transferableQueues,
   };
+}
+
+async function requireTicketActionTarget(actor: UserContext, ticketId: string) {
+  actor = await requireCurrentActor(actor);
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    include: ticketAccessInclude,
+  });
+  if (!ticket) throw new DomainError("Ticket introuvable.", 404);
+  const subject = toAccessSubject(actor);
+  const target = accessTarget(ticket);
+  if (!canViewTicket(subject, target)) {
+    throw new AuthorizationError("Vous n’avez pas accès aux actions de ce ticket.");
+  }
+  return { actor, ticket, subject, target };
+}
+
+export async function listTicketAssignmentOptions(actor: UserContext, ticketId: string) {
+  const current = await requireTicketActionTarget(actor, ticketId);
+  if (
+    !hasPermission(current.actor, "ticket:assign", current.target) ||
+    !canAssignWithRoles(roleCodes(current.actor)) ||
+    !canManageQueue(current.subject, current.target)
+  ) {
+    throw new AuthorizationError("Vous n’êtes pas habilité à affecter ce ticket.");
+  }
+
+  const memberships = await prisma.teamMember.findMany({
+    where: {
+      isActive: true,
+      team: { queueId: current.ticket.queueId, isActive: true },
+      user: { status: "ACTIVE", roleAssignments: { some: { role: { code: RoleCode.AGENT } } } },
+    },
+    select: { user: { select: { id: true, name: true, email: true } } },
+  });
+  return [...new Map(memberships.map((membership) => [membership.user.id, membership.user])).values()];
+}
+
+export async function listTicketTransferOptions(actor: UserContext, ticketId: string) {
+  const current = await requireTicketActionTarget(actor, ticketId);
+  if (
+    !hasPermission(current.actor, "ticket:transfer", current.target) ||
+    !canManageQueue(current.subject, current.target)
+  ) {
+    throw new AuthorizationError("Vous n’êtes pas habilité à réorienter ce ticket.");
+  }
+  if (
+    current.ticket.status === TicketStatus.CLOSED ||
+    current.ticket.status === TicketStatus.RESOLUTION_PENDING
+  ) {
+    return [];
+  }
+
+  const globalFunctionalAdmin = hasGlobalRole(current.subject, RoleCode.FUNCTIONAL_ADMIN);
+  const queues = await prisma.queue.findMany({
+    where: {
+      isActive: true,
+      id: { not: current.ticket.queueId },
+      department: { isActive: true },
+      ...(globalFunctionalAdmin ? {} : { departmentId: current.actor.departmentId ?? "" }),
+    },
+    select: {
+      id: true,
+      name: true,
+      departmentId: true,
+      department: { select: { name: true } },
+      teams: { select: { id: true, isActive: true } },
+    },
+    orderBy: { name: "asc" },
+  });
+
+  return queues.flatMap((queue) =>
+    canManageQueue(current.subject, {
+      requesterId: "",
+      assignedToId: null,
+      queueId: queue.id,
+      departmentId: queue.departmentId,
+      confidential: false,
+      teamIds: queue.teams.filter((team) => team.isActive).map((team) => team.id),
+    })
+      ? [{ id: queue.id, name: queue.name, departmentName: queue.department.name }]
+      : [],
+  );
 }
 
 export async function createTicketLink(actor: UserContext, ticketId: string, input: TicketLinkInput) {

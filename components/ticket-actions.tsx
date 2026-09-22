@@ -20,8 +20,6 @@ export function TicketActions({
   canTransfer,
   requiresAdministrativeReason,
   allowedStatuses,
-  agents,
-  transferableQueues,
 }: {
   ticketId: string;
   status: TicketStatus;
@@ -30,8 +28,6 @@ export function TicketActions({
   canTransfer: boolean;
   requiresAdministrativeReason: boolean;
   allowedStatuses: TicketStatus[];
-  agents: AgentOption[];
-  transferableQueues: QueueOption[];
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -43,13 +39,57 @@ export function TicketActions({
   const [solution, setSolution] = useState("");
   const [reopenedReason, setReopenedReason] = useState("");
   const [transitionReason, setTransitionReason] = useState("");
-  const [assignedToId, setAssignedToId] = useState(agents[0]?.id ?? "");
+  const [agents, setAgents] = useState<AgentOption[]>([]);
+  const [agentsLoaded, setAgentsLoaded] = useState(false);
+  const [agentsLoading, setAgentsLoading] = useState(false);
+  const [assignedToId, setAssignedToId] = useState("");
   const [assignmentReason, setAssignmentReason] = useState("");
-  const [destinationQueueId, setDestinationQueueId] = useState(transferableQueues[0]?.id ?? "");
+  const [transferableQueues, setTransferableQueues] = useState<QueueOption[]>([]);
+  const [queuesLoaded, setQueuesLoaded] = useState(false);
+  const [queuesLoading, setQueuesLoading] = useState(false);
+  const [destinationQueueId, setDestinationQueueId] = useState("");
   const [transferReason, setTransferReason] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirmation, setConfirmation] = useState<{ title: string; description: string; confirmLabel?: string; run: () => void } | null>(null);
+
+  async function loadAssignmentOptions() {
+    if (agentsLoaded || agentsLoading || !canAssign) return;
+    setAgentsLoading(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/tickets/${ticketId}/action-options?kind=assign`, { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "Chargement refusé.");
+      const nextAgents = (data.agents ?? []) as AgentOption[];
+      setAgents(nextAgents);
+      setAssignedToId((current) => current || nextAgents[0]?.id || "");
+      setAgentsLoaded(true);
+    } catch {
+      setError("Les agents affectables n’ont pas pu être chargés.");
+    } finally {
+      setAgentsLoading(false);
+    }
+  }
+
+  async function loadTransferOptions() {
+    if (queuesLoaded || queuesLoading || !canTransfer) return;
+    setQueuesLoading(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/tickets/${ticketId}/action-options?kind=transfer`, { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "Chargement refusé.");
+      const nextQueues = (data.queues ?? []) as QueueOption[];
+      setTransferableQueues(nextQueues);
+      setDestinationQueueId((current) => current || nextQueues[0]?.id || "");
+      setQueuesLoaded(true);
+    } catch {
+      setError("Les files de réorientation n’ont pas pu être chargées.");
+    } finally {
+      setQueuesLoading(false);
+    }
+  }
 
   async function post(path: string, payload: unknown, successMessage = "Action enregistrée.") {
     setBusy(true);
@@ -159,38 +199,42 @@ export function TicketActions({
         </TicketSidePanel>
       ) : null}
 
-      {canAssign && agents.length ? (
-        <TicketSidePanel title="Affectation" subtitle="Choisir le responsable du traitement">
+      {canAssign ? (
+        <TicketSidePanel title="Affectation" subtitle="Choisir le responsable du traitement" onOpen={() => void loadAssignmentOptions()}>
           <form onSubmit={assign} className="action-card space-y-4">
           <div>
             <p className="text-sm font-semibold text-slate-900">Affecter ou réaffecter</p>
             <p className="mt-1 text-xs text-slate-500">Seuls les agents actifs membres d’une équipe de cette file sont proposés.</p>
           </div>
-          <label className="field-label">Agent
+          {agentsLoading ? <p className="text-xs text-slate-500">Chargement des agents habilités…</p> : null}
+          {agentsLoaded && !agents.length ? <p className="text-xs text-slate-500">Aucun agent habilité disponible.</p> : null}
+          {agents.length ? <label className="field-label">Agent
             <Combobox value={assignedToId} onChange={setAssignedToId} options={agents.map((agent) => ({ value: agent.id, label: `${agent.name} — ${agent.email}` }))} />
-          </label>
+          </label> : null}
           <label className="field-label">Motif obligatoire
             <input required minLength={10} value={assignmentReason} onChange={(event) => setAssignmentReason(event.target.value)} placeholder="Expliquez l’affectation ou la réaffectation." className="field-control font-normal" />
           </label>
-            <button disabled={busy || assignmentReason.trim().length < 10} className="button-secondary">Affecter le ticket</button>
+            <button disabled={busy || !assignedToId || assignmentReason.trim().length < 10} className="button-secondary">Affecter le ticket</button>
           </form>
         </TicketSidePanel>
       ) : null}
 
-      {canTransfer && transferableQueues.length ? (
-        <TicketSidePanel title="Réorientation" subtitle="Transférer vers une autre file">
+      {canTransfer ? (
+        <TicketSidePanel title="Réorientation" subtitle="Transférer vers une autre file" onOpen={() => void loadTransferOptions()}>
           <form onSubmit={transfer} className="action-card space-y-4">
           <div>
             <p className="text-sm font-semibold text-slate-900">Réorienter vers une autre file</p>
             <p className="mt-1 text-xs text-slate-500">Le nouveau routage conserve le SLA, l’historique et le contexte du ticket.</p>
           </div>
-          <label className="field-label">File cible
+          {queuesLoading ? <p className="text-xs text-slate-500">Chargement des files autorisées…</p> : null}
+          {queuesLoaded && !transferableQueues.length ? <p className="text-xs text-slate-500">Aucune autre file autorisée.</p> : null}
+          {transferableQueues.length ? <label className="field-label">File cible
             <Combobox value={destinationQueueId} onChange={setDestinationQueueId} options={transferableQueues.map((queue) => ({ value: queue.id, label: `${queue.departmentName} — ${queue.name}` }))} />
-          </label>
+          </label> : null}
           <label className="field-label">Motif du transfert
             <textarea required minLength={10} value={transferReason} onChange={(event) => setTransferReason(event.target.value)} placeholder="Expliquez pourquoi la file doit changer." className="field-control min-h-24 font-normal" />
           </label>
-            <button disabled={busy || transferReason.trim().length < 10} className="button-secondary">Réorienter le ticket</button>
+            <button disabled={busy || !destinationQueueId || transferReason.trim().length < 10} className="button-secondary">Réorienter le ticket</button>
           </form>
         </TicketSidePanel>
       ) : null}

@@ -16,7 +16,7 @@ import {
   toAccessSubject,
   type UserContext,
 } from "@/lib/server-auth";
-import { accessTarget, ticketAccessInclude, ticketSecurityInclude } from "@/lib/ticket-access";
+import { accessTarget, ticketAccessInclude, ticketSecurityInclude, type AccessTicket } from "@/lib/ticket-access";
 
 const TICKET_MESSAGE_WINDOW = 200;
 const TICKET_ASSIGNMENT_WINDOW = 100;
@@ -26,7 +26,7 @@ export function getTicketForViewer(actor: UserContext, ticketId: string) {
   return measureServerOperation("tickets.detail", () => getTicketForViewerInternal(actor, ticketId));
 }
 
-async function getTicketForViewerInternal(actor: UserContext, ticketId: string): Promise<TicketDetailDomain> {
+async function getTicketForViewerInternal(actor: UserContext, ticketId: string): Promise<TicketDetailDomain & { actionAccess: AccessTicket }> {
   actor = await requireCurrentActor(actor);
   console.log({ ticketId, userId: actor.id, operation: "ticket.detail.start" });
   const accessRecord = await prisma.ticket.findUnique({ where: { id: ticketId }, include: ticketAccessInclude });
@@ -81,16 +81,19 @@ async function getTicketForViewerInternal(actor: UserContext, ticketId: string):
   console.log({ found: Boolean(ticket), ticketId, operation: "ticket.detail.content" });
   if (!ticket) throw new DomainError("Ticket introuvable.", 404);
 
-  const latestAccess = await prisma.ticket.findUnique({ where: { id: ticketId }, include: ticketAccessInclude });
-  if (!latestAccess || !canViewTicket(subject, accessTarget(latestAccess))) {
-    throw new AuthorizationError("Vous n’avez plus accès à ce ticket.");
-  }
-  const [worklogSummary, missionWorklogSummary] = await Promise.all([
+  // The final authorization recheck remains mandatory, but independent
+  // worklog aggregates can run in parallel with it after the content snapshot
+  // has been read. Nothing is returned until the recheck succeeds.
+  const [latestAccess, worklogSummary, missionWorklogSummary] = await Promise.all([
+    prisma.ticket.findUnique({ where: { id: ticketId }, include: ticketAccessInclude }),
     prisma.worklog.aggregate({ where: { ticketId }, _sum: { minutes: true }, _count: { _all: true } }),
     ticket.missionId
       ? prisma.worklog.aggregate({ where: { missionId: ticket.missionId }, _sum: { minutes: true } })
       : Promise.resolve({ _sum: { minutes: 0 } }),
   ]);
+  if (!latestAccess || !canViewTicket(subject, accessTarget(latestAccess))) {
+    throw new AuthorizationError("Vous n’avez plus accès à ce ticket.");
+  }
   console.log({ ticketId, operation: "ticket.detail.worklogs.loaded" });
   const ticketDomain = toTicketDomain(ticket);
 
@@ -113,5 +116,6 @@ async function getTicketForViewerInternal(actor: UserContext, ticketId: string):
       entries: worklogSummary._count._all,
     },
     missionWorklogMinutes: missionWorklogSummary._sum.minutes ?? 0,
+    actionAccess: latestAccess,
   };
 }
