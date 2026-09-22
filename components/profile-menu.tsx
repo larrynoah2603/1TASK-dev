@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
 function initials(name: string) {
@@ -22,7 +23,7 @@ export function ProfileMenu({ name, email, image, department, roles, admin }: { 
   return (
     <div ref={ref} className="profile-menu-industrial relative">
       <button type="button" onClick={() => setOpen((value) => !value)} className="profile-trigger" aria-expanded={open} aria-haspopup="menu">
-        <span className="profile-avatar-wrap"><span className="profile-avatar">{image ? <img src={image} alt="" className="profile-avatar-image" /> : initials(name)}</span><span className="profile-status-dot" aria-hidden="true" /></span>
+        <span className="profile-avatar-wrap"><span className="profile-avatar">{image ? <Image src={image} alt="" width={40} height={40} unoptimized className="profile-avatar-image" /> : initials(name)}</span><span className="profile-status-dot" aria-hidden="true" /></span>
         <span className="profile-compact-label hidden min-w-0 text-left xl:block"><span className="block max-w-[150px] truncate text-xs font-semibold text-slate-800">{name}</span><span className="mt-0.5 block max-w-[180px] truncate text-[10px] text-slate-500">{department}</span></span>
         <span aria-hidden="true" className="profile-chevron hidden text-slate-400 sm:block"><svg viewBox="0 0 24 24"><path d="m7 9 5 5 5-5" /></svg></span>
       </button>
