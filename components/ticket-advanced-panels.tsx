@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Combobox } from "@/components/combobox";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -101,25 +101,42 @@ export function TicketAdvancedPanels(props: Props) {
   const [error, setError] = useState("");
   const [confirmAction, setConfirmAction] = useState<{ title: string; description: string; run: () => void } | null>(null);
 
-  const loadLists = useCallback(async () => {
-    try {
-      const [linksResponse, attachmentsResponse] = await Promise.all([
-        fetch(`/api/tickets/${props.ticketId}/links`, { cache: "no-store" }),
-        fetch(`/api/tickets/${props.ticketId}/attachments`, { cache: "no-store" }),
-      ]);
-      if (linksResponse.ok) setLinks((await linksResponse.json()).links ?? []);
-      if (attachmentsResponse.ok) setAttachments((await attachmentsResponse.json()) ?? []);
-    } catch {
-      setError("Les éléments avancés n’ont pas pu être chargés.");
-    }
-  }, [props.ticketId]);
+  const [linksLoaded, setLinksLoaded] = useState(false);
+  const [attachmentsLoaded, setAttachmentsLoaded] = useState(false);
+  const [linksLoading, setLinksLoading] = useState(false);
+  const [attachmentsLoading, setAttachmentsLoading] = useState(false);
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void loadLists();
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [loadLists]);
+  const loadLinks = useCallback(async () => {
+    if (linksLoaded || linksLoading) return;
+    setLinksLoading(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/tickets/${props.ticketId}/links`, { cache: "no-store" });
+      if (!response.ok) throw new Error("links-load-failed");
+      setLinks((await response.json()).links ?? []);
+      setLinksLoaded(true);
+    } catch {
+      setError("Les relations du ticket n’ont pas pu être chargées.");
+    } finally {
+      setLinksLoading(false);
+    }
+  }, [linksLoaded, linksLoading, props.ticketId]);
+
+  const loadAttachments = useCallback(async () => {
+    if (attachmentsLoaded || attachmentsLoading) return;
+    setAttachmentsLoading(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/tickets/${props.ticketId}/attachments`, { cache: "no-store" });
+      if (!response.ok) throw new Error("attachments-load-failed");
+      setAttachments((await response.json()) ?? []);
+      setAttachmentsLoaded(true);
+    } catch {
+      setError("Les pièces jointes n’ont pas pu être chargées.");
+    } finally {
+      setAttachmentsLoading(false);
+    }
+  }, [attachmentsLoaded, attachmentsLoading, props.ticketId]);
 
   async function searchTickets(value: string) {
     setLinkQuery(value);
@@ -132,11 +149,21 @@ export function TicketAdvancedPanels(props: Props) {
     if (response.ok) setLinkResults((await response.json()).tickets ?? []);
   }
 
-  async function postJson(path: string, payload: unknown, success: string, key: string) {
+  async function postJson(
+    path: string,
+    payload: unknown,
+    success: string,
+    key: string,
+    options: { refresh?: boolean; reloadLinks?: boolean } = {},
+  ) {
     setBusy(key);
     setError("");
     try {
-      const response = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const response = await fetch(path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
       const data = await response.json();
       if (!response.ok) {
         setError(data.error ?? "Action refusée.");
@@ -144,8 +171,20 @@ export function TicketAdvancedPanels(props: Props) {
         return;
       }
       toast(success);
-      await loadLists();
-      router.refresh();
+      if (options.reloadLinks) {
+        setLinksLoaded(false);
+        setLinksLoading(true);
+        try {
+          const linksResponse = await fetch(`/api/tickets/${props.ticketId}/links`, { cache: "no-store" });
+          if (linksResponse.ok) {
+            setLinks((await linksResponse.json()).links ?? []);
+            setLinksLoaded(true);
+          }
+        } finally {
+          setLinksLoading(false);
+        }
+      }
+      if (options.refresh) router.refresh();
     } catch {
       setError("L’action n’a pas pu être envoyée.");
       toast("L’action n’a pas pu être envoyée.", "error");
@@ -198,14 +237,14 @@ export function TicketAdvancedPanels(props: Props) {
     setConfirmAction({
       title: "Confirmer la dérogation SLA",
       description: "Les échéances de première réponse et de résolution seront prolongées et l’action sera auditée.",
-      run: () => void postJson(`/api/tickets/${props.ticketId}/sla-exception`, { addedMinutes: Number(addedMinutes), reason: slaReason }, "Dérogation SLA enregistrée.", "sla"),
+      run: () => void postJson(`/api/tickets/${props.ticketId}/sla-exception`, { addedMinutes: Number(addedMinutes), reason: slaReason }, "Dérogation SLA enregistrée.", "sla", { refresh: true }),
     });
   }
 
   function submitLink(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!selectedTicket) return;
-    void postJson(`/api/tickets/${props.ticketId}/links`, { toTicketId: selectedTicket.id, type: linkType, reason: linkReason || undefined }, "Lien ticket créé.", "link");
+    void postJson(`/api/tickets/${props.ticketId}/links`, { toTicketId: selectedTicket.id, type: linkType, reason: linkReason || undefined }, "Lien ticket créé.", "link", { reloadLinks: true });
   }
 
   async function uploadAttachment(event: React.ChangeEvent<HTMLInputElement>) {
@@ -229,6 +268,7 @@ export function TicketAdvancedPanels(props: Props) {
         return;
       }
       setAttachments((items) => [...items, data]);
+      setAttachmentsLoaded(true);
       toast("Pièce jointe ajoutée.");
     } catch {
       setError("La pièce jointe n’a pas pu être envoyée.");
@@ -276,7 +316,7 @@ export function TicketAdvancedPanels(props: Props) {
         </TicketSidePanel>
       ) : null}
 
-      <TicketSidePanel title="Relations" subtitle="Tickets liés">
+      <TicketSidePanel title="Relations" subtitle="Tickets liés" onOpen={() => void loadLinks()}>
         <section className="panel p-5">
         <p className="eyebrow">Relations</p>
         <h2 className="mt-1 text-base font-semibold text-slate-900">Tickets liés</h2>
@@ -288,16 +328,16 @@ export function TicketAdvancedPanels(props: Props) {
           <label className="field-label">Motif facultatif<input value={linkReason} onChange={(event) => setLinkReason(event.target.value)} className="field-control font-normal" /></label>
           <button disabled={!selectedTicket || busy === "link"} className="button-secondary w-full">{busy === "link" ? "Création…" : "Créer le lien"}</button>
         </form> : null}
-          <div className="mt-4 space-y-2">{links.map((link) => { const other = link.fromTicket.id === props.ticketId ? link.toTicket : link.fromTicket; return <div key={link.id} className="rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 text-xs"><p className="font-semibold text-slate-800">{LINK_TYPES.find((item) => item.value === link.type)?.label ?? link.type} · {other.reference}</p><p className="mt-1 text-slate-500">{other.title} · {formatDate(link.createdAt)}</p>{link.reason ? <p className="mt-1 text-slate-500">Motif : {link.reason}</p> : null}</div>; })}{!links.length ? <p className="text-xs text-slate-500">Aucun lien visible.</p> : null}</div>
+          <div className="mt-4 space-y-2">{linksLoading ? <p className="text-xs text-slate-500">Chargement des relations…</p> : null}{links.map((link) => { const other = link.fromTicket.id === props.ticketId ? link.toTicket : link.fromTicket; return <div key={link.id} className="rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 text-xs"><p className="font-semibold text-slate-800">{LINK_TYPES.find((item) => item.value === link.type)?.label ?? link.type} · {other.reference}</p><p className="mt-1 text-slate-500">{other.title} · {formatDate(link.createdAt)}</p>{link.reason ? <p className="mt-1 text-slate-500">Motif : {link.reason}</p> : null}</div>; })}{!links.length ? <p className="text-xs text-slate-500">Aucun lien visible.</p> : null}</div>
         </section>
       </TicketSidePanel>
 
-      <TicketSidePanel title="Fichiers" subtitle="Pièces jointes">
+      <TicketSidePanel title="Fichiers" subtitle="Pièces jointes" onOpen={() => void loadAttachments()}>
         <section className="panel p-5">
         <p className="eyebrow">Fichiers</p>
         <h2 className="mt-1 text-base font-semibold text-slate-900">Pièces jointes</h2>
         {props.canUpload ? <label className="mt-4 flex cursor-pointer items-center justify-center rounded-lg border border-dashed border-[#b9b9eb] bg-[#f7f7ff] px-3 py-4 text-xs font-semibold operational-link hover:bg-[#eeeeff]">{busy === "attachment" ? "Envoi…" : "Ajouter un fichier · 10 Mo maximum"}<input type="file" onChange={(event) => void uploadAttachment(event)} disabled={busy === "attachment"} className="sr-only" /></label> : null}
-          <div className="mt-4 space-y-2">{attachments.map((attachment) => <a key={attachment.id} href={`/api/tickets/${props.ticketId}/attachments/${attachment.id}`} className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 text-xs hover:bg-slate-100"><span className="min-w-0 truncate font-semibold text-slate-800">{attachment.fileName}<span className="ml-2 font-normal text-slate-400">{formatBytes(attachment.sizeBytes)}</span></span><span className="shrink-0 text-slate-500">{attachment.uploadedBy.name}</span></a>)}{!attachments.length ? <p className="text-xs text-slate-500">Aucune pièce jointe visible.</p> : null}</div>
+          <div className="mt-4 space-y-2">{attachmentsLoading ? <p className="text-xs text-slate-500">Chargement des pièces jointes…</p> : null}{attachments.map((attachment) => <a key={attachment.id} href={`/api/tickets/${props.ticketId}/attachments/${attachment.id}`} className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 text-xs hover:bg-slate-100"><span className="min-w-0 truncate font-semibold text-slate-800">{attachment.fileName}<span className="ml-2 font-normal text-slate-400">{formatBytes(attachment.sizeBytes)}</span></span><span className="shrink-0 text-slate-500">{attachment.uploadedBy.name}</span></a>)}{!attachments.length ? <p className="text-xs text-slate-500">Aucune pièce jointe visible.</p> : null}</div>
         </section>
       </TicketSidePanel>
 
