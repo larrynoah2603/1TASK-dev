@@ -22,6 +22,29 @@ describe("observabilité serveur", () => {
     warn.mockRestore();
   });
 
+  it("émet aussi les succès rapides en JSON structuré pour les environnements multi-instances", async () => {
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+    await measureServerOperation("inbox.ticket_page", async () => "ok", {
+      route: "/inbox",
+      traceId: "trace-fast-test",
+      section: "critical",
+      payloadBytes: 1234,
+    });
+    const event = JSON.parse(String(info.mock.calls[0]?.[0]));
+    expect(event).toMatchObject({
+      event: "server_operation",
+      operation: "inbox.ticket_page",
+      route: "/inbox",
+      traceId: "trace-fast-test",
+      section: "critical",
+      payloadBytes: 1234,
+      queryCount: 0,
+      status: "ok",
+      slow: false,
+    });
+    info.mockRestore();
+  });
+
   it("agrège succès, erreurs et percentiles sans contenu sensible", async () => {
     vi.useFakeTimers();
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
