@@ -1,18 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f8fa;
-  --foreground: #171a21;
-  --muted: #737b8c;
-  --line: #e5e7eb;
-  --line-strong: #d9dce3;
-  --brand: #5b5bd6;
-  --brand-dark: #4546a8;
-  --brand-soft: #f0f0ff;
-  --accent: #20a779;
-  --sidebar: #181a20;
-  --sidebar-muted: #989eab;
-  --sidebar-line: rgba(255, 255, 255, 0.09);
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --line-strong: #cbd5e1;
+  --brand: #2563eb;
+  --brand-dark: #1d4ed8;
+  --brand-soft: #eff6ff;
+  --accent: #16a34a;
+  --sidebar: #0f172a;
+  --sidebar-muted: #94a3b8;
+  --sidebar-line: rgba(148, 163, 184, 0.16);
 }
 
 * { box-sizing: border-box; }
@@ -1639,6 +1639,10 @@ html[data-theme="dark"] .dashboard-kpi-link:hover { box-shadow: 0 10px 26px rgba
 
 
 /* Three-dashboard layouts: compact Linear-inspired workspace surfaces. */
+.dashboard-create-callout { display: flex; align-items: center; justify-content: space-between; gap: 1.25rem; border: 1px solid #bfdbfe; border-radius: 16px; background: linear-gradient(135deg, #eff6ff, #ffffff); padding: 1.25rem 1.5rem; }
+.dashboard-create-callout h2 { margin-top: .25rem; color: var(--foreground); font-size: 1rem; font-weight: 750; }
+.dashboard-create-callout p:not(.eyebrow) { margin-top: .35rem; color: var(--muted); font-size: .8125rem; }
+
 .dashboard-page {
   display: grid;
   gap: 1rem;
@@ -5336,6 +5340,27 @@ html[data-theme="dark"] {
   background: var(--ledger-primary-soft);
   color: var(--ledger-primary);
 }
+
+@media (max-width: 640px) {
+  .dashboard-create-callout { align-items: flex-start; flex-direction: column; padding: 1rem; }
+  .dashboard-create-callout .button-primary { width: 100%; }
+  .dashboard-role-hero .button-primary, .dashboard-role-hero .button-secondary { flex: 1; }
+}
+
+
+.ui-card { border: 1px solid var(--line); border-radius: 16px; background: #fff; box-shadow: 0 1px 2px rgba(15, 23, 42, .03), 0 12px 32px rgba(15, 23, 42, .04); }
+.ui-button { display: inline-flex; min-height: 2.5rem; align-items: center; justify-content: center; gap: .5rem; border-radius: 10px; padding: .625rem .875rem; font-size: .8125rem; font-weight: 700; transition: transform 140ms ease, background-color 140ms ease, box-shadow 140ms ease; }
+.ui-button:hover { transform: translateY(-1px); }
+.ui-button-primary { background: var(--brand); color: #fff; box-shadow: 0 6px 14px rgba(37, 99, 235, .18); }
+.ui-button-secondary { border: 1px solid var(--line-strong); background: #fff; color: var(--foreground); }
+.ui-button-ghost { color: var(--muted); }
+.ui-button-danger { background: #fef2f2; color: #b91c1c; }
+.ui-badge { display: inline-flex; align-items: center; border-radius: 999px; padding: .25rem .55rem; font-size: .6875rem; font-weight: 700; }
+.ui-badge-neutral { background: #f1f5f9; color: #475569; } .ui-badge-info { background: #dbeafe; color: #1d4ed8; } .ui-badge-success { background: #dcfce7; color: #15803d; } .ui-badge-warning { background: #fef3c7; color: #b45309; } .ui-badge-danger { background: #fee2e2; color: #b91c1c; }
+.ui-progress { height: .45rem; overflow: hidden; border-radius: 999px; background: #e2e8f0; } .ui-progress-fill { display: block; height: 100%; border-radius: inherit; transition: width 240ms ease; } .ui-progress-brand { background: var(--brand); } .ui-progress-success { background: var(--accent); } .ui-progress-warning { background: #f59e0b; } .ui-progress-danger { background: #dc2626; }
+.ui-empty-state { display: grid; place-items: center; gap: .45rem; min-height: 14rem; padding: 2rem; text-align: center; color: var(--muted); } .ui-empty-state h2 { color: var(--foreground); font-size: 1rem; font-weight: 750; } .ui-empty-state p { max-width: 28rem; font-size: .8125rem; } .ui-empty-icon { display: grid; height: 2.5rem; width: 2.5rem; place-items: center; border-radius: 12px; background: var(--brand-soft); color: var(--brand); font-size: 1.5rem; }
+.ui-skeleton { min-height: 1rem; border-radius: 8px; background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%); background-size: 200% 100%; animation: ui-shimmer 1.4s infinite; } @keyframes ui-shimmer { to { background-position: -200% 0; } }
+.ui-search { display: flex; align-items: center; gap: .5rem; min-height: 2.5rem; border: 1px solid var(--line); border-radius: 10px; background: #fff; padding: 0 .75rem; color: var(--muted); } .ui-search input { min-width: 0; flex: 1; border: 0; outline: 0; background: transparent; color: var(--foreground); font-size: .8125rem; }
 
 .new-ticket-launcher,
 .sidebar-new-ticket {
