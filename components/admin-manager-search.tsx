@@ -6,7 +6,7 @@ export function AdminManagerSearch({ name, value, onChange, departmentId, exclud
   const [options, setOptions] = useState<ManagerOption[]>(currentManager ? [currentManager] : []);
   const [loading, setLoading] = useState(false);
   useEffect(() => {
-    if (!departmentId) { setOptions([]); return; }
+    if (!departmentId) return;
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       setLoading(true);

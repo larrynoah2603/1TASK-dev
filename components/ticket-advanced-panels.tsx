@@ -103,13 +103,11 @@ export function TicketAdvancedPanels(props: Props) {
   const [error, setError] = useState("");
   const [confirmAction, setConfirmAction] = useState<{ title: string; description: string; run: () => void } | null>(null);
 
-  const [linksLoaded, setLinksLoaded] = useState(false);
-  const [attachmentsLoaded, setAttachmentsLoaded] = useState(false);
   const [linksLoading, setLinksLoading] = useState(false);
   const [attachmentsLoading, setAttachmentsLoading] = useState(false);
 
-  const loadLinks = useCallback(async () => {
-    if (linksLoaded || linksLoading) return;
+  const loadLinks = useCallback(async (force = false) => {
+    if ((linksLoaded && !force) || linksLoading) return;
     setLinksLoading(true);
     setError("");
     try {
@@ -156,7 +154,7 @@ export function TicketAdvancedPanels(props: Props) {
     payload: unknown,
     success: string,
     key: string,
-    options: { refresh?: boolean; reloadLinks?: boolean } = {},
+    options: { refresh?: boolean } = {},
   ) {
     setBusy(key);
     setError("");
@@ -173,18 +171,10 @@ export function TicketAdvancedPanels(props: Props) {
         return;
       }
       toast(success);
-      if (options.reloadLinks) {
-        setLinksLoaded(false);
-        setLinksLoading(true);
-        try {
-          const linksResponse = await fetch(`/api/tickets/${props.ticketId}/links`, { cache: "no-store" });
-          if (linksResponse.ok) {
-            setLinks((await linksResponse.json()).links ?? []);
-            setLinksLoaded(true);
-          }
-        } finally {
-          setLinksLoading(false);
-        }
+      if (key === "link") {
+        setSelectedTicket(null);
+        setLinkQuery("");
+        await loadLinks(true);
       }
       if (options.refresh) router.refresh();
     } catch {
@@ -246,7 +236,7 @@ export function TicketAdvancedPanels(props: Props) {
   function submitLink(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!selectedTicket) return;
-    void postJson(`/api/tickets/${props.ticketId}/links`, { toTicketId: selectedTicket.id, type: linkType, reason: linkReason || undefined }, "Lien ticket créé.", "link", { reloadLinks: true });
+    void postJson(`/api/tickets/${props.ticketId}/links`, { toTicketId: selectedTicket.id, type: linkType, reason: linkReason || undefined }, "Lien ticket créé.", "link");
   }
 
   async function uploadAttachment(event: React.ChangeEvent<HTMLInputElement>) {

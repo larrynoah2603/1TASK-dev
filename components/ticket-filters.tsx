@@ -1,6 +1,7 @@
 "use client";
 
 import { Priority, TicketStatus } from "@prisma/client";
+import type { Route } from "next";
 import { useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { PRIORITY_LABELS, STATUS_LABELS } from "@/lib/domain";
@@ -64,37 +65,17 @@ export function TicketFilters({
         .map((name) => [name, String(formData.get(name) ?? "")]),
     );
     const href = buildTicketFilterHref(pathname, searchParams.toString(), nextValues);
-    startTransition(() => router.replace(href, { scroll: false }));
+    startTransition(() => router.replace(href as Route, { scroll: false }));
   }
 
   function handleReset() {
-    startTransition(() => router.replace(resetHref, { scroll: false }));
+    startTransition(() => router.replace(resetHref as Route, { scroll: false }));
   }
 
   const departments = [...new Map(queues.map((queue) => [queue.department.id, queue.department])).values()]
     .sort((left, right) => left.name.localeCompare(right.name));
   const availableMissions = values.dossierId ? missions.filter((mission) => mission.dossier.id === values.dossierId) : missions;
   const filterStateKey = JSON.stringify(values);
-
-  function submitFilters(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const next = new URLSearchParams(searchParams.toString());
-    next.delete("page");
-    for (const [key, rawValue] of formData.entries()) {
-      if (typeof rawValue !== "string") continue;
-      const value = rawValue.trim();
-      if (value) next.set(key, value);
-      else next.delete(key);
-    }
-    const query = next.toString();
-    const href = `${pathname}${query ? `?${query}` : ""}` as Route;
-    startTransition(() => router.replace(href, { scroll: false }));
-  }
-
-  function resetFilters() {
-    startTransition(() => router.replace(resetHref as Route, { scroll: false }));
-  }
 
   return (
     <form key={filterStateKey} aria-label="Filtres de tickets" className="filter-panel grid gap-3 md:grid-cols-2 xl:grid-cols-4" onSubmit={handleSubmit}>

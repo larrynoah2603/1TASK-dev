@@ -5,7 +5,6 @@ import type { Route } from "next";
 import { useEffect, useRef, useState } from "react";
 import { useNotificationState } from "@/components/notification-state";
 import { fetchWithTimeout } from "@/lib/client-http";
-import { useNotificationState } from "@/components/notification-state";
 
 type NotificationItem = {
   id: string;
@@ -49,7 +48,6 @@ export function NotificationCenter() {
       if (!response.ok) throw new Error("Les notifications sont temporairement indisponibles.");
       const data = await response.json() as NotificationResponse;
       setItems(data.notifications ?? []);
-      setUnreadCount(Number.isFinite(data.unreadCount) ? data.unreadCount : 0);
       setLoaded(true);
     } catch {
       setError("Les notifications n’ont pas pu être chargées.");

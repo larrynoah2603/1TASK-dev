@@ -1,4 +1,5 @@
 import { RoleCode } from "@prisma/client";
+import Image from "next/image";
 import { hasGlobalRole } from "@/lib/access-control";
 import { isFunctionalAssetAdministrator } from "@/lib/asset-access";
 import { ROLE_LABELS } from "@/lib/identity";
@@ -94,7 +95,7 @@ export async function AppShell({ user, children }: { user: UserContext; children
           return <div key={group} className="sidebar-nav-group"><p className="sidebar-label">{group}</p>{groupLinks.map((link) => <ShellNavLink key={link.href} href={link.href} icon={<AppIcon kind={link.icon} />}><span className="flex min-w-0 items-center gap-2 truncate">{link.label}{link.href === "/notifications" ? <NotificationBadge /> : null}</span></ShellNavLink>)}</div>;
         })}
       </nav>}
-    user={<div className="sidebar-user-block sidebar-user-block-industrial sidebar-extra hidden md:block"><div className="sidebar-user-avatar">{user.image ? <img src={user.image} alt="" /> : initials(user.name)}</div><div className="min-w-0"><p className="sidebar-user-name truncate">{user.name}</p><p className="sidebar-user-context truncate">{user.department?.name ?? "Service desk interne"}</p></div></div>}
+    user={<div className="sidebar-user-block sidebar-user-block-industrial sidebar-extra hidden md:block"><div className="sidebar-user-avatar">{user.image ? <Image src={user.image} alt="" width={40} height={40} unoptimized /> : initials(user.name)}</div><div className="min-w-0"><p className="sidebar-user-name truncate">{user.name}</p><p className="sidebar-user-context truncate">{user.department?.name ?? "Service desk interne"}</p></div></div>}
   />;
   // TopHeader owns the topbar-layout-industrial presentation while this server component keeps access and data concerns.
   const topbar = <TopHeader context={<TopbarContext />} search={<GlobalSearch />} actions={<>{canCreate ? <NewTicketLauncher /> : null}<NotificationCenter /><HelpMenu /><ThemeToggle /><ProfileMenu name={user.name} email={user.email} image={user.image} department={user.department?.name ?? "Département non renseigné"} roles={roleLabel} admin={isAdmin} /></>} />;
