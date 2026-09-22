@@ -29,7 +29,10 @@ describe("contrats de performance Prisma", () => {
     const service = source("lib/ticket-query-service.ts");
     const route = source("app/api/tickets/route.ts");
 
-    expect(service).toContain("cursor ? { cursor: { id: cursor.id }, skip: 1 }");
+    expect(service).toContain("ticketCursorBoundary(cursor)");
+    expect(service).not.toContain("cursor: { id: cursor.id }");
+    expect(service).toContain("updatedAt: { lt: updatedAt }");
+    expect(service).toContain("createdAt: { gt: createdAt }");
     expect(service).toContain("take: cursor || !includeTotal ? pageSize + 1 : pageSize");
     expect(service).toContain("nextCursor:");
     expect(service).toContain("hasMore,");
