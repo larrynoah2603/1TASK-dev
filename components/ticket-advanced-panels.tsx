@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Combobox } from "@/components/combobox";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -96,30 +96,36 @@ export function TicketAdvancedPanels(props: Props) {
   const [linkType, setLinkType] = useState("DUPLICATE");
   const [linkReason, setLinkReason] = useState("");
   const [links, setLinks] = useState<TicketLink[]>([]);
+  const [linksLoaded, setLinksLoaded] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [attachmentsLoaded, setAttachmentsLoaded] = useState(false);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [confirmAction, setConfirmAction] = useState<{ title: string; description: string; run: () => void } | null>(null);
 
-  const loadLists = useCallback(async () => {
+  const loadLinks = useCallback(async (force = false) => {
+    if (linksLoaded && !force) return;
     try {
-      const [linksResponse, attachmentsResponse] = await Promise.all([
-        fetch(`/api/tickets/${props.ticketId}/links`, { cache: "no-store" }),
-        fetch(`/api/tickets/${props.ticketId}/attachments`, { cache: "no-store" }),
-      ]);
-      if (linksResponse.ok) setLinks((await linksResponse.json()).links ?? []);
-      if (attachmentsResponse.ok) setAttachments((await attachmentsResponse.json()) ?? []);
+      const response = await fetch(`/api/tickets/${props.ticketId}/links`, { cache: "no-store" });
+      if (!response.ok) throw new Error("links-failed");
+      setLinks((await response.json()).links ?? []);
+      setLinksLoaded(true);
     } catch {
-      setError("Les éléments avancés n’ont pas pu être chargés.");
+      setError("Les liens n’ont pas pu être chargés.");
     }
-  }, [props.ticketId]);
+  }, [linksLoaded, props.ticketId]);
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void loadLists();
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [loadLists]);
+  const loadAttachments = useCallback(async () => {
+    if (attachmentsLoaded) return;
+    try {
+      const response = await fetch(`/api/tickets/${props.ticketId}/attachments`, { cache: "no-store" });
+      if (!response.ok) throw new Error("attachments-failed");
+      setAttachments((await response.json()) ?? []);
+      setAttachmentsLoaded(true);
+    } catch {
+      setError("Les pièces jointes n’ont pas pu être chargées.");
+    }
+  }, [attachmentsLoaded, props.ticketId]);
 
   async function searchTickets(value: string) {
     setLinkQuery(value);
@@ -144,7 +150,13 @@ export function TicketAdvancedPanels(props: Props) {
         return;
       }
       toast(success);
-      await loadLists();
+      if (key === "link") {
+        setSelectedTicket(null);
+        setLinkQuery("");
+        setLinkReason("");
+        await loadLinks(true);
+        return;
+      }
       router.refresh();
     } catch {
       setError("L’action n’a pas pu être envoyée.");
@@ -276,7 +288,7 @@ export function TicketAdvancedPanels(props: Props) {
         </TicketSidePanel>
       ) : null}
 
-      <TicketSidePanel title="Relations" subtitle="Tickets liés">
+      <TicketSidePanel title="Relations" subtitle="Tickets liés" onOpen={() => void loadLinks()}>
         <section className="panel p-5">
         <p className="eyebrow">Relations</p>
         <h2 className="mt-1 text-base font-semibold text-slate-900">Tickets liés</h2>
@@ -292,7 +304,7 @@ export function TicketAdvancedPanels(props: Props) {
         </section>
       </TicketSidePanel>
 
-      <TicketSidePanel title="Fichiers" subtitle="Pièces jointes">
+      <TicketSidePanel title="Fichiers" subtitle="Pièces jointes" onOpen={() => void loadAttachments()}>
         <section className="panel p-5">
         <p className="eyebrow">Fichiers</p>
         <h2 className="mt-1 text-base font-semibold text-slate-900">Pièces jointes</h2>
