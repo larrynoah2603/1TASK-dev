@@ -74,9 +74,10 @@ export function TicketFilters({
   const departments = [...new Map(queues.map((queue) => [queue.department.id, queue.department])).values()]
     .sort((left, right) => left.name.localeCompare(right.name));
   const availableMissions = values.dossierId ? missions.filter((mission) => mission.dossier.id === values.dossierId) : missions;
+  const filterStateKey = JSON.stringify(values);
 
   return (
-    <form aria-label="Filtres de tickets" className="filter-panel grid gap-3 md:grid-cols-2 xl:grid-cols-4" onSubmit={handleSubmit}>
+    <form key={filterStateKey} aria-label="Filtres de tickets" className="filter-panel grid gap-3 md:grid-cols-2 xl:grid-cols-4" onSubmit={handleSubmit}>
       <div className="filter-heading md:col-span-2 xl:col-span-4">
         <div><p className="eyebrow">Affiner la vue</p><p className="mt-1 text-xs text-slate-500">Recherchez et réduisez la liste selon votre périmètre autorisé.</p></div>
         <span className="filter-heading-hint">Filtres persistants dans l’URL</span>

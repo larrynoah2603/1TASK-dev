@@ -2,7 +2,6 @@
 
 import { FormEvent, useState } from "react";
 import { MessageVisibility } from "@prisma/client";
-import { useRouter } from "next/navigation";
 import { Combobox } from "@/components/combobox";
 import { useToast } from "@/components/toast-provider";
 
@@ -29,9 +28,9 @@ export function TicketCommentThread({
   canPostPublic: boolean;
   canPostInternal: boolean;
 }) {
-  const router = useRouter();
   const { toast } = useToast();
   const [body, setBody] = useState("");
+  const [currentMessages, setCurrentMessages] = useState(messages);
   const [visibility, setVisibility] = useState<MessageVisibility>(MessageVisibility.REQUESTER);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -54,8 +53,11 @@ export function TicketCommentThread({
         return;
       }
       setBody("");
+      setCurrentMessages((current) => [
+        ...current,
+        { ...data, createdAt: new Date(data.createdAt) } as TicketComment,
+      ]);
       toast("Commentaire publié.");
-      router.refresh();
     } catch {
       setError("Le commentaire n’a pas pu être publié.");
       toast("Le commentaire n’a pas pu être publié.", "error");
@@ -72,10 +74,10 @@ export function TicketCommentThread({
           <h2 id="ticket-comments-title">Commentaires</h2>
           <p>Les messages publics restent visibles par le demandeur ; les messages internes restent réservés à l’équipe habilitée.</p>
         </div>
-        <span className="ticket-section-count">{messages.length}</span>
+        <span className="ticket-section-count">{currentMessages.length}</span>
       </div>
       <div className="ticket-comment-list">
-        {messages.map((message) => (
+        {currentMessages.map((message) => (
           <article key={message.id} className={`ticket-comment${message.visibility === MessageVisibility.INTERNAL ? " ticket-comment-internal" : ""}`}>
             <div className="ticket-comment-meta">
               <strong>{message.author.name}</strong>
@@ -84,7 +86,7 @@ export function TicketCommentThread({
             <p>{message.body}</p>
           </article>
         ))}
-        {!messages.length ? <p className="ticket-empty-state">Aucun commentaire pour le moment.</p> : null}
+        {!currentMessages.length ? <p className="ticket-empty-state">Aucun commentaire pour le moment.</p> : null}
       </div>
       {canPostPublic ? (
         <form onSubmit={submit} className="ticket-comment-composer">
