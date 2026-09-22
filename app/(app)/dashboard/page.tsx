@@ -26,9 +26,13 @@ export default async function DashboardPage() {
     <div className="dashboard-page dashboard-requester-layout">
       <DashboardViewTabs active="requester" canOperate={canOperate} canReport={canReport} />
       <header className="dashboard-hero dashboard-role-hero">
-        <div><p className="eyebrow">Workspace</p><h1>Tableau de bord</h1><p className="page-header-description">Un aperçu rapide de vos demandes et des tickets à traiter.</p></div>
-        <Link href="/tickets" className="button-secondary hidden sm:inline-flex">Voir mes tickets</Link>
+        <div><p className="eyebrow">Votre espace de support</p><h1>Bonjour {user.name.split(" ")[0]}</h1><p className="page-header-description">Suivez vos incidents en temps réel et retrouvez rapidement les dernières mises à jour.</p></div>
+        <div className="flex flex-wrap gap-2"><Link href="/tickets" className="button-secondary">Voir mes tickets</Link><Link href="/tickets/new" className="button-primary">+ Créer un incident</Link></div>
       </header>
+      <section className="dashboard-create-callout" aria-labelledby="create-incident-title">
+        <div><p className="eyebrow">Besoin d&apos;aide ?</p><h2 id="create-incident-title">Un problème à signaler ?</h2><p>Décrivez votre besoin en quelques étapes. Notre équipe vous orientera vers le bon service.</p></div>
+        <Link href="/tickets/new" className="button-primary">Nouveau ticket <span aria-hidden="true">→</span></Link>
+      </section>
 
       <DashboardKpiGrid items={[{ label: "Ouverts", value: personalOpen, note: "à qualifier ou affecter", href: "/tickets?status=NEW", tone: "dashboard-kpi-value-brand" }, { label: "En cours", value: personalInProgress, note: "traitement en cours", href: "/tickets?status=IN_PROGRESS", tone: "dashboard-kpi-value-info" }, { label: "Bloqués", value: personalBlocked, note: "information attendue", href: "/tickets?status=BLOCKED", tone: "dashboard-kpi-value-warning" }, { label: "Résolus", value: personalClosed, note: "historique personnel", href: "/tickets?status=CLOSED", tone: "dashboard-kpi-value-success" }]} />
 
