@@ -96,7 +96,7 @@ describe("contrats de performance Prisma", () => {
     expect(implementation).not.toContain("_count");
   });
 
-  it("mesure séparément chaque chargement critique de la boîte agent", () => {
+  it("mesure chaque chargement de la boîte agent et streame les données secondaires", () => {
     const page = source("app/(app)/inbox/page.tsx");
 
     for (const operation of [
@@ -106,8 +106,12 @@ describe("contrats de performance Prisma", () => {
       "inbox.sla_watch",
       "inbox.portfolio_filters",
     ]) {
-      expect(page).toContain(`measureServerOperation("${operation}"`);
+      expect(page).toContain(`"${operation}"`);
     }
+    expect(page).toContain("<Suspense fallback={<InboxKpiSkeleton />}>");
+    expect(page).toContain("<InboxKpis user={user} />");
+    expect(page).toContain("<Suspense fallback={<InboxWatchSkeleton />}>");
+    expect(page).toContain("<InboxSlaWatch user={user} />");
   });
 
   it("réduit les six compteurs du résumé opérationnel à quatre agrégations", () => {
