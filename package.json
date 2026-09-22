@@ -6,7 +6,6 @@
   "packageManager": "npm@11.4.2",
   "scripts": {
     "dev": "next dev",
-    "predev": "npm run env:check && prisma generate",
     "build": "next build",
     "prebuild": "npm run env:check && npm run clean:next && prisma generate",
     "prestart": "npm run env:check -- production",
