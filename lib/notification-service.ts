@@ -78,9 +78,7 @@ export async function countUnreadNotifications(
       recipientId:
         current.id,
 
-      status: {
-        not: NotificationStatus.READ,
-      },
+      readAt: null,
 
     },
 

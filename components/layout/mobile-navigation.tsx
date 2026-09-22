@@ -3,11 +3,13 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { usePathname } from "next/navigation";
+import { useNotificationState } from "@/components/notification-state";
 
 type MobileLink = { href: string; label: string; icon: React.ReactNode };
 
-export function MobileNavigation({ links, canCreate, unreadCount }: { links: MobileLink[]; canCreate: boolean; unreadCount: number }) {
+export function MobileNavigation({ links, canCreate }: { links: MobileLink[]; canCreate: boolean }) {
   const pathname = usePathname();
+  const { unreadCount } = useNotificationState();
   const preferred = ["/dashboard", "/tickets", "/inbox", "/notifications", "/profile"];
   const shown = preferred.map((href) => links.find((link) => link.href === href)).filter((link): link is MobileLink => Boolean(link)).slice(0, canCreate ? 4 : 5);
   return (
