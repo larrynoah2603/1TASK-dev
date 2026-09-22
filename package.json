@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "next dev",
     "predev": "prisma generate",
+    "postinstall": "prisma generate",
     "build": "next build",
     "prebuild": "npm run env:check && npm run clean:next && prisma generate",
     "prestart": "npm run env:check -- production",
