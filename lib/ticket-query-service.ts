@@ -369,6 +369,9 @@ function ticketOrderBy(sort: TicketListSort = "updated_desc"): Prisma.TicketOrde
 type TicketListCursor = {
   id: string;
   sort: TicketListSort;
+  updatedAt?: string;
+  createdAt?: string;
+  status?: TicketStatus;
 };
 
 function encodeTicketListCursor(cursor: TicketListCursor): string {
@@ -379,10 +382,66 @@ function decodeTicketListCursor(value: string, sort: TicketListSort): TicketList
   try {
     const decoded = JSON.parse(Buffer.from(value, "base64url").toString("utf8")) as Partial<TicketListCursor>;
     if (typeof decoded.id !== "string" || !decoded.id || decoded.sort !== sort) throw new Error("invalid cursor");
-    return { id: decoded.id, sort };
+    if ((sort === "updated_desc" || sort === "status_asc") && !decoded.updatedAt) throw new Error("missing updatedAt");
+    if ((sort === "created_desc" || sort === "created_asc") && !decoded.createdAt) throw new Error("missing createdAt");
+    if (sort === "status_asc" && !decoded.status) throw new Error("missing status");
+    return decoded as TicketListCursor;
   } catch {
     throw new DomainError("Le curseur de pagination est invalide pour ce tri.", 400);
   }
+}
+
+function ticketCursorBoundary(cursor: TicketListCursor): Prisma.TicketWhereInput {
+  if (cursor.sort === "created_desc") {
+    const createdAt = new Date(cursor.createdAt!);
+    return { OR: [
+      { createdAt: { lt: createdAt } },
+      { AND: [{ createdAt }, { id: { lt: cursor.id } }] },
+    ] };
+  }
+  if (cursor.sort === "created_asc") {
+    const createdAt = new Date(cursor.createdAt!);
+    return { OR: [
+      { createdAt: { gt: createdAt } },
+      { AND: [{ createdAt }, { id: { gt: cursor.id } }] },
+    ] };
+  }
+  if (cursor.sort === "status_asc") {
+    const updatedAt = new Date(cursor.updatedAt!);
+    const statuses = Object.values(TicketStatus);
+    const index = statuses.indexOf(cursor.status!);
+    const followingStatuses = index >= 0 ? statuses.slice(index + 1) : [];
+    return { OR: [
+      ...(followingStatuses.length ? [{ status: { in: followingStatuses } }] : []),
+      {
+        AND: [
+          { status: cursor.status },
+          { OR: [
+            { updatedAt: { lt: updatedAt } },
+            { AND: [{ updatedAt }, { id: { lt: cursor.id } }] },
+          ] },
+        ],
+      },
+    ] };
+  }
+  const updatedAt = new Date(cursor.updatedAt!);
+  return { OR: [
+    { updatedAt: { lt: updatedAt } },
+    { AND: [{ updatedAt }, { id: { lt: cursor.id } }] },
+  ] };
+}
+
+function ticketCursorFromRow(
+  ticket: { id: string; updatedAt: Date; createdAt: Date; status: TicketStatus },
+  sort: TicketListSort,
+): TicketListCursor {
+  if (sort === "created_desc" || sort === "created_asc") {
+    return { id: ticket.id, sort, createdAt: ticket.createdAt.toISOString() };
+  }
+  if (sort === "status_asc") {
+    return { id: ticket.id, sort, status: ticket.status, updatedAt: ticket.updatedAt.toISOString() };
+  }
+  return { id: ticket.id, sort, updatedAt: ticket.updatedAt.toISOString() };
 }
 
 const ticketListSelect = {
@@ -441,12 +500,13 @@ async function listVisibleTicketsPageInternal(
   const sort = options.sort ?? "updated_desc";
   const cursor = options.cursor ? decodeTicketListCursor(options.cursor, sort) : null;
   const now = new Date();
+  const cursorWhere = cursor ? { AND: [where, ticketCursorBoundary(cursor)] } : where;
   const [ticketRows, exactTotal] = await Promise.all([
     prisma.ticket.findMany({
-      where,
+      where: cursorWhere,
       select: ticketListSelect,
       orderBy: ticketOrderBy(sort),
-      ...(cursor ? { cursor: { id: cursor.id }, skip: 1 } : { skip: (page - 1) * pageSize }),
+      ...(!cursor ? { skip: (page - 1) * pageSize } : {}),
       take: cursor || !includeTotal ? pageSize + 1 : pageSize,
     }),
     includeTotal ? prisma.ticket.count({ where }) : Promise.resolve(null),
@@ -466,7 +526,7 @@ async function listVisibleTicketsPageInternal(
     totalPages: Math.max(1, Math.ceil(total / pageSize)),
     hasMore,
     nextCursor: hasMore && tickets.length
-      ? encodeTicketListCursor({ id: tickets.at(-1)!.id, sort })
+      ? encodeTicketListCursor(ticketCursorFromRow(tickets.at(-1)!, sort))
       : null,
   };
 }
