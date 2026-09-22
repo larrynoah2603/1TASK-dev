@@ -5,7 +5,7 @@ import { TicketFilters } from "@/components/ticket-filters";
 import { TicketViewSwitcher } from "@/components/ticket-view-switcher";
 import { Pagination } from "@/components/pagination";
 import { listVisibleTicketsPage } from "@/lib/ticket-query-service";
-import { listVisibleQueues } from "@/lib/ticket-queue-service";
+import { listTicketQueueFilterOptions } from "@/lib/ticket-queue-service";
 import { getSessionUserContext, roleCodes } from "@/lib/server-auth";
 import { ticketListQuerySchema } from "@/lib/validation";
 
@@ -15,7 +15,7 @@ export default async function TicketsPage({ searchParams }: { searchParams: Prom
   const rawParams = await searchParams;
   const params = ticketListQuerySchema.parse({ ...rawParams, scope: rawParams.scope ?? "requested" });
   const [queues, tickets] = await Promise.all([
-    listVisibleQueues(user, { includePersonal: true }),
+    listTicketQueueFilterOptions(user, { includePersonal: true }),
     listVisibleTicketsPage(user, { query: params.q, status: params.status, priority: params.priority, scope: params.scope, sla: params.sla, departmentId: params.departmentId, queueId: params.queueId, sort: params.sort, page: params.page, pageSize: params.pageSize }),
   ]);
   const operationalRoles: RoleCode[] = [RoleCode.AGENT, RoleCode.QUEUE_MANAGER, RoleCode.FUNCTIONAL_ADMIN];
