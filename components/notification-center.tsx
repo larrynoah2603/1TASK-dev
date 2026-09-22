@@ -5,6 +5,7 @@ import type { Route } from "next";
 import { useEffect, useRef, useState } from "react";
 import { useNotificationState } from "@/components/notification-state";
 import { fetchWithTimeout } from "@/lib/client-http";
+import { useNotificationState } from "@/components/notification-state";
 
 type NotificationItem = {
   id: string;
@@ -16,10 +17,7 @@ type NotificationItem = {
   createdAt: string;
 };
 
-type NotificationResponse = {
-  unreadCount: number;
-  notifications: NotificationItem[];
-};
+type NotificationResponse = { notifications: NotificationItem[] };
 
 function relativeDate(value: string) {
   const date = new Date(value);

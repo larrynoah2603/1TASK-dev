@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/http";
 import {
-  countUnreadNotifications,
   listUserNotificationsPage,
 } from "@/lib/notification-service";
 import { requireSessionUserContext } from "@/lib/server-auth";
@@ -28,24 +27,11 @@ export async function GET(
 
 
 
-    const [
-      notificationPage,
-      unreadCount,
-    ] = await Promise.all([
-
-      listUserNotificationsPage(actor, { pageSize: filters.take, cursor: filters.cursor }),
-
-      countUnreadNotifications(
-        actor,
-      ),
-
-    ]);
+    const notificationPage = await listUserNotificationsPage(actor, { pageSize: filters.take, cursor: filters.cursor });
 
 
 
     return NextResponse.json({
-
-      unreadCount,
 
       notifications:
         notificationPage.items.map(

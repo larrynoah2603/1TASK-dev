@@ -76,11 +76,31 @@ export function TicketFilters({
   const availableMissions = values.dossierId ? missions.filter((mission) => mission.dossier.id === values.dossierId) : missions;
   const filterStateKey = JSON.stringify(values);
 
+  function submitFilters(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete("page");
+    for (const [key, rawValue] of formData.entries()) {
+      if (typeof rawValue !== "string") continue;
+      const value = rawValue.trim();
+      if (value) next.set(key, value);
+      else next.delete(key);
+    }
+    const query = next.toString();
+    const href = `${pathname}${query ? `?${query}` : ""}` as Route;
+    startTransition(() => router.replace(href, { scroll: false }));
+  }
+
+  function resetFilters() {
+    startTransition(() => router.replace(resetHref as Route, { scroll: false }));
+  }
+
   return (
     <form key={filterStateKey} aria-label="Filtres de tickets" className="filter-panel grid gap-3 md:grid-cols-2 xl:grid-cols-4" onSubmit={handleSubmit}>
       <div className="filter-heading md:col-span-2 xl:col-span-4">
         <div><p className="eyebrow">Affiner la vue</p><p className="mt-1 text-xs text-slate-500">Recherchez et réduisez la liste selon votre périmètre autorisé.</p></div>
-        <span className="filter-heading-hint">Filtres persistants dans l’URL</span>
+        <span className="filter-heading-hint">{isPending ? "Mise à jour…" : "Filtres persistants dans l’URL"}</span>
       </div>
       <label className="sr-only" htmlFor="ticket-search">Recherche</label>
       <input

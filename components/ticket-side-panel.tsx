@@ -9,6 +9,7 @@ export function TicketSidePanel({
   defaultOpen = false,
   onOpen,
   children,
+  onOpen,
 }: {
   title: string;
   subtitle?: string;
@@ -16,6 +17,7 @@ export function TicketSidePanel({
   defaultOpen?: boolean;
   onOpen?: () => void;
   children: React.ReactNode;
+  onOpen?: () => void;
 }) {
   const [open, setOpen] = useState(defaultOpen);
 

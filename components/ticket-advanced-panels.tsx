@@ -96,7 +96,9 @@ export function TicketAdvancedPanels(props: Props) {
   const [linkType, setLinkType] = useState("DUPLICATE");
   const [linkReason, setLinkReason] = useState("");
   const [links, setLinks] = useState<TicketLink[]>([]);
+  const [linksLoaded, setLinksLoaded] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [attachmentsLoaded, setAttachmentsLoaded] = useState(false);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [confirmAction, setConfirmAction] = useState<{ title: string; description: string; run: () => void } | null>(null);

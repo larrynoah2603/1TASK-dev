@@ -155,8 +155,9 @@ export async function markAllNotificationsAsRead(
       recipientId:
         current.id,
 
-      readAt:
-        null,
+      status: {
+        not: NotificationStatus.READ,
+      },
 
     },
 
