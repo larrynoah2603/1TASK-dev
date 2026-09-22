@@ -215,4 +215,41 @@ describe("contrats de performance Prisma", () => {
     expect(implementation).toContain("teamMemberships: {");
     expect(implementation).not.toContain("department: true");
   });
+  it("keeps ticket filter navigation client-side and removes shell notification counts", () => {
+    const filters = source("components/ticket-filters.tsx");
+    const appShell = source("components/app-shell.tsx");
+    const adminShell = source("components/admin-shell.tsx");
+    const center = source("components/notification-center.tsx");
+
+    expect(filters).toContain('"use client"');
+    expect(filters).toContain("router.replace(");
+    expect(filters).toContain("useTransition()");
+    expect(filters).not.toContain('method="get"');
+    expect(appShell).not.toContain("prisma.notification.count");
+    expect(adminShell).not.toContain("prisma.notification.count");
+    expect(center).toContain("void loadNotifications()");
+  });
+
+  it("uses lightweight personal queue filters on /tickets", () => {
+    const page = source("app/(app)/tickets/page.tsx");
+    const service = source("lib/ticket-queue-service.ts");
+    const start = service.indexOf("export async function listTicketQueueFilterOptions");
+    const implementation = service.slice(start);
+
+    expect(page).toContain("listTicketQueueFilterOptions(user, { includePersonal: true })");
+    expect(page).not.toContain("listVisibleQueues(user, { includePersonal: true })");
+    expect(implementation).toContain("personalQueueIds.has(queue.id)");
+    expect(implementation).not.toContain("groupBy");
+    expect(implementation).not.toContain("_count");
+  });
+
+  it("lazy-loads ticket links and attachments independently", () => {
+    const panels = source("components/ticket-advanced-panels.tsx");
+
+    expect(panels).toContain('onOpen={() => void loadLinks()}');
+    expect(panels).toContain('onOpen={() => void loadAttachments()}');
+    expect(panels).not.toContain("const loadLists");
+    expect(panels).toContain('if (key === "link")');
+    expect(panels).toContain("await loadLinks(true)");
+  });
 });
