@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
-export function TicketWorkspace({ children }: { children: ReactNode }) {
-  return <section className="ticket-workspace" aria-label="Espace de travail tickets">{children}</section>;
+export function TicketWorkspace({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return <section className={`ticket-workspace ${className}`.trim()} aria-label="Espace de travail tickets">{children}</section>;
 }
 
 export function TicketWorkspaceHeader({ children }: { children: ReactNode }) {
