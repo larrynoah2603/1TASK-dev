@@ -14,7 +14,7 @@ export default async function TicketsPage({ searchParams }: { searchParams: Prom
   const rawParams = await searchParams;
   const params = ticketListQuerySchema.parse({ ...rawParams, scope: rawParams.scope ?? "requested" });
   const [queueResult, ticketResult] = await Promise.allSettled([
-    listTicketQueueFilterOptions(user),
+    listTicketQueueFilterOptions(user, { includePersonal: true }),
     listVisibleTicketsPage(user, { query: params.q, status: params.status, priority: params.priority, scope: params.scope, sla: params.sla, departmentId: params.departmentId, queueId: params.queueId, sort: params.sort, cursor: params.cursor, pageSize: params.pageSize }, { includeTotal: false }),
   ]);
   const queues = queueResult.status === "fulfilled" ? queueResult.value : [];
