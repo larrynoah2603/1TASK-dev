@@ -2880,6 +2880,31 @@ html[data-theme="dark"] .signin-card [class*="bg-slate-50"] p { color: #5c6b7d !
 @media (max-width: 1023px) { .shell-sidebar { width: min(18rem, 88vw); transform: translateX(-105%); } .shell-sidebar-mobile-open { transform: translateX(0); } .header-reference-frame { min-height: 3.5rem; padding: .55rem .8rem; } .header-reference-context { display: none; } .header-reference-search { justify-content: flex-start; } .shell-main { padding-top: 1rem; } }
 @media (prefers-reduced-motion: reduce) { .shell-sidebar, .sidebar-reference-nav .nav-link { transition: none; } }
 
+/* Ticket creation wizard */
+.ticket-wizard { display: flex; flex-direction: column; gap: 1rem; }
+.ticket-wizard-intro { display: flex; align-items: flex-end; justify-content: space-between; gap: 1.5rem; padding: 1.35rem 1.5rem; border: 1px solid var(--reference-line); border-radius: .75rem; background: #fff; box-shadow: 0 4px 14px rgba(16,42,67,.04); }
+.ticket-wizard-intro h1 { margin-top: .25rem; color: var(--reference-ink); font-size: 1.75rem; font-weight: 750; letter-spacing: -.035em; }
+.ticket-wizard-intro p:not(.eyebrow) { margin-top: .4rem; color: var(--reference-body); font-size: .82rem; }
+.ticket-wizard-stepper { display: flex; align-items: center; gap: .35rem; margin: 0; padding: 0; list-style: none; }
+.ticket-wizard-stepper li { display: flex; align-items: center; gap: .5rem; color: var(--reference-muted); font-size: .72rem; }
+.ticket-wizard-stepper li:not(:last-child)::after { width: 1.8rem; height: 1px; margin-inline: .2rem; background: var(--reference-line); content: ""; }
+.ticket-wizard-stepper li.is-active { color: var(--reference-blue); }
+.ticket-wizard-step-number { display: grid; width: 1.55rem; height: 1.55rem; place-items: center; border: 1px solid var(--reference-line); border-radius: 999px; background: #fff; font-weight: 750; }
+.ticket-wizard-stepper li.is-active .ticket-wizard-step-number { border-color: var(--reference-blue); background: var(--reference-blue); color: #fff; }
+.ticket-wizard-stepper small { display: block; color: var(--reference-muted); font-size: .62rem; }
+.ticket-wizard-layout { display: grid; grid-template-columns: minmax(0, 1fr) 18rem; gap: 1rem; align-items: start; }
+.ticket-wizard-layout .ticket-composer { max-width: none; }
+.ticket-wizard-summary { position: sticky; top: 1rem; display: flex; flex-direction: column; gap: .65rem; padding: 1.15rem; border: 1px solid var(--reference-line); border-radius: .75rem; background: var(--reference-navy); color: #fff; box-shadow: 0 8px 22px rgba(16,42,67,.12); }
+.ticket-wizard-summary .eyebrow { color: #91baff; }
+.ticket-wizard-summary h2 { color: #fff; font-size: 1rem; line-height: 1.35; }
+.ticket-wizard-summary > p:not(.eyebrow) { color: #c7d5e5; font-size: .78rem; line-height: 1.6; }
+.ticket-wizard-summary dl { display: flex; flex-direction: column; gap: .7rem; margin-top: .5rem; }
+.ticket-wizard-summary dl div { padding-top: .65rem; border-top: 1px solid rgba(255,255,255,.14); }
+.ticket-wizard-summary dt { color: #91baff; font-size: .67rem; font-weight: 700; }
+.ticket-wizard-summary dd { margin-top: .15rem; color: #eef5ff; font-size: .75rem; }
+@media (max-width: 900px) { .ticket-wizard-intro { align-items: flex-start; flex-direction: column; } .ticket-wizard-layout { grid-template-columns: 1fr; } .ticket-wizard-summary { position: static; } }
+@media (max-width: 640px) { .ticket-wizard-intro { padding: 1rem; } .ticket-wizard-intro h1 { font-size: 1.45rem; } .ticket-wizard-stepper { width: 100%; justify-content: space-between; } .ticket-wizard-stepper li:not(:last-child)::after { width: 1rem; } .ticket-wizard-stepper small { display: none; } }
+
 /* Canonical Service Desk Design System primitives */
 .ds-stat-card, .ds-chart-card, .ds-panel { border: 1px solid var(--reference-line); border-radius: .75rem; background: #fff; box-shadow: 0 4px 14px rgba(16,42,67,.04); }
 .ds-stat-card { display: flex; min-height: 7.5rem; flex-direction: column; justify-content: center; gap: .35rem; padding: 1rem 1.1rem; border-top: 3px solid var(--reference-blue); }
