@@ -817,6 +817,42 @@ html[data-theme="dark"] .action-card,
 html[data-theme="dark"] .filter-panel,
 html[data-theme="dark"] .table-shell { background: var(--surface); }
 
+/* Phase 2 — Enterprise app shell */
+.app-sidebar-frame { display: flex; min-height: 100%; flex: 1; flex-direction: column; }
+.app-sidebar-brand { border-bottom: 1px solid rgba(148, 163, 184, .14); padding: 1.25rem 1rem 1rem; }
+.app-sidebar-navigation { flex: 1; padding: .85rem .75rem; }
+.app-sidebar-user { margin-top: auto; border-top: 1px solid rgba(148, 163, 184, .14); padding: .85rem .75rem 1rem; }
+.sidebar-brand-block { padding: 0; }
+.sidebar-reference-brand { display: flex; align-items: center; gap: .65rem; min-height: 2.5rem; }
+.sidebar-reference-mark { display: grid; width: 2.15rem; height: 2.15rem; place-items: center; border: 1px solid rgba(96, 165, 250, .45); border-radius: .7rem; background: linear-gradient(145deg, #1d4ed8, #2563eb); color: #fff; font-size: .75rem; font-weight: 850; letter-spacing: -.04em; box-shadow: 0 5px 14px rgba(37, 99, 235, .28); }
+.sidebar-brand-wordmark { color: #f8fafc; font-size: 1.06rem; font-weight: 800; letter-spacing: -.02em; }
+.sidebar-nav { display: flex; flex-direction: column; gap: 1rem; }
+.sidebar-nav-group { display: flex; flex-direction: column; gap: .25rem; }
+.sidebar-label { margin: 0 .65rem .35rem; color: #7f8da3; font-size: .62rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+.sidebar-user-block { display: flex; align-items: center; gap: .65rem; padding: .2rem .25rem; }
+.sidebar-user-avatar { display: grid; width: 2.2rem; height: 2.2rem; flex: 0 0 2.2rem; place-items: center; overflow: hidden; border-radius: .7rem; background: #1e3a5f; color: #bfdbfe; font-size: .7rem; font-weight: 800; }
+.sidebar-user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.sidebar-user-name { margin: 0; color: #f8fafc; font-size: .75rem; font-weight: 700; }
+.sidebar-user-context { margin: .2rem 0 0; color: #94a3b8; font-size: .66rem; }
+.nav-link { min-height: 2.45rem; border-radius: .65rem; padding: .55rem .7rem; }
+.nav-link-active { background: linear-gradient(90deg, rgba(37, 99, 235, .95), rgba(37, 99, 235, .72)); box-shadow: 0 5px 14px rgba(37, 99, 235, .22); }
+.nav-link:hover:not(.nav-link-active) { background: rgba(255, 255, 255, .07); }
+.nav-link-active .nav-icon, .nav-link:hover .nav-icon { background: transparent; color: #fff; }
+.enterprise-topbar { min-height: 3.8rem; align-items: center; gap: .9rem; }
+.enterprise-topbar-context { min-width: 0; flex: 0 1 auto; }
+.enterprise-topbar-search { min-width: 15rem; flex: 1 1 22rem; max-width: 36rem; }
+.enterprise-topbar-actions { margin-left: auto; gap: .3rem; }
+.app-topbar { border-color: var(--ds-border); background: rgba(255, 255, 255, .92); box-shadow: 0 1px 10px rgba(15, 23, 42, .04); backdrop-filter: blur(12px); }
+.topbar-icon-button { border-color: var(--ds-border); color: var(--ds-ink-muted); }
+.topbar-icon-button:hover { border-color: var(--ds-brand-border); color: var(--ds-brand); background: var(--ds-brand-soft); }
+.enterprise-mobile-nav { border-top: 1px solid var(--ds-border); background: rgba(255, 255, 255, .96); box-shadow: 0 -8px 22px rgba(15, 23, 42, .08); backdrop-filter: blur(12px); }
+.enterprise-mobile-link { min-width: 3.8rem; border-radius: .65rem; }
+.enterprise-mobile-link.is-active { background: var(--ds-brand-soft); color: var(--ds-brand); }
+.shell-main { max-width: 1500px; }
+@media (max-width: 1023px) { .enterprise-topbar { align-items: flex-start; }.enterprise-topbar-search { order: 3; flex-basis: 100%; max-width: none; }.enterprise-topbar-actions { margin-left: auto; }.app-sidebar-brand { padding-top: 1rem; } }
+@media (max-width: 767px) { .enterprise-topbar-actions .topbar-text-button { display: none; }.enterprise-topbar-search { min-width: 0; }.app-sidebar-user { padding-bottom: 1.25rem; } }
+@media (prefers-reduced-motion: reduce) { .nav-link, .enterprise-mobile-link { transition: none; } }
+
 html[data-theme="dark"] .table-shell thead { background: var(--surface-subtle); }
 html[data-theme="dark"] .page-header-description { color: var(--text-body); }
 html[data-theme="dark"] .global-search-form { background: var(--surface-subtle); }

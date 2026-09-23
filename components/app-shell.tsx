@@ -19,7 +19,7 @@ import { MobileNavigation } from "@/components/layout/mobile-navigation";
 import { permissionCodes, roleCodes, toAccessSubject, type UserContext } from "@/lib/server-auth";
 
 type AppIconKind = "home" | "ticket" | "inbox" | "team" | "chart" | "shield" | "bell" | "folder" | "briefcase" | "monitor" | "book";
-type AppLink = { href: string; label: string; icon: AppIconKind; group: "Espace" | "Opérations" | "Administration"; permission?: string; roles?: RoleCode[] };
+type AppLink = { href: string; label: string; icon: AppIconKind; group: "Espace" | "Opérations" | "Pilotage" | "Administration"; permission?: string; roles?: RoleCode[] };
 
 const links: AppLink[] = [
   { href: "/dashboard", label: "Tableau de bord", icon: "home", group: "Espace" },
@@ -32,8 +32,8 @@ const links: AppLink[] = [
   { href: "/missions", label: "Missions", icon: "briefcase", group: "Opérations", permission: "portfolio:read" },
   { href: "/assets", label: "Actifs", icon: "monitor", group: "Opérations", roles: [RoleCode.FUNCTIONAL_ADMIN] },
   { href: "/knowledge", label: "Base de connaissances", icon: "book", group: "Espace", permission: "knowledge:read" },
-  { href: "/dashboard/responsible", label: "Pilotage SLA", icon: "team", group: "Opérations", permission: "reporting:read" },
-  { href: "/reporting", label: "Reporting", icon: "chart", group: "Opérations", permission: "reporting:read" },
+  { href: "/dashboard/responsible", label: "Pilotage SLA", icon: "team", group: "Pilotage", permission: "reporting:read" },
+  { href: "/reporting", label: "Reporting", icon: "chart", group: "Pilotage", permission: "reporting:read" },
   { href: "/admin", label: "Administration", icon: "shield", group: "Administration", roles: [RoleCode.FUNCTIONAL_ADMIN, RoleCode.TECHNICAL_ADMIN] },
 ];
 
@@ -80,7 +80,7 @@ export async function AppShell({ user, children }: { user: UserContext; children
     const assetsAllowed = link.href !== "/assets" || isFunctionalAssetAdministrator(user);
     return permissionAllowed && roleAllowed && adminAllowed && assetsAllowed;
   });
-  const groups: Array<AppLink["group"]> = ["Espace", "Opérations", "Administration"];
+  const groups: Array<AppLink["group"]> = ["Espace", "Opérations", "Pilotage", "Administration"];
   const roleLabel = codes.map((code) => ROLE_LABELS[code]).join(" · ");
   const sidebar = <AppSidebar
     brand={
