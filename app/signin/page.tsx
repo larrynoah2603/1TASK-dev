@@ -62,7 +62,7 @@ function SignInContent() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#181a20] px-4 py-6 text-white sm:px-8 lg:py-10">
+    <main className="signin-shell relative min-h-screen overflow-hidden px-4 py-6 text-white sm:px-8 lg:py-10">
       <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-[#7778e7]/15 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-48 left-0 h-[28rem] w-[28rem] rounded-full bg-[#5b5bd6]/15 blur-3xl" />
       <div className="relative mx-auto grid min-h-[calc(100vh-3rem)] max-w-6xl items-center gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
@@ -90,7 +90,7 @@ function SignInContent() {
           </div>
         </section>
 
-        <section className="mx-auto w-full max-w-md rounded-2xl border border-white/60 bg-white p-6 text-slate-900 shadow-2xl shadow-black/25 sm:p-9">
+        <section className="signin-card mx-auto w-full max-w-md rounded-2xl p-6 shadow-2xl sm:p-9">
           <div className="lg:hidden"><BrandMark /></div>
           <div className="mt-8 lg:mt-0">
             <p className="eyebrow">Accès sécurisé</p>

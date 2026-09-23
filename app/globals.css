@@ -2712,6 +2712,40 @@ html[data-theme="dark"] .sla-indicator-paused { color: #9fc0e8; }
 .calendar-admin-block-heading p { margin-top: 0.22rem; color: var(--text-subtle); font-size: 0.68rem; line-height: 1.4; }
 .calendar-admin-index { display: grid; height: 1.65rem; width: 1.65rem; flex: 0 0 auto; place-items: center; border-radius: 0.5rem; background: var(--brand-soft); color: var(--brand-dark); font-size: 0.61rem; font-weight: 800; }
 .calendar-admin-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; gap: 0.7rem; margin-top: 0.9rem; }
+
+/* Reference UI alignment — shared shell and page rhythm */
+:root { --reference-navy: #071b35; --reference-navy-soft: #102b4d; --reference-blue: #1769e8; --reference-canvas: #f5f8fc; --reference-line: #e2e8f0; --reference-ink: #142238; }
+body { background: var(--reference-canvas); color: var(--reference-ink); }
+.shell-sidebar { background: linear-gradient(180deg, #071b35 0%, #0b2748 100%); border-right: 1px solid rgba(148,163,184,.16); }
+.shell-sidebar .sidebar-brand-wordmark { letter-spacing: -.035em; font-size: 1.05rem; }
+.shell-sidebar .nav-link { min-height: 2.35rem; border-radius: .5rem; color: #b8c6d8; font-size: .74rem; }
+.shell-sidebar .nav-link-active { background: linear-gradient(90deg, #1769e8, #1558c7); color: #fff; box-shadow: 0 7px 18px rgba(23,105,232,.28); }
+.shell-sidebar .nav-link:hover:not(.nav-link-active) { background: rgba(255,255,255,.08); color: #fff; }
+.shell-topbar { background: rgba(255,255,255,.94); border-bottom: 1px solid var(--reference-line); box-shadow: 0 1px 8px rgba(15,23,42,.04); }
+.enterprise-topbar { min-height: 3.7rem; }
+.enterprise-topbar-context { color: var(--reference-ink); font-size: .78rem; font-weight: 700; }
+main, .dashboard-page, .ticket-workspace, .agent-workspace, .reporting-dashboard { color: var(--reference-ink); }
+.dashboard-page, .ticket-workspace, .agent-workspace, .reporting-dashboard, .admin-console-page { max-width: 1440px; margin-inline: auto; }
+.dashboard-enterprise-card, .dashboard-kpi-card, .ticket-workspace-header, .agent-card, .reporting-card, .admin-console-card { border-color: var(--reference-line); box-shadow: 0 2px 8px rgba(15,23,42,.035); }
+.button-primary { background: var(--reference-blue); box-shadow: 0 4px 12px rgba(23,105,232,.18); }
+.button-primary:hover { background: #1258c8; }
+.signin-shell { background: linear-gradient(135deg, #061a34 0%, #0b2d55 52%, #155cb8 100%); }
+.signin-card { border: 1px solid #dbe5f0; background: #fff; color: #142238; }
+.signin-card .eyebrow { color: #1769e8 !important; }
+.signin-card h1 { color: #142238 !important; }
+.signin-card p { color: #5c6b7d !important; }
+.signin-card .bg-slate-50 { background: #f5f8fc !important; }
+.signin-card .bg-slate-50 p { color: #5c6b7d !important; }
+.signin-card button { background: #1769e8; }
+.signin-card button:hover { background: #1258c8; }
+.signin-card .text-slate-400 { color: #7b8796 !important; }
+html[data-theme="dark"] .signin-card { background: #fff !important; color: #142238 !important; }
+html[data-theme="dark"] .signin-card h1, html[data-theme="dark"] .signin-card p, html[data-theme="dark"] .signin-card .text-slate-600 { color: #5c6b7d !important; }
+html[data-theme="dark"] .signin-card h1 { color: #142238 !important; }
+html[data-theme="dark"] .signin-card [class*="bg-slate-50"] { background: #f5f8fc !important; }
+html[data-theme="dark"] .signin-card [class*="bg-slate-50"] p { color: #5c6b7d !important; }
+@media (max-width: 1023px) { .signin-shell { background: linear-gradient(150deg, #071b35, #0c2d55 60%, #155cb8); } .signin-card { border-color: rgba(255,255,255,.72); } }
+@media (max-width: 680px) { .shell-sidebar .nav-link { min-height: 2.75rem; } .enterprise-topbar { padding-inline: .7rem; } }
 .calendar-admin-form > *:first-child, .calendar-admin-form > .contents > *:first-child { grid-column: 1 / -1; }
 .calendar-admin-form .contents { display: contents; }
 .calendar-admin-form .button-primary, .calendar-admin-form .button-secondary { width: 100%; }
