@@ -29,8 +29,8 @@ export default async function DashboardPage() {
       <DashboardHeader firstName={user.name.split(" ")[0]} canOperate={canOperate} canReport={canReport} />
       <DashboardKpiGrid values={{ open: personalOpen, inProgress: personalInProgress, resolved: personalClosed, atRisk: personalTickets.filter((ticket) => ticket.slaState === "AT_RISK" || ticket.slaState === "BREACHED").length }} />
       <RecentTicketsCard tickets={personalTickets} />
-      <div className="dashboard-enterprise-two-column"><SlaOverviewCard tickets={personalTickets} /><DashboardActivity tickets={personalTickets} /></div>
-      <div className="dashboard-enterprise-two-column dashboard-enterprise-actions-row"><QuickActionsCard canOperate={canOperate} canReport={canReport} /><section className="dashboard-enterprise-card dashboard-enterprise-placeholder" aria-label="Charge opérationnelle"><p className="eyebrow">Supervision</p><h2>Charge opérationnelle</h2><p>Les indicateurs de charge apparaîtront ici dès que votre périmètre contient des files opérationnelles.</p></section></div>
+      <div className="dashboard-enterprise-two-column dashboard-reference-secondary"><SlaOverviewCard tickets={personalTickets} /><DashboardActivity tickets={personalTickets} /></div>
+      <div className="dashboard-enterprise-two-column dashboard-enterprise-actions-row dashboard-reference-actions-row"><QuickActionsCard canOperate={canOperate} canReport={canReport} /><section className="dashboard-enterprise-card dashboard-enterprise-placeholder" aria-label="Charge opérationnelle"><p className="eyebrow">Supervision</p><h2>Charge opérationnelle</h2><p>Les indicateurs de charge apparaîtront ici dès que votre périmètre contient des files opérationnelles.</p></section></div>
     </div>
   );
 }
