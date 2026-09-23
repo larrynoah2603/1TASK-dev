@@ -1,6 +1,6 @@
 import { UserStatus } from "@prisma/client";
 import { AdminEmptyState, AdminNotice, AdminPageHeader, AdminStatCard } from "@/components/admin-primitives";
-import { AdminUserActions } from "@/components/admin-user-actions";
+import { UsersTable } from "@/components/admin/users-table";
 import { Combobox } from "@/components/combobox";
 import { Pagination } from "@/components/pagination";
 import { getAdminUserFormReferences, getAdminUserStatusSummary, listAdminUsersPage } from "@/lib/admin-user-query-service";
@@ -43,7 +43,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
         <AdminEmptyState title={q || status ? "Aucun utilisateur correspondant" : "Aucun utilisateur synchronisé"} description={q || status ? "Modifiez la recherche ou le filtre de statut." : "Les utilisateurs apparaîtront après leur connexion Microsoft Entra ID autorisée."} />
       ) : (
         <div className="space-y-3">
-          {userPage.users.map((user) => <AdminUserActions key={user.id} user={user} options={options} />)}
+          <UsersTable users={userPage.users} options={options} />
           <Pagination basePath="/admin/users" query={{ q: raw.q, status: status ?? "", pageSize: String(userPage.pageSize) }} page={userPage.page} totalPages={userPage.totalPages} total={userPage.total} pageSize={userPage.pageSize} />
         </div>
       )}

@@ -1,0 +1,1 @@
+export function TeamTable({ teams }: { teams: Array<{ id: string; name: string; isActive?: boolean }> }) { return <div className="admin-simple-table">{teams.map((team) => <div key={team.id}><strong>{team.name}</strong><span>{team.isActive === false ? "Inactif" : "Actif"}</span></div>)}</div>; }
