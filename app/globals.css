@@ -1,17 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --muted: #64748b;
-  --line: #e2e8f0;
-  --line-strong: #cbd5e1;
-  --brand: #2563eb;
-  --brand-dark: #1d4ed8;
-  --brand-soft: #eff6ff;
-  --accent: #16a34a;
-  --sidebar: #0f172a;
-  --sidebar-muted: #94a3b8;
+  --background: #f4f7fb;
+  --foreground: #102a43;
+  --muted: #62748a;
+  --line: #d9e2ec;
+  --line-strong: #bcccdc;
+  --brand: #1769e8;
+  --brand-dark: #1257bf;
+  --brand-soft: #eaf2ff;
+  --accent: #159570;
+  --sidebar: #102a43;
+  --sidebar-muted: #b7c9dc;
   --sidebar-line: rgba(148, 163, 184, 0.16);
   --ds-brand: #2563eb;
   --ds-brand-soft: #eff6ff;
@@ -1837,6 +1837,63 @@ html[data-theme="dark"] .combobox-option-selected { color: #bfc4ff; }
 .dashboard-workflow-item { display: flex; min-height: 2.55rem; align-items: center; gap: 0.55rem; border: 1px solid var(--line); border-radius: 0.55rem; background: var(--surface-subtle); padding: 0.55rem 0.65rem; color: var(--text-body); font-size: 0.68rem; font-weight: 600; }
 .dashboard-workflow-item:hover { border-color: var(--brand); color: var(--text-strong); }
 .dashboard-workflow-dot { height: 0.45rem; width: 0.45rem; flex: 0 0 auto; border-radius: 999px; background: var(--brand); }
+
+/* Final application-wide visual direction: calm navy shell, blue actions, quiet surfaces. */
+:root {
+  --surface: #ffffff;
+  --surface-subtle: #f7faff;
+  --surface-muted: #edf2f7;
+  --text-strong: #102a43;
+  --text-body: #486581;
+  --text-subtle: #829ab1;
+  --focus: #1769e8;
+  --shadow-soft: 0 1px 2px rgba(16, 42, 67, .04), 0 8px 24px rgba(16, 42, 67, .05);
+  --shadow-popover: 0 18px 42px rgba(16, 42, 67, .16), 0 2px 8px rgba(16, 42, 67, .06);
+  --button-primary-bg: #1769e8;
+  --button-primary-bg-hover: #1257bf;
+  --button-primary-border: #1769e8;
+}
+
+body { background: #f4f7fb; color: #102a43; }
+.app-background, .admin-background { background: #f4f7fb; }
+.shell-sidebar { background: #102a43; border-right-color: rgba(255,255,255,.12); }
+.sidebar-brand-wordmark, .sidebar-user-name { color: #f7fbff; }
+.sidebar-user-context, .sidebar-label { color: #9fb3c8; }
+.shell-sidebar .nav-link { color: #b7c9dc; }
+.shell-sidebar .nav-link:hover:not(.nav-link-active) { background: rgba(255,255,255,.08); color: #fff; }
+.shell-sidebar .nav-link-active { background: #1769e8; color: #fff; box-shadow: 0 6px 16px rgba(23,105,232,.24); }
+.shell-sidebar .nav-link-active .nav-icon { color: #fff; }
+.sidebar-reference-mark { background: #fff; border-color: #d9e2ec; color: #102a43; }
+.app-topbar, .shell-topbar { background: rgba(255,255,255,.96); border-bottom-color: #d9e2ec; }
+.page-header h1, .dashboard-reference-header h1 { color: #102a43; }
+.page-header-description { color: #62748a; }
+.button-primary { background: #1769e8; border-color: #1769e8; box-shadow: 0 4px 10px rgba(23,105,232,.18); }
+.button-primary:hover { background: #1257bf; border-color: #1257bf; }
+.button-secondary { border-color: #bcccdc; color: #243b53; }
+.button-secondary:hover { border-color: #1769e8; background: #eaf2ff; color: #102a43; }
+.new-ticket-launcher { border-color: #1769e8; background: #1769e8; color: #fff; box-shadow: 0 4px 10px rgba(23,105,232,.18); }
+.new-ticket-launcher:hover { border-color: #1257bf; background: #1257bf; }
+.global-search-form { border-color: #d9e2ec; background: #f7faff; }
+.global-search-form:focus-within { border-color: #1769e8; box-shadow: 0 0 0 3px rgba(23,105,232,.12); }
+.panel, .table-shell, .filter-panel, .metric-card, .dashboard-widget, .dashboard-enterprise-card { border-color: #d9e2ec; box-shadow: var(--shadow-soft); }
+.table-shell thead, .dashboard-recent-card th { background: #f7faff; color: #62748a; }
+.table-shell tbody tr:hover { background: #f7faff; }
+.field-control { border-color: #bcccdc; color: #243b53; }
+.field-control:focus { border-color: #1769e8; box-shadow: 0 0 0 3px rgba(23,105,232,.12); }
+.dashboard-kpi-card, .dashboard-reference-card { border-color: #d9e2ec; box-shadow: var(--shadow-soft); }
+.dashboard-kpi-card strong, .dashboard-card-header h2 { color: #102a43; }
+.dashboard-card-header, .dashboard-enterprise-card-header { border-bottom-color: #e6edf3; }
+
+@media (max-width: 767px) {
+  .shell-topbar { min-height: 3.5rem; }
+  .page-header { align-items: flex-start; flex-direction: column; }
+  .dashboard-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 480px) {
+  .dashboard-kpi-grid { grid-template-columns: 1fr; }
+  .panel, .table-shell, .filter-panel, .metric-card, .dashboard-widget, .dashboard-enterprise-card { border-radius: .65rem; }
+}
 .dashboard-escalation-list { display: grid; margin-top: 0.75rem; }
 .dashboard-escalation-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; border-top: 1px solid var(--line); padding: 0.75rem 0.2rem; }
 .dashboard-escalation-row:hover { background: var(--surface-subtle); }
