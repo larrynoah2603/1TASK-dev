@@ -14,7 +14,7 @@ export default async function TicketsPage({ searchParams }: { searchParams: Prom
   const rawParams = await searchParams;
   const params = ticketListQuerySchema.parse({ ...rawParams, scope: rawParams.scope ?? "requested" });
   const [queues, tickets] = await Promise.all([
-    listTicketQueueFilterOptions(user, { includePersonal: true }),
+    listTicketQueueFilterOptions(user),
     listVisibleTicketsPage(user, { query: params.q, status: params.status, priority: params.priority, scope: params.scope, sla: params.sla, departmentId: params.departmentId, queueId: params.queueId, sort: params.sort, cursor: params.cursor, pageSize: params.pageSize }, { includeTotal: false }),
   ]);
   const operationalRoles: RoleCode[] = [RoleCode.AGENT, RoleCode.QUEUE_MANAGER, RoleCode.FUNCTIONAL_ADMIN];
