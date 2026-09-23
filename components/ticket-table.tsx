@@ -35,12 +35,12 @@ export function TicketTable({
   showActions?: boolean;
 }) {
   const claimable = new Set(claimableTicketIds);
-  if (!tickets.length) return <div className="table-shell px-6 py-12 text-center text-sm text-slate-500">{empty}</div>;
+  if (!tickets.length) return <div className="table-shell ticket-table-empty px-6 py-12 text-center text-sm text-slate-500" role="status">{empty}</div>;
 
   return (
     <div className="table-shell">
       <div className="overflow-x-auto">
-        <table aria-label="Liste des tickets" className="w-full min-w-[1080px] text-left text-[12px]">
+        <table aria-label="Liste des tickets" className="ticket-data-table w-full min-w-[1080px] text-left text-[12px]">
           <thead className="border-b border-slate-100 text-[10px] font-semibold uppercase tracking-[0.12em]">
             <tr>
               <th className="px-4 py-3.5">Ticket</th>
