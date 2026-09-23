@@ -2757,6 +2757,42 @@ html[data-theme="dark"] .signin-card [class*="bg-slate-50"] { background: #f5f8f
 html[data-theme="dark"] .signin-card [class*="bg-slate-50"] p { color: #5c6b7d !important; }
 @media (max-width: 1023px) { .signin-shell { background: linear-gradient(150deg, #071b35, #0c2d55 60%, #155cb8); } .signin-card { border-color: rgba(255,255,255,.72); } }
 @media (max-width: 680px) { .shell-sidebar .nav-link { min-height: 2.75rem; } .enterprise-topbar { padding-inline: .7rem; } }
+
+/* Final reference shell alignment */
+:root { --shell-sidebar-width: 260px; --shell-sidebar-collapsed-width: 76px; --shell-header-height: 60px; }
+.shell-root { min-height: 100svh; background: var(--reference-canvas); }
+.shell-sidebar { width: var(--shell-sidebar-width); background: linear-gradient(180deg, #0f172a 0%, #102b4d 100%) !important; box-shadow: 8px 0 24px rgba(15,23,42,.12); transition: width 180ms ease, transform 180ms ease; }
+[data-sidebar-collapsed="true"] .shell-sidebar { width: var(--shell-sidebar-collapsed-width); }
+[data-sidebar-collapsed="true"] .sidebar-label, [data-sidebar-collapsed="true"] .sidebar-user-block, [data-sidebar-collapsed="true"] .sidebar-nav-group > .sidebar-label { display: none; }
+[data-sidebar-collapsed="true"] .sidebar-reference-nav .nav-link { justify-content: center; padding-inline: .55rem; }
+[data-sidebar-collapsed="true"] .sidebar-reference-nav .nav-link > span:last-child { display: none; }
+.app-sidebar-frame { min-height: 100%; }
+.sidebar-reference-header { padding: 1.1rem 1rem .95rem; border-bottom-color: rgba(148,163,184,.16); }
+.sidebar-reference-navigation { padding: 1rem .75rem; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(148,163,184,.35) transparent; }
+.sidebar-reference-footer { padding: .9rem .85rem 1rem; border-top-color: rgba(148,163,184,.16); }
+.sidebar-reference-nav { gap: 1.15rem; }
+.sidebar-reference-nav .sidebar-nav-group { gap: .22rem; }
+.sidebar-reference-nav .sidebar-label { margin: 0 .65rem .38rem; color: #7f8da3; font-size: .59rem; letter-spacing: .14em; }
+.sidebar-reference-nav .nav-link { display: flex; align-items: center; min-height: 2.45rem; gap: .7rem; padding: .58rem .72rem; color: #b8c6d8; transition: background 150ms ease, color 150ms ease, transform 150ms ease; }
+.sidebar-reference-nav .nav-link:hover { transform: translateX(2px); }
+.sidebar-reference-nav .nav-link-active { background: linear-gradient(90deg, #1769e8, #1558c7); color: white; box-shadow: 0 7px 18px rgba(23,105,232,.28); }
+.sidebar-reference-nav .nav-link-active .nav-icon { color: #fff; }
+.sidebar-reference-nav .nav-icon { color: #8fa6c2; }
+.header-reference-frame { min-height: var(--shell-header-height); padding: .65rem 1.25rem; }
+.header-reference-context { min-width: 10rem; }
+.header-reference-search { justify-content: center; }
+.header-reference-actions { gap: .35rem; }
+.shell-topbar { min-height: var(--shell-header-height); }
+.shell-content { min-width: 0; }
+.shell-main { padding-top: 1.35rem; }
+.mobile-reference-nav { border-top: 1px solid var(--reference-line); background: rgba(255,255,255,.97); box-shadow: 0 -8px 24px rgba(15,23,42,.08); backdrop-filter: blur(12px); }
+.mobile-reference-nav .enterprise-mobile-link { color: #64748b; }
+.mobile-reference-nav .enterprise-mobile-link.is-active { color: var(--reference-blue); }
+.shell-mobile-backdrop { background: rgba(2,8,23,.52); }
+.shell-mobile-toolbar { border-bottom: 1px solid rgba(148,163,184,.16); }
+@media (max-width: 1279px) and (min-width: 1024px) { .shell-sidebar { width: var(--shell-sidebar-collapsed-width); } .shell-sidebar .sidebar-label, .shell-sidebar .sidebar-user-block, .shell-sidebar .sidebar-brand-wordmark, .shell-sidebar .nav-link > span:last-child { display: none; } .shell-sidebar .sidebar-reference-brand, .shell-sidebar .nav-link { justify-content: center; } .header-reference-frame { padding-inline: 1rem; } }
+@media (max-width: 1023px) { .shell-sidebar { width: min(18rem, 88vw); transform: translateX(-105%); } .shell-sidebar-mobile-open { transform: translateX(0); } .header-reference-frame { min-height: 3.5rem; padding: .55rem .8rem; } .header-reference-context { display: none; } .header-reference-search { justify-content: flex-start; } .shell-main { padding-top: 1rem; } }
+@media (prefers-reduced-motion: reduce) { .shell-sidebar, .sidebar-reference-nav .nav-link { transition: none; } }
 .calendar-admin-form > *:first-child, .calendar-admin-form > .contents > *:first-child { grid-column: 1 / -1; }
 .calendar-admin-form .contents { display: contents; }
 .calendar-admin-form .button-primary, .calendar-admin-form .button-secondary { width: 100%; }
