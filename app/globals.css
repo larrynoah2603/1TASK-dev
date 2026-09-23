@@ -5498,4 +5498,17 @@ html[data-theme="dark"] {
 .ui-table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; } .ui-table { width: 100%; border-collapse: collapse; text-align: left; } .ui-table :is(th,td) { border-bottom: 1px solid var(--line); padding: .75rem 1rem; }
 .ui-modal-backdrop { position: fixed; z-index: 80; inset: 0; display: grid; place-items: center; background: rgba(15,23,42,.55); padding: 1rem; } .ui-modal { width: min(34rem,100%); border-radius: 18px; background: white; box-shadow: 0 30px 80px rgba(15,23,42,.28); } .ui-modal header,.ui-modal footer { display:flex; align-items:center; justify-content:space-between; padding: 1rem 1.25rem; border-bottom: 1px solid var(--line); } .ui-modal footer { border-top: 1px solid var(--line); border-bottom: 0; } .ui-modal-body { padding: 1.25rem; }
 .ui-error-state { display:grid; min-height:14rem; place-items:center; align-content:center; gap:.5rem; padding:2rem; text-align:center; } .ui-error-state > div { display:grid; width:2.5rem; height:2.5rem; place-items:center; border-radius:50%; background:#fee2e2; color:#b91c1c; font-weight:800; }
-@media (max-width: 1023px) { .shell-main { padding-bottom: 6.5rem !important; } }
+/* Mobile bottom navigation is intentionally exclusive to compact layouts. */
+.mobile-bottom-nav { display: none; }
+@media (max-width: 1023px) {
+  .shell-main { padding-bottom: 6.5rem !important; }
+  .mobile-bottom-nav { display: grid; }
+}
+@media (min-width: 1024px) {
+  .mobile-bottom-nav { display: none !important; }
+}
+.enterprise-mobile-nav { border-color: var(--ds-border); background: color-mix(in srgb, var(--ds-surface) 96%, transparent); color: var(--ds-ink-muted); }
+.enterprise-mobile-link { color: var(--ds-ink-muted); }
+.enterprise-mobile-link.is-active { background: var(--ds-brand-soft); color: var(--ds-brand); }
+.mobile-create-ticket { border-color: var(--ds-surface); }
+
