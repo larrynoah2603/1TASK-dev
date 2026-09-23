@@ -1,0 +1,1 @@
+export function QueueTable({ queues }: { queues: Array<{ id: string; name: string; department?: { name: string } | null }> }) { return <div className="admin-simple-table">{queues.map((queue) => <div key={queue.id}><strong>{queue.name}</strong><span>{queue.department?.name ?? "Sans département"}</span></div>)}</div>; }

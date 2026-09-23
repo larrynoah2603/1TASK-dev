@@ -1,0 +1,1 @@
+export function DepartmentTable({ departments }: { departments: Array<{ id: string; name: string; isActive: boolean }> }) { return <div className="admin-simple-table">{departments.map((department) => <div key={department.id}><strong>{department.name}</strong><span>{department.isActive ? "Actif" : "Inactif"}</span></div>)}</div>; }

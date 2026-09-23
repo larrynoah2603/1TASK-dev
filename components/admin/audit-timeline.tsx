@@ -1,0 +1,1 @@
+export function AuditTimeline({ items }: { items: Array<{ id: string; action: string; actor: string; date: string }> }) { return <ol className="admin-audit-timeline">{items.map((item) => <li key={item.id}><span className="admin-audit-dot" aria-hidden="true" /><div><strong>{item.action}</strong><p>{item.actor} · {item.date}</p></div></li>)}</ol>; }

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { hasGlobalRole } from "@/lib/access-control";
 import { getAdminUserSummary } from "@/lib/admin-service";
 import { AdminNotice, AdminPageHeader, AdminStatCard } from "@/components/admin-primitives";
+import { AdminDashboard } from "@/components/admin/admin-dashboard";
 import { requireAdminAccess, toAccessSubject } from "@/lib/server-auth";
 
 export default async function AdminDashboardPage() {
@@ -30,26 +31,21 @@ export default async function AdminDashboardPage() {
     );
   }
 
-  const [userSummary, ticketCount, activeTicketCount, overdueCount, notificationCount, auditCount] = await Promise.all([
+  const [userSummary, ticketCount, activeTicketCount, overdueCount, notificationCount, auditCount, departmentCount, teamCount, queueCount] = await Promise.all([
     getAdminUserSummary(admin),
     prisma.ticket.count({ where: { confidential: false } }),
     prisma.ticket.count({ where: { confidential: false, status: { not: TicketStatus.CLOSED } } }),
     prisma.ticket.count({ where: { confidential: false, status: { not: TicketStatus.CLOSED }, resolutionDueAt: { not: null, lt: new Date() } } }),
     prisma.notificationRule.count({ where: { isActive: true } }),
     prisma.auditLog.count(),
+    prisma.department.count({ where: { isActive: true } }),
+    prisma.team.count({ where: { isActive: true } }),
+    prisma.queue.count({ where: { isActive: true } }),
   ]);
-
-  const quickLinks = [
-    ["Utilisateurs", "/admin/users", "Statut, informations Entra, rôles et périmètres"],
-    ["Organisation", "/admin/departments", "Départements, correspondances, files et équipes"],
-    ["Catalogue", "/admin/catalog", "Services, catégories, priorité et routage"],
-    ["SLA", "/admin/sla", "Échéances, calendriers et escalades"],
-    ["Supervision", "/admin/tickets", "Tickets non confidentiels autorisés et réorientation"],
-    ["Audit", "/admin/audit", "Historique append-only des actions sensibles"],
-  ] as const;
 
   return (
     <div className="space-y-7 admin-dashboard-industrial">
+      <AdminDashboard stats={{ users: userSummary.active, departments: departmentCount, teams: teamCount, queues: queueCount }} />
       <AdminPageHeader
         eyebrow="Tableau de bord global"
         title="Administration du ticketing"
@@ -57,24 +53,12 @@ export default async function AdminDashboardPage() {
       />
       <AdminNotice>Les valeurs brutes du département viennent de Microsoft Entra ID. Le département interne du profil et sa validation sont gérés explicitement dans <code>/admin/users</code> ; le référentiel de correspondance reste audité et ne remplace pas cette affectation.</AdminNotice>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <AdminStatCard label="Utilisateurs" value={userSummary.total} detail={`${userSummary.active} actifs`} />
+      <div className="admin-console-secondary-grid">
         <AdminStatCard label="Tickets actifs" value={activeTicketCount} detail={`${ticketCount} tickets non confidentiels visibles`} tone="success" />
         <AdminStatCard label="SLA à surveiller" value={overdueCount} detail="Tickets dépassant l’échéance" tone={overdueCount ? "danger" : "success"} />
         <AdminStatCard label="Règles notification" value={notificationCount} detail="Règles actives" tone="warning" />
         <AdminStatCard label="Événements d’audit" value={auditCount} detail="Historique conservé" />
       </div>
-
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {quickLinks.map(([label, href, description]) => (
-          <Link key={href} href={href as Route} className="metric-card metric-card-link">
-            <p className="eyebrow">Administration</p>
-            <h2 className="mt-2 text-base font-semibold text-slate-900">{label}</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
-            <p className="mt-4 text-xs font-semibold operational-link">Ouvrir la rubrique →</p>
-          </Link>
-        ))}
-      </section>
 
       <section className="panel p-5 sm:p-6">
         <h2 className="text-lg font-semibold text-slate-900">Garde-fous actifs</h2>
