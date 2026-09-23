@@ -13,6 +13,8 @@ export async function getReportingSummary(actor: UserContext) {
   return cacheAside(`reporting:v1:${current.id}`, 45, () => getReportingSummaryUncached(current));
 }
 
+export type ReportingSummary = Awaited<ReturnType<typeof getReportingSummaryUncached>>;
+
 async function getReportingSummaryUncached(current: UserContext) {
   const where = await visibleTicketWhere(current, { mode: "REPORTING" });
   const now = new Date();
