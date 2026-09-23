@@ -1,0 +1,1 @@
+export function ReportingSkeleton() { return <div className="reporting-skeleton" aria-label="Chargement du reporting"><div className="reporting-skeleton-kpis">{[1, 2, 3, 4].map((item) => <div key={item} />)}</div><div className="reporting-skeleton-charts"><div /><div /><div /></div><div className="reporting-skeleton-bottom"><div /><div /></div></div>; }
