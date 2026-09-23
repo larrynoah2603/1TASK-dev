@@ -2849,6 +2849,23 @@ html[data-theme="dark"] .signin-card [class*="bg-slate-50"] p { color: #5c6b7d !
 @media (max-width: 1279px) and (min-width: 1024px) { .shell-sidebar { width: var(--shell-sidebar-collapsed-width); } .shell-sidebar .sidebar-label, .shell-sidebar .sidebar-user-block, .shell-sidebar .sidebar-brand-wordmark, .shell-sidebar .nav-link > span:last-child { display: none; } .shell-sidebar .sidebar-reference-brand, .shell-sidebar .nav-link { justify-content: center; } .header-reference-frame { padding-inline: 1rem; } }
 @media (max-width: 1023px) { .shell-sidebar { width: min(18rem, 88vw); transform: translateX(-105%); } .shell-sidebar-mobile-open { transform: translateX(0); } .header-reference-frame { min-height: 3.5rem; padding: .55rem .8rem; } .header-reference-context { display: none; } .header-reference-search { justify-content: flex-start; } .shell-main { padding-top: 1rem; } }
 @media (prefers-reduced-motion: reduce) { .shell-sidebar, .sidebar-reference-nav .nav-link { transition: none; } }
+
+/* Canonical Service Desk Design System primitives */
+.ds-stat-card, .ds-chart-card, .ds-panel { border: 1px solid var(--reference-line); border-radius: .75rem; background: #fff; box-shadow: 0 4px 14px rgba(16,42,67,.04); }
+.ds-stat-card { display: flex; min-height: 7.5rem; flex-direction: column; justify-content: center; gap: .35rem; padding: 1rem 1.1rem; border-top: 3px solid var(--reference-blue); }
+.ds-stat-card-success { border-top-color: var(--reference-success); }
+.ds-stat-card-warning { border-top-color: var(--reference-warning); }
+.ds-stat-card-danger { border-top-color: var(--reference-danger); }
+.ds-stat-card-label, .ds-chart-card-header p, .ds-panel-header p { color: var(--reference-body); font-size: .78rem; }
+.ds-stat-card-value { color: var(--reference-ink); font-size: 1.7rem; line-height: 1; }
+.ds-stat-card-detail { color: var(--reference-muted); font-size: .72rem; }
+.ds-chart-card-header, .ds-panel-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 1rem 1.1rem .85rem; border-bottom: 1px solid #edf2f7; }
+.ds-chart-card-header h2, .ds-panel-header h2 { color: var(--reference-ink); font-size: .95rem; font-weight: 750; }
+.ds-chart-card-content, .ds-panel-content { padding: 1rem 1.1rem; }
+.ds-skeleton { border-radius: .5rem; background: linear-gradient(90deg, #edf2f7 25%, #f8fbff 37%, #edf2f7 63%); background-size: 400% 100%; animation: ds-skeleton-shimmer 1.4s ease infinite; }
+@keyframes ds-skeleton-shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+@media (max-width: 640px) { .ds-chart-card-header, .ds-panel-header { flex-direction: column; } .ds-chart-card-content, .ds-panel-content { padding: .85rem; } }
+@media (prefers-reduced-motion: reduce) { .ds-skeleton { animation: none; } }
 .calendar-admin-form > *:first-child, .calendar-admin-form > .contents > *:first-child { grid-column: 1 / -1; }
 .calendar-admin-form .contents { display: contents; }
 .calendar-admin-form .button-primary, .calendar-admin-form .button-secondary { width: 100%; }

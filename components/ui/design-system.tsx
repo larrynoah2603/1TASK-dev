@@ -1,6 +1,6 @@
 import type { HTMLAttributes, ReactNode } from "react";
 
-import { Badge, Button, Card, Progress, SearchInput, StatusBadge } from "./primitives";
+import { Badge, Button, Card, LoadingSkeleton, Progress, SearchInput, StatusBadge, Timeline } from "./primitives";
 
 type Tone = "neutral" | "info" | "success" | "warning" | "danger";
 
@@ -92,5 +92,17 @@ export function DataTableShell({ children, className = "", ...props }: HTMLAttri
   return <div className={`ds-data-table-shell ${className}`} {...props}>{children}</div>;
 }
 
-export { Badge, Button, Card, Progress, SearchInput };
+export function StatCard({ label, value, detail, tone = "info", className = "" }: { label: string; value: string | number; detail?: string; tone?: Tone; className?: string }) {
+  return <article className={`ds-stat-card ds-stat-card-${tone} ${className}`}><div className="ds-stat-card-label">{label}</div><strong className="ds-stat-card-value">{value}</strong>{detail ? <p className="ds-stat-card-detail">{detail}</p> : null}</article>;
+}
+
+export function ChartCard({ title, description, action, children, className = "" }: { title: string; description?: string; action?: ReactNode; children: ReactNode; className?: string }) {
+  return <Card className={`ds-chart-card ${className}`}><div className="ds-chart-card-header"><div><h2>{title}</h2>{description ? <p>{description}</p> : null}</div>{action ? <div>{action}</div> : null}</div><div className="ds-chart-card-content">{children}</div></Card>;
+}
+
+export function Skeleton({ className = "" }: { className?: string }) {
+  return <LoadingSkeleton className={`ds-skeleton ${className}`} />;
+}
+
+export { Badge, Button, Card, LoadingSkeleton, Progress, SearchInput, StatusBadge, Timeline };
 export type { Tone };
