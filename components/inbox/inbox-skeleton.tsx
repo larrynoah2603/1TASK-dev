@@ -1,0 +1,1 @@
+export function InboxSkeleton() { return <div className="inbox-skeleton" aria-label="Chargement de l’espace agent"><div className="inbox-skeleton-kpis">{Array.from({ length: 4 }, (_, index) => <div key={index} />)}</div><div className="inbox-skeleton-main"><div /><div /></div><div className="inbox-skeleton-table" /></div>; }
