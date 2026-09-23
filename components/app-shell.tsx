@@ -88,11 +88,11 @@ export async function AppShell({ user, children }: { user: UserContext; children
         <SidebarBrand />
       </div>
     }
-    navigation={<nav aria-label="Navigation ticketing" className="sidebar-nav">
+    navigation={<nav aria-label="Navigation ticketing" className="sidebar-nav sidebar-reference-nav">
         {groups.map((group) => {
           const groupLinks = visibleLinks.filter((link) => link.group === group);
           if (!groupLinks.length) return null;
-          return <div key={group} className="sidebar-nav-group"><p className="sidebar-label">{group}</p>{groupLinks.map((link) => <ShellNavLink key={link.href} href={link.href} icon={<AppIcon kind={link.icon} />}><span className="flex min-w-0 items-center gap-2 truncate">{link.label}{link.href === "/notifications" ? <NotificationBadge /> : null}</span></ShellNavLink>)}</div>;
+          return <section key={group} className="sidebar-nav-group" aria-labelledby={`sidebar-group-${group}`}><p id={`sidebar-group-${group}`} className="sidebar-label">{group}</p>{groupLinks.map((link) => <ShellNavLink key={link.href} href={link.href} icon={<AppIcon kind={link.icon} />}><span className="flex min-w-0 items-center gap-2 truncate">{link.label}{link.href === "/notifications" ? <NotificationBadge /> : null}</span></ShellNavLink>)}</section>;
         })}
       </nav>}
     user={<div className="sidebar-user-block sidebar-user-block-industrial sidebar-extra hidden md:block"><div className="sidebar-user-avatar">{user.image ? <Image src={user.image} alt="" width={40} height={40} unoptimized /> : initials(user.name)}</div><div className="min-w-0"><p className="sidebar-user-name truncate">{user.name}</p><p className="sidebar-user-context truncate">{user.department?.name ?? "Service desk interne"}</p></div></div>}
