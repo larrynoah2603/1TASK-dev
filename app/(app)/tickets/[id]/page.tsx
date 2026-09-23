@@ -13,6 +13,8 @@ import { getTicketSlaState } from "@/lib/sla";
 import { getTicketActionContext } from "@/lib/ticket-service";
 import { getTicketForViewer } from "@/lib/ticket-detail-service";
 import { AuthorizationError, getSessionUserContext, roleCodes } from "@/lib/server-auth";
+import { TicketWorkspace, TicketWorkspaceHeader } from "@/components/tickets/ticket-workspace";
+import { TicketSlaPanel } from "@/components/tickets/ticket-sla-panel";
 
 const eventLabels: Record<string, string> = {
   CREATED: "Ticket créé",
@@ -79,11 +81,12 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
   const canResolve = actionContext.allowedStatuses.some((status) => String(status) === "RESOLUTION_PENDING");
 
   return (
-    <div className="ticket-detail-shell ticket-detail-industrial space-y-4">
+    <TicketWorkspace>
       <Link href={operational ? "/inbox" : "/tickets"} className="ticket-back-link">
         ← {operational ? "Retour à la boîte agent" : "Retour à mes tickets"}
       </Link>
 
+      <TicketWorkspaceHeader><div className="ticket-detail-heading"><p className="eyebrow">{ticket.reference}</p><h1>{ticket.title}</h1><p>{ticket.queue.department.name} · {ticket.queue.name} · {ticket.serviceCatalogItem.name}</p></div><TicketSlaPanel state={sla.state} dueAt={sla.dueAt} createdAt={ticket.createdAt} pausedMinutes={ticket.totalPausedMinutes} /></TicketWorkspaceHeader>
       <header className="ticket-detail-header">
         <div className="ticket-detail-heading">
           <p className="eyebrow">{ticket.reference}</p>
@@ -207,6 +210,6 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
           <TicketActions ticketId={ticket.id} status={ticket.status} {...actionContext} />
         </aside>
       </div>
-    </div>
+    </TicketWorkspace>
   );
 }

@@ -1,6 +1,7 @@
 import { NewTicketForm } from "@/components/new-ticket-form";
 import { redirect } from "next/navigation";
 import { requirePermission } from "@/lib/server-auth";
+import { TicketWorkspace } from "@/components/tickets/ticket-workspace";
 
 export default async function NewTicketPage() {
   try {
@@ -9,7 +10,7 @@ export default async function NewTicketPage() {
     redirect("/dashboard");
   }
   return (
-    <div className="ticket-create-industrial space-y-7">
+    <TicketWorkspace><div className="ticket-create-industrial space-y-7">
       <div className="ticket-create-hero surface-grid overflow-hidden border px-5 py-6 sm:px-8 md:py-8">
         <p className="eyebrow">Catalogue de services · 1TASK</p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 md:text-4xl">Créer une demande</h1>
@@ -21,6 +22,6 @@ export default async function NewTicketPage() {
         </div>
       </div>
       <NewTicketForm />
-    </div>
+    </div></TicketWorkspace>
   );
 }
