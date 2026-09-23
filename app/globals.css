@@ -1437,6 +1437,62 @@ body {
   letter-spacing: -0.005em;
 }
 
+/* Enterprise dashboard palette: clear hierarchy, restrained accents, readable contrast. */
+:root {
+  --reference-navy: #102a43;
+  --reference-blue: #1769e8;
+  --reference-blue-soft: #eaf2ff;
+  --reference-ink: #172b4d;
+  --reference-body: #52657a;
+  --reference-muted: #718096;
+  --reference-line: #dce6f2;
+  --reference-canvas: #f5f8fc;
+  --reference-success: #159570;
+  --reference-success-soft: #e8f7f1;
+  --reference-warning: #c77816;
+  --reference-warning-soft: #fff4df;
+  --reference-danger: #d84645;
+  --reference-danger-soft: #fff0f0;
+}
+
+.dashboard-page { color: var(--reference-ink); background: transparent; }
+.dashboard-reference-header { align-items: flex-end; gap: 1.5rem; margin-bottom: 1.35rem; }
+.dashboard-reference-header h1 { color: var(--reference-ink); letter-spacing: -.035em; }
+.dashboard-reference-header .page-header-description { color: var(--reference-body); }
+.dashboard-reference-actions { display: flex; flex-wrap: wrap; gap: .55rem; }
+.dashboard-reference-actions .button-primary, .dashboard-reference-actions .button-secondary { min-height: 2.35rem; border-radius: .55rem; padding-inline: .9rem; font-weight: 700; }
+.dashboard-reference-actions .button-primary { background: var(--reference-blue); box-shadow: 0 6px 14px rgba(23,105,232,.18); }
+.dashboard-reference-actions .button-secondary { border-color: var(--reference-line); background: #fff; color: var(--reference-ink); }
+.dashboard-enterprise-kpis { gap: .85rem; }
+.dashboard-enterprise-kpis .ui-stat-card { min-height: 8.1rem; border: 1px solid var(--reference-line); border-radius: .75rem; background: #fff; box-shadow: 0 4px 14px rgba(16,42,67,.045); }
+.dashboard-enterprise-kpis .ui-stat-card-header { color: var(--reference-body); }
+.dashboard-enterprise-kpis .ui-stat-card-value { color: var(--reference-ink); font-size: 1.75rem; }
+.dashboard-enterprise-kpis .ui-stat-card-info { border-top: 3px solid var(--reference-blue); }
+.dashboard-enterprise-kpis .ui-stat-card-warning { border-top: 3px solid var(--reference-warning); }
+.dashboard-enterprise-kpis .ui-stat-card-success { border-top: 3px solid var(--reference-success); }
+.dashboard-enterprise-kpis .ui-stat-card-danger { border-top: 3px solid var(--reference-danger); }
+.dashboard-enterprise-card { border: 1px solid var(--reference-line); border-radius: .75rem; background: #fff; box-shadow: 0 4px 14px rgba(16,42,67,.04); }
+.dashboard-enterprise-card-header { padding-bottom: .85rem; border-bottom: 1px solid #edf2f7; }
+.dashboard-enterprise-card-header h2, .dashboard-enterprise-placeholder h2 { color: var(--reference-ink); }
+.dashboard-enterprise-card-header .eyebrow, .dashboard-enterprise-placeholder .eyebrow { color: var(--reference-blue); }
+.dashboard-widget-link { color: var(--reference-blue); font-weight: 700; }
+.dashboard-widget-filter { border: 1px solid var(--reference-line); border-radius: .4rem; background: #f8fbff; color: var(--reference-body); }
+.dashboard-reference-secondary, .dashboard-reference-actions-row { gap: 1rem; }
+.dashboard-enterprise-placeholder { color: var(--reference-body); }
+.dashboard-enterprise-placeholder p:last-child { max-width: 34rem; line-height: 1.65; }
+.dashboard-sla-score strong { color: var(--reference-blue); }
+.dashboard-sla-risk-list { color: var(--reference-body); }
+.dashboard-risk-ok { background: var(--reference-success); }
+.dashboard-risk-warning { background: var(--reference-warning); }
+.dashboard-risk-danger { background: var(--reference-danger); }
+.dashboard-recent-card .ui-data-table { border-color: var(--reference-line); }
+.dashboard-recent-card .ui-data-table-scroll { border-color: var(--reference-line); }
+.dashboard-recent-card th { background: #f8fbff; color: var(--reference-muted); }
+.dashboard-recent-card td { color: var(--reference-body); border-bottom-color: #edf2f7; }
+.dashboard-ticket-reference { color: var(--reference-blue); font-weight: 750; }
+@media (max-width: 900px) { .dashboard-reference-header { align-items: flex-start; flex-direction: column; } .dashboard-reference-actions { width: 100%; } }
+@media (max-width: 640px) { .dashboard-reference-actions .button-primary, .dashboard-reference-actions .button-secondary { flex: 1 1 10rem; justify-content: center; } .dashboard-enterprise-card { border-radius: .65rem; } }
+
 .shell-sidebar,
 .shell-topbar,
 .global-search-form,
