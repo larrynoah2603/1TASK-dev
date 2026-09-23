@@ -6,6 +6,8 @@ import { listTicketQueueFilterOptions } from "@/lib/ticket-queue-service";
 import { getSessionUserContext, roleCodes } from "@/lib/server-auth";
 import { ticketListQuerySchema } from "@/lib/validation";
 
+// TicketCursorPagination is composed by TicketList so the route keeps data loading separate from presentation.
+
 export default async function TicketsPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const user = await getSessionUserContext();
   if (!user) return null;
