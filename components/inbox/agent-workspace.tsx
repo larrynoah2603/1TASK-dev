@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
-export function AgentWorkspace({ children }: { children: ReactNode }) {
-  return <div className="agent-workspace">{children}</div>;
+export function AgentWorkspace({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return <div className={`agent-workspace ${className}`.trim()}>{children}</div>;
 }
 
 export function AgentWorkspaceHeader({ children }: { children: ReactNode }) {

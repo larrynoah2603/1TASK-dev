@@ -81,7 +81,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
   const canResolve = actionContext.allowedStatuses.some((status) => String(status) === "RESOLUTION_PENDING");
 
   return (
-    <TicketWorkspace>
+    <TicketWorkspace className="ticket-detail-industrial">
       <Link href={operational ? "/inbox" : "/tickets"} className="ticket-back-link">
         ← {operational ? "Retour à la boîte agent" : "Retour à mes tickets"}
       </Link>
