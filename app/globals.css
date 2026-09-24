@@ -5842,6 +5842,22 @@ html[data-theme="dark"] {
   .shell-main { padding-inline: 3rem; }
 }
 
+/* Premium ticket detail: a focused command rail above the conversation and compact vertical information panels. */
+.ticket-action-rail { display: grid; gap: .8rem; margin: .75rem 0 1rem; border: 1px solid color-mix(in srgb, var(--brand) 25%, var(--line)); border-radius: .85rem; background: linear-gradient(110deg, color-mix(in srgb, var(--brand-soft) 72%, var(--surface)), var(--surface)); padding: .8rem; box-shadow: var(--shadow-soft); }
+.ticket-action-rail-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .1rem .2rem 0; }
+.ticket-action-rail-heading h2 { margin-top: .2rem; color: var(--text-strong); font-size: .95rem; font-weight: 800; letter-spacing: -.02em; }
+.ticket-action-rail-heading p:last-child { margin-top: .2rem; color: var(--text-subtle); font-size: .62rem; }
+.ticket-action-rail-hint { border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 999px; background: color-mix(in srgb, var(--accent) 10%, var(--surface)); padding: .3rem .55rem; color: var(--text-body); font-size: .58rem; font-weight: 750; }
+.ticket-action-rail .ticket-side-panel { border-color: color-mix(in srgb, var(--brand) 18%, var(--line)); box-shadow: none; }
+.ticket-action-rail .ticket-side-panel-trigger { min-height: 2.35rem; }
+.ticket-action-rail .ticket-side-panel-content { padding: .65rem; }
+.ticket-action-rail .ticket-side-panel-content > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem; }
+.ticket-action-rail .ticket-side-panel-content > div > .ticket-side-panel,
+.ticket-action-rail .ticket-side-panel-content > div > form,
+.ticket-action-rail .ticket-side-panel-content > div > section { min-width: 0; }
+.ticket-action-rail select.field-control { min-height: 2.2rem; }
+.ticket-action-rail textarea.field-control { min-height: 3.4rem; }
+
 /* Ticket detail reference layout: compact, vertical rhythm first, with native controls instead of expanding combobox panels. */
 .ticket-detail-industrial { max-width: 1180px; gap: .75rem; }
 .ticket-detail-industrial .ticket-back-link { margin-bottom: .15rem; font-size: .72rem; }
@@ -5875,6 +5891,8 @@ html[data-theme="dark"] {
 @media (max-width: 800px) {
   .ticket-detail-industrial .ticket-detail-header,
   .ticket-detail-industrial .ticket-detail-layout { grid-template-columns: 1fr; }
+  .ticket-action-rail-heading { align-items: flex-start; flex-direction: column; }
+  .ticket-action-rail .ticket-side-panel-content > div { grid-template-columns: 1fr; }
 }
 
 /* Ticket actions stay compact so the conversation remains visible without excessive scrolling. */
