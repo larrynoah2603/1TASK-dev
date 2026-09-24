@@ -13,13 +13,11 @@ import { getTicketSlaState } from "@/lib/sla";
 import { getTicketActionContext } from "@/lib/ticket-service";
 import { getTicketForViewer } from "@/lib/ticket-detail-service";
 import { AuthorizationError, getSessionUserContext, roleCodes } from "@/lib/server-auth";
-import { TicketWorkspace, TicketWorkspaceHeader } from "@/components/tickets/ticket-workspace";
-import { TicketSlaPanel } from "@/components/tickets/ticket-sla-panel";
+import { TicketWorkspace } from "@/components/tickets/ticket-workspace";
 import { TicketHeader } from "@/components/tickets/detail/ticket-header";
 import { TicketConversation } from "@/components/tickets/detail/ticket-conversation";
 import { TicketHistory } from "@/components/tickets/detail/ticket-history";
 import { TicketSidebarActions } from "@/components/tickets/detail/ticket-sidebar-actions";
-import { TicketSlaCard } from "@/components/tickets/detail/ticket-sla-card";
 import { TicketSummary } from "@/components/tickets/detail/ticket-summary";
 
 const eventLabels: Record<string, string> = {
@@ -92,7 +90,6 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
         ← {operational ? "Retour à la boîte agent" : "Retour à mes tickets"}
       </Link>
 
-      <TicketWorkspaceHeader><div className="ticket-detail-heading"><p className="eyebrow">{ticket.reference}</p><h1>{ticket.title}</h1><p>{ticket.queue.department.name} · {ticket.queue.name} · {ticket.serviceCatalogItem.name}</p></div><TicketSlaCard><TicketSlaPanel state={sla.state} dueAt={sla.dueAt} createdAt={ticket.createdAt} pausedMinutes={ticket.totalPausedMinutes} /></TicketSlaCard></TicketWorkspaceHeader>
       <TicketHeader>
         <div className="ticket-detail-heading">
           <p className="eyebrow">{ticket.reference}</p>

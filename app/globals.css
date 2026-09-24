@@ -5842,6 +5842,41 @@ html[data-theme="dark"] {
   .shell-main { padding-inline: 3rem; }
 }
 
+/* Ticket detail reference layout: compact, vertical rhythm first, with native controls instead of expanding combobox panels. */
+.ticket-detail-industrial { max-width: 1180px; gap: .75rem; }
+.ticket-detail-industrial .ticket-back-link { margin-bottom: .15rem; font-size: .72rem; }
+.ticket-detail-industrial .ticket-detail-header { display: grid; grid-template-columns: minmax(0, 1fr) 13rem; align-items: start; gap: 1rem; padding: .65rem 0 .75rem; }
+.ticket-detail-industrial .ticket-detail-header h1 { font-size: 1.5rem; line-height: 1.05; }
+.ticket-detail-industrial .ticket-detail-header .ticket-status-strip { min-width: 0; }
+.ticket-detail-industrial .ticket-detail-layout { grid-template-columns: minmax(0, 1.35fr) minmax(19rem, .65fr); gap: 1rem; align-items: start; }
+.ticket-detail-industrial .ticket-detail-main { min-width: 0; }
+.ticket-detail-industrial .ticket-detail-sidebar { min-width: 0; }
+.ticket-detail-industrial .ticket-detail-sidebar > * { margin-bottom: .65rem; }
+.ticket-detail-industrial .ticket-side-panel { border-radius: .45rem; }
+.ticket-detail-industrial .ticket-side-panel-header { min-height: 2.5rem; padding: .55rem .7rem; }
+.ticket-detail-industrial .ticket-side-panel-content { padding: .65rem; }
+.ticket-detail-industrial .ticket-side-panel-card { padding: .7rem; }
+.ticket-detail-industrial .ticket-timeline-list { max-height: 16rem; overflow-y: auto; scrollbar-width: thin; }
+.ticket-detail-industrial .ticket-summary-list { gap: .35rem; }
+.ticket-detail-industrial .ticket-summary-list > div { padding-block: .25rem; }
+.ticket-detail-industrial .ticket-detail-sidebar .action-card { gap: .6rem; }
+.ticket-detail-industrial .ticket-detail-sidebar .field-control { min-height: 2.2rem; padding: .4rem .55rem; }
+.ticket-detail-industrial .ticket-detail-sidebar textarea.field-control { min-height: 3.6rem; }
+.ticket-detail-industrial .ticket-detail-sidebar .button-primary,
+.ticket-detail-industrial .ticket-detail-sidebar .button-secondary { min-height: 2.1rem; padding: .45rem .7rem; font-size: .72rem; }
+
+.ticket-detail-industrial select.field-control { appearance: auto; background: var(--ds-surface); }
+
+@media (min-width: 1024px) {
+  .ticket-detail-industrial .ticket-detail-main { position: sticky; top: calc(var(--shell-header-height) + 1rem); max-height: calc(100vh - var(--shell-header-height) - 2rem); overflow-y: auto; scrollbar-width: thin; }
+  .ticket-detail-industrial .ticket-detail-sidebar { position: static; max-height: none; overflow: visible; }
+}
+
+@media (max-width: 800px) {
+  .ticket-detail-industrial .ticket-detail-header,
+  .ticket-detail-industrial .ticket-detail-layout { grid-template-columns: 1fr; }
+}
+
 /* Ticket actions stay compact so the conversation remains visible without excessive scrolling. */
 .ticket-side-panel-content { padding: .75rem; }
 .ticket-side-panel-content .action-card { padding: .75rem; }

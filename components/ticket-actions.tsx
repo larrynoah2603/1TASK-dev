@@ -5,7 +5,6 @@ import { BlockReason, TicketStatus } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { BLOCK_REASON_LABELS, STATUS_LABELS } from "@/lib/domain";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { Combobox } from "@/components/combobox";
 import { useToast } from "@/components/toast-provider";
 import { TicketSidePanel } from "@/components/ticket-side-panel";
 
@@ -165,12 +164,12 @@ export function TicketActions({
             <p className="mt-1 text-xs text-slate-500">Seules les transitions autorisées pour votre rôle et l’état actuel sont proposées.</p>
           </div>
           <label className="field-label">Nouvelle étape
-            <Combobox value={nextStatus} onChange={(next) => setNextStatus(next as TicketStatus)} options={allowedStatuses.map((item) => ({ value: item, label: STATUS_LABELS[item] }))} />
+            <select value={nextStatus} onChange={(event) => setNextStatus(event.target.value as TicketStatus)} className="field-control" aria-label="Nouvelle étape">{allowedStatuses.map((item) => <option key={item} value={item}>{STATUS_LABELS[item]}</option>)}</select>
           </label>
           {nextStatus === TicketStatus.BLOCKED ? (
             <div className="grid gap-3">
               <label className="field-label">Motif du blocage
-                <Combobox required value={blockReason} onChange={(next) => setBlockReason(next as BlockReason)} options={Object.values(BlockReason).map((item) => ({ value: item, label: BLOCK_REASON_LABELS[item] }))} />
+                <select required value={blockReason} onChange={(event) => setBlockReason(event.target.value as BlockReason)} className="field-control" aria-label="Motif du blocage">{Object.values(BlockReason).map((item) => <option key={item} value={item}>{BLOCK_REASON_LABELS[item]}</option>)}</select>
               </label>
               <label className="field-label">Détail du blocage
                 <textarea required minLength={1} value={blockDetails} onChange={(event) => setBlockDetails(event.target.value)} placeholder="Expliquez ce qui est attendu et par qui." className="field-control min-h-24 font-normal" />
@@ -209,7 +208,7 @@ export function TicketActions({
           {agentsLoading ? <p className="text-xs text-slate-500">Chargement des agents habilités…</p> : null}
           {agentsLoaded && !agents.length ? <p className="text-xs text-slate-500">Aucun agent habilité disponible.</p> : null}
           {agents.length ? <label className="field-label">Agent
-            <Combobox value={assignedToId} onChange={setAssignedToId} options={agents.map((agent) => ({ value: agent.id, label: `${agent.name} — ${agent.email}` }))} />
+            <select value={assignedToId} onChange={(event) => setAssignedToId(event.target.value)} className="field-control" aria-label="Agent">{agents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name} — {agent.email}</option>)}</select>
           </label> : null}
           <label className="field-label">Motif obligatoire
             <input required minLength={10} value={assignmentReason} onChange={(event) => setAssignmentReason(event.target.value)} placeholder="Expliquez l’affectation ou la réaffectation." className="field-control font-normal" />
@@ -229,7 +228,7 @@ export function TicketActions({
           {queuesLoading ? <p className="text-xs text-slate-500">Chargement des files autorisées…</p> : null}
           {queuesLoaded && !transferableQueues.length ? <p className="text-xs text-slate-500">Aucune autre file autorisée.</p> : null}
           {transferableQueues.length ? <label className="field-label">File cible
-            <Combobox value={destinationQueueId} onChange={setDestinationQueueId} options={transferableQueues.map((queue) => ({ value: queue.id, label: `${queue.departmentName} — ${queue.name}` }))} />
+            <select value={destinationQueueId} onChange={(event) => setDestinationQueueId(event.target.value)} className="field-control" aria-label="File cible">{transferableQueues.map((queue) => <option key={queue.id} value={queue.id}>{queue.departmentName} — {queue.name}</option>)}</select>
           </label> : null}
           <label className="field-label">Motif du transfert
             <textarea required minLength={10} value={transferReason} onChange={(event) => setTransferReason(event.target.value)} placeholder="Expliquez pourquoi la file doit changer." className="field-control min-h-24 font-normal" />
