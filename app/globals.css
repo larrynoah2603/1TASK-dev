@@ -5816,3 +5816,29 @@ html[data-theme="dark"] {
 .enterprise-mobile-link.is-active { background: var(--ds-brand-soft); color: var(--ds-brand); }
 .mobile-create-ticket { border-color: var(--ds-surface); }
 
+/* Desktop-first alignment pass: one consistent content rail, predictable chrome, and balanced ticket workspace. */
+@media (min-width: 1024px) {
+  .shell-sidebar { width: 248px; }
+  .shell-content { padding-left: 248px; }
+  [data-sidebar-collapsed="true"] .shell-sidebar { width: 76px; }
+  [data-sidebar-collapsed="true"] .shell-content { padding-left: 76px; }
+  .shell-topbar-fixed { left: 248px; width: auto; min-height: var(--shell-header-height); padding-inline: 2rem; }
+  [data-sidebar-collapsed="true"] .shell-topbar-fixed { left: 76px; }
+  .shell-main { width: min(100%, 1440px); padding-inline: 2rem; padding-top: calc(var(--shell-header-height) + 2rem) !important; }
+  .breadcrumbs { width: 100%; max-width: 1180px; margin-inline: auto; margin-bottom: 1.25rem; }
+  .ticket-workspace { width: 100%; max-width: 1180px; margin-inline: auto; gap: 1.25rem; }
+  .ticket-workspace-header { min-height: 5rem; align-items: center; padding: .75rem 0 1.25rem; }
+  .ticket-workspace-header h1 { font-size: 1.8rem; }
+  .ticket-workspace-toolbar { gap: 1rem; }
+  .ticket-workspace-toolbar .filter-panel { padding: .8rem; }
+  .ticket-reference-list { min-width: 0; }
+  .ticket-reference-list .table-shell,
+  .ticket-reference-list .ui-data-table { width: 100%; }
+  .topbar-layout { grid-template-columns: minmax(14rem, 1fr) minmax(18rem, 28rem) minmax(20rem, 1fr); gap: 1.25rem; }
+  .enterprise-topbar-actions { justify-content: flex-end; gap: .5rem; }
+}
+
+@media (min-width: 1280px) {
+  .shell-main { padding-inline: 3rem; }
+}
+
