@@ -16,6 +16,7 @@ import { permissionCodes, roleCodes, toAccessSubject, type UserContext } from "@
 type AdminIconKind =
   | "overview"
   | "users"
+  | "roles"
   | "department"
   | "queue"
   | "team"
@@ -37,7 +38,8 @@ type AdminLink = {
 
 const adminLinks: AdminLink[] = [
   { href: "/admin", label: "Vue d’ensemble", icon: "overview", role: "ANY" },
-  { href: "/admin/users", label: "Utilisateurs et rôles", icon: "users", role: "FUNCTIONAL", permission: "organization:manage" },
+  { href: "/admin/users", label: "Utilisateurs", icon: "users", role: "FUNCTIONAL", permission: "organization:manage" },
+  { href: "/admin/roles", label: "Rôles & permissions", icon: "roles", role: "FUNCTIONAL", permission: "organization:manage" },
   { href: "/admin/departments", label: "Départements / Entra", icon: "department", role: "FUNCTIONAL", permission: "organization:manage" },
   { href: "/admin/queues", label: "Files et responsables", icon: "queue", role: "FUNCTIONAL", permission: "organization:manage" },
   { href: "/admin/teams", label: "Équipes et agents", icon: "team", role: "FUNCTIONAL", permission: "organization:manage" },
@@ -54,6 +56,7 @@ function AdminIcon({ kind }: { kind: AdminIconKind }) {
   const paths: Record<AdminIconKind, string> = {
     overview: "M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z",
     users: "M16 19v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 17.5V19M10 10.5A3 3 0 1 0 10 4.5a3 3 0 0 0 0 6ZM16 5a3 3 0 0 1 0 5.8M17 14.2a3.5 3.5 0 0 1 3 3.3V19",
+    roles: "M12 3l7 4v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V7l7-4ZM9 12l2 2 4-4",
     department: "M4 5h16v14H4zM8 5v14M4 10h4M12 9h5M12 13h5M12 17h3",
     queue: "M4 6h16v12H4zM4 10h16M8 14h3M14 14h3",
     team: "M16 19v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 17.5V19M10 10.5A3 3 0 1 0 10 4.5a3 3 0 0 0 0 6ZM16 5a3 3 0 0 1 0 5.8M17 14.2a3.5 3.5 0 0 1 3 3.3V19",
