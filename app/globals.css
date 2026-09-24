@@ -1839,6 +1839,21 @@ html[data-theme="dark"] .combobox-option-selected { color: #bfc4ff; }
 .dashboard-workflow-dot { height: 0.45rem; width: 0.45rem; flex: 0 0 auto; border-radius: 999px; background: var(--brand); }
 
 /* Final application-wide visual direction: premium aubergine, petroleum teal, paper ivory. */
+.reporting-chart-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.reporting-chart-frame { height: 250px; padding: .75rem .25rem .25rem; }
+.reporting-radial-frame { height: 220px; }
+.reporting-radial-value { fill: var(--text-strong); font-size: 1.7rem; font-weight: 800; }
+.reporting-radial-label { fill: var(--text-subtle); font-size: .7rem; }
+.reporting-legend { display: flex; flex-wrap: wrap; gap: .75rem; border-top: 1px solid var(--line); padding-top: .75rem; color: var(--text-body); font-size: .68rem; }
+.reporting-legend span { display: inline-flex; align-items: center; gap: .35rem; }
+.reporting-data-note { border-top: 1px solid var(--line); margin: 0 .75rem; padding: .65rem 0 0; color: var(--text-subtle); font-size: .68rem; }
+.reporting-filter-client { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; margin-top: 1rem; border: 1px solid var(--line); border-radius: .75rem; background: var(--surface); padding: .85rem; }
+.reporting-filter-client label { display: grid; gap: .35rem; }
+.reporting-filter-client label span { color: var(--text-subtle); font-size: .65rem; font-weight: 750; }
+.reporting-filter-client select { min-height: 2.35rem; border: 1px solid var(--line-strong); border-radius: .45rem; background: var(--surface); padding: .35rem .55rem; color: var(--text-strong); font: inherit; font-size: .75rem; }
+@media (max-width: 1024px) { .reporting-chart-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .reporting-chart-grid, .reporting-filter-client { grid-template-columns: 1fr; } }
+
 :root {
   --surface: #ffffff;
   --surface-subtle: #fcfaf7;
