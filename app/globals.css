@@ -5842,3 +5842,32 @@ html[data-theme="dark"] {
   .shell-main { padding-inline: 3rem; }
 }
 
+/* Ticket actions stay compact so the conversation remains visible without excessive scrolling. */
+.ticket-side-panel-content { padding: .75rem; }
+.ticket-side-panel-content .action-card { padding: .75rem; }
+.ticket-side-panel-content .action-card > div:first-child p:last-child { display: none; }
+.ticket-side-panel-content .field-label { gap: .3rem; }
+.ticket-side-panel-content .field-control,
+.ticket-side-panel-content .combobox-trigger { min-height: 2.35rem; padding-block: .45rem; }
+.ticket-side-panel-content textarea.field-control { min-height: 4.5rem; }
+.combobox-listbox { max-height: 14rem; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.combobox-option { min-height: 2.15rem; padding-block: .45rem; }
+
+@media (min-width: 1024px) {
+  .ticket-detail-layout { align-items: start; }
+  .ticket-detail-sidebar { position: sticky; top: calc(var(--shell-header-height) + 1rem); max-height: calc(100vh - var(--shell-header-height) - 2rem); overflow-y: auto; padding-right: .35rem; scrollbar-width: thin; }
+  .ticket-detail-sidebar .ticket-side-panel-content .action-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: .65rem .8rem; }
+  .ticket-detail-sidebar .ticket-side-panel-content .action-card > div:first-child,
+  .ticket-detail-sidebar .ticket-side-panel-content .action-card > p,
+  .ticket-detail-sidebar .ticket-side-panel-content .action-card > button { grid-column: 1 / -1; }
+  .ticket-detail-sidebar .ticket-side-panel-content .action-card .field-label { min-width: 0; }
+  .ticket-detail-sidebar .ticket-side-panel-content .action-card .button-primary,
+  .ticket-detail-sidebar .ticket-side-panel-content .action-card .button-secondary { width: auto; justify-self: end; }
+  .ticket-detail-sidebar .ticket-side-panel-content .action-card textarea.field-control { min-height: 3.75rem; }
+}
+
+@media (max-width: 767px) {
+  .ticket-side-panel-content { padding: .6rem; }
+  .ticket-side-panel-content .action-card { padding: .6rem; }
+}
+
