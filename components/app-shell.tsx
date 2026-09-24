@@ -99,6 +99,6 @@ export async function AppShell({ user, children }: { user: UserContext; children
   />;
   // TopHeader owns the topbar-layout-industrial presentation while this server component keeps access and data concerns.
   const topbar = <TopHeader context={<TopbarContext />} search={<GlobalSearch />} actions={<>{canCreate ? <NewTicketLauncher /> : null}<NotificationCenter /><HelpMenu /><ThemeToggle /><ProfileMenu name={user.name} email={user.email} image={user.image} department={user.department?.name ?? "Département non renseigné"} roles={roleLabel} admin={isAdmin} /></>} />;
-  const mobileNavigation = <MobileNavigation links={visibleLinks.map((link) => ({ ...link, icon: <AppIcon kind={link.icon} /> }))} canCreate={canCreate} />;
+  const mobileNavigation = <MobileNavigation links={visibleLinks.map((link) => ({ ...link, icon: <AppIcon kind={link.icon} /> }))} />;
   return <NotificationProvider><CollapsibleShell variant="app" sidebar={sidebar} topbar={topbar} mobileNavigation={mobileNavigation}>{children}</CollapsibleShell></NotificationProvider>;
 }

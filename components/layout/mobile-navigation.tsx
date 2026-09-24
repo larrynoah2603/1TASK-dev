@@ -7,15 +7,14 @@ import { useNotificationState } from "@/components/notification-state";
 
 type MobileLink = { href: string; label: string; icon: React.ReactNode };
 
-export function MobileNavigation({ links, canCreate }: { links: MobileLink[]; canCreate: boolean }) {
+export function MobileNavigation({ links }: { links: MobileLink[] }) {
   const pathname = usePathname();
   const { unreadCount } = useNotificationState();
   const preferred = ["/dashboard", "/tickets", "/inbox", "/notifications", "/profile"];
-  const shown = preferred.map((href) => links.find((link) => link.href === href)).filter((link): link is MobileLink => Boolean(link)).slice(0, canCreate ? 4 : 5);
+  const shown = preferred.map((href) => links.find((link) => link.href === href)).filter((link): link is MobileLink => Boolean(link)).slice(0, 5);
   return (
     <nav className="mobile-bottom-nav enterprise-mobile-nav mobile-reference-nav lg:hidden" aria-label="Navigation mobile">
       {shown.slice(0, 2).map((link) => <MobileItem key={link.href} link={link} active={pathname === link.href || pathname.startsWith(`${link.href}/`)} unreadCount={unreadCount} />)}
-      {canCreate ? <Link href="/tickets/new" className="mobile-create-ticket" aria-label="Créer un incident"><span aria-hidden="true">+</span></Link> : null}
       {shown.slice(2).map((link) => <MobileItem key={link.href} link={link} active={pathname === link.href || pathname.startsWith(`${link.href}/`)} unreadCount={unreadCount} />)}
     </nav>
   );
