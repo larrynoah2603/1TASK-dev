@@ -1,4 +1,4 @@
-export const ticketSecurityInclude = {
+﻿export const ticketSecurityInclude = {
   requester: { select: { id: true, name: true } },
   sourceDepartment: { select: { id: true, name: true, code: true } },
   assignedTo: { select: { id: true, name: true } },
@@ -22,22 +22,56 @@ export const ticketAccessInclude = {
   assignedTo: {
     select: {
       id: true,
-      name: true,
-      email: true,
       teamMemberships: {
-        select: { teamId: true, isActive: true, team: { select: { isActive: true } } },
+        select: {
+          teamId: true,
+          isActive: true,
+          team: {
+            select: {
+              isActive: true,
+            },
+          },
+        },
       },
     },
   },
+
   queue: {
-    include: {
-      department: true,
-      manager: { select: { id: true, name: true } },
-      teams: { select: { id: true, isActive: true } },
+    select: {
+      id: true,
+      isActive: true,
+      managerId: true,
+      departmentId: true,
+
+      department: {
+        select: {
+          id: true,
+          isActive: true,
+        },
+      },
+
+      teams: {
+        select: {
+          id: true,
+          isActive: true,
+        },
+      },
     },
   },
-  accessList: { select: { userId: true } },
-  serviceCatalogItem: { select: { id: true, code: true, category: true } },
+
+  accessList: {
+    select: {
+      userId: true,
+    },
+  },
+
+  serviceCatalogItem: {
+    select: {
+      id: true,
+      code: true,
+      category: true,
+    },
+  },
 } as const;
 
 export type AccessTicket = {
@@ -78,3 +112,6 @@ export function accessTarget(ticket: AccessTicket) {
     ].filter((value): value is string => Boolean(value)),
   };
 }
+
+
+

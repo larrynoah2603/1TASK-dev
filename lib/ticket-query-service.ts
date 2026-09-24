@@ -1,4 +1,4 @@
-import { cache } from "react";
+﻿import { cache } from "react";
 import { Priority, Prisma, RoleCode, TicketStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { DomainError } from "@/lib/domain-error";
@@ -81,7 +81,39 @@ async function ticketSearchCandidateIds(query: string): Promise<string[] | null>
   return rows.map((row) => row.id);
 }
 
+
+export const cachedVisibleTicketWhere = cache(
+  async (
+    actorId: string,
+    actor: UserContext,
+    optionsKey: string,
+  ): Promise<Prisma.TicketWhereInput> => {
+
+    const options =
+      JSON.parse(optionsKey) as VisibilityOptions;
+
+    return visibleTicketWhereInternal(
+      actor,
+      options,
+    );
+  },
+);
+
+
 export async function visibleTicketWhere(
+  actor: UserContext,
+  options: VisibilityOptions = {},
+): Promise<Prisma.TicketWhereInput> {
+
+  return cachedVisibleTicketWhere(
+    actor.id,
+    actor,
+    JSON.stringify(options),
+  );
+
+}
+
+async function visibleTicketWhereInternal(
   actor: UserContext,
   options: VisibilityOptions = {},
 ): Promise<Prisma.TicketWhereInput> {
@@ -461,16 +493,34 @@ const ticketListSelect = {
   resolvedAt: true,
   slaPausedAt: true,
   totalPausedMinutes: true,
-  queue: {
-    select: {
-      id: true,
-      name: true,
-      departmentId: true,
-      department: { select: { id: true, name: true } },
-      manager: { select: { id: true, name: true } },
-      teams: { select: { id: true, isActive: true } },
+ queue: {
+  select: {
+    id: true,
+    name: true,
+    departmentId: true,
+
+    department: {
+      select: {
+        id: true,
+        name: true,
+      },
+    },
+
+    manager: {
+      select: {
+        id: true,
+        name: true,
+      },
+    },
+
+    teams: {
+      select: {
+        id: true,
+        isActive: true,
+      },
     },
   },
+},
   assignedTo: { select: { id: true, name: true } },
   requester: { select: { id: true, name: true } },
   sourceDepartment: { select: { id: true, name: true, code: true } },
@@ -483,7 +533,7 @@ export function listVisibleTicketsPage(
   settings: { includeTotal?: boolean } = {},
 ) {
   return measureServerOperation("tickets.list",
-    () => listVisibleTicketsPageInternal(actor, options, settings.includeTotal ?? true),
+    () => listVisibleTicketsPageInternal(actor, options, settings.includeTotal ?? false),
   );
 }
 
@@ -605,3 +655,6 @@ export async function getOperationalTicketSummary(actor: UserContext) {
   const mine = assignmentCounts.find((row) => row.assignedToId === current.id)?._count._all ?? 0;
   return { total, active, unassigned, mine, slaAttention, slaBreached };
 }
+
+
+
