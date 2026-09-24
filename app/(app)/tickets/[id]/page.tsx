@@ -111,6 +111,16 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
         />
       </TicketHeader>
 
+      <div className="ticket-action-rail" aria-label="Actions rapides du ticket">
+        <div className="ticket-action-rail-heading">
+          <div><p className="eyebrow">Pilotage</p><h2>Actions rapides</h2><p>Les contrôles restent visibles avant les échanges.</p></div>
+          <span className="ticket-action-rail-hint">Sélecteurs compacts</span>
+        </div>
+        <TicketSidebarActions>
+          <TicketActions ticketId={ticket.id} status={ticket.status} {...actionContext} />
+        </TicketSidebarActions>
+      </div>
+
       <div className="ticket-detail-layout">
         <main className="ticket-detail-main">
           <TicketConversation>
@@ -212,9 +222,6 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
             canUpload={actionContext.canPostPublic}
             canLink={operational && ticket.status !== "CLOSED"}
           />
-          <TicketSidebarActions>
-            <TicketActions ticketId={ticket.id} status={ticket.status} {...actionContext} />
-          </TicketSidebarActions>
         </aside>
       </div>
     </TicketWorkspace>
