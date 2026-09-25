@@ -419,6 +419,7 @@ model TeamMember {
 
   @@unique([teamId, userId])
   @@index([userId, isActive, isAvailable])
+  @@index([teamId, isActive, userId])
 }
 
 model Role {
@@ -758,6 +759,10 @@ model Ticket {
   @@index([assignedToId, status, updatedAt])
   @@index([status, firstResponseDueAt])
   @@index([status, resolutionDueAt])
+  @@index([queueId, createdAt])
+  @@index([assignedToId, createdAt])
+  @@index([requesterId, createdAt])
+  @@index([status, createdAt])
 }
 
 model TicketMessage {
@@ -995,20 +1000,20 @@ model AuditLog {
 }
 
 model OutboxEvent {
-  id            String   @id @default(cuid())
-  eventKey      String   @unique
+  id            String    @id @default(cuid())
+  eventKey      String    @unique
   type          String
   aggregateType String
   aggregateId   String
   payload       Json
-  status        String   @default("PENDING")
-  attempts      Int      @default(0)
-  availableAt   DateTime @default(now())
+  status        String    @default("PENDING")
+  attempts      Int       @default(0)
+  availableAt   DateTime  @default(now())
   lockedAt      DateTime?
   processedAt   DateTime?
   lastError     String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   @@index([status, availableAt, createdAt])
   @@index([aggregateType, aggregateId, createdAt])
