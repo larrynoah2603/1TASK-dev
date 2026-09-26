@@ -3,6 +3,7 @@ import { Priority, Prisma, RoleCode, TicketStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { DomainError } from "@/lib/domain-error";
 import { readServerEnvironment } from "@/lib/env";
+import { logTelemetry } from "@/lib/observability";
 import { measureServerOperation } from "@/lib/performance";
 import { requireCurrentActor, type UserContext } from "@/lib/server-auth";
 import { getTicketSlaState, SLA_RISK_WINDOW_MINUTES } from "@/lib/sla";
@@ -36,23 +37,40 @@ export type TicketListOptions = VisibilityOptions & {
   sort?: TicketListSort;
 };
 
+async function measureTicketQueryTiming<T>(
+  category: "ticket-access" | "tickets.list",
+  operation: string,
+  callback: () => Promise<T>,
+): Promise<T> {
+  const startedAt = Date.now();
+  try {
+    return await callback();
+  } finally {
+    logTelemetry("info", `[PERF][${category}]`, {
+      operation,
+      durationMs: Date.now() - startedAt,
+    });
+  }
+}
+
 function nonConfidential(clause: Prisma.TicketWhereInput): Prisma.TicketWhereInput {
   return { ...clause, confidential: false };
 }
 
-const loadActiveTeamMemberRows = cache(async (teamIdsKey: string) => {
-  const teamIds = teamIdsKey.split("|").filter(Boolean);
-  if (!teamIds.length) return [];
-  return prisma.teamMember.findMany({
-    where: {
-      teamId: { in: teamIds },
-      isActive: true,
-      team: { isActive: true },
-      user: { status: "ACTIVE" },
+function activeTeamAssigneeWhere(teamIds: string[]): Prisma.TicketWhereInput {
+  return {
+    assignedTo: {
+      status: "ACTIVE",
+      teamMemberships: {
+        some: {
+          teamId: { in: teamIds },
+          isActive: true,
+          team: { isActive: true },
+        },
+      },
     },
-    select: { teamId: true, userId: true },
-  });
-});
+  };
+}
 
 const MAX_FULL_TEXT_SEARCH_CANDIDATES = 5_000;
 
@@ -117,6 +135,15 @@ async function visibleTicketWhereInternal(
   actor: UserContext,
   options: VisibilityOptions = {},
 ): Promise<Prisma.TicketWhereInput> {
+  return measureTicketQueryTiming("ticket-access", "visibleTicketWhere", () =>
+    calculateVisibleTicketWhere(actor, options),
+  );
+}
+
+async function calculateVisibleTicketWhere(
+  actor: UserContext,
+  options: VisibilityOptions,
+): Promise<Prisma.TicketWhereInput> {
   const scopedClauses: Prisma.TicketWhereInput[] = [];
   const reportingMode = options.mode === "REPORTING";
   const relevantRoles = reportingMode
@@ -135,25 +162,15 @@ async function visibleTicketWhereInternal(
   );
   const activeTeamQueueIds = [...new Set(activeTeamMemberships.map((membership) => membership.team.queueId))]
     .filter((queueId) => !actor.authorizedQueueId || actor.authorizedQueueId === queueId);
-  const teamIdsKey = activeTeamMemberships
-    .map((membership) => membership.team.id)
-    .sort()
-    .join("|");
-  const activeTeamMemberRows = await loadActiveTeamMemberRows(teamIdsKey);
   const agentBoundaryForTeams = (
     teams: UserContext["teamMemberships"],
   ): Prisma.TicketWhereInput => {
     const teamIds = teams.map((membership) => membership.team.id);
     const queueIds = [...new Set(teams.map((membership) => membership.team.queueId))]
       .filter((queueId) => !actor.authorizedQueueId || actor.authorizedQueueId === queueId);
-    const memberIds = [...new Set(
-      activeTeamMemberRows
-        .filter((member) => teamIds.includes(member.teamId))
-        .map((member) => member.userId),
-    )];
     const clauses: Prisma.TicketWhereInput[] = [];
-    if (memberIds.length && queueIds.length) {
-      clauses.push({ AND: [{ assignedToId: { in: memberIds } }, { queueId: { in: queueIds } }] });
+    if (teamIds.length && queueIds.length) {
+      clauses.push({ AND: [activeTeamAssigneeWhere(teamIds), { queueId: { in: queueIds } }] });
     }
     if (queueIds.length) clauses.push({ AND: [{ queueId: { in: queueIds } }, { assignedToId: null }] });
     return { OR: clauses.length ? clauses : [{ id: "__no_agent_team_boundary__" }] };
@@ -302,6 +319,12 @@ async function visibleTicketWhereInternal(
 }
 
 async function buildTicketListWhere(actor: UserContext, options: TicketListOptions) {
+  return measureTicketQueryTiming("tickets.list", "buildTicketListWhere", () =>
+    calculateTicketListWhere(actor, options),
+  );
+}
+
+async function calculateTicketListWhere(actor: UserContext, options: TicketListOptions) {
   const current = await requireCurrentActor(actor);
   const filters: Prisma.TicketWhereInput[] = [];
   if (options.status) filters.push({ status: options.status });
@@ -329,14 +352,7 @@ async function buildTicketListWhere(actor: UserContext, options: TicketListOptio
         filters.push({ id: "__no_active_team_membership__" });
         break;
       }
-      const teamIdsKey = [...teamIds].sort().join("|");
-      const teamMembers = await loadActiveTeamMemberRows(teamIdsKey);
-      const userIds = [...new Set(
-        teamMembers
-          .filter((member) => teamIds.includes(member.teamId))
-          .map((member) => member.userId),
-      )];
-      filters.push(userIds.length ? { assignedToId: { in: userIds } } : { id: "__no_active_team_members__" });
+      filters.push(activeTeamAssigneeWhere(teamIds));
       break;
     }
     default:
@@ -549,15 +565,20 @@ async function listVisibleTicketsPageInternal(
   const cursor = options.cursor ? decodeTicketListCursor(options.cursor, sort) : null;
   const now = new Date();
   const cursorWhere = cursor ? { AND: [where, ticketCursorBoundary(cursor)] } : where;
+  const countPromise = includeTotal ? prisma.ticket.count({ where }) : Promise.resolve(null);
   const [ticketRows, exactTotal] = await Promise.all([
-    prisma.ticket.findMany({
-      where: cursorWhere,
-      select: ticketListSelect,
-      orderBy: ticketOrderBy(sort),
-      ...(!cursor ? { skip: (page - 1) * pageSize } : {}),
-      take: cursor || !includeTotal ? pageSize + 1 : pageSize,
-    }),
-    includeTotal ? prisma.ticket.count({ where }) : Promise.resolve(null),
+    measureTicketQueryTiming("tickets.list", "findMany", () =>
+      prisma.ticket.findMany({
+        where: cursorWhere,
+        select: ticketListSelect,
+        orderBy: ticketOrderBy(sort),
+        ...(!cursor ? { skip: (page - 1) * pageSize } : {}),
+        take: cursor || !includeTotal ? pageSize + 1 : pageSize,
+      }),
+    ),
+    includeTotal
+      ? measureTicketQueryTiming("tickets.list", "count", () => countPromise)
+      : countPromise,
   ]);
   const hasMore = cursor || exactTotal === null ? ticketRows.length > pageSize : page * pageSize < exactTotal;
   const tickets = ticketRows.slice(0, pageSize);
