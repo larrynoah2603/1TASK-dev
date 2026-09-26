@@ -583,6 +583,7 @@ async function listVisibleTicketsPageInternal(
   const cursor = options.cursor ? decodeTicketListCursor(options.cursor, sort) : null;
   const now = new Date();
   const cursorWhere = cursor ? { AND: [where, ticketCursorBoundary(cursor)] } : where;
+  const countPromise = includeTotal ? prisma.ticket.count({ where }) : Promise.resolve(null);
   const [ticketRows, exactTotal] = await Promise.all([
     measureTicketQueryTiming("tickets.list", "findMany", () =>
       prisma.ticket.findMany({
@@ -594,8 +595,8 @@ async function listVisibleTicketsPageInternal(
       }),
     ),
     includeTotal
-      ? measureTicketQueryTiming("tickets.list", "count", () => prisma.ticket.count({ where }))
-      : Promise.resolve(null),
+      ? measureTicketQueryTiming("tickets.list", "count", () => countPromise)
+      : countPromise,
   ]);
   const hasMore = cursor || exactTotal === null ? ticketRows.length > pageSize : page * pageSize < exactTotal;
   const tickets = ticketRows.slice(0, pageSize);
