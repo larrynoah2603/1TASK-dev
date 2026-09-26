@@ -57,21 +57,20 @@ function nonConfidential(clause: Prisma.TicketWhereInput): Prisma.TicketWhereInp
   return { ...clause, confidential: false };
 }
 
-const loadActiveTeamMemberRows = cache(async (teamIdsKey: string) => {
-  const teamIds = teamIdsKey.split("|").filter(Boolean);
-  if (!teamIds.length) return [];
-  return measureTicketQueryTiming("ticket-access", "loadActiveTeamMemberRows", () =>
-    prisma.teamMember.findMany({
-      where: {
-        teamId: { in: teamIds },
-        isActive: true,
-        team: { isActive: true },
-        user: { status: "ACTIVE" },
+function activeTeamAssigneeWhere(teamIds: string[]): Prisma.TicketWhereInput {
+  return {
+    assignedTo: {
+      status: "ACTIVE",
+      teamMemberships: {
+        some: {
+          teamId: { in: teamIds },
+          isActive: true,
+          team: { isActive: true },
+        },
       },
-      select: { teamId: true, userId: true },
-    }),
-  );
-});
+    },
+  };
+}
 
 const MAX_FULL_TEXT_SEARCH_CANDIDATES = 5_000;
 
@@ -163,25 +162,15 @@ async function calculateVisibleTicketWhere(
   );
   const activeTeamQueueIds = [...new Set(activeTeamMemberships.map((membership) => membership.team.queueId))]
     .filter((queueId) => !actor.authorizedQueueId || actor.authorizedQueueId === queueId);
-  const teamIdsKey = activeTeamMemberships
-    .map((membership) => membership.team.id)
-    .sort()
-    .join("|");
-  const activeTeamMemberRows = await loadActiveTeamMemberRows(teamIdsKey);
   const agentBoundaryForTeams = (
     teams: UserContext["teamMemberships"],
   ): Prisma.TicketWhereInput => {
     const teamIds = teams.map((membership) => membership.team.id);
     const queueIds = [...new Set(teams.map((membership) => membership.team.queueId))]
       .filter((queueId) => !actor.authorizedQueueId || actor.authorizedQueueId === queueId);
-    const memberIds = [...new Set(
-      activeTeamMemberRows
-        .filter((member) => teamIds.includes(member.teamId))
-        .map((member) => member.userId),
-    )];
     const clauses: Prisma.TicketWhereInput[] = [];
-    if (memberIds.length && queueIds.length) {
-      clauses.push({ AND: [{ assignedToId: { in: memberIds } }, { queueId: { in: queueIds } }] });
+    if (teamIds.length && queueIds.length) {
+      clauses.push({ AND: [activeTeamAssigneeWhere(teamIds), { queueId: { in: queueIds } }] });
     }
     if (queueIds.length) clauses.push({ AND: [{ queueId: { in: queueIds } }, { assignedToId: null }] });
     return { OR: clauses.length ? clauses : [{ id: "__no_agent_team_boundary__" }] };
@@ -363,14 +352,7 @@ async function calculateTicketListWhere(actor: UserContext, options: TicketListO
         filters.push({ id: "__no_active_team_membership__" });
         break;
       }
-      const teamIdsKey = [...teamIds].sort().join("|");
-      const teamMembers = await loadActiveTeamMemberRows(teamIdsKey);
-      const userIds = [...new Set(
-        teamMembers
-          .filter((member) => teamIds.includes(member.teamId))
-          .map((member) => member.userId),
-      )];
-      filters.push(userIds.length ? { assignedToId: { in: userIds } } : { id: "__no_active_team_members__" });
+      filters.push(activeTeamAssigneeWhere(teamIds));
       break;
     }
     default:
