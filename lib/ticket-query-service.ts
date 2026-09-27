@@ -326,6 +326,8 @@ async function buildTicketListWhere(actor: UserContext, options: TicketListOptio
 
 async function calculateTicketListWhere(actor: UserContext, options: TicketListOptions) {
   const current = await requireCurrentActor(actor);
+  const requesterOwnScope =
+    options.scope === "requested" && !options.workQueue && options.mode !== "REPORTING";
   const filters: Prisma.TicketWhereInput[] = [];
   if (options.status) filters.push({ status: options.status });
   if (options.priority) filters.push({ priority: options.priority });
@@ -342,7 +344,7 @@ async function calculateTicketListWhere(actor: UserContext, options: TicketListO
       filters.push({ assignedToId: current.id });
       break;
     case "requested":
-      filters.push({ requesterId: current.id });
+      if (!requesterOwnScope) filters.push({ requesterId: current.id });
       break;
     case "team": {
       const teamIds = current.teamMemberships
@@ -392,7 +394,12 @@ async function calculateTicketListWhere(actor: UserContext, options: TicketListO
         }
       : { id: { in: candidateIds.length ? candidateIds : ["__no_full_text_match__"] } });
   }
-  const baseWhere = await visibleTicketWhere(current, options);
+  // A requester always sees their own tickets, including confidential ones.
+  // Avoid expanding the full role/team ACL into SQL when this owner predicate
+  // already guarantees exactly the same visible set.
+  const baseWhere: Prisma.TicketWhereInput = requesterOwnScope
+    ? { requesterId: current.id }
+    : await visibleTicketWhere(current, options);
   const where: Prisma.TicketWhereInput = filters.length
     ? { AND: [baseWhere, ...filters] }
     : baseWhere;
