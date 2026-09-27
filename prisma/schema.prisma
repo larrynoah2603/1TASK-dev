@@ -754,6 +754,7 @@ model Ticket {
 
   @@unique([createdById, creationIdempotencyToken])
   @@index([requesterId, status, updatedAt])
+  @@index([requesterId, updatedAt, id])
   @@index([sourceDepartmentId, createdAt])
   @@index([queueId, status, priority, updatedAt])
   @@index([assignedToId, status, updatedAt])
