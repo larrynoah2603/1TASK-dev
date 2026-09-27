@@ -5,6 +5,14 @@ import { describe, expect, it } from "vitest";
 const source = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("contrats de performance Prisma", () => {
+  it("indexe le scope demandeur dans l’ordre de pagination par défaut", () => {
+    const schema = source("prisma/schema.prisma");
+    const migration = source("prisma/migrations/20260927090000_add_requester_ticket_list_index/migration.sql");
+
+    expect(schema).toContain("@@index([requesterId, updatedAt, id])");
+    expect(migration).toContain('ON "Ticket"("requesterId", "updatedAt", "id")');
+  });
+
   it("agrège les statistiques des files sans charger chaque ticket en mémoire", () => {
     const service = source("lib/ticket-queue-service.ts");
     const start = service.indexOf("export async function listVisibleQueues");
