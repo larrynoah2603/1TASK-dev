@@ -9,13 +9,13 @@ import { HelpMenu } from "@/components/help-menu";
 import { NewTicketLauncher } from "@/components/new-ticket-launcher";
 import { NotificationCenter } from "@/components/notification-center";
 import { NotificationBadge, NotificationProvider } from "@/components/notification-state";
-import { ProfileMenu } from "@/components/profile-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { ShellNavLink } from "@/components/shell-nav-link";
 import { TopbarContext } from "@/components/topbar-context";
-import { AppSidebar } from "@/components/layout/app-sidebar";
-import { TopHeader } from "@/components/layout/top-header";
+import { Sidebar } from "@/components/layout/sidebar";
+import { SidebarItem } from "@/components/layout/sidebar-item";
+import { Topbar } from "@/components/layout/topbar";
 import { MobileNavigation } from "@/components/layout/mobile-navigation";
+import { UserMenu } from "@/components/layout/user-menu";
 import { permissionCodes, roleCodes, toAccessSubject, type UserContext } from "@/lib/server-auth";
 
 type AppIconKind = "home" | "ticket" | "inbox" | "team" | "chart" | "shield" | "bell" | "folder" | "briefcase" | "monitor" | "book";
@@ -82,7 +82,7 @@ export async function AppShell({ user, children }: { user: UserContext; children
   });
   const groups: Array<AppLink["group"]> = ["Espace", "Opérations", "Pilotage", "Administration"];
   const roleLabel = codes.map((code) => ROLE_LABELS[code]).join(" · ");
-  const sidebar = <AppSidebar
+  const sidebar = <Sidebar
     brand={
       <div className="sidebar-brand-block">
         <SidebarBrand />
@@ -92,13 +92,12 @@ export async function AppShell({ user, children }: { user: UserContext; children
         {groups.map((group) => {
           const groupLinks = visibleLinks.filter((link) => link.group === group);
           if (!groupLinks.length) return null;
-          return <section key={group} className="sidebar-nav-group" aria-labelledby={`sidebar-group-${group}`}><p id={`sidebar-group-${group}`} className="sidebar-label">{group}</p>{groupLinks.map((link) => <ShellNavLink key={link.href} href={link.href} icon={<AppIcon kind={link.icon} />}><span className="flex min-w-0 items-center gap-2 truncate">{link.label}{link.href === "/notifications" ? <NotificationBadge /> : null}</span></ShellNavLink>)}</section>;
+          return <section key={group} className="sidebar-nav-group" aria-labelledby={`sidebar-group-${group}`}><p id={`sidebar-group-${group}`} className="sidebar-label">{group}</p>{groupLinks.map((link) => <SidebarItem key={link.href} href={link.href} icon={<AppIcon kind={link.icon} />}><span className="flex min-w-0 items-center gap-2 truncate">{link.label}{link.href === "/notifications" ? <NotificationBadge /> : null}</span></SidebarItem>)}</section>;
         })}
       </nav>}
     user={<div className="sidebar-user-block sidebar-user-block-industrial sidebar-extra hidden md:block"><div className="sidebar-user-avatar">{user.image ? <Image src={user.image} alt="" width={40} height={40} unoptimized /> : initials(user.name)}</div><div className="min-w-0"><p className="sidebar-user-name truncate">{user.name}</p><p className="sidebar-user-context truncate">{user.department?.name ?? "Service desk interne"}</p></div></div>}
   />;
-  // TopHeader owns the topbar-layout-industrial presentation while this server component keeps access and data concerns.
-  const topbar = <TopHeader context={<TopbarContext />} search={<GlobalSearch />} actions={<>{canCreate ? <NewTicketLauncher /> : null}<NotificationCenter /><HelpMenu /><ThemeToggle /><ProfileMenu name={user.name} email={user.email} image={user.image} department={user.department?.name ?? "Département non renseigné"} roles={roleLabel} admin={isAdmin} /></>} />;
+  const topbar = <div className="topbar-layout-industrial"><Topbar context={<TopbarContext />} search={<GlobalSearch />} actions={<>{canCreate ? <NewTicketLauncher /> : null}<NotificationCenter /><HelpMenu /><ThemeToggle /><UserMenu name={user.name} email={user.email} image={user.image} department={user.department?.name ?? "Département non renseigné"} roles={roleLabel} admin={isAdmin} /></>} /></div>;
   const mobileNavigation = <MobileNavigation links={visibleLinks.map((link) => ({ ...link, icon: <AppIcon kind={link.icon} /> }))} />;
   return <NotificationProvider><CollapsibleShell variant="app" sidebar={sidebar} topbar={topbar} mobileNavigation={mobileNavigation}>{children}</CollapsibleShell></NotificationProvider>;
 }

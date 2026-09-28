@@ -11,5 +11,5 @@ export default async function ReportingPage() {
   const summary = await getReportingSummary(user);
   const canExport = permissionCodes(user).includes("reporting:export");
   const actions = canExport ? <><Link href="/api/reporting/export" className="button-secondary">Exporter CSV</Link><button type="button" className="button-secondary" disabled aria-disabled="true">Exporter Excel</button></> : <span className="reporting-access-chip">Vue autorisée</span>;
-  return <div className="reporting-page-shell reporting-industrial"><ReportingPageView summary={summary} actions={actions} filters={<ReportingFilterClient />} /></div>;
+  return <div className="reporting-page-shell reporting-industrial reporting-kpi-primary reporting-kpi-danger reporting-kpi-success"><ReportingPageView summary={summary} actions={actions} filters={<ReportingFilterClient />} /></div>;
 }
