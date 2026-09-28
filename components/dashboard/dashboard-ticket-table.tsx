@@ -1,0 +1,7 @@
+import Link from "next/link";
+import type { DashboardTicket } from "./recent-tickets";
+
+function label(status: string) { return status === "CLOSED" ? "Résolu" : status === "IN_PROGRESS" ? "En cours" : "Ouvert"; }
+export function DashboardTicketTable({ tickets }: { tickets: DashboardTicket[] }) {
+  return <section className="dashboard-modern-card dashboard-modern-tickets" aria-labelledby="dashboard-tickets-title"><div className="dashboard-modern-card-header"><div><p className="dashboard-modern-kicker">Support</p><h2 id="dashboard-tickets-title">Tickets récents</h2></div><Link href="/tickets" className="dashboard-modern-link">Voir tous les tickets</Link></div><div className="dashboard-ticket-table-wrap"><table className="dashboard-modern-table"><thead><tr><th>Ticket ID</th><th>Titre</th><th>Statut</th><th>SLA</th><th>Date</th></tr></thead><tbody>{tickets.slice(0, 6).map((ticket) => <tr key={ticket.id}><td><Link href={`/tickets/${ticket.id}`}>{ticket.reference}</Link></td><td className="dashboard-ticket-title">{ticket.title}</td><td><span className={`dashboard-status dashboard-status-${ticket.status.toLowerCase()}`}>{label(ticket.status)}</span></td><td><span className={`dashboard-sla dashboard-sla-${ticket.slaState.toLowerCase()}`}>{ticket.slaState === "OK" ? "Respecté" : ticket.slaState === "BREACHED" ? "Dépassé" : "À surveiller"}</span></td><td>{new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "short" }).format(ticket.updatedAt)}</td></tr>)}</tbody></table></div></section>;
+}
