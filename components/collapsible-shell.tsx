@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Breadcrumbs } from "@/components/breadcrumbs";
+import { Breadcrumb } from "@/components/layout/breadcrumb";
 
 export function CollapsibleShell({ variant, sidebar, topbar, mobileNavigation, children }: { variant: "app" | "admin"; sidebar: React.ReactNode; topbar: React.ReactNode; mobileNavigation?: React.ReactNode; children: React.ReactNode }) {
   const storageKey = `1task-${variant}-sidebar-collapsed`;
@@ -62,7 +62,7 @@ export function CollapsibleShell({ variant, sidebar, topbar, mobileNavigation, c
         </header>
         <div className="shell-structural-rule" aria-hidden="true" />
         <main id="main-content" className="shell-main mx-auto w-full max-w-[1500px] px-4 py-5 sm:px-6 md:px-8 md:py-7">
-          <Breadcrumbs />
+          <Breadcrumb />
           {children}
         </main>
         {mobileNavigation}
