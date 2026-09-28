@@ -4738,6 +4738,33 @@ html[data-theme="light"] {
   .shell-industrial .knowledge-industrial .knowledge-query-panel { padding: 0.9rem; }
 }
 
+/* Modern dashboard UI: calm SaaS surfaces, clear hierarchy, and responsive data density. */
+.dashboard-modern-page { display: grid; gap: 1.25rem; max-width: 1440px; margin: 0 auto; }
+.dashboard-modern-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1.5rem; }
+.dashboard-modern-kicker { margin: 0; color: #4f46e5; font-size: .68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.dashboard-modern-header h1 { margin: .35rem 0 0; color: #0f172a; font-size: clamp(1.55rem, 3vw, 2.15rem); letter-spacing: -.04em; }
+.dashboard-modern-header p:last-child { margin-top: .35rem; color: #64748b; font-size: .84rem; }
+.dashboard-modern-header-actions { display: flex; align-items: center; gap: .55rem; }
+.dashboard-search { display: flex; align-items: center; gap: .45rem; min-width: 12rem; border: 1px solid #dbe3ef; border-radius: .55rem; background: #fff; padding: .55rem .7rem; color: #94a3b8; }
+.dashboard-search input { width: 100%; border: 0; outline: 0; color: #0f172a; font: inherit; font-size: .72rem; }
+.dashboard-icon-button { display: grid; place-items: center; width: 2.15rem; height: 2.15rem; border: 1px solid #dbe3ef; border-radius: .55rem; background: #fff; color: #475569; }
+.dashboard-avatar { display: grid; place-items: center; width: 2.15rem; height: 2.15rem; border-radius: 50%; background: #e0e7ff; color: #4338ca; font-size: .75rem; font-weight: 800; }
+.dashboard-modern-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+.dashboard-modern-kpi, .dashboard-modern-card { border: 1px solid #e2e8f0; border-radius: .8rem; background: #fff; box-shadow: 0 4px 16px rgba(15,23,42,.04); }
+.dashboard-modern-kpi { padding: 1rem; }
+.dashboard-modern-kpi-top, .dashboard-modern-kpi-bottom, .dashboard-modern-card-header { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+.dashboard-modern-kpi-top { color: #64748b; font-size: .72rem; font-weight: 700; }
+.dashboard-modern-kpi-icon { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: .55rem; }
+.dashboard-modern-kpi strong { display: block; margin-top: .75rem; color: #0f172a; font-size: 1.85rem; letter-spacing: -.05em; }
+.dashboard-modern-kpi-bottom { margin-top: .5rem; color: #94a3b8; font-size: .65rem; }
+.dashboard-modern-kpi-bottom b { color: #16a34a; font-size: .65rem; }
+.dashboard-modern-kpi-warning .dashboard-modern-kpi-icon { background: #fef3c7; color: #d97706; }.dashboard-modern-kpi-success .dashboard-modern-kpi-icon { background: #dcfce7; color: #16a34a; }.dashboard-modern-kpi-danger .dashboard-modern-kpi-icon { background: #fee2e2; color: #dc2626; }.dashboard-modern-kpi-info .dashboard-modern-kpi-icon { background: #e0e7ff; color: #4f46e5; }
+.dashboard-modern-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(17rem, .7fr); gap: 1rem; }
+.dashboard-modern-card { padding: 1rem; }.dashboard-modern-card h2 { margin-top: .25rem; color: #0f172a; font-size: .98rem; }.dashboard-period-pill { border-radius: 999px; background: #f1f5f9; padding: .35rem .55rem; color: #64748b; font-size: .62rem; font-weight: 700; }.dashboard-chart { height: 250px; margin-top: .8rem; }.dashboard-modern-link { color: #4f46e5; font-size: .7rem; font-weight: 750; }.dashboard-modern-tickets { min-width: 0; }.dashboard-ticket-table-wrap { margin-top: .85rem; overflow-x: auto; }.dashboard-modern-table { width: 100%; border-collapse: collapse; font-size: .72rem; }.dashboard-modern-table th { padding: .65rem; background: #f8fafc; color: #64748b; font-size: .62rem; font-weight: 800; text-align: left; }.dashboard-modern-table td { border-top: 1px solid #eef2f7; padding: .75rem .65rem; color: #475569; }.dashboard-modern-table tr:hover td { background: #f8fbff; }.dashboard-modern-table td:first-child a { color: #4f46e5; font-weight: 750; }.dashboard-ticket-title { color: #1e293b !important; font-weight: 650; }.dashboard-status, .dashboard-sla { display: inline-flex; border-radius: 999px; padding: .28rem .5rem; font-size: .6rem; font-weight: 750; }.dashboard-status-closed, .dashboard-sla-ok { background: #dcfce7; color: #15803d; }.dashboard-status-in_progress { background: #e0e7ff; color: #4338ca; }.dashboard-status-open, .dashboard-sla-at_risk { background: #fef3c7; color: #a16207; }.dashboard-sla-breached { background: #fee2e2; color: #b91c1c; }
+.dashboard-modern-sla { display: flex; flex-direction: column; }.dashboard-sla-ring { display: grid; place-items: center; align-content: center; width: 9rem; height: 9rem; margin: 1.5rem auto 1rem; border-radius: 50%; background: conic-gradient(#4f46e5 var(--sla-rate), #e2e8f0 0); position: relative; }.dashboard-sla-ring::after { content: ""; position: absolute; inset: .65rem; border-radius: inherit; background: #fff; }.dashboard-sla-ring strong, .dashboard-sla-ring span { position: relative; z-index: 1; }.dashboard-sla-ring strong { color: #0f172a; font-size: 1.65rem; }.dashboard-sla-ring span { color: #64748b; font-size: .65rem; }.dashboard-modern-sla > p { color: #64748b; font-size: .72rem; text-align: center; }.dashboard-sla-legend { display: flex; justify-content: center; gap: .8rem; margin-top: auto; padding-top: 1rem; color: #64748b; font-size: .62rem; }.dashboard-sla-legend span { display: flex; align-items: center; gap: .3rem; }.dashboard-sla-legend i { width: .45rem; height: .45rem; border-radius: 50%; background: #4f46e5; }.dashboard-sla-legend i.is-risk { background: #f59e0b; }
+@media (max-width: 1024px) { .dashboard-modern-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }.dashboard-modern-grid { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .dashboard-modern-header { flex-direction: column; }.dashboard-modern-header-actions { width: 100%; }.dashboard-search { flex: 1; }.dashboard-modern-kpis { grid-template-columns: 1fr; }.dashboard-modern-table thead { display: none; }.dashboard-modern-table, .dashboard-modern-table tbody, .dashboard-modern-table tr, .dashboard-modern-table td { display: block; }.dashboard-modern-table tr { border-top: 1px solid #eef2f7; padding: .7rem 0; }.dashboard-modern-table td { display: flex; justify-content: space-between; border: 0; padding: .25rem .4rem; }.dashboard-modern-table td::before { content: attr(data-label); color: #94a3b8; font-size: .6rem; font-weight: 700; }.dashboard-chart { height: 210px; } }
+
 /* Reference SaaS shell: navy navigation, light workspace, clear enterprise hierarchy. */
 .shell-reference { background: #f4f7fb; color: #172033; }
 .shell-reference .sidebar-reference,
