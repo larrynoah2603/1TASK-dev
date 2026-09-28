@@ -1,14 +1,12 @@
-import Link from "next/link";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { RoleCode } from "@prisma/client";
 import { DashboardViewTabs } from "@/components/dashboard-visuals";
-import { AgentWorkspace, AgentWorkspaceGrid, AgentWorkspaceHeader } from "@/components/inbox/agent-workspace";
 import { AgentKpiGrid } from "@/components/inbox/agent-kpi-grid";
-import { PriorityTickets } from "@/components/inbox/priority-tickets";
-import { AgentTicketTable } from "@/components/inbox/agent-ticket-table";
 import { SlaMonitorPanel } from "@/components/inbox/sla-monitor-panel";
 import { AgentActivity } from "@/components/inbox/agent-activity";
+import { InboxAgentPanel } from "@/components/inbox/inbox-agent-panel";
+import { InboxPage as InboxWorkspace } from "@/components/inbox/inbox-page";
 import { TicketFilters } from "@/components/ticket-filters";
 import { TicketViewSwitcher } from "@/components/ticket-view-switcher";
 import { TicketCursorPagination } from "@/components/ticket-cursor-pagination";
@@ -57,11 +55,14 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
   const canReport = permissionCodes(user).includes("reporting:read");
   const waiting = currentRows.filter((ticket) => ticket.status === "BLOCKED" || ticket.status === "RESOLUTION_PENDING").length;
   return (
-    <AgentWorkspace className="inbox-operations-industrial">
-      <DashboardViewTabs active="operations" canOperate canReport={canReport} />
-      <AgentWorkspaceHeader><div><p className="eyebrow">Poste agent</p><h1>Inbox Agent</h1><p className="page-header-description">Gérez vos tickets et priorités.</p></div><div className="agent-workspace-actions"><Link href="/tickets/new" className="button-primary">Créer un ticket</Link><Link href="/tickets" className="button-secondary">Rechercher un ticket</Link></div></AgentWorkspaceHeader>
-      <Suspense fallback={<InboxKpiSkeleton />}><InboxKpis user={user} /></Suspense>
-      <AgentWorkspaceGrid><div className="agent-workspace-main"><PriorityTickets tickets={currentRows} /><section className="agent-card" aria-labelledby="agent-tickets-title"><div className="agent-card-header"><div><p className="eyebrow">Liste de travail agent</p><h2 id="agent-tickets-title">Mes tickets</h2></div><span className="agent-card-count">{currentRows.length}</span></div><TicketViewSwitcher scope={params.scope} sla={params.sla} basePath="/inbox" /><TicketFilters queues={queues} dossiers={dossiers} missions={missions} values={params} resetHref="/inbox" scopeOptions={["all", "unassigned", "mine", "team"]} /><AgentTicketTable tickets={currentRows} claimableTicketIds={claimableTicketIds} /><TicketCursorPagination basePath="/inbox" query={{ q: params.q, status: params.status, priority: params.priority, scope: params.scope, sla: params.sla, departmentId: params.departmentId, queueId: params.queueId, dossierId: params.dossierId, missionId: params.missionId, sort: params.sort, pageSize: String(params.pageSize) }} currentCursor={params.cursor} nextCursor={ticketPage.nextCursor} itemCount={currentRows.length} pageSize={ticketPage.pageSize} /></section></div><div className="agent-workspace-rail"><Suspense fallback={<InboxWatchSkeleton />}><InboxSlaWatch user={user} /></Suspense><AgentActivity tickets={currentRows} /></div></AgentWorkspaceGrid>
-    </AgentWorkspace>
+    <InboxWorkspace
+      tickets={currentRows}
+      claimableTicketIds={claimableTicketIds}
+      navigation={<DashboardViewTabs active="operations" canOperate canReport={canReport} />}
+      kpis={<Suspense fallback={<InboxKpiSkeleton />}><InboxKpis user={user} /></Suspense>}
+      filters={<><TicketViewSwitcher scope={params.scope} sla={params.sla} basePath="/inbox" /><TicketFilters queues={queues} dossiers={dossiers} missions={missions} values={params} resetHref="/inbox" scopeOptions={["all", "unassigned", "mine", "team"]} /></>}
+      pagination={<TicketCursorPagination basePath="/inbox" query={{ q: params.q, status: params.status, priority: params.priority, scope: params.scope, sla: params.sla, departmentId: params.departmentId, queueId: params.queueId, dossierId: params.dossierId, missionId: params.missionId, sort: params.sort, pageSize: String(params.pageSize) }} currentCursor={params.cursor} nextCursor={ticketPage.nextCursor} itemCount={currentRows.length} pageSize={ticketPage.pageSize} />}
+      agentPanel={<InboxAgentPanel><Suspense fallback={<InboxWatchSkeleton />}><InboxSlaWatch user={user} /></Suspense><AgentActivity tickets={currentRows} /></InboxAgentPanel>}
+    />
   );
 }
