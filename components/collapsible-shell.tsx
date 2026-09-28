@@ -43,7 +43,7 @@ export function CollapsibleShell({ variant, sidebar, topbar, mobileNavigation, c
   }
 
   return (
-    <div data-sidebar-collapsed={collapsed ? "true" : "false"} className={`${variant === "admin" ? "admin-background" : "app-background"} shell-root shell-industrial min-h-screen`}>
+    <div data-sidebar-collapsed={collapsed ? "true" : "false"} className={`${variant === "admin" ? "admin-background" : "app-background"} shell-root ${variant === "admin" ? "shell-industrial" : "shell-industrial shell-reference"} min-h-screen`}>
       {mobileOpen ? <button type="button" className="shell-mobile-backdrop lg:hidden" aria-label="Fermer le menu" onClick={() => setMobileOpen(false)} /> : null}
       <aside id={`${variant}-sidebar`} aria-label={variant === "admin" ? "Navigation administration" : "Navigation principale"} aria-hidden={!mobileOpen ? undefined : false} onClick={(event) => { if ((event.target as HTMLElement).closest("a")) setMobileOpen(false); }} className={`shell-sidebar shell-sidebar-industrial ${mobileOpen ? "shell-sidebar-mobile-open" : ""}`}>
         <div className="shell-mobile-toolbar">

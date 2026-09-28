@@ -4738,6 +4738,47 @@ html[data-theme="light"] {
   .shell-industrial .knowledge-industrial .knowledge-query-panel { padding: 0.9rem; }
 }
 
+/* Reference SaaS shell: navy navigation, light workspace, clear enterprise hierarchy. */
+.shell-reference { background: #f4f7fb; color: #172033; }
+.shell-reference .sidebar-reference,
+.shell-reference .app-sidebar { background: #102a43; color: #dbeafe; }
+.shell-reference .sidebar-reference-brand,
+.shell-reference .sidebar-brand-block { border-color: rgba(255,255,255,.12); }
+.shell-reference .sidebar-brand-wordmark { color: #ffffff; letter-spacing: .08em; }
+.shell-reference .sidebar-label { color: #91a7c2; }
+.shell-reference .sidebar-nav a { border-radius: .5rem; color: #c3d2e4; }
+.shell-reference .sidebar-nav a:hover { background: rgba(255,255,255,.08); color: #ffffff; }
+.shell-reference .sidebar-nav a[aria-current="page"] { background: #2563eb; color: #ffffff; box-shadow: 0 6px 16px rgba(37,99,235,.24); }
+.shell-reference .sidebar-user-block { border-color: rgba(255,255,255,.12); }
+.shell-reference .sidebar-user-name { color: #ffffff; }
+.shell-reference .sidebar-user-context { color: #9fb2c9; }
+.shell-reference .topbar-layout-industrial,
+.shell-reference .app-topbar { border-color: #e2e8f0; background: #ffffff; color: #172033; box-shadow: 0 1px 4px rgba(15,23,42,.06); }
+.shell-reference .shell-main { background: #f4f7fb; }
+.shell-reference .page-header,
+.shell-reference .panel,
+.shell-reference .metric-card,
+.shell-reference .card,
+.shell-reference .data-table-wrap { border-color: #e2e8f0; border-radius: .75rem; background: #ffffff; box-shadow: 0 2px 8px rgba(15,23,42,.04); }
+.shell-reference h1,
+.shell-reference h2,
+.shell-reference h3 { color: #172033; }
+.shell-reference .eyebrow { color: #2563eb; }
+.shell-reference .page-header-description,
+.shell-reference .text-subtle { color: #64748b; }
+.shell-reference .button-primary { border-color: #2563eb; border-radius: .5rem; background: #2563eb; color: #ffffff; box-shadow: 0 4px 10px rgba(37,99,235,.18); }
+.shell-reference .button-primary:hover { background: #1d4ed8; }
+.shell-reference .button-secondary,
+.shell-reference .button-ghost { border-color: #cbd5e1; border-radius: .5rem; background: #ffffff; color: #334155; }
+.shell-reference .button-secondary:hover,
+.shell-reference .button-ghost:hover { border-color: #2563eb; background: #eff6ff; color: #1d4ed8; }
+.shell-reference .field-control,
+.shell-reference .combobox-trigger { border-color: #cbd5e1; border-radius: .5rem; background: #ffffff; color: #172033; }
+.shell-reference .data-table th { border-color: #e2e8f0; background: #f8fafc; color: #64748b; }
+.shell-reference .data-table td { border-color: #e2e8f0; color: #334155; }
+.shell-reference .data-table tbody tr:hover { background: #f8fbff; }
+.shell-reference .status-chip { border-radius: 999px; }
+
 /* -------------------------------------------------------------------------- */
 /* Lot 6 — actifs industriels.                                                 */
 /* L’accès exclusif FUNCTIONAL_ADMIN global et les mouvements restent intacts. */
