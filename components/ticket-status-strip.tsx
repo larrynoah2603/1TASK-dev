@@ -47,7 +47,7 @@ export function TicketStatusStrip({
   const actionLabel = canClaim ? "Prendre en charge" : canResolve ? "Soumettre la résolution" : "Consulter le ticket";
 
   return (
-    <section className="ticket-status-strip" aria-label="État du ticket">
+    <section className="ticket-status-strip ticket-status-premium-card" aria-label="État du ticket">
       <div className="ticket-status-strip-topline">
         <div className="min-w-0">
           <p className="ticket-status-reference">{reference}</p>
