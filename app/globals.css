@@ -1,6 +1,22 @@
 @import "tailwindcss";
 
 :root {
+  /* Premium semantic palette. Feature themes consume these tokens rather than
+     introducing page-specific colors. */
+  --color-background: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-card: #FFFFFF;
+  --color-primary: #4F46E5;
+  --color-secondary: #64748B;
+  --color-success: #16A34A;
+  --color-warning: #F59E0B;
+  --color-danger: #DC2626;
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #475569;
+  --space-page: clamp(1rem, 2vw, 2rem);
+  --radius-control: 0.5rem;
+  --radius-card: 0.75rem;
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.05);
   --background: #f7f4ee;
   --foreground: #241b35;
   --muted: #5d566a;
@@ -28,6 +44,19 @@
   --ds-radius-lg: 12px;
   --ds-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
   --ds-shadow-md: 0 10px 24px rgba(37, 99, 235, 0.1);
+}
+
+html[data-theme="dark"] {
+  --color-background: #020617;
+  --color-surface: #0F172A;
+  --color-card: #111827;
+  --color-primary: #818CF8;
+  --color-secondary: #94A3B8;
+  --color-success: #22C55E;
+  --color-warning: #FBBF24;
+  --color-danger: #F87171;
+  --color-text-primary: #F8FAFC;
+  --color-text-secondary: #CBD5E1;
 }
 
 * { box-sizing: border-box; }
@@ -6057,19 +6086,19 @@ html[data-theme="dark"] {
 /* Final presentation layer: shared tokens, application chrome and primitives. */
 /* ========================================================================== */
 :root {
-  --ui-canvas: #f6f7f9;
-  --ui-surface: #ffffff;
-  --ui-surface-subtle: #f8fafc;
-  --ui-text: #111827;
-  --ui-text-muted: #667085;
+  --ui-canvas: var(--color-background);
+  --ui-surface: var(--color-surface);
+  --ui-surface-subtle: color-mix(in srgb, var(--color-surface) 92%, var(--color-secondary));
+  --ui-text: var(--color-text-primary);
+  --ui-text-muted: var(--color-text-secondary);
   --ui-border: #e4e7ec;
   --ui-border-strong: #d0d5dd;
-  --ui-primary: #0f766e;
-  --ui-primary-hover: #115e59;
-  --ui-primary-soft: #ecfdf5;
-  --ui-danger: #b42318;
-  --ui-warning: #b54708;
-  --ui-success: #067647;
+  --ui-primary: var(--color-primary);
+  --ui-primary-hover: color-mix(in srgb, var(--color-primary) 84%, black);
+  --ui-primary-soft: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
+  --ui-danger: var(--color-danger);
+  --ui-warning: var(--color-warning);
+  --ui-success: var(--color-success);
   --ui-info: #175cd3;
   --ui-space-1: .25rem;
   --ui-space-2: .5rem;
@@ -6124,6 +6153,35 @@ body { background: var(--ui-canvas); color: var(--ui-text); font-feature-setting
 @media (max-width: 900px) { .enterprise-header { display: flex; }.enterprise-header-context { display: none; }.enterprise-header-search { flex: 1; }.enterprise-header-actions > :not(.notification-anchor):not(.profile-menu-industrial) { display: none; } }
 @media (max-width: 640px) { .enterprise-header-search { display: none; }.enterprise-header-actions { margin-left: auto; }.enterprise-breadcrumb { margin-bottom: .9rem; }.ds-card-header { flex-direction: column; }.ds-modal { max-height: calc(100dvh - 2rem); overflow-y: auto; } }
 @media (prefers-reduced-motion: reduce) { .ds-modal-backdrop,.ds-modal,.ds-dropdown-menu { animation: none; } }
+
+/* Theme-safe primitive surfaces. Keeping these selectors at the component
+   boundary prevents feature pages from carrying their own theme overrides. */
+html[data-theme="dark"] body,
+html[data-theme="dark"] .shell-reference,
+html[data-theme="dark"] .shell-reference .shell-main { background: var(--color-background); color: var(--color-text-primary); }
+html[data-theme="dark"] .shell-reference .app-topbar,
+html[data-theme="dark"] .ds-card,
+html[data-theme="dark"] .ds-input,
+html[data-theme="dark"] .ds-search-input,
+html[data-theme="dark"] .ds-table-container,
+html[data-theme="dark"] .ds-modal,
+html[data-theme="dark"] .ds-dropdown-menu { border-color: color-mix(in srgb, var(--color-secondary) 38%, transparent); background: var(--color-surface); color: var(--color-text-primary); }
+html[data-theme="dark"] .ds-card-header,
+html[data-theme="dark"] .ds-card-footer,
+html[data-theme="dark"] .ds-table :is(th,td),
+html[data-theme="dark"] .ds-modal header,
+html[data-theme="dark"] .ds-modal footer { border-color: color-mix(in srgb, var(--color-secondary) 28%, transparent); }
+html[data-theme="dark"] .ds-card-header h2,
+html[data-theme="dark"] .ds-input,
+html[data-theme="dark"] .ds-search-input input { color: var(--color-text-primary); }
+html[data-theme="dark"] .ds-card-header p,
+html[data-theme="dark"] .enterprise-breadcrumb,
+html[data-theme="dark"] .ds-progress-label { color: var(--color-text-secondary); }
+html[data-theme="dark"] .ds-table th,
+html[data-theme="dark"] .ds-dropdown-item:hover,
+html[data-theme="dark"] .ds-button-secondary:hover,
+html[data-theme="dark"] .ds-button-ghost:hover { background: var(--color-card); }
+html[data-theme="dark"] .ds-button-secondary { border-color: color-mix(in srgb, var(--color-secondary) 45%, transparent); background: var(--color-surface); color: var(--color-text-primary); }
 
 /* Semantic reporting KPI tones use the shared industrial palette. */
 .reporting-industrial.reporting-kpi-primary .reporting-modern-kpi:first-child .reporting-kpi-icon {
