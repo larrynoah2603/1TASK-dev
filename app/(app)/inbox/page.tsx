@@ -55,14 +55,16 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
   const canReport = permissionCodes(user).includes("reporting:read");
   const waiting = currentRows.filter((ticket) => ticket.status === "BLOCKED" || ticket.status === "RESOLUTION_PENDING").length;
   return (
-    <InboxWorkspace
-      tickets={currentRows}
-      claimableTicketIds={claimableTicketIds}
-      navigation={<DashboardViewTabs active="operations" canOperate canReport={canReport} />}
-      kpis={<Suspense fallback={<InboxKpiSkeleton />}><InboxKpis user={user} /></Suspense>}
-      filters={<><TicketViewSwitcher scope={params.scope} sla={params.sla} basePath="/inbox" /><TicketFilters queues={queues} dossiers={dossiers} missions={missions} values={params} resetHref="/inbox" scopeOptions={["all", "unassigned", "mine", "team"]} /></>}
-      pagination={<TicketCursorPagination basePath="/inbox" query={{ q: params.q, status: params.status, priority: params.priority, scope: params.scope, sla: params.sla, departmentId: params.departmentId, queueId: params.queueId, dossierId: params.dossierId, missionId: params.missionId, sort: params.sort, pageSize: String(params.pageSize) }} currentCursor={params.cursor} nextCursor={ticketPage.nextCursor} itemCount={currentRows.length} pageSize={ticketPage.pageSize} />}
-      agentPanel={<InboxAgentPanel><Suspense fallback={<InboxWatchSkeleton />}><InboxSlaWatch user={user} /></Suspense><AgentActivity tickets={currentRows} /></InboxAgentPanel>}
-    />
+    <div className="inbox-operations-industrial">
+      <InboxWorkspace
+        tickets={currentRows}
+        claimableTicketIds={claimableTicketIds}
+        navigation={<DashboardViewTabs active="operations" canOperate canReport={canReport} />}
+        kpis={<Suspense fallback={<InboxKpiSkeleton />}><InboxKpis user={user} /></Suspense>}
+        filters={<><TicketViewSwitcher scope={params.scope} sla={params.sla} basePath="/inbox" /><TicketFilters queues={queues} dossiers={dossiers} missions={missions} values={params} resetHref="/inbox" scopeOptions={["all", "unassigned", "mine", "team"]} /></>}
+        pagination={<TicketCursorPagination basePath="/inbox" query={{ q: params.q, status: params.status, priority: params.priority, scope: params.scope, sla: params.sla, departmentId: params.departmentId, queueId: params.queueId, dossierId: params.dossierId, missionId: params.missionId, sort: params.sort, pageSize: String(params.pageSize) }} currentCursor={params.cursor} nextCursor={ticketPage.nextCursor} itemCount={currentRows.length} pageSize={ticketPage.pageSize} />}
+        agentPanel={<InboxAgentPanel><Suspense fallback={<InboxWatchSkeleton />}><InboxSlaWatch user={user} /></Suspense><AgentActivity tickets={currentRows} /></InboxAgentPanel>}
+      />
+    </div>
   );
 }
