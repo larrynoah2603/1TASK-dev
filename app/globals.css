@@ -140,3 +140,289 @@ html[data-theme="light"] .shell-industrial {
   background: var(--industrial-panel, Canvas);
 }
 }
+/* =========================================================
+   BIOS EXPERTISE — GLOBAL LOADING PAGE
+   ========================================================= */
+
+.bios-loading-page {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 100dvh;
+
+  background:
+    radial-gradient(
+      circle at 50% 42%,
+      rgba(240, 125, 32, 0.08),
+      transparent 32%
+    ),
+    #ffffff;
+}
+
+.bios-loading-content {
+  width: min(420px, calc(100vw - 48px));
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  animation: biosLoadingEnter 500ms ease-out both;
+}
+
+
+/* LOGO */
+
+.bios-loading-logo-wrapper {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+}
+
+.bios-loading-logo {
+  position: relative;
+  z-index: 2;
+
+  width: min(330px, 78vw);
+  height: auto;
+
+  object-fit: contain;
+
+  animation: biosLogoPulse 2.2s ease-in-out infinite;
+
+  filter:
+    drop-shadow(0 12px 24px rgba(0, 0, 0, 0.08));
+}
+
+
+/* ORANGE GLOW */
+
+.bios-loading-glow {
+  position: absolute;
+
+  width: 210px;
+  height: 110px;
+
+  border-radius: 999px;
+
+  background: rgba(240, 125, 32, 0.16);
+
+  filter: blur(45px);
+
+  animation: biosGlow 2.2s ease-in-out infinite;
+}
+
+
+/* PROGRESS */
+
+.bios-loading-progress {
+  position: relative;
+
+  width: min(270px, 65vw);
+  height: 3px;
+
+  margin-top: 30px;
+
+  overflow: hidden;
+
+  border-radius: 999px;
+
+  background: rgba(100, 100, 100, 0.12);
+}
+
+.bios-loading-progress-bar {
+  position: absolute;
+  inset-block: 0;
+
+  width: 42%;
+
+  border-radius: inherit;
+
+  background: #f07d20;
+
+  animation: biosProgress 1.5s ease-in-out infinite;
+}
+
+
+/* STATUS */
+
+.bios-loading-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-top: 16px;
+
+  color: #64748b;
+
+  font-size: 12px;
+  font-weight: 500;
+
+  letter-spacing: 0.02em;
+}
+
+.bios-loading-dot {
+  width: 6px;
+  height: 6px;
+
+  margin-right: 8px;
+
+  border-radius: 50%;
+
+  background: #f07d20;
+
+  animation: biosStatusPulse 1.3s ease-in-out infinite;
+}
+
+
+/* THREE DOTS */
+
+.bios-loading-dots {
+  display: inline-flex;
+  width: 18px;
+  margin-left: 2px;
+}
+
+.bios-loading-dots span {
+  animation: biosDot 1.4s infinite;
+}
+
+.bios-loading-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.bios-loading-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+
+/* =========================================================
+   ANIMATIONS
+   ========================================================= */
+
+@keyframes biosLoadingEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes biosLogoPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.92;
+  }
+
+  50% {
+    transform: scale(1.025);
+    opacity: 1;
+  }
+}
+
+@keyframes biosGlow {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.9);
+  }
+
+  50% {
+    opacity: 0.8;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes biosProgress {
+  0% {
+    left: -45%;
+  }
+
+  50% {
+    left: 45%;
+  }
+
+  100% {
+    left: 105%;
+  }
+}
+
+@keyframes biosStatusPulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes biosDot {
+  0%,
+  20% {
+    opacity: 0;
+  }
+
+  50%,
+  100% {
+    opacity: 1;
+  }
+}
+
+
+/* ACCESSIBILITY */
+
+@media (prefers-reduced-motion: reduce) {
+  .bios-loading-content,
+  .bios-loading-logo,
+  .bios-loading-glow,
+  .bios-loading-progress-bar,
+  .bios-loading-dot,
+  .bios-loading-dots span {
+    animation: none;
+  }
+
+  .bios-loading-progress-bar {
+    left: 0;
+    width: 100%;
+  }
+}
+
+
+/* DARK MODE */
+
+@media (prefers-color-scheme: dark) {
+  .bios-loading-page {
+    background:
+      radial-gradient(
+        circle at 50% 42%,
+        rgba(240, 125, 32, 0.1),
+        transparent 32%
+      ),
+      #0b0f14;
+  }
+
+  .bios-loading-status {
+    color: #94a3b8;
+  }
+
+  .bios-loading-progress {
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
