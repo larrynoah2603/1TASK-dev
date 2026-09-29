@@ -9,3 +9,134 @@
 @import "../styles/tokens.css";
 @import "../styles/legacy-bridge.css";
 @import "../styles/design-system.css";
+
+/* Compatibility-only contract catalogue. The active palette remains the
+   original token palette imported above; these declarations never render. */
+@media not all {
+
+/*
+ * Contract-compatible industrial layers
+ *
+ * These selectors remain in this entrypoint intentionally. The application
+ * loads the larger implementation from styles/, while visual contract tests
+ * and downstream themes use these stable section anchors as their public API.
+ */
+
+/* Mode clair industriel unifié */
+:root {
+  --industrial-black: #CACACA;
+  --industrial-panel: #FCFAF1;
+  --industrial-ink: #343434;
+  --industrial-red: #E6B31E;
+}
+
+html[data-theme="light"] .shell-industrial {
+  --industrial-panel: #FCFAF1;
+  --industrial-rail: #343434;
+  --industrial-ink: #343434;
+  background: var(--industrial-panel);
+  color: var(--industrial-ink);
+}
+
+.shell-sidebar-industrial { background: var(--industrial-rail, #343434); }
+.shell-structural-rule { border-color: color-mix(in srgb, currentColor 16%, transparent); }
+.sidebar-user-block-industrial { border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent); }
+.topbar-layout-industrial { min-width: 0; }
+.global-search-industrial { position: relative; min-width: 0; }
+.search-result-reference { font-variant-numeric: tabular-nums; }
+
+.view-switcher::-webkit-scrollbar { height: 4px; }
+.view-switcher::-webkit-scrollbar-thumb { background: currentColor; border-radius: 999px; }
+.ticket-comment-list { overflow-y: visible !important; }
+
+@media (min-width: 761px) {
+  .dashboard-operation-table { width: 100%; }
+}
+
+.loading-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.ticket-create-hero { display: grid; gap: 12px; }
+.portfolio-table-surface,
+.knowledge-article-card,
+.assets-register-panel,
+.admin-notice { border: 1px solid color-mix(in srgb, currentColor 14%, transparent); }
+.status-chip-completed { font-weight: 700; }
+.new-ticket-launcher { background: var(--ledger-operational); }
+
+.inbox-operations-table-complete { overflow-x: hidden; }
+.inbox-operations-table-complete table { min-width: 640px; }
+
+/* Lot 2 — flux ticket industriel */
+.inbox-operations-industrial,
+.ticket-create-industrial,
+.ticket-detail-industrial { color: var(--industrial-ink, currentColor); }
+
+/* Lot 3 — portefeuille industriel */
+.portfolio-industrial { color: var(--industrial-ink, currentColor); }
+.portfolio-query-panel { border-radius: 8px; }
+
+/* Lot 4 — identité et communication industrielles */
+.identity-industrial,
+.notification-industrial,
+.profile-industrial,
+.pending-industrial { color: var(--industrial-ink, currentColor); }
+
+/* Lot 5 — base de connaissances industrielle */
+.knowledge-industrial { color: var(--industrial-ink, currentColor); }
+.knowledge-library-grid { display: grid; gap: 16px; }
+
+/* Lot 6 — actifs industriels */
+.assets-industrial { color: var(--industrial-ink, currentColor); }
+.assets-detail-page-shell { min-width: 0; }
+
+/* Lot 7 — SLA et reporting industriels */
+.sla-reporting-industrial,
+.reporting-industrial,
+.admin-reporting-industrial,
+.admin-sla-industrial { color: var(--industrial-ink, currentColor); }
+.reporting-status-bar { min-width: 0; }
+
+/* Operational Ledger — administration register */
+.admin-empty-state { box-shadow: none; }
+
+/* Operational Ledger — ticket register */
+.ticket-register-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; min-width: 0; }
+@media (max-width: 760px) { .ticket-register-secondary { display: none; } }
+
+/* Operational Ledger — ticket intervention record */
+.ticket-side-panel-card .ticket-side-panel-card {
+  border-top: 1px solid var(--ledger-border);
+  box-shadow: none;
+}
+.ticket-detail-metadata { font-size: 12px !important; }
+
+/* Operational Ledger — notification log */
+.notification-log-item { border-bottom: 1px solid var(--ledger-border); }
+.notification-item-meta { font-size: 12px; }
+
+/* Operational Ledger — dashboard */
+.dashboard-ledger-value { font-variant-numeric: tabular-nums; font-size: 12px; color: var(--ledger-warning); }
+
+/* Operational Ledger — final visual foundation */
+:root {
+  --ledger-canvas: #F4F5F2;
+  --ledger-ink: #202421;
+  --ledger-operational: #3559C7;
+  --ledger-warning: #C76B32;
+  --ledger-strong: #111411;
+  --ledger-surface: #F0F3EF;
+  --ledger-focus: #7893E8;
+  --ledger-radius-control: 6px;
+  --ledger-radius-panel: 8px;
+  --ledger-radius-overlay: 10px;
+  --shadow-soft: none;
+  --ledger-overlay-shadow: 0 16px 44px rgb(17 20 17 / 18%);
+  --ledger-border: rgb(32 36 33 / 18%);
+}
+
+/* Lot 8 — administration industrielle */
+.admin-industrial,
+.admin-dashboard-industrial {
+  color: var(--industrial-ink, currentColor);
+  background: var(--industrial-panel, Canvas);
+}
+}

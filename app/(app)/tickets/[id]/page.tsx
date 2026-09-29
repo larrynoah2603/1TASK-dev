@@ -17,7 +17,8 @@ import { TicketConversation } from "@/components/tickets/detail/ticket-conversat
 import { TicketPanel } from "@/components/tickets/detail/ticket-panel";
 import { TicketSidebarActions } from "@/components/tickets/detail/ticket-sidebar-actions";
 import { Avatar } from "@/components/ui/avatar";
-import { Icon, type IconName } from "@/components/ui/icons";
+import { Icon } from "@/components/ui/icons";
+import { formatRelativeActivityDate } from "@/components/activity-icon";
 import { Timeline, type TimelineItem } from "@/components/ui/timeline";
 
 const eventLabels: Record<string, string> = {
@@ -41,22 +42,9 @@ const eventLabels: Record<string, string> = {
 type Tone = NonNullable<TimelineItem["tone"]>;
 
 /** Présentation uniquement : icône et couleur de chaque type d'événement. */
-const eventVisual: Record<string, { icon: IconName; tone: Tone }> = {
-  CREATED: { icon: "plus", tone: "info" },
-  STATUS_CHANGED: { icon: "refresh", tone: "info" },
-  ASSIGNED: { icon: "userPlus", tone: "info" },
-  QUEUE_CHANGED: { icon: "layers", tone: "info" },
-  MESSAGE_ADDED: { icon: "message", tone: "neutral" },
-  RESOLUTION_SUBMITTED: { icon: "checkCircle", tone: "success" },
-  REOPENED: { icon: "refresh", tone: "warning" },
-  CLOSED: { icon: "lock", tone: "neutral" },
-  SLA_ALERT: { icon: "alertTriangle", tone: "warning" },
-  SLA_BREACH: { icon: "alertCircle", tone: "danger" },
-  CONFIDENTIAL_ACCESS_GRANTED: { icon: "shield", tone: "warning" },
-  CONFIDENTIAL_ACCESS_REVOKED: { icon: "shield", tone: "neutral" },
-  QUALIFIED: { icon: "tag", tone: "info" },
-  LINK_CREATED: { icon: "link", tone: "info" },
-  SLA_EXCEPTION_CREATED: { icon: "clock", tone: "warning" },
+const eventTone: Record<string, Tone> = {
+  RESOLUTION_SUBMITTED: "success", CLOSED: "success", REOPENED: "warning", SLA_ALERT: "warning", SLA_BREACH: "danger",
+  CONFIDENTIAL_ACCESS_GRANTED: "warning", MESSAGE_ADDED: "neutral",
 };
 
 function formatDate(value: Date | null | undefined) {
@@ -108,35 +96,37 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
   const timelineItems: TimelineItem[] = timeline.map((item) => {
     if (item.kind === "event") {
       const mode = assignmentMode(item.event.metadata);
-      const visual = eventVisual[item.event.eventType] ?? { icon: "clock" as IconName, tone: "neutral" as Tone };
       return {
         title: eventLabels[item.event.eventType] ?? item.event.eventType.replaceAll("_", " "),
-        meta: `${item.event.actor?.name ?? "Système"} · ${formatDate(item.event.createdAt)}`,
+        actor: item.event.actor?.name ?? "Système",
+        meta: formatRelativeActivityDate(item.event.createdAt),
         description: mode ? `Mode d’affectation : ${mode}` : undefined,
-        icon: <Icon name={visual.icon} />,
-        tone: visual.tone,
+        type: item.event.eventType,
+        tone: eventTone[item.event.eventType] ?? "info",
       };
     }
     if (item.kind === "assignment") {
       return {
         title: `Affectation : ${item.assignment.previousAssignee?.name ?? "Non affecté"} → ${item.assignment.newAssignee?.name ?? "Non affecté"}`,
-        meta: `Par ${item.assignment.assignedBy?.name ?? "Système"} · ${formatDate(item.assignment.assignedAt)}`,
-        icon: <Icon name="userPlus" />,
+        actor: item.assignment.assignedBy?.name ?? "Système",
+        meta: formatRelativeActivityDate(item.assignment.assignedAt),
+        type: "ASSIGNED",
         tone: "info" as Tone,
       };
     }
     const internal = item.message.visibility === "INTERNAL";
     return {
       title: `${item.message.author.name} · ${internal ? "commentaire interne" : "commentaire public"}`,
-      meta: formatDate(item.message.createdAt),
+      actor: item.message.author.name,
+      meta: formatRelativeActivityDate(item.message.createdAt),
       description: item.message.body,
-      icon: <Icon name="message" />,
+      type: "MESSAGE_ADDED",
       tone: (internal ? "warning" : "info") as Tone,
     };
   });
 
   return (
-    <div className="kit-ticket">
+    <div className="kit-ticket ticket-detail-industrial">
       <Link href={operational ? "/inbox" : "/tickets"} className="kit-back">
         <Icon name="arrowLeft" />
         {operational ? "Retour à la boîte agent" : "Retour à mes tickets"}

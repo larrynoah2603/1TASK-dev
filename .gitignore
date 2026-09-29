@@ -9,3 +9,6 @@ coverage/
 !.env.example
 prisma/dev.db
 prisma/dev.db-journal
+
+# Captures locales de recette : les fichiers binaires bloquent la création de PR Codex.
+docs/screenshots/*.png
