@@ -139,7 +139,7 @@ export function NotificationCenter() {
         <span className="kit-notif-body">
           <span className="kit-notif-item-title">{item.title}</span>
           <span className="kit-notif-item-copy">{item.body}</span>
-          <span className="kit-notif-item-meta">{item.ticketReference ? `${item.ticketReference} · ` : ""}{relativeDate(item.createdAt)}</span>
+          <span className="kit-notif-item-meta notification-item-meta">{item.ticketReference ? `${item.ticketReference} · ` : ""}{relativeDate(item.createdAt)}</span>
         </span>
         {read ? null : <span className="kit-notif-dot" role="img" aria-label="Non lue" />}
       </>
@@ -159,7 +159,7 @@ export function NotificationCenter() {
         <section className="kit-popover kit-notif" role="dialog" aria-label="Centre de notifications">
           <div className="kit-notif-head">
             <h2 className="kit-notif-title">Notifications{unread ? <span className="kit-badge kit-badge-info">{unread} nouvelle{unread > 1 ? "s" : ""}</span> : null}</h2>
-            <button type="button" disabled={busy || !unreadCount} onClick={() => void markAllRead()} className="kit-btn kit-btn-ghost kit-btn-sm">Tout marquer lu</button>
+            <button type="button" disabled={busy || !unreadCount} onClick={() => void markAllRead()} className="kit-btn kit-btn-ghost kit-btn-sm notification-mark-all">Tout marquer lu</button>
           </div>
           <div className="kit-notif-list">
             {!loaded ? <p className="kit-notif-empty">Chargement…</p> : null}

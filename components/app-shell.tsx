@@ -90,9 +90,9 @@ export async function AppShell({ user, children }: { user: UserContext; children
         );
       })}
     </nav>}
-    user={<Link href="/profile" className="kit-user-card" title={user.name}><Avatar name={user.name} image={user.image} status /><span className="kit-user-card-text"><p className="kit-user-card-name">{user.name}</p><p className="kit-user-card-sub">{department}</p></span></Link>}
+    user={<Link href="/profile" className="kit-user-card sidebar-user-block-industrial" title={user.name}><Avatar name={user.name} image={user.image} status /><span className="kit-user-card-text"><p className="kit-user-card-name">{user.name}</p><p className="kit-user-card-sub">{department}</p></span></Link>}
   />;
-  const topbar = <TopHeader context={<TopbarContext />} search={<GlobalSearch />} actions={<>{canCreate ? <NewTicketLauncher /> : null}<NotificationCenter /><span className="kit-hide-mobile"><HelpMenu /></span><span className="kit-hide-mobile"><ThemeToggle /></span><span className="kit-topbar-divider" aria-hidden="true" /><ProfileMenu name={user.name} email={user.email} image={user.image} department={user.department?.name ?? "Département non renseigné"} roles={roleLabel} admin={isAdmin} /></>} />;
+  const topbar = <TopHeader context={<TopbarContext />} search={<span className="topbar-layout-industrial"><GlobalSearch /></span>} actions={<>{canCreate ? <NewTicketLauncher /> : null}<NotificationCenter /><span className="kit-hide-mobile"><HelpMenu /></span><span className="kit-hide-mobile"><ThemeToggle /></span><span className="kit-topbar-divider" aria-hidden="true" /><ProfileMenu name={user.name} email={user.email} image={user.image} department={user.department?.name ?? "Département non renseigné"} roles={roleLabel} admin={isAdmin} /></>} />;
   const mobileNavigation = <MobileNavigation links={visibleLinks.map((link) => ({ href: link.href, label: link.label, icon: <Icon name={link.icon} /> }))} />;
   return <NotificationProvider><CollapsibleShell variant="app" sidebar={sidebar} topbar={topbar} mobileNavigation={mobileNavigation}>{children}</CollapsibleShell></NotificationProvider>;
 }
