@@ -12,6 +12,7 @@ const PATHS = {
   book: "M4 4.5h6A2 2 0 0 1 12 6.5v13a2 2 0 0 0-2-2H4zM20 4.5h-6a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h6z",
   chart: "M4 19V9M10 19V5M16 19v-7M22 19H2",
   monitor: "M4 5h16v11H4zM8 20h8M12 16v4",
+  clipboard: "M8 5h8M9 3h6v4H9zM6 5H4v16h16V5h-2M8 12h8M8 16h5",
   shield: "M12 3 19 6v5.5c0 4.5-3 7.5-7 9.5-4-2-7-5-7-9.5V6l7-3ZM9 12l2 2 4-4",
   sliders: "M4 7h8M16 7h4M4 17h4M12 17h8M14 5v4M10 15v4",
   user: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4 20a8 8 0 0 1 16 0",

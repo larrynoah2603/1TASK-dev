@@ -2,6 +2,7 @@ import { RoleCode, TicketStatus } from "@prisma/client";
 import { DashboardPage } from "@/components/dashboard/dashboard-page";
 import { getRequesterTicketSummary, listVisibleTickets } from "@/lib/ticket-query-service";
 import { getSessionUserContext, permissionCodes, roleCodes } from "@/lib/server-auth";
+import { AssetRequestDialog } from "@/components/asset-request-dialog";
 
 export default async function DashboardRoute() {
   const user = await getSessionUserContext();
@@ -19,5 +20,5 @@ export default async function DashboardRoute() {
   const personalInProgress = statusCounts[TicketStatus.IN_PROGRESS];
   const personalClosed = statusCounts[TicketStatus.CLOSED];
 
-  return <DashboardPage firstName={user.name.split(" ")[0]} kpis={{ open: personalOpen, inProgress: personalInProgress, resolved: personalClosed, atRisk: personalTickets.filter((ticket) => ticket.slaState === "AT_RISK" || ticket.slaState === "BREACHED").length }} tickets={personalTickets} />;
+  return <DashboardPage firstName={user.name.split(" ")[0]} kpis={{ open: personalOpen, inProgress: personalInProgress, resolved: personalClosed, atRisk: personalTickets.filter((ticket) => ticket.slaState === "AT_RISK" || ticket.slaState === "BREACHED").length }} tickets={personalTickets}><section className="dashboard-asset-cta"><div><p className="eyebrow">Équipement</p><h2>Besoin d’un nouvel actif ?</h2><p>Envoyez votre demande à l’administration fonctionnelle sans quitter votre tableau de bord.</p></div><AssetRequestDialog /></section></DashboardPage>;
 }
