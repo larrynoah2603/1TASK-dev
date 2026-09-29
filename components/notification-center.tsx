@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import type { Route } from "next";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useNotificationState } from "@/components/notification-state";
+import { useDismissable } from "@/components/ui/dropdown";
+import { Icon, type IconName } from "@/components/ui/icons";
 import { fetchWithTimeout } from "@/lib/client-http";
 
 type NotificationItem = {
@@ -14,6 +16,8 @@ type NotificationItem = {
   ticketId: string | null;
   ticketReference: string | null;
   createdAt: string;
+  /** Optionnel : si l'API l'expose un jour, il pilote l'icône ; sinon on la déduit du texte. */
+  type?: string;
 };
 
 type NotificationResponse = { notifications: NotificationItem[] };
@@ -29,6 +33,30 @@ function relativeDate(value: string) {
   return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
 }
 
+type NotificationKind = "assigned" | "warning" | "breach" | "neutral";
+
+const KIND_ICON: Record<NotificationKind, IconName> = { assigned: "userPlus", warning: "alertTriangle", breach: "alertCircle", neutral: "bell" };
+
+/** Icône et couleur : `type` s'il est fourni, sinon déduction prudente à partir du titre et du corps. */
+function notificationKind(item: NotificationItem): NotificationKind {
+  const type = (item.type ?? "").toUpperCase();
+  if (type === "SLA_BREACH") return "breach";
+  if (type === "SLA_ALERT") return "warning";
+  if (type === "TICKET_ASSIGNED") return "assigned";
+  if (type) return "neutral";
+  const text = `${item.title} ${item.body}`.toLowerCase();
+  if (/(dépass|depass|breach|violation)/.test(text)) return "breach";
+  if (/(sla|alerte|échéance|echeance)/.test(text)) return "warning";
+  if (/(affect|assign|attribu)/.test(text)) return "assigned";
+  return "neutral";
+}
+
+function isToday(value: string) {
+  const date = new Date(value);
+  const now = new Date();
+  return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate();
+}
+
 export function NotificationCenter() {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotificationItem[]>([]);
@@ -36,7 +64,8 @@ export function NotificationCenter() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const { unreadCount, setUnreadCount } = useNotificationState();
-  const ref = useRef<HTMLDivElement>(null);
+  const closePanel = useCallback(() => setOpen(false), []);
+  const ref = useDismissable<HTMLDivElement>(open, closePanel);
   const requestInFlight = useRef(false);
 
   async function loadNotifications() {
@@ -64,22 +93,6 @@ export function NotificationCenter() {
       return next;
     });
   }
-
-  useEffect(() => {
-    if (!open) return;
-    const close = (event: MouseEvent) => {
-      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false);
-    };
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("mousedown", close);
-    window.addEventListener("keydown", closeOnEscape);
-    return () => {
-      document.removeEventListener("mousedown", close);
-      window.removeEventListener("keydown", closeOnEscape);
-    };
-  }, [open]);
 
   async function markRead(id: string) {
     const item = items.find((candidate) => candidate.id === id);
@@ -110,25 +123,56 @@ export function NotificationCenter() {
     }
   }
 
+  const unread = items.filter((item) => item.status !== "READ").length;
+  const groups = [
+    { label: "Aujourd’hui", entries: items.filter((item) => isToday(item.createdAt)) },
+    { label: "Plus tôt", entries: items.filter((item) => !isToday(item.createdAt)) },
+  ].filter((group) => group.entries.length);
+
+  function renderRow(item: NotificationItem) {
+    const read = item.status === "READ";
+    const kind = notificationKind(item);
+    const className = `kit-notif-row kit-notif-${kind} ${read ? "kit-notif-read" : "kit-notif-unread"}`;
+    const content = (
+      <>
+        <span className="kit-notif-icon" aria-hidden="true"><Icon name={KIND_ICON[kind]} /></span>
+        <span className="kit-notif-body">
+          <span className="kit-notif-item-title">{item.title}</span>
+          <span className="kit-notif-item-copy">{item.body}</span>
+          <span className="kit-notif-item-meta">{item.ticketReference ? `${item.ticketReference} · ` : ""}{relativeDate(item.createdAt)}</span>
+        </span>
+        {read ? null : <span className="kit-notif-dot" role="img" aria-label="Non lue" />}
+      </>
+    );
+    return item.ticketId
+      ? <Link key={item.id} href={`/tickets/${item.ticketId}`} onClick={() => { void markRead(item.id); setOpen(false); }} className={className}>{content}</Link>
+      : <button key={item.id} type="button" onClick={() => void markRead(item.id)} className={className}>{content}</button>;
+  }
+
   return (
-    <div ref={ref} className="notification-anchor notification-center-industrial">
-      <button type="button" onClick={toggleOpen} className="topbar-icon-button notification-trigger relative" aria-label={`Notifications${unreadCount ? `, ${unreadCount} non lue(s)` : ""}`} aria-expanded={open} aria-haspopup="dialog" title="Notifications">
-        <span aria-hidden="true" className="notification-trigger-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path strokeLinecap="round" strokeLinejoin="round" d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-7-3-9M10 21h4" /></svg></span>
-        {unreadCount ? <span className="notification-count">{unreadCount > 9 ? "9+" : unreadCount}</span> : null}
+    <div ref={ref} className="kit-anchor">
+      <button type="button" onClick={toggleOpen} className="kit-icon-btn" aria-label={`Notifications${unreadCount ? `, ${unreadCount} non lue(s)` : ""}`} aria-expanded={open} aria-haspopup="dialog" title="Notifications">
+        <Icon name="bell" />
+        {unreadCount ? <span className="kit-bell-badge">{unreadCount > 9 ? "9+" : unreadCount}</span> : null}
       </button>
       {open ? (
-        <section className="notification-popover" role="dialog" aria-label="Centre de notifications">
-          <div className="notification-popover-header"><div><p className="eyebrow">Centre de notifications</p><h2 className="mt-1 text-sm font-bold text-slate-900">Vos alertes</h2></div><button type="button" disabled={busy || !unreadCount} onClick={() => void markAllRead()} className="notification-mark-all font-semibold disabled:opacity-40">Tout marquer lu</button></div>
-          <div className="notification-popover-list">
-            {!loaded ? <p className="px-3 py-6 text-center text-xs text-slate-500">Chargement…</p> : null}
-            {error ? <p role="alert" className="px-3 py-3 text-center text-xs font-semibold text-rose-700">{error}</p> : null}
-            {loaded && !error && !items.length ? <p className="px-3 py-6 text-center text-xs text-slate-500">Aucune notification.</p> : null}
-            {items.map((item) => {
-              const content = <><span className={`notification-dot ${item.status === "READ" ? "notification-dot-read" : ""}`} /><span className="min-w-0 flex-1"><span className="notification-item-title block font-semibold">{item.title}</span><span className="notification-item-copy mt-1 block line-clamp-2">{item.body}</span><span className="notification-item-meta mt-1 block">{item.ticketReference ? `${item.ticketReference} · ` : ""}{relativeDate(item.createdAt)}</span></span></>;
-              return item.ticketId ? <Link key={item.id} href={`/tickets/${item.ticketId}`} onClick={() => { void markRead(item.id); setOpen(false); }} className={`notification-row ${item.status === "READ" ? "notification-row-read" : ""}`}>{content}</Link> : <button key={item.id} type="button" onClick={() => void markRead(item.id)} className={`notification-row w-full text-left ${item.status === "READ" ? "notification-row-read" : ""}`}>{content}</button>;
-            })}
+        <section className="kit-popover kit-notif" role="dialog" aria-label="Centre de notifications">
+          <div className="kit-notif-head">
+            <h2 className="kit-notif-title">Notifications{unread ? <span className="kit-badge kit-badge-info">{unread} nouvelle{unread > 1 ? "s" : ""}</span> : null}</h2>
+            <button type="button" disabled={busy || !unreadCount} onClick={() => void markAllRead()} className="kit-btn kit-btn-ghost kit-btn-sm">Tout marquer lu</button>
           </div>
-          <Link href={"/notifications" as Route} onClick={() => setOpen(false)} className="notification-popover-footer">Ouvrir le centre complet →</Link>
+          <div className="kit-notif-list">
+            {!loaded ? <p className="kit-notif-empty">Chargement…</p> : null}
+            {error ? <p role="alert" className="kit-notif-error">{error}</p> : null}
+            {loaded && !error && !items.length ? <p className="kit-notif-empty">Aucune notification.</p> : null}
+            {groups.map((group) => (
+              <div key={group.label}>
+                <p className="kit-notif-group">{group.label}</p>
+                {group.entries.map(renderRow)}
+              </div>
+            ))}
+          </div>
+          <Link href={"/notifications" as Route} onClick={() => setOpen(false)} className="kit-notif-foot">Voir toutes les notifications</Link>
         </section>
       ) : null}
     </div>

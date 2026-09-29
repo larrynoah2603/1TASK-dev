@@ -146,7 +146,7 @@ export function TicketActions({
 
       {canClaim ? (
         <TicketSidePanel title="Prise en charge" subtitle="Devenir responsable du traitement" defaultOpen>
-          <section className="action-card border-[#dfe1f9] bg-[#f7f7ff]">
+          <section className="action-card kit-callout">
           <p className="text-sm font-semibold text-slate-900">Ticket non affecté</p>
           <p className="mt-1 text-xs text-slate-600">Vous êtes un agent actif habilité dans l’équipe de cette file.</p>
           <button type="button" onClick={() => setConfirmation({ title: "Confirmer la prise en charge", description: "Vous deviendrez l’agent responsable de ce ticket. Cette action sera visible dans l’historique.", confirmLabel: "Prendre en charge", run: () => { void post("/api/tickets/" + ticketId + "/claim", {}, "Ticket pris en charge."); } })} disabled={busy} className="button-primary mt-4">

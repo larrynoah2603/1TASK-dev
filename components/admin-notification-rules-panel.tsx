@@ -119,7 +119,7 @@ export function AdminNotificationRulesPanel({
   return (
     <div className="space-y-5">
       {message ? <div role="status" className="admin-notice">{message}</div> : null}
-      <form onSubmit={submit} className="grid gap-3 rounded-xl border border-[#dfe1f9] bg-[#f7f7ff] p-5 md:grid-cols-3">
+      <form onSubmit={submit} className="grid gap-3 rounded-xl kit-callout p-5 md:grid-cols-3">
         <label className="field-label">Nom<input name="name" required className="field-control" placeholder="Alerte SLA au responsable" /></label>
         <label className="field-label">Événement<Combobox name="eventType" required options={eventTypes.map((item) => ({ value: item, label: item }))} /></label>
         <label className="field-label">Canal<Combobox name="channel" required options={channels.map((item) => ({ value: item, label: item }))} /></label>

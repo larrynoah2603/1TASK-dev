@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Breadcrumb } from "@/components/layout/breadcrumb";
+import { Icon } from "@/components/ui/icons";
 
 export function CollapsibleShell({ variant, sidebar, topbar, mobileNavigation, children }: { variant: "app" | "admin"; sidebar: React.ReactNode; topbar: React.ReactNode; mobileNavigation?: React.ReactNode; children: React.ReactNode }) {
   const storageKey = `1task-${variant}-sidebar-collapsed`;
@@ -30,8 +30,13 @@ export function CollapsibleShell({ variant, sidebar, topbar, mobileNavigation, c
         return next;
       });
     };
+    const handleOpen = () => setMobileOpen(true);
     window.addEventListener("1task:toggle-sidebar", handleToggle);
-    return () => window.removeEventListener("1task:toggle-sidebar", handleToggle);
+    window.addEventListener("1task:open-menu", handleOpen);
+    return () => {
+      window.removeEventListener("1task:toggle-sidebar", handleToggle);
+      window.removeEventListener("1task:open-menu", handleOpen);
+    };
   }, [storageKey]);
 
   function toggleCollapsed() {
@@ -43,26 +48,19 @@ export function CollapsibleShell({ variant, sidebar, topbar, mobileNavigation, c
   }
 
   return (
-    <div data-sidebar-collapsed={collapsed ? "true" : "false"} className={`${variant === "admin" ? "admin-background" : "app-background"} shell-root ${variant === "admin" ? "shell-industrial" : "shell-industrial shell-reference"} min-h-screen`}>
-      {mobileOpen ? <button type="button" className="shell-mobile-backdrop lg:hidden" aria-label="Fermer le menu" onClick={() => setMobileOpen(false)} /> : null}
-      <aside id={`${variant}-sidebar`} aria-label={variant === "admin" ? "Navigation administration" : "Navigation principale"} aria-hidden={!mobileOpen ? undefined : false} onClick={(event) => { if ((event.target as HTMLElement).closest("a")) setMobileOpen(false); }} className={`shell-sidebar shell-sidebar-industrial ${mobileOpen ? "shell-sidebar-mobile-open" : ""}`}>
-        <div className="shell-mobile-toolbar">
-          <button type="button" onClick={() => setMobileOpen(false)} className="shell-mobile-close" aria-label="Fermer le menu">Fermer</button>
-        </div>
+    <div data-sidebar-collapsed={collapsed ? "true" : "false"} className="kit-app">
+      {mobileOpen ? <button type="button" className="kit-backdrop" aria-label="Fermer le menu" onClick={() => setMobileOpen(false)} /> : null}
+      <aside id={`${variant}-sidebar`} aria-label={variant === "admin" ? "Navigation administration" : "Navigation principale"} aria-hidden={!mobileOpen ? undefined : false} onClick={(event) => { if ((event.target as HTMLElement).closest("a")) setMobileOpen(false); }} className={`kit-sidebar${mobileOpen ? " kit-sidebar-open" : ""}`}>
         {sidebar}
-        <button type="button" onClick={toggleCollapsed} className="sidebar-collapse-rail hidden lg:inline-flex" aria-expanded={!collapsed} aria-label={collapsed ? "Développer la barre latérale" : "Replier la barre latérale"} title={collapsed ? "Développer la barre latérale" : "Replier la barre latérale"}>
-          <span aria-hidden="true">{collapsed ? "›" : "‹"}</span>
+        <button type="button" onClick={() => setMobileOpen(false)} className="kit-icon-btn kit-sidebar-close" aria-label="Fermer le menu"><Icon name="x" /></button>
+        <button type="button" onClick={toggleCollapsed} className="kit-sidebar-toggle" aria-expanded={!collapsed} aria-label={collapsed ? "Développer la barre latérale" : "Replier la barre latérale"} title={collapsed ? "Développer la barre latérale" : "Replier la barre latérale"}>
+          <Icon name="chevronLeft" />
         </button>
       </aside>
 
-      <div className="shell-content">
-        <header className="app-topbar shell-topbar shell-topbar-fixed shell-topbar-industrial sticky top-0 z-40 flex items-center gap-3 border-b px-4 py-3 sm:px-6 md:px-8 md:py-3.5">
-          <button type="button" onClick={() => setMobileOpen(true)} className="topbar-icon-button lg:hidden" aria-expanded={mobileOpen} aria-controls={`${variant}-sidebar`} aria-label="Ouvrir le menu">☰</button>
-          <div className="min-w-0 flex-1">{topbar}</div>
-        </header>
-        <div className="shell-structural-rule" aria-hidden="true" />
-        <main id="main-content" className="shell-main mx-auto w-full max-w-[1500px] px-4 py-5 sm:px-6 md:px-8 md:py-7">
-          <Breadcrumb />
+      <div className="kit-content">
+        <header className="kit-topbar">{topbar}</header>
+        <main id="main-content" className={`kit-main ${variant === "admin" ? "admin-industrial" : "shell-industrial"}`}>
           {children}
         </main>
         {mobileNavigation}

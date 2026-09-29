@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Icon } from "@/components/ui/icons";
 
 export function TicketSidePanel({
   title,
@@ -37,7 +38,7 @@ export function TicketSidePanel({
         </span>
         <span className="ticket-side-panel-meta">
           {typeof count === "number" ? <span className="ticket-side-panel-count">{count}</span> : null}
-          <span className="ticket-side-panel-chevron" aria-hidden="true">{open ? "⌃" : "⌄"}</span>
+          <span className="ticket-side-panel-chevron" aria-hidden="true"><Icon name="chevronDown" /></span>
         </span>
       </button>
       {open ? <div className="ticket-side-panel-content">{children}</div> : null}

@@ -45,7 +45,7 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="space-y-7 admin-dashboard-industrial">
-      <AdminDashboard stats={{ users: userSummary.active, departments: departmentCount, teams: teamCount, queues: queueCount, notificationRules: notificationCount }} />
+      <AdminDashboard stats={{ users: userSummary.active, departments: departmentCount, teams: teamCount, queues: queueCount }} />
       <AdminPageHeader
         eyebrow="Tableau de bord global"
         title="Administration du ticketing"

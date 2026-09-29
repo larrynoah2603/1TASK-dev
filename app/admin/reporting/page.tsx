@@ -17,7 +17,7 @@ export default async function AdminReportingPage() {
       {!summary.total ? <AdminEmptyState title="Aucune donnée de reporting" description="Aucun ticket non confidentiel n’est disponible dans le périmètre autorisé." /> : (
         <section className="reporting-distribution-panel panel p-5 sm:p-6">
           <h2 className="text-lg font-semibold text-slate-900">Répartition par statut</h2>
-          <div className="mt-5 space-y-3">{summary.byStatus.map((row) => <div key={row.status} className="flex items-center gap-4"><span className="w-48 text-sm text-slate-600">{STATUS_LABELS[row.status]}</span><div className="reporting-status-track h-2 flex-1 overflow-hidden rounded-full bg-slate-100"><div className="reporting-status-bar h-full rounded-full bg-[#5b5bd6]" style={{ width: `${summary.total ? (row.count / summary.total) * 100 : 0}%` }} /></div><span className="w-10 text-right text-sm font-semibold text-slate-700">{row.count}</span></div>)}</div>
+          <div className="mt-5 space-y-3">{summary.byStatus.map((row) => <div key={row.status} className="flex items-center gap-4"><span className="w-48 text-sm text-slate-600">{STATUS_LABELS[row.status]}</span><div className="reporting-status-track h-2 flex-1 overflow-hidden rounded-full bg-slate-100"><div className="reporting-status-bar h-full rounded-full bg-[var(--kit-primary)]" style={{ width: `${summary.total ? (row.count / summary.total) * 100 : 0}%` }} /></div><span className="w-10 text-right text-sm font-semibold text-slate-700">{row.count}</span></div>)}</div>
         </section>
       )}
     </div>

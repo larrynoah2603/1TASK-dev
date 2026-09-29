@@ -1,24 +1,15 @@
 import type { ReactNode } from "react";
-import { Activity, CheckCircle2, Clock3, Ticket } from "lucide-react";
-import { DashboardChartCard } from "./dashboard-chart-card";
-import { DashboardHeader } from "./dashboard-header";
-import { DashboardKpiCard } from "./dashboard-kpi-card";
-import { DashboardSlaCard } from "./dashboard-sla-card";
-import { DashboardTicketTable } from "./dashboard-ticket-table";
-import type { DashboardKpis } from "./kpi-grid";
-import type { DashboardTicket } from "./recent-tickets";
+import { KpiGrid, type DashboardKpis } from "./kpi-grid";
+import { RecentTickets, type DashboardTicket } from "./recent-tickets";
+import { ActivityTimeline } from "./activity-timeline";
+import { SlaOverview } from "./sla-overview";
 
 export function DashboardPage({ firstName, kpis, tickets, children }: { firstName: string; kpis: DashboardKpis; tickets: DashboardTicket[]; children?: ReactNode }) {
-  return <div className="dashboard-page dashboard-modern-page">
-    <DashboardHeader firstName={firstName} />
-    <section className="dashboard-modern-kpis" aria-label="Indicateurs clés">
-      <DashboardKpiCard label="Tickets ouverts" value={kpis.open} detail="dans votre périmètre" trend="+12%" icon={Ticket} tone="info" />
-      <DashboardKpiCard label="En cours" value={kpis.inProgress} detail="traitement actif" trend="+8%" icon={Activity} tone="warning" />
-      <DashboardKpiCard label="Tickets résolus" value={kpis.resolved} detail="historique récent" trend="+18%" icon={CheckCircle2} tone="success" />
-      <DashboardKpiCard label="SLA à risque" value={kpis.atRisk} detail="à traiter rapidement" trend="Prioritaire" icon={Clock3} tone="danger" />
-    </section>
-    <div className="dashboard-modern-grid"><DashboardChartCard tickets={tickets} /><DashboardSlaCard tickets={tickets} /></div>
-    <DashboardTicketTable tickets={tickets} />
+  return <div className="dashboard-page dashboard-reference-page">
+    <header className="dashboard-reference-header"><div><p className="eyebrow">Votre espace de support</p><h1>Bonjour {firstName} <span aria-hidden="true">👋</span></h1><p className="page-header-description">Voici un aperçu de votre activité aujourd&apos;hui.</p></div></header>
+    <KpiGrid values={kpis} />
+    <div className="dashboard-reference-main-grid"><RecentTickets tickets={tickets} /><ActivityTimeline tickets={tickets} /></div>
+    <SlaOverview tickets={tickets} />
     {children}
   </div>;
 }

@@ -2,6 +2,7 @@ import { Priority, TicketStatus } from "@prisma/client";
 import type { TicketSlaState } from "@/lib/sla";
 import { PriorityBadge, StatusBadge } from "@/components/status-badge";
 import { SlaIndicator } from "@/components/sla-indicator";
+import { Icon } from "@/components/ui/icons";
 import { STATUS_LABELS } from "@/lib/domain";
 
 const STATUS_ORDER = [
@@ -21,6 +22,7 @@ function statusPosition(status: string) {
   return position >= 0 ? position : 0;
 }
 
+/** Statut, priorité, SLA et progression du workflow. Présentation uniquement : les props et les règles sont inchangées. */
 export function TicketStatusStrip({
   reference,
   status,
@@ -47,34 +49,28 @@ export function TicketStatusStrip({
   const actionLabel = canClaim ? "Prendre en charge" : canResolve ? "Soumettre la résolution" : "Consulter le ticket";
 
   return (
-    <section className="ticket-status-strip ticket-status-premium-card" aria-label="État du ticket">
-      <div className="ticket-status-strip-topline">
-        <div className="min-w-0">
-          <p className="ticket-status-reference">{reference}</p>
-          <p className="ticket-status-current">Étape actuelle : <strong>{currentLabel}</strong></p>
-        </div>
-        <div className="ticket-status-badges">
-          <StatusBadge status={status} />
-          <PriorityBadge priority={priority} />
-          <SlaIndicator state={slaState} dueAt={slaDueAt} startedAt={createdAt} pausedMinutes={pausedMinutes} compact />
-        </div>
+    <section className="kit-strip" aria-label={`État du ticket ${reference}`}>
+      <div className="kit-ticket-badges">
+        <StatusBadge status={status} />
+        <PriorityBadge priority={priority} />
+        <SlaIndicator state={slaState} dueAt={slaDueAt} startedAt={createdAt} pausedMinutes={pausedMinutes} compact />
       </div>
-      <div className="ticket-status-sla-callout">
+      <div className="kit-strip-sla">
         <SlaIndicator state={slaState} dueAt={slaDueAt} startedAt={createdAt} pausedMinutes={pausedMinutes} />
       </div>
-      <div className="ticket-status-progress" aria-label="Progression du workflow">
+      <ol className="kit-stepper" aria-label="Progression du workflow">
         {STATUS_ORDER.map((step, index) => {
           const complete = index < currentPosition;
           const active = index === currentPosition;
           return (
-            <span key={step} className={`ticket-status-step${complete ? " ticket-status-step-complete" : ""}${active ? " ticket-status-step-active" : ""}`}>
-              <span className="ticket-status-step-dot" aria-hidden="true">{complete ? "✓" : index + 1}</span>
-              <span className="ticket-status-step-label">{STATUS_LABELS[step]}</span>
-            </span>
+            <li key={step} className={`kit-step${complete ? " kit-step-done" : ""}${active ? " kit-step-active" : ""}`} aria-current={active ? "step" : undefined}>
+              <span className="kit-step-dot" aria-hidden="true">{complete ? <Icon name="check" /> : index + 1}</span>
+              <span>{STATUS_LABELS[step]}</span>
+            </li>
           );
         })}
-      </div>
-      <p className="ticket-status-hint">{actionLabel} selon vos permissions et l’état actuel du ticket.</p>
+      </ol>
+      <p className="kit-strip-next">Étape actuelle : <strong>{currentLabel}</strong> · {actionLabel} selon vos permissions et l’état du ticket.</p>
     </section>
   );
 }

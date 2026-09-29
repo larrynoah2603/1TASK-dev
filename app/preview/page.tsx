@@ -13,7 +13,7 @@ export const metadata = {
 
 export default function PublicPreviewPage() {
   return (
-    <main className="min-h-screen bg-[#f8fafc] text-slate-950">
+    <main className="min-h-screen bg-[var(--kit-bg)] text-slate-950">
       <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-8 lg:px-12 lg:py-10">
         <header className="flex flex-col gap-6 border-b border-slate-200 pb-7 sm:flex-row sm:items-end sm:justify-between">
           <div>

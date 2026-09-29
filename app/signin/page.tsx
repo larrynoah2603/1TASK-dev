@@ -63,12 +63,12 @@ function SignInContent() {
 
   return (
     <main className="signin-shell relative min-h-screen overflow-hidden px-4 py-6 text-white sm:px-8 lg:py-10">
-      <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-[#7778e7]/15 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-48 left-0 h-[28rem] w-[28rem] rounded-full bg-[#5b5bd6]/15 blur-3xl" />
+      <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-48 left-0 h-[28rem] w-[28rem] rounded-full bg-white/10 blur-3xl" />
       <div className="relative mx-auto grid min-h-[calc(100vh-3rem)] max-w-6xl items-center gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
         <section className="hidden lg:block">
           <BrandMark inverse />
-          <p className="mt-14 max-w-xl text-sm font-bold uppercase tracking-[0.24em] text-[#c8c8ff]">Le support interne, en un seul geste</p>
+          <p className="mt-14 max-w-xl text-sm font-bold uppercase tracking-[0.24em] text-indigo-200">Le support interne, en un seul geste</p>
           <h1 className="mt-5 max-w-2xl text-5xl font-black leading-[1.05] tracking-[-0.04em] text-white xl:text-6xl">
             Chaque demande mérite une réponse claire.
           </h1>
@@ -82,7 +82,7 @@ function SignInContent() {
               ["03", "Résoudre", "Avec une traçabilité complète"],
             ].map(([number, title, text]) => (
               <div key={number} className="rounded-xl border border-white/10 bg-white/[0.06] p-4">
-                <span className="text-xs font-black text-[#bdbdff]">{number}</span>
+                <span className="text-xs font-black text-indigo-200">{number}</span>
                 <p className="mt-6 text-sm font-bold text-white">{title}</p>
                 <p className="mt-1 text-xs leading-5 text-slate-400">{text}</p>
               </div>
@@ -106,14 +106,14 @@ function SignInContent() {
             type="button"
             disabled={loading !== null}
             onClick={() => void handleSignIn("microsoft-entra-id")}
-            className="mt-8 flex min-h-12 w-full items-center justify-center gap-3 rounded-lg bg-[#5b5bd6] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-[#4546a8]/15 transition hover:bg-[#4546a8] disabled:cursor-wait disabled:opacity-60"
+            className="mt-8 flex min-h-12 w-full items-center justify-center gap-3 rounded-lg bg-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-700/15 transition hover:bg-indigo-700 disabled:cursor-wait disabled:opacity-60"
           >
             <span className="grid h-7 w-7 place-items-center rounded-md bg-white text-sm font-black operational-link">M</span>
             {loading === "microsoft-entra-id" ? "Connexion en cours…" : "Continuer avec Microsoft Entra ID"}
           </button>
 
           <div className="mt-6 flex items-start gap-3 rounded-lg bg-slate-50 p-4 text-xs leading-5 text-slate-600">
-            <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md bg-[#f0f0ff] font-bold operational-link">✓</span>
+            <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md bg-indigo-50 font-bold operational-link">✓</span>
             <p>Microsoft Entra ID fournit votre identité. Le nom affiché, le département et le manager applicatif sont validés exclusivement par l’administrateur fonctionnel.</p>
           </div>
           <p className="mt-6 text-center text-[11px] font-medium text-slate-400">1TASK · Service desk interne</p>
@@ -125,7 +125,7 @@ function SignInContent() {
 
 function SignInFallback() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#181a20] text-sm font-semibold text-white">
+    <main className="flex min-h-screen items-center justify-center bg-slate-950 text-sm font-semibold text-white">
       Chargement de 1TASK…
     </main>
   );

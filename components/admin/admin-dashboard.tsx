@@ -1,14 +1,9 @@
-import { Building2, Inbox, Users, UsersRound } from "lucide-react";
-import { AdminCalendarCard } from "./admin-calendar-card";
-import { AdminHeader } from "./admin-header";
-import { AdminNotificationCard } from "./admin-notification-card";
-import { AdminQueueCard } from "./admin-queue-card";
-import { AdminSettingsCard } from "./admin-settings-card";
-import { AdminStatCard } from "./admin-stat-card";
-import { AdminTeamCard } from "./admin-team-card";
-import { AdminUsersTable } from "./admin-users-table";
+import Link from "next/link";
+import type { Route } from "next";
+import { Users, Building2, UsersRound, Inbox, ShieldCheck, ArrowUpRight } from "lucide-react";
+import { StatCard } from "@/components/ui/stat-card";
 
-export type AdminDashboardStats = { users: number; departments: number; teams: number; queues: number; notificationRules: number };
+export type AdminDashboardStats = { users: number; departments: number; teams: number; queues: number };
 
 const sections = [
   { href: "/admin/users", label: "Utilisateurs", description: "Identités, rôles et habilitations", icon: Users },
@@ -18,17 +13,27 @@ const sections = [
 ];
 
 export function AdminDashboard({ stats }: { stats: AdminDashboardStats }) {
-  return <div className="admin-modern-page">
-    <AdminHeader />
-    <section className="admin-modern-stats" aria-label="Indicateurs administration">
-      <AdminStatCard label="Utilisateurs" value={stats.users} detail="actifs et synchronisés" icon={Users} tone="blue" />
-      <AdminStatCard label="Départements" value={stats.departments} detail="organisation active" icon={Building2} tone="green" />
-      <AdminStatCard label="Équipes" value={stats.teams} detail="périmètres opérationnels" icon={UsersRound} tone="amber" />
-      <AdminStatCard label="Files actives" value={stats.queues} detail="routage disponible" icon={Inbox} tone="slate" />
-    </section>
-    <section className="admin-modern-main-grid" aria-label="Vue d&apos;ensemble administration"><AdminUsersTable count={stats.users} /><AdminSettingsCard /></section>
-    <section className="admin-modern-resource-grid" aria-label="Ressources administration"><AdminTeamCard count={stats.teams} /><AdminQueueCard count={stats.queues} /><AdminCalendarCard /><AdminNotificationCard count={stats.notificationRules} /></section>
-  </div>;
+  return (
+    <div className="admin-console-page">
+      <header className="admin-console-header">
+        <div><p className="eyebrow">Console d’administration</p><h1>Admin Overview</h1><p>Supervisez la structure 1TASK, les accès et les périmètres opérationnels.</p></div>
+        <div className="admin-console-header-actions"><Link href="/admin/users" className="button-primary">Gérer les utilisateurs</Link></div>
+      </header>
+      <nav className="admin-section-nav" aria-label="Sections administration">
+        {sections.map((section) => <Link key={section.href} href={section.href as Route}><section.icon aria-hidden="true" /><span>{section.label}</span></Link>)}
+      </nav>
+      <section className="admin-console-kpis" aria-label="Indicateurs administration">
+        <StatCard title="Utilisateurs actifs" value={stats.users} description="Identités synchronisées" iconComponent={Users} tone="info" />
+        <StatCard title="Départements" value={stats.departments} description="Organisation active" iconComponent={Building2} tone="success" />
+        <StatCard title="Équipes" value={stats.teams} description="Périmètres opérationnels" iconComponent={UsersRound} tone="warning" />
+        <StatCard title="Files actives" value={stats.queues} description="Routage disponible" iconComponent={Inbox} tone="neutral" />
+      </section>
+      <section className="admin-console-grid" aria-label="Accès administration">
+        <div className="admin-console-card"><div className="admin-console-card-heading"><div><p className="eyebrow">Gouvernance</p><h2>Gestion structurée</h2></div><ShieldCheck aria-hidden="true" /></div><div className="admin-console-links">{sections.map((section) => <Link key={section.href} href={section.href as Route}><span><strong>{section.label}</strong><small>{section.description}</small></span><ArrowUpRight aria-hidden="true" /></Link>)}</div></div>
+        <div className="admin-console-card admin-console-guardrails"><p className="eyebrow">Sécurité</p><h2>Accès et traçabilité</h2><p>Les vues sont filtrées par les autorisations serveur existantes. Les modifications restent exécutées par les APIs d’administration et historisées.</p><Link href="/admin/audit" className="button-secondary">Ouvrir le journal d’audit</Link></div>
+      </section>
+    </div>
+  );
 }
 
 export default AdminDashboard;

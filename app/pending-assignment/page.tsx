@@ -13,7 +13,7 @@ export default async function PendingAssignmentPage() {
   const displayName = user.managedDisplayName ?? user.entraDisplayName ?? user.name;
 
   return (
-    <main className="pending-assignment-page pending-industrial flex min-h-screen items-center justify-center bg-[#181a20] px-4 py-10 text-slate-900">
+    <main className="pending-assignment-page pending-industrial flex min-h-screen items-center justify-center bg-slate-950 px-4 py-10 text-slate-900">
       <section className="w-full max-w-xl rounded-2xl bg-white p-7 shadow-2xl sm:p-10">
         <BrandMark />
         <div className="mt-9 grid h-12 w-12 place-items-center rounded-lg bg-amber-50 text-xl font-bold text-amber-700">!</div>

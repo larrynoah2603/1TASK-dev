@@ -5,20 +5,20 @@ import { RoleCode } from "@prisma/client";
 import { TicketActions } from "@/components/ticket-actions";
 import { TicketAdvancedPanels } from "@/components/ticket-advanced-panels";
 import { TicketCommentThread } from "@/components/ticket-comment-thread";
-import { TicketSidePanel } from "@/components/ticket-side-panel";
 import { TicketStatusStrip } from "@/components/ticket-status-strip";
-import { BLOCK_REASON_LABELS, STATUS_LABELS, TYPE_LABELS } from "@/lib/domain";
+import { BLOCK_REASON_LABELS, TYPE_LABELS } from "@/lib/domain";
 import { DomainError } from "@/lib/domain-error";
 import { getTicketSlaState } from "@/lib/sla";
 import { getTicketActionContext } from "@/lib/ticket-service";
 import { getTicketForViewer } from "@/lib/ticket-detail-service";
 import { AuthorizationError, getSessionUserContext, roleCodes } from "@/lib/server-auth";
-import { TicketWorkspace } from "@/components/tickets/ticket-workspace";
 import { TicketHeader } from "@/components/tickets/detail/ticket-header";
 import { TicketConversation } from "@/components/tickets/detail/ticket-conversation";
-import { TicketHistory } from "@/components/tickets/detail/ticket-history";
+import { TicketPanel } from "@/components/tickets/detail/ticket-panel";
 import { TicketSidebarActions } from "@/components/tickets/detail/ticket-sidebar-actions";
-import { TicketSummary } from "@/components/tickets/detail/ticket-summary";
+import { Avatar } from "@/components/ui/avatar";
+import { Icon, type IconName } from "@/components/ui/icons";
+import { Timeline, type TimelineItem } from "@/components/ui/timeline";
 
 const eventLabels: Record<string, string> = {
   CREATED: "Ticket créé",
@@ -36,6 +36,27 @@ const eventLabels: Record<string, string> = {
   QUALIFIED: "Qualification enregistrée",
   LINK_CREATED: "Lien entre tickets créé",
   SLA_EXCEPTION_CREATED: "Dérogation SLA enregistrée",
+};
+
+type Tone = NonNullable<TimelineItem["tone"]>;
+
+/** Présentation uniquement : icône et couleur de chaque type d'événement. */
+const eventVisual: Record<string, { icon: IconName; tone: Tone }> = {
+  CREATED: { icon: "plus", tone: "info" },
+  STATUS_CHANGED: { icon: "refresh", tone: "info" },
+  ASSIGNED: { icon: "userPlus", tone: "info" },
+  QUEUE_CHANGED: { icon: "layers", tone: "info" },
+  MESSAGE_ADDED: { icon: "message", tone: "neutral" },
+  RESOLUTION_SUBMITTED: { icon: "checkCircle", tone: "success" },
+  REOPENED: { icon: "refresh", tone: "warning" },
+  CLOSED: { icon: "lock", tone: "neutral" },
+  SLA_ALERT: { icon: "alertTriangle", tone: "warning" },
+  SLA_BREACH: { icon: "alertCircle", tone: "danger" },
+  CONFIDENTIAL_ACCESS_GRANTED: { icon: "shield", tone: "warning" },
+  CONFIDENTIAL_ACCESS_REVOKED: { icon: "shield", tone: "neutral" },
+  QUALIFIED: { icon: "tag", tone: "info" },
+  LINK_CREATED: { icon: "link", tone: "info" },
+  SLA_EXCEPTION_CREATED: { icon: "clock", tone: "warning" },
 };
 
 function formatDate(value: Date | null | undefined) {
@@ -84,20 +105,52 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
   ].sort((left, right) => left.at.getTime() - right.at.getTime());
   const canResolve = actionContext.allowedStatuses.some((status) => String(status) === "RESOLUTION_PENDING");
 
+  const timelineItems: TimelineItem[] = timeline.map((item) => {
+    if (item.kind === "event") {
+      const mode = assignmentMode(item.event.metadata);
+      const visual = eventVisual[item.event.eventType] ?? { icon: "clock" as IconName, tone: "neutral" as Tone };
+      return {
+        title: eventLabels[item.event.eventType] ?? item.event.eventType.replaceAll("_", " "),
+        meta: `${item.event.actor?.name ?? "Système"} · ${formatDate(item.event.createdAt)}`,
+        description: mode ? `Mode d’affectation : ${mode}` : undefined,
+        icon: <Icon name={visual.icon} />,
+        tone: visual.tone,
+      };
+    }
+    if (item.kind === "assignment") {
+      return {
+        title: `Affectation : ${item.assignment.previousAssignee?.name ?? "Non affecté"} → ${item.assignment.newAssignee?.name ?? "Non affecté"}`,
+        meta: `Par ${item.assignment.assignedBy?.name ?? "Système"} · ${formatDate(item.assignment.assignedAt)}`,
+        icon: <Icon name="userPlus" />,
+        tone: "info" as Tone,
+      };
+    }
+    const internal = item.message.visibility === "INTERNAL";
+    return {
+      title: `${item.message.author.name} · ${internal ? "commentaire interne" : "commentaire public"}`,
+      meta: formatDate(item.message.createdAt),
+      description: item.message.body,
+      icon: <Icon name="message" />,
+      tone: (internal ? "warning" : "info") as Tone,
+    };
+  });
+
   return (
-    <TicketWorkspace className="ticket-detail-industrial">
-      <Link href={operational ? "/inbox" : "/tickets"} className="ticket-back-link">
-        ← {operational ? "Retour à la boîte agent" : "Retour à mes tickets"}
+    <div className="kit-ticket">
+      <Link href={operational ? "/inbox" : "/tickets"} className="kit-back">
+        <Icon name="arrowLeft" />
+        {operational ? "Retour à la boîte agent" : "Retour à mes tickets"}
       </Link>
 
       <TicketHeader>
-        <div className="ticket-detail-heading">
-          <p className="eyebrow">{ticket.reference}</p>
-          <h1>{ticket.title}</h1>
-          <p>
-            {ticket.sourceDepartment?.name ?? "Département source non renseigné"} → {ticket.queue.department.name} · {ticket.queue.name} · {ticket.serviceCatalogItem.name}
-          </p>
+        <div className="kit-ticket-idrow">
+          <span className="kit-ref">{ticket.reference}</span>
+          <span className="kit-badge kit-badge-neutral">{TYPE_LABELS[ticket.type]}</span>
         </div>
+        <h1 className="kit-ticket-title">{ticket.title}</h1>
+        <p className="kit-ticket-route">
+          {ticket.sourceDepartment?.name ?? "Département source non renseigné"} → {ticket.queue.department.name} · {ticket.queue.name} · {ticket.serviceCatalogItem.name}
+        </p>
         <TicketStatusStrip
           reference={ticket.reference}
           status={ticket.status}
@@ -111,105 +164,100 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
         />
       </TicketHeader>
 
-      <div className="ticket-action-rail" aria-label="Actions rapides du ticket">
-        <div className="ticket-action-rail-heading">
-          <div><p className="eyebrow">Pilotage</p><h2>Actions rapides</h2><p>Les contrôles restent visibles avant les échanges.</p></div>
-          <span className="ticket-action-rail-hint">Sélecteurs compacts</span>
-        </div>
-        <TicketSidebarActions>
-          <TicketActions ticketId={ticket.id} status={ticket.status} {...actionContext} />
-        </TicketSidebarActions>
-      </div>
+      <div className="kit-ticket-grid">
+        <div className="kit-ticket-col">
+          <TicketPanel title="Description" subtitle="Demande initiale">
+            {ticket.requestedService ? <div className="kit-need"><p className="kit-need-label">Besoin saisi par le demandeur</p><p className="kit-need-value">{ticket.requestedService}</p></div> : null}
+            <p className="kit-prose">{ticket.description}</p>
+          </TicketPanel>
 
-      <div className="ticket-detail-layout">
-        <main className="ticket-detail-main">
           <TicketConversation>
-          <TicketCommentThread
-            ticketId={ticket.id}
-            messages={ticket.messages}
-            canPostPublic={actionContext.canPostPublic}
-            canPostInternal={actionContext.canPostInternal}
-          />
+            <TicketCommentThread
+              ticketId={ticket.id}
+              messages={ticket.messages}
+              canPostPublic={actionContext.canPostPublic}
+              canPostInternal={actionContext.canPostInternal}
+            />
           </TicketConversation>
-        </main>
 
-        <aside className="ticket-detail-sidebar" aria-label="Informations et actions du ticket">
-          <TicketSidePanel title="Description" subtitle="Demande initiale" defaultOpen>
-            <div className="ticket-side-panel-card">
-              {ticket.requestedService ? <div className="mb-3 border-b border-slate-100 pb-3"><p className="eyebrow">Besoin saisi par le demandeur</p><p className="mt-1 text-sm font-semibold text-slate-800">{ticket.requestedService}</p></div> : null}
-              <p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">{ticket.description}</p>
-            </div>
-          </TicketSidePanel>
+          <TicketPanel title="Chronologie" subtitle="Historique complet du ticket" count={timeline.length}>
+            {timelineItems.length ? <Timeline items={timelineItems} /> : <p className="kit-empty">Aucun événement enregistré.</p>}
+          </TicketPanel>
 
-          <TicketSidePanel title="Timeline" subtitle="Historique chronologique" count={timeline.length}>
-            <div className="ticket-side-panel-card ticket-timeline-list">
-              {timeline.map((item) => {
-                if (item.kind === "event") {
-                  const mode = assignmentMode(item.event.metadata);
-                  return (
-                    <div key={`event-${item.event.id}`} className="ticket-timeline-item">
-                      <span className="ticket-timeline-dot" aria-hidden="true" />
-                      <div>
-                        <p className="text-sm font-semibold text-slate-800">{eventLabels[item.event.eventType] ?? item.event.eventType.replaceAll("_", " ")}</p>
-                        <p className="mt-1 text-[11px] text-slate-400">{item.event.actor?.name ?? "Système"} · {formatDate(item.event.createdAt)}</p>
-                        {mode ? <p className="mt-1 text-xs text-slate-500">Mode d’affectation : {mode}</p> : null}
-                      </div>
-                    </div>
-                  );
-                }
-                if (item.kind === "assignment") {
-                  return (
-                    <div key={`assignment-${item.assignment.id}`} className="ticket-timeline-assignment">
-                      <p className="eyebrow">Historique d’affectation</p>
-                      <p className="mt-2 text-sm text-slate-700">{item.assignment.previousAssignee?.name ?? "Non affecté"} → {item.assignment.newAssignee?.name ?? "Non affecté"}</p>
-                      <p className="mt-1 text-[11px] text-slate-500">Par {item.assignment.assignedBy?.name ?? "Système"} · {formatDate(item.assignment.assignedAt)}</p>
-                    </div>
-                  );
-                }
-                return (
-                  <div key={`message-${item.message.id}`} className={`ticket-timeline-message${item.message.visibility === "INTERNAL" ? " ticket-timeline-message-internal" : ""}`}>
-                    <div className="flex justify-between gap-3"><p className="text-sm font-semibold text-slate-800">{item.message.author.name}</p><p className="text-[11px] font-semibold text-slate-500">{item.message.visibility === "INTERNAL" ? "Interne" : "Public"}</p></div>
-                    <p className="mt-1 text-[11px] text-slate-400">{formatDate(item.message.createdAt)}</p>
-                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">{item.message.body}</p>
-                  </div>
-                );
-              })}
-              {!timeline.length ? <p className="ticket-empty-state">Aucun événement enregistré.</p> : null}
-            </div>
-          </TicketSidePanel>
+          <TicketAdvancedPanels
+            only="attachments"
+            ticketId={ticket.id}
+            impact={ticket.impact}
+            urgency={ticket.urgency}
+            priority={ticket.priority}
+            legalDueAt={ticket.legalDueAt?.toISOString() ?? null}
+            firstResponseDueAt={ticket.firstResponseDueAt?.toISOString() ?? null}
+            resolutionDueAt={ticket.resolutionDueAt?.toISOString() ?? null}
+            canQualify={operational && ticket.status !== "CLOSED"}
+            canManageSla={actionContext.canTransfer && ticket.status !== "CLOSED"}
+            canUpload={actionContext.canPostPublic}
+            canLink={operational && ticket.status !== "CLOSED"}
+          />
+        </div>
 
-          <TicketSidePanel title="Récapitulatif" subtitle="Qui fait quoi et quand" defaultOpen>
-            <div className="ticket-side-panel-card">
-              <dl className="ticket-summary-list">
-                <div><dt>Demandeur</dt><dd>{ticket.requester.name}</dd></div>
-                <div><dt>Responsable de file</dt><dd>{ticket.queue.manager?.name ?? "Non désigné"}</dd></div>
-                <div><dt>Agent</dt><dd>{ticket.assignedTo?.name ?? "Non affecté"}</dd></div>
-                <div><dt>Nature</dt><dd>{TYPE_LABELS[ticket.type]}</dd></div>
-                <div><dt>Créé le</dt><dd>{formatDate(ticket.createdAt)}</dd></div>
-                <div><dt>Première réponse avant</dt><dd>{formatDate(ticket.firstResponseDueAt)}</dd></div>
-                <div><dt>Résolution avant</dt><dd>{formatDate(ticket.resolutionDueAt)}</dd></div>
-                <div><dt>Temps bloqué</dt><dd>{ticket.totalPausedMinutes} min</dd></div>
-                {ticket.blockReason ? <div><dt>Blocage</dt><dd>{BLOCK_REASON_LABELS[ticket.blockReason]}</dd></div> : null}
-              </dl>
+        <aside className="kit-ticket-col kit-ticket-side" aria-label="Informations et actions du ticket">
+          <TicketSidebarActions>
+            <TicketActions ticketId={ticket.id} status={ticket.status} {...actionContext} />
+          </TicketSidebarActions>
+
+          <TicketPanel title="Demandeur">
+            <div className="kit-person">
+              <Avatar name={ticket.requester.name} size="lg" />
+              <div>
+                <p className="kit-person-name">{ticket.requester.name}</p>
+                <p className="kit-person-role">{ticket.sourceDepartment?.name ?? "Département non renseigné"}</p>
+              </div>
             </div>
-          </TicketSidePanel>
+          </TicketPanel>
+
+          <TicketPanel title="Équipe en charge">
+            {ticket.assignedTo ? (
+              <div className="kit-person">
+                <Avatar name={ticket.assignedTo.name} size="lg" />
+                <div>
+                  <p className="kit-person-name">{ticket.assignedTo.name}</p>
+                  <p className="kit-person-role">Agent assigné</p>
+                </div>
+              </div>
+            ) : <p className="kit-empty" style={{ padding: 0, textAlign: "left" }}>Aucun agent assigné pour le moment.</p>}
+            <dl className="kit-dl" style={{ marginTop: "var(--kit-space-4)" }}>
+              <div><dt>Département</dt><dd>{ticket.queue.department.name}</dd></div>
+              <div><dt>File</dt><dd>{ticket.queue.name}</dd></div>
+              <div><dt>Responsable de file</dt><dd>{ticket.queue.manager?.name ?? "Non désigné"}</dd></div>
+            </dl>
+          </TicketPanel>
+
+          <TicketPanel title="Détails" subtitle="Dates et échéances">
+            <dl className="kit-dl">
+              <div><dt>Nature</dt><dd>{TYPE_LABELS[ticket.type]}</dd></div>
+              <div><dt>Créé le</dt><dd>{formatDate(ticket.createdAt)}</dd></div>
+              <div><dt>Première réponse avant</dt><dd>{formatDate(ticket.firstResponseDueAt)}</dd></div>
+              <div><dt>Résolution avant</dt><dd>{formatDate(ticket.resolutionDueAt)}</dd></div>
+              <div><dt>Temps bloqué</dt><dd>{ticket.totalPausedMinutes} min</dd></div>
+              {ticket.blockReason ? <div><dt>Blocage</dt><dd>{BLOCK_REASON_LABELS[ticket.blockReason]}</dd></div> : null}
+            </dl>
+          </TicketPanel>
 
           {ticket.dossier || ticket.mission ? (
-            <TicketSidePanel title="Contexte de production" subtitle="Dossier, mission et temps">
-              <div className="ticket-side-panel-card">
-                <dl className="ticket-summary-list">
-                  <div><dt>Client</dt><dd>{ticket.dossier?.client.name ?? "Non renseigné"}</dd></div>
-                  <div><dt>Dossier</dt><dd>{ticket.dossier ? <Link href={`/dossiers/${ticket.dossier.id}` as Route}>{ticket.dossier.code}</Link> : "Non rattaché"}</dd></div>
-                  <div><dt>Mission</dt><dd>{ticket.mission ? <Link href={`/missions/${ticket.mission.id}` as Route}>{ticket.mission.code}</Link> : "Non rattachée"}</dd></div>
-                  <div><dt>Budget mission</dt><dd>{ticket.mission?.budgetMinutes ? formatMinutes(ticket.mission.budgetMinutes) : "Non défini"}</dd></div>
-                  <div><dt>Temps mission</dt><dd>{formatMinutes(ticket.missionWorklogMinutes)}</dd></div>
-                  <div><dt>Temps sur ticket</dt><dd>{formatMinutes(ticket.worklogSummary.minutes)} · {ticket.worklogSummary.entries} saisie(s)</dd></div>
-                </dl>
-              </div>
-            </TicketSidePanel>
+            <TicketPanel title="Contexte de production" subtitle="Dossier, mission et temps">
+              <dl className="kit-dl">
+                <div><dt>Client</dt><dd>{ticket.dossier?.client.name ?? "Non renseigné"}</dd></div>
+                <div><dt>Dossier</dt><dd>{ticket.dossier ? <Link href={`/dossiers/${ticket.dossier.id}` as Route}>{ticket.dossier.code}</Link> : "Non rattaché"}</dd></div>
+                <div><dt>Mission</dt><dd>{ticket.mission ? <Link href={`/missions/${ticket.mission.id}` as Route}>{ticket.mission.code}</Link> : "Non rattachée"}</dd></div>
+                <div><dt>Budget mission</dt><dd>{ticket.mission?.budgetMinutes ? formatMinutes(ticket.mission.budgetMinutes) : "Non défini"}</dd></div>
+                <div><dt>Temps mission</dt><dd>{formatMinutes(ticket.missionWorklogMinutes)}</dd></div>
+                <div><dt>Temps sur ticket</dt><dd>{formatMinutes(ticket.worklogSummary.minutes)} · {ticket.worklogSummary.entries} saisie(s)</dd></div>
+              </dl>
+            </TicketPanel>
           ) : null}
 
           <TicketAdvancedPanels
+            only="management"
             ticketId={ticket.id}
             impact={ticket.impact}
             urgency={ticket.urgency}
@@ -224,6 +272,6 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
           />
         </aside>
       </div>
-    </TicketWorkspace>
+    </div>
   );
 }

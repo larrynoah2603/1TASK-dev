@@ -1,0 +1,313 @@
+/* ==========================================================================
+   1TASK — Pont legacy → design system
+   L'ancien CSS (styles/legacy.css) passe par ~100 variables (--ledger-*, --industrial-*,
+   --ds-*, --reference-*…). Elles sont ici toutes redirigées vers les tokens --kit-*
+   (définies dans tokens.css) : tout l'existant adopte la nouvelle palette et les
+   nouveaux rayons sans réécrire 6 000 lignes.
+   Ce fichier est TEMPORAIRE : à supprimer quand legacy.css aura été retiré.
+   ========================================================================== */
+
+:root,
+html[data-theme="light"],
+html[data-theme="dark"] {
+  /* Surfaces & fond */
+  --background: var(--kit-bg);
+  --surface: var(--kit-card);
+  --surface-muted: var(--kit-surface-muted);
+  --surface-subtle: var(--kit-bg);
+  --ledger-canvas: var(--kit-bg);
+  --ledger-surface: var(--kit-card);
+  --ledger-surface-secondary: var(--kit-surface-muted);
+  --reference-canvas: var(--kit-bg);
+  --ds-surface: var(--kit-card);
+  --ds-surface-muted: var(--kit-surface-muted);
+  --industrial-black: var(--kit-bg);
+  --industrial-panel: var(--kit-card);
+  --industrial-panel-raised: var(--kit-surface-muted);
+  --industrial-rail: var(--kit-surface);
+  --sidebar: var(--kit-surface);
+  /* Textes */
+  --foreground: var(--kit-text);
+  --muted: var(--kit-text-2);
+  --text-strong: var(--kit-text);
+  --text-body: var(--kit-text-2);
+  --text-subtle: var(--kit-secondary);
+  --ledger-ink: var(--kit-text);
+  --ledger-text: var(--kit-text);
+  --ledger-muted: var(--kit-text-2);
+  --ds-ink-strong: var(--kit-text);
+  --ds-ink-muted: var(--kit-text-2);
+  --reference-ink: var(--kit-text);
+  --reference-body: var(--kit-text-2);
+  --reference-muted: var(--kit-secondary);
+  --reference-navy: var(--kit-text);
+  --industrial-ink: var(--kit-text);
+  --industrial-muted: var(--kit-text-2);
+  --sidebar-muted: var(--kit-text-2);
+  /* Bordures */
+  --line: var(--kit-border);
+  --line-strong: var(--kit-border-strong);
+  --ledger-border: var(--kit-border);
+  --ledger-border-strong: var(--kit-border-strong);
+  --ds-border: var(--kit-border);
+  --ds-border-soft: var(--kit-border);
+  --ds-border-strong: var(--kit-border-strong);
+  --reference-line: var(--kit-border);
+  --industrial-line: var(--kit-border);
+  --sidebar-line: var(--kit-border);
+  /* Marque / accent → primary */
+  --brand: var(--kit-primary);
+  --brand-dark: var(--kit-primary-hover);
+  --brand-soft: var(--kit-primary-soft);
+  --accent: var(--kit-primary);
+  --focus: var(--kit-primary);
+  --ledger-primary: var(--kit-primary);
+  --ledger-primary-strong: var(--kit-primary-hover);
+  --ledger-primary-deep: var(--kit-primary-hover);
+  --ledger-primary-soft: var(--kit-primary-soft);
+  --ledger-information: var(--kit-primary);
+  --ledger-operational: var(--kit-primary);
+  --ds-brand: var(--kit-primary);
+  --ds-brand-soft: var(--kit-primary-soft);
+  --ds-brand-border: var(--kit-primary-line);
+  --reference-blue: var(--kit-primary);
+  --reference-blue-soft: var(--kit-primary-soft);
+  --reference-navy-soft: var(--kit-surface-muted);
+  --industrial-gold: var(--kit-primary);
+  --industrial-red: var(--kit-primary);
+  /* Sémantique */
+  --ledger-success: var(--kit-success-text);
+  --ledger-warning: var(--kit-warning-text);
+  --ledger-danger: var(--kit-danger-text);
+  --danger: var(--kit-danger-text);
+  --ds-success: var(--kit-success-text);
+  --ds-warning: var(--kit-warning-text);
+  --ds-danger: var(--kit-danger-text);
+  --reference-success: var(--kit-success-text);
+  --reference-success-soft: var(--kit-success-soft);
+  --reference-warning: var(--kit-warning-text);
+  --reference-warning-soft: var(--kit-warning-soft);
+  --reference-danger: var(--kit-danger-text);
+  --reference-danger-soft: var(--kit-danger-soft);
+  /* Boutons */
+  --button-primary-bg: var(--kit-primary);
+  --button-primary-bg-hover: var(--kit-primary-hover);
+  --button-primary-border: var(--kit-primary);
+  --button-secondary-bg: var(--kit-surface);
+  --button-secondary-bg-hover: var(--kit-surface-muted);
+  --button-secondary-border: var(--kit-border-strong);
+  --button-secondary-text: var(--kit-text);
+  --button-ghost-bg-hover: var(--kit-hover);
+  --button-ghost-text: var(--kit-text-2);
+  --button-danger-bg: var(--kit-danger-soft);
+  --button-danger-border: var(--kit-danger);
+  --button-danger-text: var(--kit-danger-text);
+  /* Rayons & ombres */
+  --radius-lg: var(--kit-radius-lg);
+  --radius-md: var(--kit-radius-md);
+  --radius-sm: var(--kit-radius-sm);
+  --ds-radius-lg: var(--kit-radius-lg);
+  --ledger-radius-panel: var(--kit-radius-lg);
+  --ledger-radius-control: var(--kit-radius-md);
+  --ledger-radius-overlay: var(--kit-radius-xl);
+  --ledger-radius-pill: var(--kit-radius-pill);
+  --ds-shadow-sm: var(--kit-shadow-xs);
+  --ds-shadow-md: var(--kit-shadow-sm);
+  --shadow-soft: var(--kit-shadow-sm);
+  --shadow-popover: var(--kit-shadow-md);
+  --ledger-overlay-shadow: var(--kit-shadow-md);
+  /* Gabarits */
+  --shell-header-height: var(--kit-topbar-h);
+  --shell-sidebar-width: var(--kit-sidebar-w);
+  --shell-sidebar-collapsed-width: var(--kit-sidebar-w-collapsed);
+}
+
+/* Palette Tailwind → tokens. Périmètre volontairement limité aux teintes dont le sens est identique en fond,
+   bordure et texte (fonds pâles, bordures, états sémantiques). Les gris foncés (text-slate-600…950) ne sont PAS
+   remappés ici : ils servent aussi de fonds sombres (ex. page de connexion). Voir la section suivante pour le texte. */
+:root,
+html[data-theme="light"],
+html[data-theme="dark"] {
+  --kit-danger-line: color-mix(in srgb, var(--kit-danger) 30%, var(--kit-card));
+  --kit-success-line: color-mix(in srgb, var(--kit-success) 30%, var(--kit-card));
+  --kit-warning-line: color-mix(in srgb, var(--kit-warning) 34%, var(--kit-card));
+  --color-slate-50: var(--kit-surface-muted);
+  --color-slate-100: var(--kit-surface-muted);
+  --color-slate-200: var(--kit-border);
+  --color-rose-50: var(--kit-danger-soft);
+  --color-rose-100: var(--kit-danger-soft);
+  --color-rose-200: var(--kit-danger-line);
+  --color-rose-600: var(--kit-danger-text);
+  --color-rose-700: var(--kit-danger-text);
+  --color-emerald-50: var(--kit-success-soft);
+  --color-emerald-100: var(--kit-success-soft);
+  --color-emerald-200: var(--kit-success-line);
+  --color-emerald-600: var(--kit-success-text);
+  --color-emerald-700: var(--kit-success-text);
+  --color-amber-50: var(--kit-warning-soft);
+  --color-amber-100: var(--kit-warning-soft);
+  --color-amber-200: var(--kit-warning-line);
+  --color-amber-600: var(--kit-warning-text);
+  --color-amber-700: var(--kit-warning-text);
+}
+
+/* Le legacy fixe des couleurs de texte / fond en dur (avec !important) sur ces utilitaires, à l'intérieur de l'application.
+   On réaffirme les tokens, uniquement dans .kit-app : les pages autonomes (connexion, attente) ne sont pas touchées. */
+html[data-theme] .kit-app .text-slate-950,
+html[data-theme] .kit-app .text-slate-900,
+html[data-theme] .kit-app .text-slate-800 { color: var(--kit-text) !important; }
+html[data-theme] .kit-app .text-slate-700,
+html[data-theme] .kit-app .text-slate-600 { color: var(--kit-text-2) !important; }
+html[data-theme] .kit-app .text-slate-500,
+html[data-theme] .kit-app .text-slate-400 { color: var(--kit-secondary) !important; }
+html[data-theme] .kit-app .bg-slate-50,
+html[data-theme] .kit-app .bg-slate-100 { background-color: var(--kit-surface-muted) !important; }
+html[data-theme] .kit-app .border-slate-100,
+html[data-theme] .kit-app .border-slate-200 { border-color: var(--kit-border) !important; }
+html[data-theme] .kit-app .text-rose-700,
+html[data-theme] .kit-app .text-rose-600 { color: var(--kit-danger-text) !important; }
+html[data-theme] .kit-app .bg-rose-50 { background-color: var(--kit-danger-soft) !important; }
+html[data-theme] .kit-app .border-rose-200 { border-color: var(--kit-danger-line) !important; }
+html[data-theme] .kit-app .text-emerald-700,
+html[data-theme] .kit-app .text-emerald-600 { color: var(--kit-success-text) !important; }
+html[data-theme] .kit-app .bg-emerald-50 { background-color: var(--kit-success-soft) !important; }
+html[data-theme] .kit-app .border-emerald-200 { border-color: var(--kit-success-line) !important; }
+html[data-theme] .kit-app .text-amber-700,
+html[data-theme] .kit-app .text-amber-600 { color: var(--kit-warning-text) !important; }
+html[data-theme] .kit-app .bg-amber-50 { background-color: var(--kit-warning-soft) !important; }
+html[data-theme] .kit-app .border-amber-200 { border-color: var(--kit-warning-line) !important; }
+
+/* ---------- Base globale ---------- */
+html { background: var(--kit-bg); }
+body {
+  background: var(--kit-bg);
+  color: var(--kit-text);
+  font-family: var(--kit-font);
+  font-size: var(--kit-text-md);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+::selection { background: color-mix(in srgb, var(--kit-primary) 28%, transparent); color: inherit; }
+*:focus-visible { outline: 2px solid var(--kit-primary); outline-offset: 2px; }
+.skip-link { border-radius: var(--kit-radius-md); background: var(--kit-surface); color: var(--kit-text); border-color: var(--kit-border-strong); }
+
+/* Étiquettes : phrase normale, plus de MAJUSCULES espacées. */
+html[data-theme] .eyebrow {
+  color: var(--kit-secondary);
+  font-size: var(--kit-text-xs);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* ---------- En-têtes de page existants ---------- */
+html[data-theme] .page-header {
+  display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between;
+  gap: var(--kit-space-4);
+}
+html[data-theme] .page-header h1 {
+  margin: 0; color: var(--kit-text); font-size: var(--kit-text-2xl); font-weight: 650; line-height: 1.2; letter-spacing: -0.015em;
+}
+html[data-theme] .page-header-description { color: var(--kit-text-2); font-size: var(--kit-text-md); max-width: 68ch; }
+
+/* ---------- Surfaces (cartes) : 16px, bordure discrète, ombre douce ---------- */
+html[data-theme] .panel,
+html[data-theme] .metric-card,
+html[data-theme] .table-shell,
+html[data-theme] .filter-panel,
+html[data-theme] .action-card,
+html[data-theme] .dashboard-widget,
+html[data-theme] .reporting-card,
+html[data-theme] .admin-config-section,
+html[data-theme] .dashboard-kpi-card,
+html[data-theme] .dashboard-enterprise-card,
+html[data-theme] .dashboard-reference-card,
+html[data-theme] .portfolio-query-panel,
+html[data-theme] .ui-card,
+html[data-theme] .ui-stat-card,
+html[data-theme] .ds-panel,
+html[data-theme] .ds-kpi-card,
+html[data-theme] .ds-stat-card,
+html[data-theme] .ds-chart-card,
+html[data-theme] .agent-card,
+html[data-theme] .route-panel {
+  border: 1px solid var(--kit-border) !important;
+  border-radius: var(--kit-radius-lg) !important;
+  background: var(--kit-card) !important;
+  box-shadow: var(--kit-shadow-xs) !important;
+}
+html[data-theme] .metric-card-link:hover,
+html[data-theme] .dashboard-kpi-card:hover { border-color: var(--kit-border-strong) !important; box-shadow: var(--kit-shadow-sm) !important; }
+
+/* Surfaces flottantes */
+html[data-theme] .popover-panel,
+html[data-theme] .modal-panel,
+html[data-theme] .confirm-dialog,
+html[data-theme] .combobox-listbox {
+  border: 1px solid var(--kit-border) !important;
+  border-radius: var(--kit-radius-lg) !important;
+  background: var(--kit-surface) !important;
+  color: var(--kit-text) !important;
+  box-shadow: var(--kit-shadow-md) !important;
+}
+html[data-theme] .modal-panel, html[data-theme] .confirm-dialog { border-radius: var(--kit-radius-xl) !important; box-shadow: var(--kit-shadow-lg) !important; }
+html[data-theme] .modal-backdrop { background: var(--kit-overlay) !important; backdrop-filter: blur(4px); }
+
+/* ---------- Boutons ---------- */
+html[data-theme] .button-primary,
+html[data-theme] .button-secondary,
+html[data-theme] .button-ghost {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--kit-space-2);
+  min-height: 36px; padding: 0 var(--kit-space-4);
+  border-radius: var(--kit-radius-md) !important;
+  font-size: var(--kit-text-sm); font-weight: 600; line-height: 1;
+  transition: background-color var(--kit-fast) var(--kit-ease), border-color var(--kit-fast) var(--kit-ease), box-shadow var(--kit-fast) var(--kit-ease);
+}
+html[data-theme] .button-primary { background: var(--kit-primary) !important; border: 1px solid var(--kit-primary) !important; color: var(--kit-on-primary) !important; box-shadow: var(--kit-shadow-xs) !important; }
+html[data-theme] .button-primary:hover:not(:disabled) { background: var(--kit-primary-hover) !important; border-color: var(--kit-primary-hover) !important; }
+html[data-theme] .button-secondary { background: var(--kit-surface) !important; border: 1px solid var(--kit-border-strong) !important; color: var(--kit-text) !important; box-shadow: var(--kit-shadow-xs) !important; }
+html[data-theme] .button-secondary:hover:not(:disabled) { background: var(--kit-surface-muted) !important; }
+html[data-theme] .button-ghost { background: transparent !important; border: 1px solid transparent !important; color: var(--kit-text-2) !important; box-shadow: none !important; }
+html[data-theme] .button-ghost:hover:not(:disabled) { background: var(--kit-hover) !important; color: var(--kit-text) !important; }
+html[data-theme] .button-primary:disabled,
+html[data-theme] .button-secondary:disabled,
+html[data-theme] .button-ghost:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ---------- Champs de formulaire ---------- */
+html[data-theme] .field-label { color: var(--kit-text-2); font-size: var(--kit-text-sm); font-weight: 600; }
+html[data-theme] .field-control {
+  border: 1px solid var(--kit-border-strong) !important;
+  border-radius: var(--kit-radius-md) !important;
+  background: var(--kit-surface) !important;
+  color: var(--kit-text) !important;
+  box-shadow: none !important;
+}
+html[data-theme] .field-control::placeholder { color: var(--kit-secondary); }
+html[data-theme] .field-control:focus { border-color: var(--kit-primary) !important; box-shadow: 0 0 0 3px var(--kit-ring) !important; outline: none; }
+
+/* ---------- Tableaux ---------- */
+html[data-theme] .table-shell,
+html[data-theme] .ui-table-wrap,
+html[data-theme] .ui-data-table-scroll { overflow-x: auto; max-width: 100%; }
+html[data-theme] .kit-main.kit-main .data-table th,
+html[data-theme] .kit-main.kit-main .table-shell th {
+  background: var(--kit-surface-muted) !important; color: var(--kit-text-2) !important;
+  font-size: var(--kit-text-xs); font-weight: 600; letter-spacing: 0; text-transform: none;
+  border-color: var(--kit-border) !important;
+}
+html[data-theme] .kit-main.kit-main .data-table td,
+html[data-theme] .kit-main.kit-main .table-shell td { border-color: var(--kit-border) !important; color: var(--kit-text); }
+html[data-theme] .kit-main.kit-main .data-table tbody tr:hover,
+html[data-theme] .kit-main.kit-main .table-shell tbody tr:hover { background: var(--kit-hover) !important; box-shadow: none !important; }
+
+/* ---------- Pastilles de statut / priorité historiques ---------- */
+html[data-theme] .semantic-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 24px; padding: 0 10px; border-radius: var(--kit-radius-pill) !important;
+  font-size: var(--kit-text-xs); font-weight: 600;
+  border: 1px solid transparent;
+}
+
+/* ---------- Garde-fous responsive ---------- */
+.kit-main img, .kit-main svg, .kit-main video, .kit-main canvas { max-width: 100%; }
+.kit-main > * { min-width: 0; }

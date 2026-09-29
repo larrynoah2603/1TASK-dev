@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Icon } from "@/components/ui/icons";
 
 export function ThemeToggle() {
   const [dark, setDark] = useState(true);
@@ -23,8 +24,8 @@ export function ThemeToggle() {
   }
 
   return (
-    <button type="button" onClick={toggle} className="topbar-icon-button" aria-label={dark ? "Activer le mode clair" : "Activer le mode sombre"} title={dark ? "Mode clair" : "Mode sombre"}>
-      <span aria-hidden="true">{dark ? "☀" : "☾"}</span>
+    <button type="button" onClick={toggle} className="kit-icon-btn" aria-label={dark ? "Activer le mode clair" : "Activer le mode sombre"} title={dark ? "Mode clair" : "Mode sombre"}>
+      <Icon name={dark ? "sun" : "moon"} />
     </button>
   );
 }

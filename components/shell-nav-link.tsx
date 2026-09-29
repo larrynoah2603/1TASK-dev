@@ -4,11 +4,18 @@ import Link from "next/link";
 import type { Route } from "next";
 import { usePathname, useSearchParams } from "next/navigation";
 
+// Sections dont les sous-pages appartiennent à d'autres entrées du menu : correspondance exacte uniquement.
+const EXACT_ONLY = new Set(["/dashboard", "/admin"]);
+
 function isCurrentLink(href: string, pathname: string, searchParams: URLSearchParams) {
   const target = new URL(href, "http://1task.local");
+  const targetParams = Array.from(target.searchParams.entries());
+
+  // Les pages de détail (/tickets/123) gardent leur section active dans le menu.
+  if (!targetParams.length && !EXACT_ONLY.has(target.pathname) && pathname.startsWith(`${target.pathname}/`)) return true;
+
   if (target.pathname !== pathname) return false;
 
-  const targetParams = Array.from(target.searchParams.entries());
   if (!targetParams.length) {
     return !searchParams.has("scope") && !searchParams.has("sla") && !searchParams.has("queueId");
   }
@@ -20,11 +27,13 @@ export function ShellNavLink({
   href,
   children,
   icon,
+  title,
   className = "",
 }: {
   href: string;
   children: React.ReactNode;
   icon: React.ReactNode;
+  title?: string;
   className?: string;
 }) {
   const pathname = usePathname();
@@ -32,15 +41,9 @@ export function ShellNavLink({
   const active = isCurrentLink(href, pathname, searchParams);
 
   return (
-    <Link
-      href={href as Route}
-      aria-current={active ? "page" : undefined}
-      className={`nav-link nav-link-industrial ${active ? "nav-link-active" : ""} flex w-full min-w-0 items-center gap-3 px-3 py-2 text-[13px] font-medium ${className}`}
-    >
-      <span className="nav-icon nav-icon-industrial grid h-7 w-7 shrink-0 place-items-center transition-colors">
-        {icon}
-      </span>
-      <span className="shell-nav-label truncate">{children}</span>
+    <Link href={href as Route} aria-current={active ? "page" : undefined} title={title} className={`kit-nav-item ${className}`.trim()}>
+      <span className="kit-nav-icon">{icon}</span>
+      <span className="kit-nav-text">{children}</span>
     </Link>
   );
 }

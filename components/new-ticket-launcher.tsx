@@ -3,6 +3,7 @@
 import { createPortal } from "react-dom";
 import { useEffect, useState } from "react";
 import { NewTicketForm } from "@/components/new-ticket-form";
+import { Icon } from "@/components/ui/icons";
 
 export function NewTicketLauncher() {
   const [open, setOpen] = useState(false);
@@ -36,11 +37,9 @@ export function NewTicketLauncher() {
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className="new-ticket-launcher" aria-haspopup="dialog" aria-expanded={open}>
-        <span className="new-ticket-launcher-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg></span>
-        <span className="hidden sm:inline">Nouveau ticket</span>
-        <span className="sm:hidden">Nouveau</span>
-        <span className="new-ticket-launcher-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m7 9 5 5 5-5" /></svg></span>
+      <button type="button" onClick={() => setOpen(true)} className="kit-btn kit-btn-primary kit-new-ticket" aria-haspopup="dialog" aria-expanded={open} aria-label="Nouveau ticket">
+        <Icon name="plus" />
+        <span className="kit-hide-mobile">Nouveau ticket</span>
       </button>
       {modal}
     </>

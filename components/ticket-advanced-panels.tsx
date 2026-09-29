@@ -64,6 +64,8 @@ type Props = {
   canManageSla: boolean;
   canUpload: boolean;
   canLink: boolean;
+  /** Affichage : "attachments" = uniquement les fichiers, "management" = qualification, SLA et relations. Par défaut : tout. */
+  only?: "attachments" | "management";
 };
 
 function formatBytes(value: number) {
@@ -81,6 +83,8 @@ function ticketLabel(ticket: TicketRef) {
 }
 
 export function TicketAdvancedPanels(props: Props) {
+  const showManagement = props.only !== "attachments";
+  const showAttachments = props.only !== "management";
   const router = useRouter();
   const { toast } = useToast();
   const [impact, setImpact] = useState(props.impact);
@@ -274,7 +278,7 @@ export function TicketAdvancedPanels(props: Props) {
     <div className="space-y-5">
       {error ? <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">{error}</div> : null}
 
-      {props.canQualify ? (
+      {showManagement && props.canQualify ? (
         <TicketSidePanel title="Qualification" subtitle="Impact, urgence et priorité" defaultOpen>
           <section className="panel p-5">
           <p className="eyebrow">Qualification</p>
@@ -293,7 +297,7 @@ export function TicketAdvancedPanels(props: Props) {
         </TicketSidePanel>
       ) : null}
 
-      {props.canManageSla ? (
+      {showManagement && props.canManageSla ? (
         <TicketSidePanel title="SLA" subtitle="Échéances et dérogation contrôlée">
           <section className="panel p-5">
           <p className="eyebrow">SLA</p>
@@ -308,30 +312,30 @@ export function TicketAdvancedPanels(props: Props) {
         </TicketSidePanel>
       ) : null}
 
-      <TicketSidePanel title="Relations" subtitle="Tickets liés" onOpen={() => void loadLinks()}>
+      {showManagement ? <TicketSidePanel title="Relations" subtitle="Tickets liés" onOpen={() => void loadLinks()}>
         <section className="panel p-5">
         <p className="eyebrow">Relations</p>
         <h2 className="mt-1 text-base font-semibold text-slate-900">Tickets liés</h2>
         {props.canLink ? <form onSubmit={submitLink} className="mt-4 space-y-3">
           <label className="field-label">Rechercher un ticket cible<input value={linkQuery} onChange={(event) => void searchTickets(event.target.value)} className="field-control font-normal" placeholder="Référence ou titre…" /></label>
           {linkResults.length ? <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-200 bg-white p-1">{linkResults.map((ticket) => <button type="button" key={ticket.id} onClick={() => { setSelectedTicket(ticket); setLinkQuery(ticketLabel(ticket)); setLinkResults([]); }} className="block w-full rounded-md px-2 py-2 text-left text-xs hover:bg-slate-50"><strong>{ticket.reference}</strong> · {ticket.title}</button>)}</div> : null}
-          {selectedTicket ? <p className="rounded-md bg-[#f7f7ff] px-2 py-2 text-xs operational-link">Cible : {ticketLabel(selectedTicket)}</p> : null}
+          {selectedTicket ? <p className="kit-callout rounded-md px-2 py-2 text-xs">Cible : {ticketLabel(selectedTicket)}</p> : null}
           <label className="field-label">Type de relation<Combobox value={linkType} onChange={setLinkType} options={LINK_TYPES} /></label>
           <label className="field-label">Motif facultatif<input value={linkReason} onChange={(event) => setLinkReason(event.target.value)} className="field-control font-normal" /></label>
           <button disabled={!selectedTicket || busy === "link"} className="button-secondary w-full">{busy === "link" ? "Création…" : "Créer le lien"}</button>
         </form> : null}
           <div className="mt-4 space-y-2">{linksLoading ? <p className="text-xs text-slate-500">Chargement des relations…</p> : null}{links.map((link) => { const other = link.fromTicket.id === props.ticketId ? link.toTicket : link.fromTicket; return <div key={link.id} className="rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 text-xs"><p className="font-semibold text-slate-800">{LINK_TYPES.find((item) => item.value === link.type)?.label ?? link.type} · {other.reference}</p><p className="mt-1 text-slate-500">{other.title} · {formatDate(link.createdAt)}</p>{link.reason ? <p className="mt-1 text-slate-500">Motif : {link.reason}</p> : null}</div>; })}{!links.length ? <p className="text-xs text-slate-500">Aucun lien visible.</p> : null}</div>
         </section>
-      </TicketSidePanel>
+      </TicketSidePanel> : null}
 
-      <TicketSidePanel title="Fichiers" subtitle="Pièces jointes" onOpen={() => void loadAttachments()}>
+      {showAttachments ? <TicketSidePanel title="Pièces jointes" subtitle="Fichiers du ticket" onOpen={() => void loadAttachments()}>
         <section className="panel p-5">
         <p className="eyebrow">Fichiers</p>
         <h2 className="mt-1 text-base font-semibold text-slate-900">Pièces jointes</h2>
-        {props.canUpload ? <label className="mt-4 flex cursor-pointer items-center justify-center rounded-lg border border-dashed border-[#b9b9eb] bg-[#f7f7ff] px-3 py-4 text-xs font-semibold operational-link hover:bg-[#eeeeff]">{busy === "attachment" ? "Envoi…" : "Ajouter un fichier · 10 Mo maximum"}<input type="file" onChange={(event) => void uploadAttachment(event)} disabled={busy === "attachment"} className="sr-only" /></label> : null}
+        {props.canUpload ? <label className="mt-4 flex cursor-pointer items-center justify-center rounded-lg border border-dashed kit-dropzone px-3 py-4 text-xs font-semibold">{busy === "attachment" ? "Envoi…" : "Ajouter un fichier · 10 Mo maximum"}<input type="file" onChange={(event) => void uploadAttachment(event)} disabled={busy === "attachment"} className="sr-only" /></label> : null}
           <div className="mt-4 space-y-2">{attachmentsLoading ? <p className="text-xs text-slate-500">Chargement des pièces jointes…</p> : null}{attachments.map((attachment) => <a key={attachment.id} href={`/api/tickets/${props.ticketId}/attachments/${attachment.id}`} className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 text-xs hover:bg-slate-100"><span className="min-w-0 truncate font-semibold text-slate-800">{attachment.fileName}<span className="ml-2 font-normal text-slate-400">{formatBytes(attachment.sizeBytes)}</span></span><span className="shrink-0 text-slate-500">{attachment.uploadedBy.name}</span></a>)}{!attachments.length ? <p className="text-xs text-slate-500">Aucune pièce jointe visible.</p> : null}</div>
         </section>
-      </TicketSidePanel>
+      </TicketSidePanel> : null}
 
       <ConfirmDialog open={Boolean(confirmAction)} title={confirmAction?.title ?? "Confirmer"} description={confirmAction?.description ?? ""} confirmLabel="Confirmer" busy={Boolean(busy)} onCancel={() => setConfirmAction(null)} onConfirm={() => { const action = confirmAction; setConfirmAction(null); action?.run(); }} />
     </div>

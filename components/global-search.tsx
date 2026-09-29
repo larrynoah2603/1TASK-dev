@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Icon } from "@/components/ui/icons";
 
 type SearchResult = { id: string; reference: string; title: string; status: string; queue: string; updatedAt: string };
 
@@ -72,18 +73,24 @@ export function GlobalSearch() {
     if (!query.trim()) inputRef.current?.blur();
   }
 
+  function openSearch() {
+    setExpanded(true);
+    setOpen(true);
+    window.setTimeout(() => inputRef.current?.focus(), 0);
+  }
+
   return (
-    <div ref={ref} className={`global-search-wrap global-search-industrial ${expanded ? "global-search-expanded" : ""}`}>
-      <form onSubmit={submit} className="global-search-form">
-        <span aria-hidden="true" className="global-search-icon"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="5.8" /><path d="m15.2 15.2 4.2 4.2" /></svg></span>
-        <input ref={inputRef} value={query} onFocus={() => setExpanded(true)} onChange={(event) => { const next = event.target.value; setQuery(next); setExpanded(true); setOpen(true); if (next.trim().length < 2) { setResults([]); setLoading(false); } }} placeholder="Rechercher…" aria-label="Recherche globale" />
-        {expanded ? <button type="button" className="global-search-collapse" onClick={collapse} aria-label="Réduire la recherche">×</button> : <kbd className="global-search-shortcut hidden sm:inline">⌘ K</kbd>}
+    <div ref={ref} className="kit-search">
+      <form onSubmit={submit} className={`kit-search-form${expanded ? " kit-search-open" : ""}`} role="search">
+        <button type="button" className="kit-search-trigger" onClick={openSearch} aria-label="Ouvrir la recherche"><Icon name="search" /></button>
+        <input ref={inputRef} value={query} onFocus={() => setExpanded(true)} onChange={(event) => { const next = event.target.value; setQuery(next); setExpanded(true); setOpen(true); if (next.trim().length < 2) { setResults([]); setLoading(false); } }} placeholder="Rechercher un ticket…" aria-label="Recherche globale" />
+        {expanded ? <button type="button" className="kit-search-clear" onClick={collapse} aria-label="Réduire la recherche"><Icon name="x" /></button> : <kbd className="kit-kbd hidden sm:inline">⌘ K</kbd>}
       </form>
       {open && (query.trim().length >= 2 || loading) ? (
-        <div className="popover-panel left-0 right-0 top-[calc(100%+0.5rem)] max-h-96 overflow-y-auto p-2" role="listbox" aria-label="Résultats de recherche">
-          {loading ? <p className="global-search-message px-3 py-4 text-xs">Recherche en cours…</p> : null}
-          {!loading && !results.length ? <p className="global-search-message px-3 py-4 text-xs">Aucun ticket visible ne correspond à cette recherche.</p> : null}
-          {results.map((result) => <Link key={result.id} href={`/tickets/${result.id}`} onClick={() => setOpen(false)} className="search-result search-result-industrial" role="option"><span className="search-result-reference font-mono text-[11px] font-bold">{result.reference}</span><span className="min-w-0 flex-1"><span className="search-result-title block truncate text-xs font-semibold">{result.title}</span><span className="search-result-meta mt-0.5 block truncate text-[11px]">{result.queue} · {result.status}</span></span><span className="search-result-action text-[10px]">Ouvrir</span></Link>)}
+        <div className="kit-popover kit-popover-full kit-popover-pad kit-popover-scroll" role="listbox" aria-label="Résultats de recherche">
+          {loading ? <p className="kit-search-message">Recherche en cours…</p> : null}
+          {!loading && !results.length ? <p className="kit-search-message">Aucun ticket visible ne correspond à cette recherche.</p> : null}
+          {results.map((result) => <Link key={result.id} href={`/tickets/${result.id}`} onClick={() => setOpen(false)} className="kit-search-result" role="option"><span className="kit-search-ref">{result.reference}</span><span className="min-w-0 flex-1"><span className="kit-search-title">{result.title}</span><span className="kit-search-meta">{result.queue} · {result.status}</span></span><span className="kit-search-open-hint">Ouvrir</span></Link>)}
         </div>
       ) : null}
     </div>

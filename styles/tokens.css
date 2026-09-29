@@ -1,0 +1,124 @@
+/* ==========================================================================
+   1TASK — Design tokens
+   Source unique des couleurs, espacements, rayons, ombres et typographies.
+   Règle : aucun composant ne doit utiliser de couleur en dur. On référence
+   uniquement les variables --kit-* ci-dessous.
+   Thème : html[data-theme="light" | "dark"] (posé par le script de app/layout.tsx).
+   ========================================================================== */
+
+:root {
+  /* ---- Espacement (échelle imposée : 4 · 8 · 12 · 16 · 24 · 32 · 48) ---- */
+  --kit-space-1: 4px;
+  --kit-space-2: 8px;
+  --kit-space-3: 12px;
+  --kit-space-4: 16px;
+  --kit-space-5: 24px;
+  --kit-space-6: 32px;
+  --kit-space-7: 48px;
+
+  /* ---- Rayons : les cartes ne descendent jamais sous 16px ---- */
+  --kit-radius-sm: 8px;
+  --kit-radius-md: 12px;
+  --kit-radius-lg: 16px;
+  --kit-radius-xl: 20px;
+  --kit-radius-pill: 999px;
+
+  /* ---- Typographie ---- */
+  --kit-font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --kit-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --kit-text-xs: 0.75rem;
+  --kit-text-sm: 0.8125rem;
+  --kit-text-md: 0.875rem;
+  --kit-text-lg: 1rem;
+  --kit-text-xl: 1.25rem;
+  --kit-text-2xl: 1.5rem;
+
+  /* ---- Gabarits ---- */
+  --kit-sidebar-w: 240px;
+  --kit-sidebar-w-collapsed: 68px;
+  --kit-topbar-h: 56px;
+  --kit-content-max: 1440px;
+
+  /* ---- Mouvement ---- */
+  --kit-ease: cubic-bezier(0.2, 0, 0, 1);
+  --kit-fast: 120ms;
+  --kit-base: 180ms;
+
+  /* =====================  MODE CLAIR (par défaut)  ===================== */
+  color-scheme: light;
+
+  --kit-bg: #F8FAFC;
+  --kit-surface: #FFFFFF;
+  --kit-card: #FFFFFF;
+  --kit-primary: #4F46E5;
+  --kit-secondary: #64748B;
+  --kit-success: #16A34A;
+  --kit-warning: #F59E0B;
+  --kit-danger: #DC2626;
+  --kit-text: #0F172A;
+  --kit-text-2: #475569;
+  --kit-on-primary: #FFFFFF;
+
+  /* Neutres dérivés (même famille slate que la palette) */
+  --kit-border: #E2E8F0;
+  --kit-border-strong: #CBD5E1;
+  --kit-surface-muted: #F1F5F9;
+
+  /* Textes sémantiques lisibles sur fond teinté (contraste ≥ 4.5:1) */
+  --kit-primary-text: var(--kit-primary);
+  --kit-success-text: color-mix(in srgb, var(--kit-success) 75%, black);
+  --kit-warning-text: color-mix(in srgb, var(--kit-warning) 55%, black);
+  --kit-danger-text: color-mix(in srgb, var(--kit-danger) 85%, black);
+
+  /* Ombres douces */
+  --kit-shadow-xs: 0 1px 2px rgb(15 23 42 / 0.04);
+  --kit-shadow-sm: 0 1px 2px rgb(15 23 42 / 0.04), 0 2px 8px rgb(15 23 42 / 0.04);
+  --kit-shadow-md: 0 8px 24px rgb(15 23 42 / 0.08), 0 2px 6px rgb(15 23 42 / 0.04);
+  --kit-shadow-lg: 0 24px 56px rgb(15 23 42 / 0.16), 0 4px 12px rgb(15 23 42 / 0.06);
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+
+  --kit-bg: #020617;
+  --kit-surface: #0F172A;
+  --kit-card: #111827;
+  --kit-primary: #818CF8;
+  --kit-secondary: #94A3B8;
+  --kit-success: #22C55E;
+  --kit-warning: #FBBF24;
+  --kit-danger: #F87171;
+  --kit-text: #F8FAFC;
+  --kit-text-2: #CBD5E1;
+  --kit-on-primary: #0F172A;
+
+  --kit-border: #1E293B;
+  --kit-border-strong: #334155;
+  --kit-surface-muted: #1E293B;
+
+  --kit-success-text: var(--kit-success);
+  --kit-warning-text: var(--kit-warning);
+  --kit-danger-text: var(--kit-danger);
+
+  --kit-shadow-xs: 0 1px 2px rgb(0 0 0 / 0.3);
+  --kit-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3), 0 2px 8px rgb(0 0 0 / 0.2);
+  --kit-shadow-md: 0 8px 24px rgb(0 0 0 / 0.45), 0 2px 6px rgb(0 0 0 / 0.3);
+  --kit-shadow-lg: 0 24px 56px rgb(0 0 0 / 0.6), 0 4px 12px rgb(0 0 0 / 0.4);
+}
+
+/* Teintes calculées à partir des tokens : elles suivent automatiquement le thème. */
+:root,
+html[data-theme="dark"] {
+  --kit-hover: color-mix(in srgb, var(--kit-text) 5%, transparent);
+  --kit-active: color-mix(in srgb, var(--kit-text) 8%, transparent);
+  --kit-primary-hover: color-mix(in srgb, var(--kit-primary) 88%, var(--kit-text));
+  --kit-primary-soft: color-mix(in srgb, var(--kit-primary) 12%, var(--kit-card));
+  --kit-primary-line: color-mix(in srgb, var(--kit-primary) 32%, var(--kit-card));
+  --kit-success-soft: color-mix(in srgb, var(--kit-success) 13%, var(--kit-card));
+  --kit-warning-soft: color-mix(in srgb, var(--kit-warning) 15%, var(--kit-card));
+  --kit-danger-soft: color-mix(in srgb, var(--kit-danger) 12%, var(--kit-card));
+  --kit-neutral-soft: color-mix(in srgb, var(--kit-secondary) 13%, var(--kit-card));
+  --kit-ring: color-mix(in srgb, var(--kit-primary) 45%, transparent);
+  --kit-overlay: color-mix(in srgb, var(--kit-bg) 60%, transparent);
+  --kit-glass: color-mix(in srgb, var(--kit-surface) 82%, transparent);
+}

@@ -8,7 +8,7 @@ const statusTone: Record<string, string> = { Nouveau: "info", Ouvert: "warning",
 export function StatusBadge({ value, kind = "status", children, className = "" }: { value?: StatusValue; kind?: StatusKind; children?: ReactNode; className?: string }) {
   const label = value ?? children;
   const tone = statusTone[String(value ?? children)] ?? "neutral";
-  return <span className={`ui-status-badge ui-status-badge-${tone} ui-status-badge-${kind} ${className}`} role="status"><span className="ui-status-badge-dot" aria-hidden="true" />{label}</span>;
+  return <span className={`kit-badge kit-badge-${tone} ${className}`.trim()} data-kind={kind} role="status"><span className="kit-badge-dot" aria-hidden="true" />{label}</span>;
 }
 
 export type { StatusKind, StatusValue };
