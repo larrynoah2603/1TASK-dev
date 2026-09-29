@@ -41,7 +41,7 @@ export function ShellNavLink({
   const active = isCurrentLink(href, pathname, searchParams);
 
   return (
-    <Link href={href as Route} aria-current={active ? "page" : undefined} title={title} className={`kit-nav-item ${className}`.trim()}>
+    <Link href={href as Route} aria-current={active ? "page" : undefined} title={title} className={`kit-nav-item nav-link-industrial ${className}`.trim()}>
       <span className="kit-nav-icon">{icon}</span>
       <span className="kit-nav-text">{children}</span>
     </Link>

@@ -80,7 +80,7 @@ export function GlobalSearch() {
   }
 
   return (
-    <div ref={ref} className="kit-search">
+    <div ref={ref} className="kit-search global-search-industrial">
       <form onSubmit={submit} className={`kit-search-form${expanded ? " kit-search-open" : ""}`} role="search">
         <button type="button" className="kit-search-trigger" onClick={openSearch} aria-label="Ouvrir la recherche"><Icon name="search" /></button>
         <input ref={inputRef} value={query} onFocus={() => setExpanded(true)} onChange={(event) => { const next = event.target.value; setQuery(next); setExpanded(true); setOpen(true); if (next.trim().length < 2) { setResults([]); setLoading(false); } }} placeholder="Rechercher un ticket…" aria-label="Recherche globale" />
@@ -90,7 +90,7 @@ export function GlobalSearch() {
         <div className="kit-popover kit-popover-full kit-popover-pad kit-popover-scroll" role="listbox" aria-label="Résultats de recherche">
           {loading ? <p className="kit-search-message">Recherche en cours…</p> : null}
           {!loading && !results.length ? <p className="kit-search-message">Aucun ticket visible ne correspond à cette recherche.</p> : null}
-          {results.map((result) => <Link key={result.id} href={`/tickets/${result.id}`} onClick={() => setOpen(false)} className="kit-search-result" role="option"><span className="kit-search-ref">{result.reference}</span><span className="min-w-0 flex-1"><span className="kit-search-title">{result.title}</span><span className="kit-search-meta">{result.queue} · {result.status}</span></span><span className="kit-search-open-hint">Ouvrir</span></Link>)}
+          {results.map((result) => <Link key={result.id} href={`/tickets/${result.id}`} onClick={() => setOpen(false)} className="kit-search-result" role="option"><span className="kit-search-ref search-result-reference">{result.reference}</span><span className="min-w-0 flex-1"><span className="kit-search-title">{result.title}</span><span className="kit-search-meta">{result.queue} · {result.status}</span></span><span className="kit-search-open-hint">Ouvrir</span></Link>)}
         </div>
       ) : null}
     </div>

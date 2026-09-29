@@ -17,3 +17,10 @@ export function assertFunctionalAssetAdministrator(actor: UserContext): void {
     );
   }
 }
+
+/** Requests are reviewed globally: scoped roles must never expose another user's request. */
+export function assertAssetRequestReviewer(actor: UserContext): void {
+  if (!isFunctionalAssetAdministrator(actor)) {
+    throw new AuthorizationError("La validation des demandes d’actifs est réservée à l’administrateur fonctionnel global.");
+  }
+}

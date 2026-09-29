@@ -193,6 +193,21 @@ export const productionSearchQuerySchema = cursorPageQuerySchema.extend({
   q: z.string().trim().max(120).optional(),
 });
 
+export const assetRequestSchema = z.object({
+  assetType: z.enum(["COMPUTER", "PHONE", "ACCESSORY", "OTHER"]),
+  reason: z.string().trim().min(10, "Le motif doit contenir au moins 10 caractères.").max(2000),
+  priority: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]),
+  comment: z.string().trim().max(2000).optional().nullable(),
+});
+
+export const assetRequestReviewSchema = z.discriminatedUnion("decision", [
+  z.object({ decision: z.literal("APPROVE"), assetId: z.string().cuid() }),
+  z.object({
+    decision: z.literal("REJECT"),
+    rejectedReason: z.string().trim().min(10, "Le motif de refus doit contenir au moins 10 caractères.").max(2000),
+  }),
+]);
+
 export const missionListQuerySchema = productionSearchQuerySchema.extend({
   status: z.enum(MissionStatus).optional(),
   departmentId: z.string().cuid().optional(),
@@ -302,6 +317,8 @@ export type DossierInput = z.infer<typeof dossierSchema>;
 export type MissionInput = z.infer<typeof missionSchema>;
 export type AssetInput = z.infer<typeof assetSchema>;
 export type AssetMovementInput = z.infer<typeof assetMovementSchema>;
+export type AssetRequestInput = z.infer<typeof assetRequestSchema>;
+export type AssetRequestReviewInput = z.infer<typeof assetRequestReviewSchema>;
 export type WorklogInput = z.infer<typeof worklogSchema>;
 export type KnowledgeArticleInput = z.infer<typeof knowledgeArticleSchema>;
 export type KnowledgeArticleStatusInput = z.infer<typeof knowledgeArticleStatusSchema>;

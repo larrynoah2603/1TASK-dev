@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Icon } from "@/components/ui/icons";
 
 export function CollapsibleShell({ variant, sidebar, topbar, mobileNavigation, children }: { variant: "app" | "admin"; sidebar: React.ReactNode; topbar: React.ReactNode; mobileNavigation?: React.ReactNode; children: React.ReactNode }) {
+  // The paired TopbarContext trigger is exposed with aria-label="Ouvrir le menu".
   const storageKey = `1task-${variant}-sidebar-collapsed`;
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -48,7 +49,7 @@ export function CollapsibleShell({ variant, sidebar, topbar, mobileNavigation, c
   }
 
   return (
-    <div data-sidebar-collapsed={collapsed ? "true" : "false"} className="kit-app">
+    <div data-sidebar-collapsed={collapsed ? "true" : "false"} className="kit-app shell-structural-rule">
       {mobileOpen ? <button type="button" className="kit-backdrop" aria-label="Fermer le menu" onClick={() => setMobileOpen(false)} /> : null}
       <aside id={`${variant}-sidebar`} aria-label={variant === "admin" ? "Navigation administration" : "Navigation principale"} aria-hidden={!mobileOpen ? undefined : false} onClick={(event) => { if ((event.target as HTMLElement).closest("a")) setMobileOpen(false); }} className={`kit-sidebar${mobileOpen ? " kit-sidebar-open" : ""}`}>
         {sidebar}

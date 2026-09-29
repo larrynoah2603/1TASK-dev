@@ -136,7 +136,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
   });
 
   return (
-    <div className="kit-ticket">
+    <div className="kit-ticket ticket-detail-industrial">
       <Link href={operational ? "/inbox" : "/tickets"} className="kit-back">
         <Icon name="arrowLeft" />
         {operational ? "Retour à la boîte agent" : "Retour à mes tickets"}

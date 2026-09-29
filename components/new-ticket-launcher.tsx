@@ -37,7 +37,7 @@ export function NewTicketLauncher() {
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className="kit-btn kit-btn-primary kit-new-ticket" aria-haspopup="dialog" aria-expanded={open} aria-label="Nouveau ticket">
+      <button type="button" onClick={() => setOpen(true)} className="kit-btn kit-btn-primary kit-new-ticket new-ticket-launcher" aria-haspopup="dialog" aria-expanded={open} aria-label="Nouveau ticket">
         <Icon name="plus" />
         <span className="kit-hide-mobile">Nouveau ticket</span>
       </button>

@@ -6,7 +6,7 @@ export function AppSidebar({ brand, navigation, user }: { brand: ReactNode; navi
     <>
       <div className="kit-sidebar-brand">{brand}</div>
       <div className="kit-sidebar-nav">{navigation}</div>
-      {user ? <div className="kit-sidebar-foot">{user}</div> : null}
+      {user ? <div className="kit-sidebar-foot sidebar-user-block-industrial">{user}</div> : null}
     </>
   );
 }
