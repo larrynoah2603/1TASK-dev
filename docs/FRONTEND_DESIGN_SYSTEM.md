@@ -46,9 +46,8 @@ en icône, le thème passe dans le menu utilisateur, barre de navigation basse �
 ## 4. Centre de notifications
 Logique inchangée (chargement, « marquer lu », « tout marquer lu »). Nouveautés : regroupement *Aujourd'hui / Plus tôt*,
 icône et couleur par type (affectation, alerte SLA, dépassement SLA, neutre), point « non lu », compteur, état vide et erreur.
-> L'API `/api/notifications` ne renvoie pas le champ `type` (interdit d'y toucher). Le composant lit `type` s'il apparaît un
-> jour, sinon **déduit** l'icône du titre/texte (mots-clés français). Si vous autorisez un jour l'ajout de `type` à la réponse
-> GET, l'icône deviendra exacte sans changer le composant.
+L’API `/api/notifications` expose maintenant le champ enum `type` déjà persisté. Les notifications, timelines et demandes
+d’actifs utilisent le mapping Lucide centralisé de `components/activity-icon.tsx`, sans déduction fragile depuis le texte.
 
 ## 5. Détail du ticket
 Colonne gauche : description, conversation, chronologie moderne (icônes/tons par événement), pièces jointes.

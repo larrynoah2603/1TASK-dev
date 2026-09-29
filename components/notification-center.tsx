@@ -5,7 +5,8 @@ import type { Route } from "next";
 import { useCallback, useRef, useState } from "react";
 import { useNotificationState } from "@/components/notification-state";
 import { useDismissable } from "@/components/ui/dropdown";
-import { Icon, type IconName } from "@/components/ui/icons";
+import { Icon } from "@/components/ui/icons";
+import { ActivityIcon, formatRelativeActivityDate, type ActivityType } from "@/components/activity-icon";
 import { fetchWithTimeout } from "@/lib/client-http";
 
 type NotificationItem = {
@@ -16,40 +17,10 @@ type NotificationItem = {
   ticketId: string | null;
   ticketReference: string | null;
   createdAt: string;
-  /** Optionnel : si l'API l'expose un jour, il pilote l'icône ; sinon on la déduit du texte. */
-  type?: string;
+  type: ActivityType;
 };
 
 type NotificationResponse = { notifications: NotificationItem[] };
-
-function relativeDate(value: string) {
-  const date = new Date(value);
-  const diff = Date.now() - date.getTime();
-  const minutes = Math.floor(diff / 60_000);
-  if (minutes < 1) return "à l’instant";
-  if (minutes < 60) return `il y a ${minutes} min`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `il y a ${hours} h`;
-  return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
-}
-
-type NotificationKind = "assigned" | "warning" | "breach" | "neutral";
-
-const KIND_ICON: Record<NotificationKind, IconName> = { assigned: "userPlus", warning: "alertTriangle", breach: "alertCircle", neutral: "bell" };
-
-/** Icône et couleur : `type` s'il est fourni, sinon déduction prudente à partir du titre et du corps. */
-function notificationKind(item: NotificationItem): NotificationKind {
-  const type = (item.type ?? "").toUpperCase();
-  if (type === "SLA_BREACH") return "breach";
-  if (type === "SLA_ALERT") return "warning";
-  if (type === "TICKET_ASSIGNED") return "assigned";
-  if (type) return "neutral";
-  const text = `${item.title} ${item.body}`.toLowerCase();
-  if (/(dépass|depass|breach|violation)/.test(text)) return "breach";
-  if (/(sla|alerte|échéance|echeance)/.test(text)) return "warning";
-  if (/(affect|assign|attribu)/.test(text)) return "assigned";
-  return "neutral";
-}
 
 function isToday(value: string) {
   const date = new Date(value);
@@ -131,15 +102,14 @@ export function NotificationCenter() {
 
   function renderRow(item: NotificationItem) {
     const read = item.status === "READ";
-    const kind = notificationKind(item);
-    const className = `kit-notif-row kit-notif-${kind} ${read ? "kit-notif-read" : "kit-notif-unread"}`;
+    const className = `kit-notif-row ${read ? "kit-notif-read" : "kit-notif-unread"}`;
     const content = (
       <>
-        <span className="kit-notif-icon" aria-hidden="true"><Icon name={KIND_ICON[kind]} /></span>
+        <span className="kit-notif-icon"><ActivityIcon type={item.type} label={item.title} /></span>
         <span className="kit-notif-body">
           <span className="kit-notif-item-title">{item.title}</span>
           <span className="kit-notif-item-copy">{item.body}</span>
-          <span className="kit-notif-item-meta notification-item-meta">{item.ticketReference ? `${item.ticketReference} · ` : ""}{relativeDate(item.createdAt)}</span>
+          <span className="kit-notif-item-meta notification-item-meta">{item.ticketReference ? `${item.ticketReference} • ` : ""}{formatRelativeActivityDate(item.createdAt)}</span>
         </span>
         {read ? null : <span className="kit-notif-dot" role="img" aria-label="Non lue" />}
       </>

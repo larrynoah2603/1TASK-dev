@@ -49,6 +49,9 @@ export async function GET(
             status:
               item.status,
 
+            type:
+              item.type,
+
             ticketId:
               item.ticketId,
 

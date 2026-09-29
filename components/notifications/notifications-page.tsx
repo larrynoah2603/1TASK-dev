@@ -6,8 +6,9 @@ import { fetchWithTimeout } from "@/lib/client-http";
 import { NotificationFilter, type NotificationFilterValue } from "@/components/notifications/notification-filter";
 import { NotificationGroup } from "@/components/notifications/notification-group";
 import { NotificationHeader } from "@/components/notifications/notification-header";
+import type { ActivityType } from "@/components/activity-icon";
 
-export type NotificationItemData = { id: string; title: string; body: string; status: string; ticketId: string | null; ticketReference: string | null; createdAt: string };
+export type NotificationItemData = { id: string; type: ActivityType; title: string; body: string; status: string; ticketId: string | null; ticketReference: string | null; createdAt: string };
 type NotificationResponse = { notifications: NotificationItemData[]; pagination?: { nextCursor?: string | null } };
 
 function dayKey(value: string) { const date = new Date(value); const today = new Date(); const yesterday = new Date(); yesterday.setDate(today.getDate() - 1); if (date.toDateString() === today.toDateString()) return "Aujourd’hui"; if (date.toDateString() === yesterday.toDateString()) return "Hier"; return new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(date); }

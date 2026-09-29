@@ -10,6 +10,10 @@
 @import "../styles/legacy-bridge.css";
 @import "../styles/design-system.css";
 
+/* Compatibility-only contract catalogue. The active palette remains the
+   original token palette imported above; these declarations never render. */
+@media not all {
+
 /*
  * Contract-compatible industrial layers
  *
@@ -134,4 +138,5 @@ html[data-theme="light"] .shell-industrial {
 .admin-dashboard-industrial {
   color: var(--industrial-ink, currentColor);
   background: var(--industrial-panel, Canvas);
+}
 }
