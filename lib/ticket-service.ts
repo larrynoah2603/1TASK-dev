@@ -53,7 +53,7 @@ import {
   type QueueTransferInput,
   type TicketLinkInput,
 } from "@/lib/validation";
-import { routeTicketFromCatalog } from "@/lib/routing";
+import { matchCatalogService, routeTicketFromCatalog, type CatalogCandidate } from "@/lib/routing";
 import { measureServerOperation } from "@/lib/performance";
 import { DomainError } from "@/lib/domain-error";
 import { logServerError } from "@/lib/http";
@@ -144,27 +144,55 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
   if (!parsed.serviceCatalogItemId && targetDepartment && targetDepartment.id !== actor.departmentId && !hasPermission(actor, "ticket:create:cross-department")) {
     throw new AuthorizationError("Vous ne pouvez pas envoyer une demande libre vers ce département.");
   }
-  const service = await prisma.serviceCatalogItem.findFirst({
-    where: parsed.serviceCatalogItemId
-      ? { id: parsed.serviceCatalogItemId, isActive: true }
-      : { code: `TRIAGE-${targetDepartment?.code}`, isActive: true, queue: { departmentId: targetDepartment?.id } },
-    include: {
-      queue: {
-        include: {
-          department: true,
-          escalationRules: {
-            where: { isActive: true },
-            select: { id: true, thresholdPercent: true, targetRole: true },
-          },
-        },
-      },
-      sla: { include: { calendar: { include: { holidays: true } } } },
-      escalationRules: {
-        where: { isActive: true },
-        select: { id: true, thresholdPercent: true, targetRole: true },
+
+  const serviceInclude = {
+    queue: {
+      include: {
+        department: true,
+        escalationRules: { where: { isActive: true }, select: { id: true, thresholdPercent: true, targetRole: true } },
       },
     },
-  });
+    sla: { include: { calendar: { include: { holidays: true } } } },
+    escalationRules: { where: { isActive: true }, select: { id: true, thresholdPercent: true, targetRole: true } },
+  } satisfies Prisma.ServiceCatalogItemInclude;
+
+  let matchedBy: "catalog-id" | "keyword" | "name" | "category" | "text" = "catalog-id";
+  let routingMode: "CATALOG" | "AUTO_CATALOG" | "TRIAGE" = "CATALOG";
+  let service: Prisma.ServiceCatalogItemGetPayload<{ include: typeof serviceInclude }> | null | undefined;
+  if (parsed.serviceCatalogItemId) {
+    service = await prisma.serviceCatalogItem.findFirst({
+      where: { id: parsed.serviceCatalogItemId, isActive: true },
+      include: serviceInclude,
+    });
+  } else {
+    const candidates = await prisma.serviceCatalogItem.findMany({
+      where: {
+        isActive: true,
+        queue: { isActive: true, departmentId: targetDepartment?.id, department: { isActive: true } },
+      },
+      include: serviceInclude,
+    });
+    const catalogCandidates: CatalogCandidate[] = candidates.map((candidate) => ({
+      id: candidate.id, code: candidate.code, name: candidate.name, description: candidate.description,
+      ticketType: candidate.ticketType, category: candidate.category, queueId: candidate.queueId,
+      priorityDefault: candidate.priorityDefault, keywords: candidate.keywords,
+    }));
+    const automaticMatch = matchCatalogService({
+      requestedService: parsed.requestedService,
+      title: parsed.title,
+      description: parsed.description,
+      candidates: catalogCandidates,
+    });
+    if (automaticMatch) {
+      service = candidates.find((candidate) => candidate.id === automaticMatch.serviceCatalogItemId);
+      matchedBy = automaticMatch.matchedBy;
+      routingMode = "AUTO_CATALOG";
+    } else {
+      service = candidates.find((candidate) => candidate.code === `TRIAGE-${targetDepartment?.code}`);
+      matchedBy = "catalog-id";
+      routingMode = "TRIAGE";
+    }
+  }
   if (!service || !service.queue.isActive || !service.queue.department.isActive) {
     throw new DomainError("Le service sélectionné n’est pas disponible.", 422);
   }
@@ -199,7 +227,7 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
       id: service.id,
       code: service.code,
       name: service.name,
-      ticketType: parsed.type ?? service.ticketType,
+      ticketType: service.ticketType,
       category: service.category,
       queueId: service.queueId,
       priorityDefault: service.priorityDefault,
@@ -208,7 +236,7 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
     ],
   });
   const now = new Date();
-  const initialStatus = parsed.serviceCatalogItemId ? TicketStatus.NEW : TicketStatus.TO_QUALIFY;
+  const initialStatus = routingMode === "TRIAGE" ? TicketStatus.TO_QUALIFY : TicketStatus.NEW;
   const escalationRules = [
     ...service.queue.escalationRules,
     ...service.escalationRules,
@@ -252,9 +280,9 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
             eventType: TicketEventType.CREATED,
             toStatus: initialStatus,
             metadata: {
-              routingMode: parsed.serviceCatalogItemId ? "CATALOG" : "TRIAGE",
+              routingMode,
               requestedService: parsed.requestedService ?? null,
-              matchedBy: routing.matchedBy,
+              matchedBy,
               catalogItemId: service.id,
               catalogCode: service.code,
               routedDepartmentId: service.queue.departmentId,
@@ -292,7 +320,7 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
 
     let autoAssigned = false;
     let autoAssignedUserId: string | null = null;
-    if (parsed.serviceCatalogItemId && service.queue.autoAssignment) {
+    if (routingMode !== "TRIAGE" && service.queue.autoAssignment) {
       const candidate = await chooseAutoAssignee(tx, routing.queueId, service.keywords);
       if (candidate) {
         ticket = await tx.ticket.update({

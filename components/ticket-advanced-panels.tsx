@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Combobox } from "@/components/combobox";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -33,6 +33,8 @@ const LINK_TYPES = [
   { value: "CHILD", label: "Enfant de" },
 ];
 
+type QualificationService = { id: string; code: string; name: string; category: string; queue: { name: string; department: { id: string } } };
+
 type TicketRef = { id: string; reference: string; title: string; status: string; priority: string };
 type TicketLink = {
   id: string;
@@ -54,6 +56,7 @@ type Attachment = {
 
 type Props = {
   ticketId: string;
+  targetDepartmentId: string;
   impact: string;
   urgency: string;
   priority: string;
@@ -92,6 +95,8 @@ export function TicketAdvancedPanels(props: Props) {
   const [priority, setPriority] = useState(props.priority);
   const [legalDueAt, setLegalDueAt] = useState(props.legalDueAt ? props.legalDueAt.slice(0, 10) : "");
   const [qualificationReason, setQualificationReason] = useState("");
+  const [qualificationServices, setQualificationServices] = useState<QualificationService[]>([]);
+  const [qualificationServiceId, setQualificationServiceId] = useState("");
   const [addedMinutes, setAddedMinutes] = useState("60");
   const [slaReason, setSlaReason] = useState("");
   const [linkQuery, setLinkQuery] = useState("");
@@ -109,6 +114,14 @@ export function TicketAdvancedPanels(props: Props) {
 
   const [linksLoading, setLinksLoading] = useState(false);
   const [attachmentsLoading, setAttachmentsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!props.canQualify) return;
+    fetch("/api/catalog", { cache: "no-store" })
+      .then(async (response) => response.ok ? response.json() as Promise<QualificationService[]> : [])
+      .then((services) => setQualificationServices(services.filter((service) => service.queue.department.id === props.targetDepartmentId && !service.code.startsWith("TRIAGE-"))))
+      .catch(() => undefined);
+  }, [props.canQualify, props.targetDepartmentId]);
 
   const loadLinks = useCallback(async (force = false) => {
     if ((linksLoaded && !force) || linksLoading) return;
@@ -193,7 +206,7 @@ export function TicketAdvancedPanels(props: Props) {
     event.preventDefault();
     setConfirmAction({
       title: "Confirmer la qualification",
-      description: "La priorité et les informations de qualification seront recalculées et historisées.",
+      description: "Le service, la file, le SLA et la priorité seront mis à jour atomiquement et historisés.",
       run: () => {
         void (async () => {
           setBusy("qualification");
@@ -202,7 +215,7 @@ export function TicketAdvancedPanels(props: Props) {
             const response = await fetch(`/api/tickets/${props.ticketId}/qualification`, {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ impact, urgency, legalDueAt: legalDueAt ? new Date(`${legalDueAt}T00:00:00.000Z`).toISOString() : null, priority: priority || undefined, reason: qualificationReason }),
+              body: JSON.stringify({ serviceCatalogItemId: qualificationServiceId || undefined, impact, urgency, legalDueAt: legalDueAt ? new Date(`${legalDueAt}T00:00:00.000Z`).toISOString() : null, priority: priority || undefined, reason: qualificationReason }),
             });
             const data = await response.json();
             if (!response.ok) {
@@ -284,6 +297,7 @@ export function TicketAdvancedPanels(props: Props) {
           <p className="eyebrow">Qualification</p>
           <h2 className="mt-1 text-base font-semibold text-slate-900">Impact, urgence et priorité</h2>
           <form onSubmit={submitQualification} className="mt-4 space-y-3">
+            <label className="field-label">Service catalogue de destination<Combobox value={qualificationServiceId} onChange={setQualificationServiceId} options={[{ value: "", label: "Conserver le service et la file actuels" }, ...qualificationServices.map((service) => ({ value: service.id, label: `${service.name} · ${service.category} · ${service.queue.name}` }))]} /></label>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="field-label">Impact<Combobox value={impact} onChange={setImpact} options={IMPACTS} /></label>
               <label className="field-label">Urgence<Combobox value={urgency} onChange={setUrgency} options={URGENCIES} /></label>

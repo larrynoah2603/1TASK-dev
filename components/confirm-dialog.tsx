@@ -10,6 +10,9 @@ export function ConfirmDialog({
   cancelLabel = "Annuler",
   danger = false,
   busy = false,
+  confirmDisabled = false,
+  busyLabel = "Traitement…",
+  children,
   onConfirm,
   onCancel,
 }: {
@@ -20,6 +23,9 @@ export function ConfirmDialog({
   cancelLabel?: string;
   danger?: boolean;
   busy?: boolean;
+  confirmDisabled?: boolean;
+  busyLabel?: string;
+  children?: React.ReactNode;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
@@ -40,9 +46,10 @@ export function ConfirmDialog({
         <p className="eyebrow">Confirmation requise</p>
         <h2 id="confirm-dialog-title" className="mt-2 text-lg font-bold text-slate-950">{title}</h2>
         <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
+        {children}
         <div className="mt-6 flex flex-col-reverse justify-end gap-3 sm:flex-row">
           <button type="button" disabled={busy} onClick={onCancel} className="button-secondary">{cancelLabel}</button>
-          <button type="button" disabled={busy} onClick={onConfirm} className={danger ? "button-danger" : "button-primary"}>{busy ? "Traitement…" : confirmLabel}</button>
+          <button type="button" disabled={busy || confirmDisabled} onClick={onConfirm} className={danger ? "button-danger" : "button-primary"}>{busy ? busyLabel : confirmLabel}</button>
         </div>
       </section>
     </div>

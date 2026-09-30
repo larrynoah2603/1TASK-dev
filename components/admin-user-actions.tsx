@@ -75,6 +75,8 @@ export function AdminUserActions({
   }[] | null>(null);
   const [historyBusy, setHistoryBusy] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteReason, setDeleteReason] = useState("");
   const [pendingForm, setPendingForm] = useState<FormData | null>(null);
   const [departmentId, setDepartmentId] = useState(user.department?.id ?? "");
   const [managerId, setManagerId] = useState(user.manager?.id ?? "");
@@ -106,6 +108,30 @@ export function AdminUserActions({
     event.preventDefault();
     setPendingForm(new FormData(event.currentTarget));
     setConfirmOpen(true);
+  }
+
+  async function deleteUser() {
+    if (busy || deleteReason.trim().length < 10) return;
+    setBusy(true);
+    setMessage("");
+    try {
+      const response = await fetch("/api/admin/users/" + user.id, { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ reason: deleteReason }) });
+      const data = await response.json();
+      if (!response.ok) {
+        setMessage(data.error ?? "Suppression refusée.");
+        toast(data.error ?? "Suppression refusée.", "error");
+        return;
+      }
+      setDeleteOpen(false);
+      setDeleteReason("");
+      toast("Utilisateur supprimé.");
+      router.refresh();
+    } catch {
+      setMessage("La suppression n’a pas pu être envoyée.");
+      toast("La suppression n’a pas pu être envoyée.", "error");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function saveProfile(form: FormData) {
@@ -175,13 +201,13 @@ export function AdminUserActions({
             </span>
           </div>
         </div>
-        <button
+        <div className="flex shrink-0 gap-2"><button
           type="button"
           onClick={() => setOpen((value) => !value)}
-          className="button-secondary shrink-0 min-h-9 px-3 py-2 text-xs"
+          className="button-secondary min-h-9 px-3 py-2 text-xs"
         >
           {open ? "Fermer la fiche" : "Compléter / modifier"}
-        </button>
+        </button><button type="button" disabled={busy} onClick={() => setDeleteOpen(true)} className="button-danger min-h-9 px-3 py-2 text-xs">Supprimer</button></div>
       </div>
 
       {open ? (
@@ -256,6 +282,7 @@ export function AdminUserActions({
           {message ? <p className="mt-3 text-xs font-semibold text-slate-600">{message}</p> : null}
         </div>
       ) : null}
+      <ConfirmDialog open={deleteOpen} title="Supprimer l’utilisateur ?" description={`Vous êtes sur le point de supprimer définitivement ${displayName} (${user.email}). La suppression sera refusée si un historique métier existe.`} confirmLabel="Supprimer définitivement" busyLabel="Suppression…" danger busy={busy} confirmDisabled={deleteReason.trim().length < 10} onCancel={() => { if (!busy) { setDeleteOpen(false); setDeleteReason(""); } }} onConfirm={() => void deleteUser()}><label className="field-label mt-4">Motif de suppression<textarea autoFocus required minLength={10} maxLength={2000} value={deleteReason} onChange={(event) => setDeleteReason(event.target.value)} className="field-control min-h-24" placeholder="Motif obligatoire, 10 caractères minimum…" /></label></ConfirmDialog>
       <ConfirmDialog open={confirmOpen} title="Confirmer la fiche utilisateur" description="Les rôles, le périmètre et le statut applicatif seront enregistrés, historisés et audités." confirmLabel="Enregistrer la fiche" busy={busy} onCancel={() => { setConfirmOpen(false); setPendingForm(null); }} onConfirm={() => { const form = pendingForm; setConfirmOpen(false); setPendingForm(null); if (form) void saveProfile(form); }} />
     </article>
   );
