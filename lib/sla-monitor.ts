@@ -1,6 +1,4 @@
 import {
-  NotificationChannel,
-  NotificationStatus,
   NotificationType,
   Prisma,
   RoleCode,
@@ -94,12 +92,6 @@ async function processSlaAlertBatch(alerts: SlaAlert[]) {
     }
     recipientsByKey.set(alert.eventKey, [...recipients]);
   }
-  const recipientIds = [...new Set([...recipientsByKey.values()].flat())];
-  const preferences = await prisma.notificationPreference.findMany({
-    where: { userId: { in: recipientIds }, eventType: { in: [NotificationType.SLA_ALERT, NotificationType.SLA_BREACH] }, channel: NotificationChannel.IN_APP },
-    select: { userId: true, eventType: true, enabled: true },
-  });
-  const disabled = new Set(preferences.filter((item) => !item.enabled).map((item) => `${item.userId}:${item.eventType}`));
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
       return await prisma.$transaction(async (tx) => {
@@ -112,10 +104,21 @@ async function processSlaAlertBatch(alerts: SlaAlert[]) {
         const acquired = pending.filter((alert) => insertedKeys.has(alert.eventKey));
         if (acquired.length) await tx.auditLog.createMany({ data: acquired.map((alert) => ({ action: alert.eventType, objectType: "Ticket", objectId: alert.ticketId, newValue: { metric: alert.metric, thresholdPercent: alert.thresholdPercent, progressPercent: alert.progressPercent }, reason: "Surveillance SLA" })) });
         const notifications = acquired.flatMap((alert) => {
-          const type = alert.thresholdPercent >= 100 ? NotificationType.SLA_BREACH : NotificationType.SLA_ALERT;
-          return (recipientsByKey.get(alert.eventKey) ?? []).filter((recipientId) => !disabled.has(`${recipientId}:${type}`)).map((recipientId) => ({ recipientId, ticketId: alert.ticketId, type, title: alert.thresholdPercent >= 100 ? `SLA dépassé — ${alert.metric === "FIRST_RESPONSE" ? "première réponse" : "résolution"}` : `Alerte SLA à ${alert.thresholdPercent} %`, body: `${alert.reference} a atteint ${Math.round(alert.progressPercent)} % de son délai de ${alert.metric === "FIRST_RESPONSE" ? "première réponse" : "résolution"}.`, channel: NotificationChannel.IN_APP, status: NotificationStatus.PENDING }));
+          const breached = alert.thresholdPercent >= 100;
+          return (recipientsByKey.get(alert.eventKey) ?? []).map((recipientId) => ({
+            recipientId,
+            ticketId: alert.ticketId,
+            type: breached ? NotificationType.SLA_BREACHED : NotificationType.SLA_WARNING,
+            severity: breached ? "CRITICAL" as const : "WARNING" as const,
+            title: breached ? `SLA dépassé — ${alert.metric === "FIRST_RESPONSE" ? "première réponse" : "résolution"}` : `Alerte SLA à ${alert.thresholdPercent} %`,
+            body: `${alert.reference} a atteint ${Math.round(alert.progressPercent)} % de son délai de ${alert.metric === "FIRST_RESPONSE" ? "première réponse" : "résolution"}.`,
+            entityType: "TICKET",
+            entityId: alert.ticketId,
+            actionUrl: `/tickets/${alert.ticketId}`,
+            deduplicationKey: `SLA_${breached ? "BREACHED" : "WARNING"}:${alert.ticketId}:${alert.metric}:${alert.thresholdPercent}`,
+          }));
         });
-        if (notifications.length) await tx.notification.createMany({ data: notifications });
+        if (notifications.length) await tx.notification.createMany({ data: notifications, skipDuplicates: true });
         return { alerts: acquired.filter((alert) => alert.thresholdPercent < 100).length, breaches: acquired.filter((alert) => alert.thresholdPercent >= 100).length };
       }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
     } catch (error) {

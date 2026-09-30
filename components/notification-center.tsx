@@ -18,6 +18,8 @@ type NotificationItem = {
   ticketReference: string | null;
   createdAt: string;
   type: ActivityType;
+  severity: "INFO" | "SUCCESS" | "WARNING" | "CRITICAL";
+  actionUrl: string | null;
 };
 
 type NotificationResponse = { notifications: NotificationItem[] };
@@ -107,15 +109,16 @@ export function NotificationCenter() {
       <>
         <span className="kit-notif-icon"><ActivityIcon type={item.type} label={item.title} /></span>
         <span className="kit-notif-body">
-          <span className="kit-notif-item-title">{item.title}</span>
+          <span className="kit-notif-item-title">{item.severity} · {item.title}</span>
           <span className="kit-notif-item-copy">{item.body}</span>
           <span className="kit-notif-item-meta notification-item-meta">{item.ticketReference ? `${item.ticketReference} • ` : ""}{formatRelativeActivityDate(item.createdAt)}</span>
         </span>
         {read ? null : <span className="kit-notif-dot" role="img" aria-label="Non lue" />}
       </>
     );
-    return item.ticketId
-      ? <Link key={item.id} href={`/tickets/${item.ticketId}`} onClick={() => { void markRead(item.id); setOpen(false); }} className={className}>{content}</Link>
+    const actionUrl = item.actionUrl ?? (item.ticketId ? `/tickets/${item.ticketId}` : null);
+    return actionUrl
+      ? <Link key={item.id} href={actionUrl as Route} onClick={() => { void markRead(item.id); setOpen(false); }} className={className}>{content}</Link>
       : <button key={item.id} type="button" onClick={() => void markRead(item.id)} className={className}>{content}</button>;
   }
 

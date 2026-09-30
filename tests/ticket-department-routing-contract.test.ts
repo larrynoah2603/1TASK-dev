@@ -11,7 +11,7 @@ describe("routage départemental des tickets", () => {
     const ticketService = source("lib/ticket-service.ts");
 
     expect(ticketService).toContain(
-      "const initialStatus = parsed.serviceCatalogItemId ? TicketStatus.NEW : TicketStatus.TO_QUALIFY",
+      "const initialStatus = routingMode === \"TRIAGE\" ? TicketStatus.TO_QUALIFY : TicketStatus.NEW",
     );
     expect(ticketService).toContain("status: initialStatus");
   });

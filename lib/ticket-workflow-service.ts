@@ -14,8 +14,10 @@ import { DomainError } from "@/lib/domain-error";
 import { AuthorizationError, hasPermission, requireCurrentActor, roleCodes, toAccessSubject, type UserContext } from "@/lib/server-auth";
 import { createInAppNotifications } from "@/lib/notifications";
 import { logServerError } from "@/lib/http";
-import { recordAssignment } from "@/lib/ticket-assignment-service";
+import { chooseAutoAssignee, recordAssignment } from "@/lib/ticket-assignment-service";
 import { accessTarget, ticketAccessInclude, ticketSecurityInclude } from "@/lib/ticket-access";
+import { calculateSlaDeadlines } from "@/lib/sla";
+import { queueWorkerIds } from "@/lib/ticket-notification-service";
 import {
   ticketQualificationSchema,
   transitionTicketSchema,
@@ -48,16 +50,69 @@ export async function qualifyTicket(actor: UserContext, ticketId: string, input:
     throw new AuthorizationError("La qualification n’est pas autorisée dans ce périmètre.");
   }
   if (ticket.status === TicketStatus.CLOSED) throw new DomainError("Un ticket clôturé ne peut plus être qualifié.", 409);
+
+  const selectedService = parsed.serviceCatalogItemId
+    ? await prisma.serviceCatalogItem.findFirst({
+        where: {
+          id: parsed.serviceCatalogItemId,
+          isActive: true,
+          code: { not: { startsWith: "TRIAGE-" } },
+          queue: { isActive: true, departmentId: ticket.queue.departmentId, department: { isActive: true } },
+        },
+        include: { queue: true, sla: { include: { calendar: { include: { holidays: true } } } } },
+      })
+    : null;
+  if (parsed.serviceCatalogItemId && !selectedService) {
+    throw new AuthorizationError("Le service de destination est indisponible ou hors du périmètre de qualification.");
+  }
+  if (selectedService && (!selectedService.sla || !selectedService.sla.isActive || !selectedService.sla.calendar.isActive)) {
+    throw new DomainError("Le service de destination n’a pas de SLA actif configuré.", 422);
+  }
+
   const priority = parsed.priority ?? calculatePriorityFromImpactUrgency(parsed.impact, parsed.urgency);
+  const now = new Date();
+  const deadlines = selectedService?.sla
+    ? calculateSlaDeadlines(now, selectedService.sla, {
+        ...selectedService.sla.calendar,
+        holidays: selectedService.sla.calendar.holidays.map((holiday) => holiday.date),
+      })
+    : null;
+
   return prisma.$transaction(async (tx) => {
+    const rerouted = Boolean(selectedService && (selectedService.id !== ticket.serviceCatalogItemId || selectedService.queueId !== ticket.queueId));
+    let nextStatus = selectedService ? TicketStatus.TO_ASSIGN : ticket.status;
+    let assignedToId: string | null | undefined = selectedService ? null : undefined;
+    let assignee: Awaited<ReturnType<typeof chooseAutoAssignee>> = null;
+    if (selectedService?.queue.autoAssignment) {
+      assignee = await chooseAutoAssignee(tx, selectedService.queueId, selectedService.keywords);
+      if (assignee) {
+        nextStatus = TicketStatus.ASSIGNED;
+        assignedToId = assignee.userId;
+      }
+    }
     const changed = await tx.ticket.updateMany({
-      where: { id: ticketId, status: ticket.status },
+      where: { id: ticketId, status: ticket.status, queueId: ticket.queueId },
       data: {
         impact: parsed.impact,
         urgency: parsed.urgency,
         priority,
         priorityOverrideReason: parsed.priority ? parsed.reason : null,
         legalDueAt: parsed.legalDueAt ?? null,
+        ...(selectedService && deadlines ? {
+          serviceCatalogItemId: selectedService.id,
+          queueId: selectedService.queueId,
+          type: selectedService.ticketType,
+          category: selectedService.category,
+          slaId: selectedService.sla?.id,
+          firstResponseDueAt: deadlines.firstResponseDueAt,
+          resolutionDueAt: deadlines.resolutionDueAt,
+          status: nextStatus,
+          assignedToId,
+          firstRespondedAt: null,
+          resolvedAt: null,
+          slaPausedAt: null,
+          totalPausedMinutes: 0,
+        } : {}),
       },
     });
     if (changed.count !== 1) throw new DomainError("Le ticket a changé avant la qualification. Rechargez la fiche puis réessayez.", 409);
@@ -67,26 +122,65 @@ export async function qualifyTicket(actor: UserContext, ticketId: string, input:
       data: {
         ticketId,
         actorId: actor.id,
-        queueId: ticket.queueId,
+        queueId: updated.queue.id,
         eventType: TicketEventType.QUALIFIED,
         fromStatus: ticket.status,
-        toStatus: ticket.status,
-        metadata: { impact: parsed.impact, urgency: parsed.urgency, priority, legalDueAt: parsed.legalDueAt, reason: parsed.reason },
+        toStatus: updated.status,
+        metadata: {
+          impact: parsed.impact, urgency: parsed.urgency, priority, legalDueAt: parsed.legalDueAt, reason: parsed.reason,
+          routingMode: selectedService ? "CATALOG" : undefined,
+          catalogItemId: selectedService?.id,
+          catalogCode: selectedService?.code,
+          routedDepartmentId: selectedService?.queue.departmentId,
+          routedQueueId: selectedService?.queueId,
+          slaId: selectedService?.sla?.id,
+        },
       },
     });
+    if (rerouted) {
+      await tx.ticketEvent.create({
+        data: {
+          ticketId, actorId: actor.id, queueId: selectedService?.queueId,
+          eventType: TicketEventType.QUEUE_CHANGED, fromStatus: ticket.status, toStatus: updated.status,
+          metadata: { previousQueueId: ticket.queueId, queueId: selectedService?.queueId, serviceCatalogItemId: selectedService?.id, reason: parsed.reason },
+        },
+      });
+    }
+    if (selectedService && assignee) {
+      await recordAssignment(tx, {
+        ticketId, queueId: selectedService.queueId, previousAssigneeId: ticket.assignedToId,
+        newAssigneeId: assignee.userId, assignedById: actor.id, reason: "Auto-affectation après qualification",
+        fromStatus: ticket.status, toStatus: TicketStatus.ASSIGNED, assignmentMode: "AUTO",
+      });
+    }
     await appendAuditLog(tx, {
       actorId: actor.id,
-      action: "TICKET_QUALIFIED",
+      action: rerouted ? "TICKET_QUALIFIED_AND_ROUTED" : "TICKET_QUALIFIED",
       objectType: "Ticket",
       objectId: ticketId,
-      oldValue: { impact: ticket.impact, urgency: ticket.urgency, priority: ticket.priority, legalDueAt: ticket.legalDueAt },
-      newValue: { impact: parsed.impact, urgency: parsed.urgency, priority, legalDueAt: parsed.legalDueAt ?? null },
+      oldValue: { impact: ticket.impact, urgency: ticket.urgency, priority: ticket.priority, legalDueAt: ticket.legalDueAt, queueId: ticket.queueId, serviceCatalogItemId: ticket.serviceCatalogItemId, slaId: ticket.slaId },
+      newValue: { impact: parsed.impact, urgency: parsed.urgency, priority, legalDueAt: parsed.legalDueAt ?? null, queueId: updated.queue.id, serviceCatalogItemId: updated.serviceCatalogItem.id, slaId: selectedService?.sla?.id ?? ticket.slaId, status: updated.status },
       reason: parsed.reason,
     });
+    if (selectedService) {
+      const recipientIds = assignee
+        ? [assignee.userId]
+        : await queueWorkerIds(tx, selectedService.queueId);
+      await createInAppNotifications(tx, [...new Set(recipientIds)]
+        .filter((recipientId) => recipientId !== actor.id)
+        .map((recipientId) => ({
+          recipientId,
+          ticketId,
+          type: assignee ? NotificationType.TICKET_ASSIGNED : NotificationType.QUEUE_NEW_TICKET,
+          title: assignee ? "Nouveau ticket affecté" : "Ticket qualifié dans votre file",
+          body: assignee
+            ? `${updated.reference} vous a été affecté après qualification.`
+            : `${updated.reference} a été qualifié et routé vers ${updated.queue.name}.`,
+        })));
+    }
     return updated;
-  });
+  }, { maxWait: 10_000, timeout: 15_000 });
 }
-
 
 export async function transitionTicket(
   actor: UserContext,

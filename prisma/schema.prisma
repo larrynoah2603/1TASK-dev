@@ -106,6 +106,13 @@ enum TicketEventType {
   SLA_EXCEPTION_CREATED
 }
 
+enum NotificationSeverity {
+  INFO
+  SUCCESS
+  WARNING
+  CRITICAL
+}
+
 enum NotificationType {
   TICKET_CREATED
   QUEUE_NEW_TICKET
@@ -117,10 +124,20 @@ enum NotificationType {
   SLA_BREACH
   CONFIDENTIAL_ACCESS
   ADMINISTRATIVE_ACTION
+  TICKET_MESSAGE
+  TICKET_STATUS_CHANGED
+  SLA_WARNING
+  SLA_BREACHED
+  ASSET_REQUEST
+  ASSET_APPROVED
+  ASSET_REJECTED
+  ADMIN_ACTION
+  SECURITY
 }
 
 enum NotificationChannel {
   IN_APP
+  PUSH
   EMAIL
 }
 
@@ -265,6 +282,7 @@ model User {
   worklogs                Worklog[]
   knowledgeArticlesOwned  KnowledgeArticle[]       @relation("KnowledgeArticleOwner")
   notificationPreferences NotificationPreference[]
+  pushSubscriptions      PushSubscription[]
 
   ticketLinksCreated   TicketLink[]        @relation("TicketLinkActor")
   slaExceptionsCreated SlaException[]      @relation("SlaExceptionActor")
@@ -859,6 +877,11 @@ model Notification {
   recipientId String
   ticketId    String?
   type        NotificationType
+  severity    NotificationSeverity @default(INFO)
+  entityType  String?
+  entityId    String?
+  actionUrl   String?
+  deduplicationKey String?
   channel     NotificationChannel @default(IN_APP)
   status      NotificationStatus  @default(PENDING)
   title       String
@@ -872,6 +895,9 @@ model Notification {
   @@index([recipientId, status, createdAt])
   @@index([recipientId, createdAt])
   @@index([ticketId, type, createdAt])
+  @@index([recipientId, severity, createdAt])
+  @@index([entityType, entityId, createdAt])
+  @@unique([recipientId, channel, deduplicationKey])
 }
 
 model NotificationRule {
@@ -999,6 +1025,21 @@ model NotificationPreference {
   user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, eventType, channel])
+}
+
+model PushSubscription {
+  id         String   @id @default(cuid())
+  userId     String
+  endpoint   String   @unique @db.Text
+  p256dh     String
+  auth       String
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  lastUsedAt DateTime?
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
 }
 
 model UserProfileChange {
