@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/http";
 import {
+  deleteManagedUser,
   getManagedUserProfile,
   updateManagedUserProfile,
 } from "@/lib/admin-service";
@@ -64,6 +65,18 @@ export async function GET(
     );
 
 
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
+
+
+export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
+  try {
+    const actor = await requireAdminAccess("FUNCTIONAL");
+    const { id } = await context.params;
+    const payload = await request.json();
+    return NextResponse.json(await deleteManagedUser(actor, id, payload.reason));
   } catch (error) {
     return errorResponse(error);
   }

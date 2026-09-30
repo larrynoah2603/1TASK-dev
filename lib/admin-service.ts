@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db";
 import { appendAuditLog } from "@/lib/audit";
 import { measureServerOperation } from "@/lib/performance";
 import { deleteCacheKey } from "@/lib/distributed-cache";
+import { getDeletionImpact, type DeletionEntityType } from "@/lib/services/deletion-impact.service";
 import { createInAppNotification } from "@/lib/notifications";
 import { normalizePageSize, toCursorPage, type CursorPageOptions } from "@/lib/cursor-pagination";
 import {
@@ -21,6 +22,7 @@ import {
   holidayAdminSchema,
   organizationAdminSchema,
   departmentAdminSchema,
+  deleteAdminSchema,
   escalationRuleAdminSchema,
   queueAdminSchema,
   roleAssignmentAdminSchema,
@@ -206,6 +208,111 @@ export async function getAdminUserSummary(actor: UserContext) {
     total: grouped.reduce((sum, item) => sum + item._count._all, 0),
     active: counts.get(UserStatus.ACTIVE) ?? 0,
   };
+}
+
+async function requireDeletable(entityType: DeletionEntityType, entityId: string) {
+  const impact = await getDeletionImpact({ entityType, entityId });
+  if (!impact) throw new AdminServiceError("Élément introuvable.", 404);
+  if (!impact.canDelete) {
+    const history = impact.blockers.some((item) => item.protectedHistory);
+    throw new AdminServiceError(history
+      ? `Suppression impossible : ${impact.totalBlockers} dépendance(s), dont un historique métier protégé. Désactivez ou archivez cet élément.`
+      : `Suppression impossible : ${impact.totalBlockers} dépendance(s) doivent d’abord être détachées ou réaffectées.`, 409);
+  }
+  return impact;
+}
+
+export async function deleteManagedUser(actor: UserContext, userId: string, reason: string) {
+  const current = await requireFunctionalAdminFor(actor, "user:validate");
+  const parsed = deleteAdminSchema.parse({ reason });
+  if (current.id === userId) throw new AdminServiceError("Vous ne pouvez pas supprimer votre propre compte.", 422);
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, name: true, email: true, entraObjectId: true, status: true, roleAssignments: { select: { scopeId: true, role: { select: { code: true } } } } },
+  });
+  if (!user) throw new AdminServiceError("Utilisateur introuvable.", 404);
+  const globalAdmin = user.roleAssignments.some((assignment) => assignment.role.code === RoleCode.FUNCTIONAL_ADMIN && !assignment.scopeId);
+  if (globalAdmin && user.status === UserStatus.ACTIVE) {
+    const activeAdmins = await prisma.user.count({ where: { status: UserStatus.ACTIVE, roleAssignments: { some: { role: { code: RoleCode.FUNCTIONAL_ADMIN }, scopeId: null } } } });
+    if (activeAdmins <= 1) throw new AdminServiceError("Le dernier administrateur fonctionnel global actif ne peut pas être supprimé.", 422);
+  }
+  await requireDeletable("USER", userId);
+  return prisma.$transaction(async (tx) => {
+    await tx.user.updateMany({ where: { OR: [{ managerId: userId }, { entraManagerId: userId }] }, data: { managerId: null, entraManagerId: null } });
+    await tx.queue.updateMany({ where: { managerId: userId }, data: { managerId: null } });
+    await tx.team.updateMany({ where: { leadId: userId }, data: { leadId: null } });
+    await appendAuditLog(tx, { actorId: current.id, action: "USER_DELETED", objectType: "User", objectId: user.id, oldValue: { id: user.id, name: user.name, email: user.email, entraObjectId: user.entraObjectId }, reason: parsed.reason });
+    // Accounts/sessions and purely technical memberships cascade. A later Entra
+    // sign-in provisions a fresh pending account; the remote identity is untouched.
+    await tx.user.delete({ where: { id: userId } });
+    return { id: user.id };
+  });
+}
+
+export async function deleteDepartment(actor: UserContext, departmentId: string, reason: string) {
+  const current = await requireFunctionalAdminFor(actor, "organization:manage");
+  const parsed = deleteAdminSchema.parse({ reason });
+  const department = await prisma.department.findUnique({ where: { id: departmentId }, select: { id: true, code: true, name: true } });
+  if (!department) throw new AdminServiceError("Département introuvable.", 404);
+  await requireDeletable("DEPARTMENT", departmentId);
+  const result = await prisma.$transaction(async (tx) => {
+    await appendAuditLog(tx, { actorId: current.id, action: "DEPARTMENT_DELETED", objectType: "Department", objectId: department.id, oldValue: department, reason: parsed.reason });
+    await tx.department.delete({ where: { id: departmentId } });
+    return { id: department.id };
+  });
+  await deleteCacheKey("catalog:active:v1");
+  return result;
+}
+
+export async function deleteQueue(actor: UserContext, queueId: string, reason: string) {
+  const current = await requireFunctionalAdminFor(actor, "organization:manage");
+  const parsed = deleteAdminSchema.parse({ reason });
+  const queue = await prisma.queue.findUnique({ where: { id: queueId }, select: { id: true, code: true, name: true } });
+  if (!queue) throw new AdminServiceError("File introuvable.", 404);
+  await requireDeletable("QUEUE", queueId);
+  const result = await prisma.$transaction(async (tx) => {
+    await tx.user.updateMany({ where: { authorizedQueueId: queueId }, data: { authorizedQueueId: null } });
+    await tx.notificationRule.deleteMany({ where: { queueId } });
+    await tx.escalationRule.deleteMany({ where: { queueId } });
+    await tx.permissionScope.deleteMany({ where: { queueId } });
+    await appendAuditLog(tx, { actorId: current.id, action: "QUEUE_DELETED", objectType: "Queue", objectId: queue.id, oldValue: queue, reason: parsed.reason });
+    await tx.queue.delete({ where: { id: queueId } });
+    return { id: queue.id };
+  });
+  await deleteCacheKey("catalog:active:v1");
+  return result;
+}
+
+export async function deleteTeam(actor: UserContext, teamId: string, reason: string) {
+  const current = await requireFunctionalAdminFor(actor, "organization:manage");
+  const parsed = deleteAdminSchema.parse({ reason });
+  const team = await prisma.team.findUnique({ where: { id: teamId }, select: { id: true, name: true, queueId: true } });
+  if (!team) throw new AdminServiceError("Équipe introuvable.", 404);
+  await requireDeletable("TEAM", teamId);
+  return prisma.$transaction(async (tx) => {
+    await tx.user.updateMany({ where: { primaryTeamId: teamId }, data: { primaryTeamId: null } });
+    await tx.teamMember.deleteMany({ where: { teamId } });
+    await tx.permissionScope.deleteMany({ where: { teamId } });
+    await appendAuditLog(tx, { actorId: current.id, action: "TEAM_DELETED", objectType: "Team", objectId: team.id, oldValue: team, reason: parsed.reason });
+    await tx.team.delete({ where: { id: teamId } });
+    return { id: team.id };
+  });
+}
+
+export async function deleteCatalogItem(actor: UserContext, serviceId: string, reason: string) {
+  const current = await requireFunctionalAdminFor(actor, "catalog:manage");
+  const parsed = deleteAdminSchema.parse({ reason });
+  const service = await prisma.serviceCatalogItem.findUnique({ where: { id: serviceId }, select: { id: true, code: true, name: true } });
+  if (!service) throw new AdminServiceError("Service du catalogue introuvable.", 404);
+  await requireDeletable("CATALOG_ITEM", serviceId);
+  const result = await prisma.$transaction(async (tx) => {
+    await tx.escalationRule.deleteMany({ where: { serviceItemId: serviceId } });
+    await appendAuditLog(tx, { actorId: current.id, action: "CATALOG_ITEM_DELETED", objectType: "ServiceCatalogItem", objectId: service.id, oldValue: service, reason: parsed.reason });
+    await tx.serviceCatalogItem.delete({ where: { id: serviceId } });
+    return { id: service.id };
+  });
+  await deleteCacheKey("catalog:active:v1");
+  return result;
 }
 
 export async function saveDepartment(actor: UserContext, id: string | undefined, input: DepartmentAdminInput) {

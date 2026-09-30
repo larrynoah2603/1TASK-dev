@@ -99,7 +99,8 @@ describe("Prompt 8 — création, catalogue et département Entra", () => {
     });
 
     expect(result.success).toBe(true);
-    expect(ticketService).toContain("parsed.serviceCatalogItemId ?");
+    expect(ticketService).toContain("if (parsed.serviceCatalogItemId)");
+    expect(ticketService).toContain("matchCatalogService");
     expect(ticketService).toContain("TRIAGE-${targetDepartment?.code}");
     expect(ticketService).toContain("sourceDepartmentId: actor.departmentId");
   });
@@ -419,10 +420,10 @@ describe("Prompt 8 — routes, espaces et rôles", () => {
   });
 
   it("ne possède aucune route de suppression définitive des tickets", () => {
-    const routeSources = walk(resolve(projectRoot, "app/api"))
+    const ticketRouteSources = walk(resolve(projectRoot, "app/api/tickets"))
       .filter((path) => path.endsWith("route.ts"))
       .map((path) => readFileSync(path, "utf8"));
-    expect(routeSources.some((content) => /export async function DELETE/.test(content))).toBe(false);
+    expect(ticketRouteSources.some((content) => /export async function DELETE/.test(content))).toBe(false);
     expect(ticketService).not.toMatch(/prisma\.ticket\.delete(?:Many)?\(/);
   });
 });

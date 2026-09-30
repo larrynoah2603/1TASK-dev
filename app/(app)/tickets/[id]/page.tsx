@@ -177,6 +177,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
           <TicketAdvancedPanels
             only="attachments"
             ticketId={ticket.id}
+            targetDepartmentId={ticket.queue.department.id}
             impact={ticket.impact}
             urgency={ticket.urgency}
             priority={ticket.priority}
@@ -249,6 +250,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
           <TicketAdvancedPanels
             only="management"
             ticketId={ticket.id}
+            targetDepartmentId={ticket.queue.department.id}
             impact={ticket.impact}
             urgency={ticket.urgency}
             priority={ticket.priority}

@@ -1,6 +1,7 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { readServerEnvironment } from "@/lib/env";
+import { deliverPushNotification } from "@/lib/push-notification-service";
 
 type OutboxDb = Prisma.TransactionClient | PrismaClient;
 
@@ -36,6 +37,14 @@ export async function processOutboxBatch(now = new Date()) {
   for (const event of claimed) {
     try {
       const environment = readServerEnvironment();
+      if (event.type === "NOTIFICATION_PUSH_REQUESTED") {
+        const payload = event.payload as { notificationId?: string };
+        if (!payload.notificationId) throw new Error("Push notification id is missing");
+        await deliverPushNotification(payload.notificationId);
+        await prisma.outboxEvent.update({ where: { id: event.id }, data: { status: "PROCESSED", processedAt: new Date(), lockedAt: null, lastError: null } });
+        processed += 1;
+        continue;
+      }
       const endpoint = environment.OUTBOX_DELIVERY_URL;
       if (!endpoint) throw new Error("OUTBOX_DELIVERY_URL is not configured");
       const response = await fetch(endpoint, {

@@ -94,6 +94,7 @@ export const confidentialAccessSchema = z.object({
 });
 
 export const ticketQualificationSchema = z.object({
+  serviceCatalogItemId: z.string().cuid().optional(),
   impact: z.enum(Impact),
   urgency: z.enum(Urgency),
   legalDueAt: z.coerce.date().nullable().optional(),
@@ -329,6 +330,12 @@ export type UserStatusAdminInput = z.infer<typeof userStatusAdminSchema>;
 export type UserProfileAdminInput = z.infer<typeof userProfileAdminSchema>;
 export type OrganizationAdminInput = z.infer<typeof organizationAdminSchema>;
 export type HolidayAdminInput = z.infer<typeof holidayAdminSchema>;
+
+export const deleteAdminSchema = z.object({
+  reason: z.string().trim().min(10, "Un motif d’au moins 10 caractères est obligatoire.").max(2_000),
+}).strict();
+
+export type DeleteAdminInput = z.infer<typeof deleteAdminSchema>;
 
 const adminReason = z.string().trim().min(10, "Un motif d’au moins 10 caractères est obligatoire.").max(2_000);
 
