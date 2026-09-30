@@ -26,7 +26,7 @@ export function NewTicketLauncher() {
     <div className="modal-backdrop ticket-launcher-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>
       <section className="modal-panel ticket-launcher-modal" role="dialog" aria-modal="true" aria-labelledby="new-ticket-modal-title" onMouseDown={(event) => event.stopPropagation()} onWheel={(event) => event.stopPropagation()}>
         <header className="ticket-launcher-modal-header">
-          <div><p className="eyebrow">Création rapide</p><h2 id="new-ticket-modal-title">Nouveau ticket</h2><p className="mt-1 text-xs text-slate-500">Décrivez votre besoin ; l’équipe du département choisi le qualifiera ensuite.</p></div>
+          <div><p className="eyebrow">Création rapide</p><h2 id="new-ticket-modal-title">Nouveau ticket</h2><p className="mt-1 text-xs text-slate-500">Décrivez votre besoin ; le catalogue le route directement lorsqu’une correspondance fiable existe.</p></div>
           <button type="button" className="modal-close-button" onClick={() => setOpen(false)} aria-label="Fermer la fenêtre">×</button>
         </header>
         <div className="ticket-launcher-modal-body"><NewTicketForm onCancel={() => setOpen(false)} /></div>

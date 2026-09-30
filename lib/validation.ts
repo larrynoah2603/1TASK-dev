@@ -94,6 +94,7 @@ export const confidentialAccessSchema = z.object({
 });
 
 export const ticketQualificationSchema = z.object({
+  serviceCatalogItemId: z.string().cuid().optional(),
   impact: z.enum(Impact),
   urgency: z.enum(Urgency),
   legalDueAt: z.coerce.date().nullable().optional(),

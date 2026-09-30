@@ -6,6 +6,7 @@ export default function AppLoading() {
       className="bios-loading-page"
       role="status"
       aria-live="polite"
+      aria-busy="true"
       aria-label="Chargement de l'application"
     >
       <div className="bios-loading-content">
