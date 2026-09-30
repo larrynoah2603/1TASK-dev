@@ -96,6 +96,8 @@ export function AdminConfigurationPanel({ configuration, sections }: { configura
   const { toast } = useToast();
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<{ path: string; label: string } | null>(null);
+  const [deleteReason, setDeleteReason] = useState("");
   const [pendingAction, setPendingAction] = useState<{ path: string; payload: Record<string, unknown>; form: HTMLFormElement } | null>(null);
   const enabled = (section: AdminConfigurationSection) => !sections || sections.includes(section);
   const activeUsers = configuration.users.filter((user) => user.status === "ACTIVE");
@@ -104,6 +106,36 @@ export function AdminConfigurationPanel({ configuration, sections }: { configura
   function submit(event: FormEvent<HTMLFormElement>, path: string, payload: Record<string, unknown>) {
     event.preventDefault();
     setPendingAction({ path, payload, form: event.currentTarget });
+  }
+
+  async function executeDelete() {
+    if (!pendingDelete || busy || deleteReason.trim().length < 10) return;
+    setBusy(true);
+    setMessage("");
+    try {
+      const response = await fetch(pendingDelete.path, { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ reason: deleteReason }) });
+      const data = await response.json();
+      if (!response.ok) {
+        setMessage(data.error ?? "La suppression a été refusée.");
+        toast(data.error ?? "La suppression a été refusée.", "error");
+        return;
+      }
+      toast(`${pendingDelete.label} supprimé(e).`);
+      setPendingDelete(null);
+      setDeleteReason("");
+      router.refresh();
+    } catch {
+      setMessage("La suppression n’a pas pu être envoyée.");
+      toast("La suppression n’a pas pu être envoyée.", "error");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function requestDelete(path: string, label: string) {
+    if (busy) return;
+    setDeleteReason("");
+    setPendingDelete({ path, label });
   }
 
   async function executeSubmit(path: string, payload: Record<string, unknown>, form: HTMLFormElement) {
@@ -141,7 +173,7 @@ export function AdminConfigurationPanel({ configuration, sections }: { configura
         <Field label="Motif"><input name="reason" required minLength={10} className={inputClass} placeholder="Motif de création…" /></Field>
         <button disabled={busy} className={buttonClass}>Ajouter</button>
       </form>
-      <div className="mt-5 grid gap-2 md:grid-cols-3">{configuration.departments.map((department) => <div key={department.id} className="rounded-lg bg-slate-50 px-3 py-2 text-sm"><span className="font-semibold">{department.code}</span> — {department.name}<span className={department.isActive ? "ml-2 text-xs text-emerald-700" : "ml-2 text-xs text-slate-400"}>{department.isActive ? "actif" : "inactif"}</span></div>)}</div>
+      <div className="mt-5 grid gap-2 md:grid-cols-3">{configuration.departments.map((department) => <div key={department.id} className="rounded-lg bg-slate-50 px-3 py-2 text-sm"><span className="font-semibold">{department.code}</span> — {department.name}<span className={department.isActive ? "ml-2 text-xs text-emerald-700" : "ml-2 text-xs text-slate-400"}>{department.isActive ? "actif" : "inactif"}</span><button type="button" disabled={busy} onClick={() => requestDelete(`/api/admin/departments/${department.id}`, `${department.name} (${department.code})`)} className="button-danger mt-2 min-h-8 px-2 py-1 text-xs">Supprimer</button></div>)}</div>
       <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50/50 p-4"><p className="text-sm font-semibold text-slate-800">Référentiel des valeurs de département Microsoft Entra ID</p><p className="mt-1 text-xs leading-5 text-slate-600">Ce référentiel conserve les valeurs organisationnelles brutes. L’affectation du département d’un utilisateur et la validation de son profil se font exclusivement dans <code>/admin/users</code>.</p><form onSubmit={(event) => void submit(event, "/api/admin/entra-departments", { externalValue: value(event.currentTarget, "externalValue"), departmentId: value(event.currentTarget, "mappingDepartmentId"), isActive: true, reason: value(event.currentTarget, "mappingReason") })} className="mt-3 grid gap-3 md:grid-cols-4"><Field label="Valeur Entra"><input name="externalValue" required className={inputClass} placeholder="Direction des systèmes" /></Field><Field label="Département interne"><Combobox name="mappingDepartmentId" required options={[{ value: "", label: "Sélectionner" }, ...configuration.departments.filter((department) => department.isActive).map((department) => ({ value: department.id, label: department.name }))]} /></Field><Field label="Motif"><input name="mappingReason" required minLength={10} className={inputClass} placeholder="Motif de référentiel…" /></Field><button disabled={busy} className={buttonClass}>Enregistrer le référentiel</button></form><div className="mt-4 grid gap-2 md:grid-cols-2">{configuration.entraMappings.map((mapping) => <div key={mapping.id} className="rounded-lg bg-white px-3 py-2 text-xs text-slate-600">{mapping.externalValue} → {mapping.department.name} · {mapping.isActive ? "active" : "inactive"}</div>)}</div>{configuration.pendingUsers.length ? <p className="mt-3 text-xs text-amber-700">{configuration.pendingUsers.length} compte(s) Entra attendent une affectation dans /admin/users.</p> : null}</div>
     </section> : null}
 
@@ -157,7 +189,7 @@ export function AdminConfigurationPanel({ configuration, sections }: { configura
         <Field label="Motif"><input name="reason" required minLength={10} className={inputClass} placeholder="Motif de création…" /></Field>
         <button disabled={busy} className={buttonClass}>Créer la file</button>
       </form>
-      <div className="mt-5 grid gap-2 md:grid-cols-2">{configuration.queues.map((queue) => <div key={queue.id} className="rounded-lg bg-slate-50 px-3 py-3 text-sm"><p className="font-semibold">{queue.name} <span className="font-normal text-slate-400">({queue.code})</span></p><p className="mt-1 text-xs text-slate-500">{queue.department.name} · Responsable : {queue.manager?.name ?? "Non désigné"} · {queue.isActive ? "active" : "inactive"}</p></div>)}</div>
+      <div className="mt-5 grid gap-2 md:grid-cols-2">{configuration.queues.map((queue) => <div key={queue.id} className="rounded-lg bg-slate-50 px-3 py-3 text-sm"><p className="font-semibold">{queue.name} <span className="font-normal text-slate-400">({queue.code})</span></p><p className="mt-1 text-xs text-slate-500">{queue.department.name} · Responsable : {queue.manager?.name ?? "Non désigné"} · {queue.isActive ? "active" : "inactive"}</p><button type="button" disabled={busy} onClick={() => requestDelete(`/api/admin/queues/${queue.id}`, `${queue.name} (${queue.code})`)} className="button-danger mt-2 min-h-8 px-2 py-1 text-xs">Supprimer</button></div>)}</div>
     </section> : null}
 
     {enabled("teams") ? <section className="panel admin-config-section p-6">
@@ -177,7 +209,7 @@ export function AdminConfigurationPanel({ configuration, sections }: { configura
         <Field label="Motif"><input name="memberReason" required minLength={10} className={inputClass} placeholder="Motif d’ajout…" /></Field>
         <button disabled={busy} className={buttonClass}>Ajouter l’agent</button>
       </form>
-      <div className="mt-5 grid gap-2 md:grid-cols-2">{configuration.teams.map((team) => <div key={team.id} className="rounded-lg bg-slate-50 px-3 py-3 text-sm"><p className="font-semibold">{team.name} <span className="font-normal text-slate-400">· {team.queue.name}</span></p><p className="mt-1 text-xs text-slate-500">Responsable : {team.lead?.name ?? "Non désigné"} · Agents : {team.members.filter((member) => member.isActive).map((member) => member.user.name).join(", ") || "Aucun"}</p></div>)}</div>
+      <div className="mt-5 grid gap-2 md:grid-cols-2">{configuration.teams.map((team) => <div key={team.id} className="rounded-lg bg-slate-50 px-3 py-3 text-sm"><p className="font-semibold">{team.name} <span className="font-normal text-slate-400">· {team.queue.name}</span></p><p className="mt-1 text-xs text-slate-500">Responsable : {team.lead?.name ?? "Non désigné"} · Agents : {team.members.filter((member) => member.isActive).map((member) => member.user.name).join(", ") || "Aucun"}</p><button type="button" disabled={busy} onClick={() => requestDelete(`/api/admin/teams/${team.id}`, team.name)} className="button-danger mt-2 min-h-8 px-2 py-1 text-xs">Supprimer</button></div>)}</div>
     </section> : null}
 
     {enabled("catalog") ? <section className="panel admin-config-section p-6">
@@ -196,7 +228,7 @@ export function AdminConfigurationPanel({ configuration, sections }: { configura
         <Field label="Motif"><input name="reason" required minLength={10} className={inputClass} placeholder="Motif de création…" /></Field>
         <button disabled={busy} className={buttonClass}>Ajouter au catalogue</button>
       </form>
-      <div className="mt-5 divide-y divide-slate-100">{configuration.services.map((service) => <div key={service.id} className="flex flex-col justify-between gap-2 py-3 md:flex-row md:items-center"><div><p className="font-semibold">{service.name} <span className="font-normal text-slate-400">({service.code})</span></p><p className="text-xs text-slate-500">{service.category} · {service.ticketType} · {service.queue.department.name} / {service.queue.name} · SLA : {service.sla?.name ?? "aucun"}</p></div><span className={service.isActive ? "text-xs text-emerald-700" : "text-xs text-slate-400"}>{service.isActive ? "actif" : "inactif"}</span></div>)}</div>
+      <div className="mt-5 divide-y divide-slate-100">{configuration.services.map((service) => <div key={service.id} className="flex flex-col justify-between gap-2 py-3 md:flex-row md:items-center"><div><p className="font-semibold">{service.name} <span className="font-normal text-slate-400">({service.code})</span></p><p className="text-xs text-slate-500">{service.category} · {service.ticketType} · {service.queue.department.name} / {service.queue.name} · SLA : {service.sla?.name ?? "aucun"}</p></div><div className="flex items-center gap-2"><span className={service.isActive ? "text-xs text-emerald-700" : "text-xs text-slate-400"}>{service.isActive ? "actif" : "inactif"}</span><button type="button" disabled={busy} onClick={() => requestDelete(`/api/admin/catalog/${service.id}`, `${service.name} (${service.code})`)} className="button-danger min-h-8 px-2 py-1 text-xs">Supprimer</button></div></div>)}</div>
     </section> : null}
 
     {enabled("sla") ? <section className="panel admin-config-section p-6">
@@ -236,6 +268,7 @@ export function AdminConfigurationPanel({ configuration, sections }: { configura
         <button disabled={busy} className={buttonClass}>Attribuer le rôle</button>
       </form>
     </section> : null}
+    <ConfirmDialog open={Boolean(pendingDelete)} title="Confirmer la suppression définitive" description={`Vous êtes sur le point de supprimer ${pendingDelete?.label ?? "cet élément"}. L’opération n’est autorisée que si aucun historique métier n’en dépend.`} confirmLabel="Supprimer définitivement" busyLabel="Suppression…" danger busy={busy} confirmDisabled={deleteReason.trim().length < 10} onCancel={() => { if (!busy) { setPendingDelete(null); setDeleteReason(""); } }} onConfirm={() => void executeDelete()}><label className="field-label mt-4">Motif de suppression<textarea autoFocus required minLength={10} maxLength={2000} value={deleteReason} onChange={(event) => setDeleteReason(event.target.value)} className="field-control min-h-24" placeholder="Motif obligatoire, 10 caractères minimum…" /></label></ConfirmDialog>
     <ConfirmDialog open={Boolean(pendingAction)} title="Confirmer la modification" description="Cette modification de configuration sera enregistrée et ajoutée au journal d’audit." confirmLabel="Confirmer et enregistrer" busy={busy} onCancel={() => setPendingAction(null)} onConfirm={() => { const action = pendingAction; setPendingAction(null); if (action) void executeSubmit(action.path, action.payload, action.form); }} />
   </div>;
 }
