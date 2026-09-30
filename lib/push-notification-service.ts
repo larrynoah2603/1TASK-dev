@@ -1,10 +1,27 @@
-import webpush from "web-push";
+import { createRequire } from "node:module";
 import { prisma } from "@/lib/db";
 import { readServerEnvironment } from "@/lib/env";
+
+const require = createRequire(import.meta.url);
+
+type WebPushModule = {
+  setVapidDetails(subject: string, publicKey: string, privateKey: string): void;
+  sendNotification(
+    subscription: { endpoint: string; keys: { p256dh: string; auth: string } },
+    payload: string,
+  ): Promise<unknown>;
+};
+
+function loadWebPush(): WebPushModule {
+  // Keep the optional delivery provider out of module initialization so that
+  // importing the outbox does not require Web Push to be installed/configured.
+  return require("web-push") as WebPushModule;
+}
 
 export async function deliverPushNotification(notificationId: string) {
   const environment = readServerEnvironment();
   if (!environment.WEB_PUSH_PUBLIC_KEY || !environment.WEB_PUSH_PRIVATE_KEY || !environment.WEB_PUSH_SUBJECT) throw new Error("Web Push is not configured");
+  const webpush = loadWebPush();
   webpush.setVapidDetails(environment.WEB_PUSH_SUBJECT, environment.WEB_PUSH_PUBLIC_KEY, environment.WEB_PUSH_PRIVATE_KEY);
   const notification = await prisma.notification.findUnique({ where: { id: notificationId }, include: { recipient: { select: { pushSubscriptions: true } } } });
   if (!notification) return { delivered: 0 };
