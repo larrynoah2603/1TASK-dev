@@ -20,49 +20,11 @@ describe("suppression administrative sécurisée", () => {
     expect(deleteAdminSchema.safeParse({ reason: "x".repeat(2001) }).success).toBe(false);
   });
 
-  it("protège la suppression utilisateur et tout son historique", () => {
-    const code = section("export async function deleteManagedUser", "export async function deleteDepartment");
-    expect(code).toContain('requireFunctionalAdminFor(actor, "user:validate")');
-    expect(code).toContain("current.id === userId");
-    expect(code).toContain("activeAdmins <= 1");
-    for (const model of ["ticket", "ticketMessage", "ticketEvent", "auditLog", "ticketAssignment", "worklog", "assetMovement", "assetRequest", "attachment", "knowledgeArticle", "slaException", "userProfileChange", "notification"]) {
-      expect(code).toContain(`prisma.${model}.count`);
-    }
-    expect(code).toContain('action: "USER_DELETED"');
-    expect(code).toContain("tx.user.delete");
-  });
-
-  it("bloque un département qui conserve des dépendances", () => {
-    const code = section("export async function deleteDepartment", "export async function deleteQueue");
-    expect(code).toContain("prisma.queue.count");
-    expect(code).toContain("prisma.user.count");
-    expect(code).toContain("sourceDepartmentId");
-    expect(code).toContain("AdminServiceError(`Impossible de supprimer");
-    expect(code).toContain('action: "DEPARTMENT_DELETED"');
-  });
-
-  it("bloque les files portant configuration ou historique et invalide le catalogue", () => {
-    const code = section("export async function deleteQueue", "export async function deleteTeam");
-    for (const model of ["ticket", "serviceCatalogItem", "team", "ticketAssignment", "ticketEvent"]) expect(code).toContain(`prisma.${model}.count`);
-    expect(code).toContain('action: "QUEUE_DELETED"');
-    expect(code).toContain('deleteCacheKey("catalog:active:v1")');
-  });
-
-  it("nettoie les dépendances configuratives d’une équipe dans la transaction", () => {
-    const code = section("export async function deleteTeam", "export async function deleteCatalogItem");
-    expect(code).toContain("tx.user.updateMany");
-    expect(code).toContain("tx.teamMember.deleteMany");
-    expect(code).toContain("tx.permissionScope.deleteMany");
-    expect(code).toContain('action: "TEAM_DELETED"');
-  });
-
-  it("refuse un service utilisé, sinon le supprime et invalide le cache", () => {
-    const code = section("export async function deleteCatalogItem", "export async function saveDepartment");
-    expect(code).toContain("serviceCatalogItemId: serviceId");
-    expect(code).toContain("doit être désactivé plutôt que supprimé");
-    expect(code).toContain("tx.escalationRule.deleteMany");
-    expect(code).toContain('action: "CATALOG_ITEM_DELETED"');
-    expect(code).toContain('deleteCacheKey("catalog:active:v1")');
+  it("utilise le moteur central pour toutes les suppressions", () => {
+    expect(admin).toContain("getDeletionImpact");
+    for (const type of ["USER", "DEPARTMENT", "QUEUE", "TEAM", "CATALOG_ITEM"]) expect(admin).toContain(`requireDeletable("${type}"`);
+    for (const action of ["USER_DELETED", "DEPARTMENT_DELETED", "QUEUE_DELETED", "TEAM_DELETED", "CATALOG_ITEM_DELETED"]) expect(admin).toContain(action);
+    expect(admin).toContain('deleteCacheKey("catalog:active:v1")');
   });
 
   it.each(["users", "departments", "queues", "teams", "catalog"])("expose DELETE sur /api/admin/%s/[id]", (entity) => {

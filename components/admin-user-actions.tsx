@@ -1,6 +1,9 @@
 "use client";
 
+import type { Route } from "next";
+
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { AdminManagerSearch } from "@/components/admin-manager-search";
@@ -77,6 +80,8 @@ export function AdminUserActions({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteReason, setDeleteReason] = useState("");
+  const [deletionImpact, setDeletionImpact] = useState<{ canDelete: boolean; totalBlockers: number; entityType: string; entityId: string; blockers: { type: string; label: string; count: number; adminPath: string; protectedHistory: boolean }[] } | null>(null);
+  const [impactBusy, setImpactBusy] = useState(false);
   const [pendingForm, setPendingForm] = useState<FormData | null>(null);
   const [departmentId, setDepartmentId] = useState(user.department?.id ?? "");
   const [managerId, setManagerId] = useState(user.manager?.id ?? "");
@@ -108,6 +113,14 @@ export function AdminUserActions({
     event.preventDefault();
     setPendingForm(new FormData(event.currentTarget));
     setConfirmOpen(true);
+  }
+
+  async function requestUserDeletion() {
+    if (busy || impactBusy) return;
+    setDeleteReason(""); setDeletionImpact(null); setDeleteOpen(true); setImpactBusy(true);
+    try { const response = await fetch(`/api/admin/deletion-impact?entityType=USER&entityId=${encodeURIComponent(user.id)}`, { cache: "no-store" }); const data = await response.json(); if (!response.ok) { setMessage(data.error ?? "Analyse des dépendances impossible."); setDeleteOpen(false); return; } setDeletionImpact(data); }
+    catch { setMessage("Analyse des dépendances impossible."); setDeleteOpen(false); }
+    finally { setImpactBusy(false); }
   }
 
   async function deleteUser() {
@@ -207,7 +220,7 @@ export function AdminUserActions({
           className="button-secondary min-h-9 px-3 py-2 text-xs"
         >
           {open ? "Fermer la fiche" : "Compléter / modifier"}
-        </button><button type="button" disabled={busy} onClick={() => setDeleteOpen(true)} className="button-danger min-h-9 px-3 py-2 text-xs">Supprimer</button></div>
+        </button><button type="button" disabled={busy} onClick={() => void requestUserDeletion()} className="button-danger min-h-9 px-3 py-2 text-xs">Supprimer</button></div>
       </div>
 
       {open ? (
@@ -282,7 +295,7 @@ export function AdminUserActions({
           {message ? <p className="mt-3 text-xs font-semibold text-slate-600">{message}</p> : null}
         </div>
       ) : null}
-      <ConfirmDialog open={deleteOpen} title="Supprimer l’utilisateur ?" description={`Vous êtes sur le point de supprimer définitivement ${displayName} (${user.email}). La suppression sera refusée si un historique métier existe.`} confirmLabel="Supprimer définitivement" busyLabel="Suppression…" danger busy={busy} confirmDisabled={deleteReason.trim().length < 10} onCancel={() => { if (!busy) { setDeleteOpen(false); setDeleteReason(""); } }} onConfirm={() => void deleteUser()}><label className="field-label mt-4">Motif de suppression<textarea autoFocus required minLength={10} maxLength={2000} value={deleteReason} onChange={(event) => setDeleteReason(event.target.value)} className="field-control min-h-24" placeholder="Motif obligatoire, 10 caractères minimum…" /></label></ConfirmDialog>
+      <ConfirmDialog open={deleteOpen} title="Supprimer l’utilisateur ?" description={`Vous êtes sur le point de supprimer définitivement ${displayName} (${user.email}). La suppression sera refusée si un historique métier existe.`} confirmLabel="Supprimer définitivement" busyLabel="Suppression…" danger busy={busy} confirmDisabled={impactBusy || !deletionImpact?.canDelete || deleteReason.trim().length < 10} onCancel={() => { if (!busy) { setDeleteOpen(false); setDeleteReason(""); } }} onConfirm={() => void deleteUser()}>{impactBusy ? <p className="mt-4 text-sm">Analyse des dépendances…</p> : deletionImpact && !deletionImpact.canDelete ? <div className="mt-4 space-y-2"><p className="font-semibold text-rose-700">{deletionImpact.totalBlockers} dépendance(s) empêchent la suppression.</p>{deletionImpact.blockers.map((item) => <div key={item.type} className="flex items-center justify-between rounded-lg border p-3 text-sm"><span>{item.protectedHistory ? "Historique protégé · " : ""}{item.label} ({item.count})</span><Link href={item.adminPath as Route} className="button-secondary px-2 py-1 text-xs">Voir</Link></div>)}<Link href={`/admin/dependencies/user/${user.id}` as Route} className="button-secondary inline-flex">Voir toutes les dépendances</Link></div> : <label className="field-label mt-4">Motif de suppression<textarea autoFocus required minLength={10} maxLength={2000} value={deleteReason} onChange={(event) => setDeleteReason(event.target.value)} className="field-control min-h-24" /></label>}</ConfirmDialog>
       <ConfirmDialog open={confirmOpen} title="Confirmer la fiche utilisateur" description="Les rôles, le périmètre et le statut applicatif seront enregistrés, historisés et audités." confirmLabel="Enregistrer la fiche" busy={busy} onCancel={() => { setConfirmOpen(false); setPendingForm(null); }} onConfirm={() => { const form = pendingForm; setConfirmOpen(false); setPendingForm(null); if (form) void saveProfile(form); }} />
     </article>
   );

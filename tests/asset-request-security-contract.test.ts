@@ -22,5 +22,9 @@ describe("asset request server-side isolation", () => {
     expect(service).toContain("prisma.$transaction");
     expect(service).toContain("assignedToId: request.requesterId");
     expect(service).toContain("createInAppNotification(tx");
+    const review = service.slice(service.indexOf("export async function reviewAssetRequest"));
+    expect(review.indexOf("assignedToId: request.requesterId")).toBeLessThan(
+      review.indexOf("await notify(tx"),
+    );
   });
 });

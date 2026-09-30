@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db";
 import { appendAuditLog } from "@/lib/audit";
 import { measureServerOperation } from "@/lib/performance";
 import { deleteCacheKey } from "@/lib/distributed-cache";
+import { getDeletionImpact, type DeletionEntityType } from "@/lib/services/deletion-impact.service";
 import { createInAppNotification } from "@/lib/notifications";
 import { normalizePageSize, toCursorPage, type CursorPageOptions } from "@/lib/cursor-pagination";
 import {
@@ -209,6 +210,18 @@ export async function getAdminUserSummary(actor: UserContext) {
   };
 }
 
+async function requireDeletable(entityType: DeletionEntityType, entityId: string) {
+  const impact = await getDeletionImpact({ entityType, entityId });
+  if (!impact) throw new AdminServiceError("Élément introuvable.", 404);
+  if (!impact.canDelete) {
+    const history = impact.blockers.some((item) => item.protectedHistory);
+    throw new AdminServiceError(history
+      ? `Suppression impossible : ${impact.totalBlockers} dépendance(s), dont un historique métier protégé. Désactivez ou archivez cet élément.`
+      : `Suppression impossible : ${impact.totalBlockers} dépendance(s) doivent d’abord être détachées ou réaffectées.`, 409);
+  }
+  return impact;
+}
+
 export async function deleteManagedUser(actor: UserContext, userId: string, reason: string) {
   const current = await requireFunctionalAdminFor(actor, "user:validate");
   const parsed = deleteAdminSchema.parse({ reason });
@@ -223,24 +236,7 @@ export async function deleteManagedUser(actor: UserContext, userId: string, reas
     const activeAdmins = await prisma.user.count({ where: { status: UserStatus.ACTIVE, roleAssignments: { some: { role: { code: RoleCode.FUNCTIONAL_ADMIN }, scopeId: null } } } });
     if (activeAdmins <= 1) throw new AdminServiceError("Le dernier administrateur fonctionnel global actif ne peut pas être supprimé.", 422);
   }
-  const counts = await Promise.all([
-    prisma.ticket.count({ where: { OR: [{ requesterId: userId }, { createdById: userId }, { assignedToId: userId }] } }),
-    prisma.ticketMessage.count({ where: { authorId: userId } }),
-    prisma.ticketEvent.count({ where: { actorId: userId } }),
-    prisma.auditLog.count({ where: { actorId: userId } }),
-    prisma.ticketAssignment.count({ where: { OR: [{ assignedById: userId }, { previousAssigneeId: userId }, { newAssigneeId: userId }] } }),
-    prisma.worklog.count({ where: { userId } }),
-    prisma.assetMovement.count({ where: { OR: [{ createdById: userId }, { fromUserId: userId }, { toUserId: userId }] } }),
-    prisma.assetRequest.count({ where: { OR: [{ requesterId: userId }, { approvedById: userId }] } }),
-    prisma.attachment.count({ where: { uploadedById: userId } }),
-    prisma.knowledgeArticle.count({ where: { ownerId: userId } }),
-    prisma.slaException.count({ where: { createdById: userId } }),
-    prisma.userProfileChange.count({ where: { OR: [{ userId }, { actorId: userId }] } }),
-    prisma.notification.count({ where: { recipientId: userId } }),
-  ]);
-  if (counts.some((count) => count > 0)) {
-    throw new AdminServiceError("Cet utilisateur possède un historique métier et ne peut pas être supprimé définitivement. Vous pouvez le désactiver.", 409);
-  }
+  await requireDeletable("USER", userId);
   return prisma.$transaction(async (tx) => {
     await tx.user.updateMany({ where: { OR: [{ managerId: userId }, { entraManagerId: userId }] }, data: { managerId: null, entraManagerId: null } });
     await tx.queue.updateMany({ where: { managerId: userId }, data: { managerId: null } });
@@ -258,14 +254,7 @@ export async function deleteDepartment(actor: UserContext, departmentId: string,
   const parsed = deleteAdminSchema.parse({ reason });
   const department = await prisma.department.findUnique({ where: { id: departmentId }, select: { id: true, code: true, name: true } });
   if (!department) throw new AdminServiceError("Département introuvable.", 404);
-  const [users, queues, tickets, mappings, scopes, rules, missions, assets, movements, articles] = await Promise.all([
-    prisma.user.count({ where: { departmentId } }), prisma.queue.count({ where: { departmentId } }), prisma.ticket.count({ where: { sourceDepartmentId: departmentId } }),
-    prisma.entraDepartmentMapping.count({ where: { departmentId } }), prisma.permissionScope.count({ where: { departmentId } }), prisma.notificationRule.count({ where: { departmentId } }),
-    prisma.mission.count({ where: { departmentId } }), prisma.asset.count({ where: { departmentId } }), prisma.assetMovement.count({ where: { OR: [{ fromDepartmentId: departmentId }, { toDepartmentId: departmentId }] } }),
-    prisma.knowledgeArticle.count({ where: { departmentId } }),
-  ]);
-  const dependencies = [[users,"utilisateur(s)"],[queues,"file(s)"],[tickets,"ticket(s) historique(s)"],[mappings,"correspondance(s) Entra"],[scopes,"périmètre(s)"],[rules,"règle(s) de notification"],[missions,"mission(s)"],[assets,"actif(s)"],[movements,"mouvement(s) d’actif"],[articles,"article(s)"]].filter(([count]) => Number(count) > 0).map(([count,label]) => `${count} ${label}`);
-  if (dependencies.length) throw new AdminServiceError(`Impossible de supprimer le département ${department.name} : ${dependencies.join(" et ")} y sont encore rattachés. Désactivez-le pour empêcher toute nouvelle utilisation.`, 409);
+  await requireDeletable("DEPARTMENT", departmentId);
   const result = await prisma.$transaction(async (tx) => {
     await appendAuditLog(tx, { actorId: current.id, action: "DEPARTMENT_DELETED", objectType: "Department", objectId: department.id, oldValue: department, reason: parsed.reason });
     await tx.department.delete({ where: { id: departmentId } });
@@ -280,12 +269,7 @@ export async function deleteQueue(actor: UserContext, queueId: string, reason: s
   const parsed = deleteAdminSchema.parse({ reason });
   const queue = await prisma.queue.findUnique({ where: { id: queueId }, select: { id: true, code: true, name: true } });
   if (!queue) throw new AdminServiceError("File introuvable.", 404);
-  const [tickets, services, teams, assignments, events] = await Promise.all([
-    prisma.ticket.count({ where: { queueId } }), prisma.serviceCatalogItem.count({ where: { queueId } }), prisma.team.count({ where: { queueId } }),
-    prisma.ticketAssignment.count({ where: { queueId } }), prisma.ticketEvent.count({ where: { queueId } }),
-  ]);
-  const dependencies = [[tickets,"ticket(s)"],[services,"service(s)"],[teams,"équipe(s)"],[assignments,"affectation(s) historique(s)"],[events,"événement(s) historique(s)"]].filter(([count]) => Number(count) > 0).map(([count,label]) => `${count} ${label}`);
-  if (dependencies.length) throw new AdminServiceError(`Impossible de supprimer la file ${queue.name} : ${dependencies.join(" et ")} l’utilisent encore. Désactivez-la pour empêcher toute nouvelle utilisation.`, 409);
+  await requireDeletable("QUEUE", queueId);
   const result = await prisma.$transaction(async (tx) => {
     await tx.user.updateMany({ where: { authorizedQueueId: queueId }, data: { authorizedQueueId: null } });
     await tx.notificationRule.deleteMany({ where: { queueId } });
@@ -304,6 +288,7 @@ export async function deleteTeam(actor: UserContext, teamId: string, reason: str
   const parsed = deleteAdminSchema.parse({ reason });
   const team = await prisma.team.findUnique({ where: { id: teamId }, select: { id: true, name: true, queueId: true } });
   if (!team) throw new AdminServiceError("Équipe introuvable.", 404);
+  await requireDeletable("TEAM", teamId);
   return prisma.$transaction(async (tx) => {
     await tx.user.updateMany({ where: { primaryTeamId: teamId }, data: { primaryTeamId: null } });
     await tx.teamMember.deleteMany({ where: { teamId } });
@@ -319,8 +304,7 @@ export async function deleteCatalogItem(actor: UserContext, serviceId: string, r
   const parsed = deleteAdminSchema.parse({ reason });
   const service = await prisma.serviceCatalogItem.findUnique({ where: { id: serviceId }, select: { id: true, code: true, name: true } });
   if (!service) throw new AdminServiceError("Service du catalogue introuvable.", 404);
-  const tickets = await prisma.ticket.count({ where: { serviceCatalogItemId: serviceId } });
-  if (tickets) throw new AdminServiceError(`Ce service est utilisé par ${tickets} ticket(s) existant(s) et doit être désactivé plutôt que supprimé.`, 409);
+  await requireDeletable("CATALOG_ITEM", serviceId);
   const result = await prisma.$transaction(async (tx) => {
     await tx.escalationRule.deleteMany({ where: { serviceItemId: serviceId } });
     await appendAuditLog(tx, { actorId: current.id, action: "CATALOG_ITEM_DELETED", objectType: "ServiceCatalogItem", objectId: service.id, oldValue: service, reason: parsed.reason });

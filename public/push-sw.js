@@ -1,0 +1,2 @@
+self.addEventListener("push", (event) => { const data = event.data ? event.data.json() : {}; event.waitUntil(self.registration.showNotification(data.title || "1TASK", { body: data.body || "", data: { actionUrl: data.actionUrl || "/notifications" } })); });
+self.addEventListener("notificationclick", (event) => { event.notification.close(); event.waitUntil(clients.openWindow(event.notification.data.actionUrl || "/notifications")); });

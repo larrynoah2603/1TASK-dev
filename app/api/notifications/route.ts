@@ -52,6 +52,10 @@ export async function GET(
             type:
               item.type,
 
+            severity: item.severity,
+            entityType: item.entityType,
+            actionUrl: item.actionUrl,
+
             ticketId:
               item.ticketId,
 

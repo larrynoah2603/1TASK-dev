@@ -49,6 +49,9 @@ export const serverEnvironmentSchema = z.object({
   REDIS_REST_TOKEN: optionalString,
   REDIS_REST_URL: optionalUrl,
   SLA_MONITOR_BATCH_SIZE: boundedInteger(100, 25, 500),
+  WEB_PUSH_PUBLIC_KEY: optionalString,
+  WEB_PUSH_PRIVATE_KEY: optionalString,
+  WEB_PUSH_SUBJECT: optionalString,
   TICKET_FTS_ENABLED: z.enum(["true", "false"]).default("true").transform((value) => value === "true"),
 }).superRefine((environment, context) => {
   // Vercel intentionally withholds production-only secrets from Preview
@@ -61,6 +64,11 @@ export const serverEnvironmentSchema = z.object({
   }
   if (strictRuntime && environment.OUTBOX_DELIVERY_TOKEN && !environment.OUTBOX_DELIVERY_URL) {
     context.addIssue({ code: "custom", path: ["OUTBOX_DELIVERY_URL"], message: "OUTBOX_DELIVERY_URL est obligatoire lorsqu’un token de livraison est configuré." });
+  }
+
+  const pushValues = [environment.WEB_PUSH_PUBLIC_KEY, environment.WEB_PUSH_PRIVATE_KEY, environment.WEB_PUSH_SUBJECT];
+  if (strictRuntime && pushValues.some(Boolean) && !pushValues.every(Boolean)) {
+    context.addIssue({ code: "custom", path: ["WEB_PUSH_PUBLIC_KEY"], message: "Les trois variables Web Push doivent être configurées ensemble." });
   }
 
   const entraValues = [environment.MICROSOFT_ENTRA_ID_CLIENT_ID, environment.MICROSOFT_ENTRA_ID_CLIENT_SECRET, environment.MICROSOFT_ENTRA_ID_TENANT_ID];

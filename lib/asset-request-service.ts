@@ -2,7 +2,7 @@ import { AssetRequestStatus, AssetStatus, NotificationType } from "@prisma/clien
 import { assertAssetRequestReviewer } from "@/lib/asset-access";
 import { appendAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/db";
-import { createInAppNotification } from "@/lib/notifications";
+import { createInAppNotification, notify } from "@/lib/notifications";
 import { AuthorizationError, ResourceNotFoundError, type UserContext } from "@/lib/server-auth";
 import { assetRequestReviewSchema, assetRequestSchema, type AssetRequestInput, type AssetRequestReviewInput } from "@/lib/validation";
 
@@ -25,7 +25,23 @@ export function listMyAssetRequests(actor: UserContext) {
 
 export async function createAssetRequest(actor: UserContext, input: AssetRequestInput) {
   const parsed = assetRequestSchema.parse(input);
-  return prisma.assetRequest.create({ data: { ...parsed, comment: parsed.comment || null, requesterId: actor.id } });
+  return prisma.$transaction(async (tx) => {
+    const request = await tx.assetRequest.create({
+      data: { ...parsed, comment: parsed.comment || null, requesterId: actor.id },
+    });
+    await createInAppNotification(tx, {
+      recipientId: actor.id,
+      type: NotificationType.ASSET_REQUEST,
+      severity: "INFO",
+      title: "Demande d’actif enregistrée",
+      body: "Votre demande d’actif a été transmise pour validation.",
+      entityType: "ASSET_REQUEST",
+      entityId: request.id,
+      actionUrl: "/asset-requests",
+      deduplicationKey: `ASSET_REQUEST:${request.id}`,
+    });
+    return request;
+  });
 }
 
 export async function listAssetRequestsForReview(actor: UserContext) {
@@ -69,13 +85,13 @@ export async function reviewAssetRequest(actor: UserContext, requestId: string, 
       if (assignment.count !== 1) throw new AuthorizationError("L’actif vient d’être attribué à un autre utilisateur.");
       await tx.assetMovement.create({ data: { assetId: asset.id, toUserId: request.requesterId, toDepartmentId: asset.departmentId, reason: `Attribution après validation de la demande ${request.id}`, createdById: actor.id } });
       const updated = await tx.assetRequest.update({ where: { id: request.id }, data: { status: AssetRequestStatus.APPROVED, assetId: asset.id, approvedById: actor.id, approvedAt } });
-      await createInAppNotification(tx, { recipientId: request.requesterId, type: NotificationType.ADMINISTRATIVE_ACTION, title: "Demande d’actif approuvée", body: `${asset.name} (${asset.assetTag}) vous a été attribué.` });
+      await notify(tx, { recipientId: request.requesterId, type: NotificationType.ASSET_APPROVED, severity: "SUCCESS", title: "Demande d’actif approuvée", message: `${asset.name} (${asset.assetTag}) vous a été attribué.`, entityType: "ASSET_REQUEST", entityId: request.id, actionUrl: "/asset-requests", deduplicationKey: `ASSET_APPROVED:${request.id}` });
       await appendAuditLog(tx, { actorId: actor.id, action: "ASSET_REQUEST_APPROVED", objectType: "AssetRequest", objectId: request.id, newValue: { assetId: asset.id, requesterId: request.requesterId }, reason: "Validation et attribution d’un actif." });
       return updated;
     }
 
     const updated = await tx.assetRequest.update({ where: { id: request.id }, data: { status: AssetRequestStatus.REJECTED, rejectedReason: parsed.rejectedReason, approvedById: actor.id, approvedAt: new Date() } });
-    await createInAppNotification(tx, { recipientId: request.requesterId, type: NotificationType.ADMINISTRATIVE_ACTION, title: "Demande d’actif refusée", body: parsed.rejectedReason });
+    await notify(tx, { recipientId: request.requesterId, type: NotificationType.ASSET_REJECTED, severity: "WARNING", title: "Demande d’actif refusée", message: parsed.rejectedReason, entityType: "ASSET_REQUEST", entityId: request.id, actionUrl: "/asset-requests", deduplicationKey: `ASSET_REJECTED:${request.id}` });
     await appendAuditLog(tx, { actorId: actor.id, action: "ASSET_REQUEST_REJECTED", objectType: "AssetRequest", objectId: request.id, newValue: { rejectedReason: parsed.rejectedReason }, reason: "Refus motivé d’une demande d’actif." });
     return updated;
   });

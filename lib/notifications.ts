@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { PrismaClient, NotificationChannel, NotificationStatus, NotificationType } from "@prisma/client";
 import { enqueueOutboxEvent } from "@/lib/outbox";
 
@@ -10,6 +10,11 @@ export type InAppNotificationInput = {
   type: NotificationType;
   title: string;
   body: string;
+  severity?: import("@prisma/client").NotificationSeverity;
+  entityType?: string;
+  entityId?: string;
+  actionUrl?: string;
+  deduplicationKey?: string;
 };
 
 async function notificationEnabled(db: NotificationDb, recipientId: string, type: NotificationType, channel: NotificationChannel) {
@@ -26,6 +31,11 @@ export async function createInAppNotification(db: NotificationDb, input: InAppNo
       type: input.type,
       title: input.title,
       body: input.body,
+      severity: input.severity,
+      entityType: input.entityType,
+      entityId: input.entityId,
+      actionUrl: input.actionUrl,
+      deduplicationKey: input.deduplicationKey,
       channel: NotificationChannel.IN_APP,
       status: NotificationStatus.PENDING,
     },
@@ -55,6 +65,11 @@ export async function createInAppNotifications(db: NotificationDb, inputs: InApp
       type: input.type,
       title: input.title,
       body: input.body,
+      severity: input.severity,
+      entityType: input.entityType,
+      entityId: input.entityId,
+      actionUrl: input.actionUrl,
+      deduplicationKey: input.deduplicationKey,
       channel: NotificationChannel.IN_APP,
       status: NotificationStatus.PENDING,
     }));
@@ -91,4 +106,51 @@ export async function queueEmailNotification(
     payload: { notificationId: notification.id, recipientId: input.recipientId, ticketId: input.ticketId ?? null, type: input.type, title: input.title, body: input.body },
   });
   return notification;
+}
+
+export type NotificationDispatchInput = {
+  recipientId: string;
+  type: NotificationType;
+  severity: import("@prisma/client").NotificationSeverity;
+  title: string;
+  message: string;
+  ticketId?: string;
+  entityType?: string;
+  entityId?: string;
+  actionUrl?: string;
+  deduplicationKey?: string;
+};
+
+export function defaultChannelsForSeverity(severity: import("@prisma/client").NotificationSeverity): NotificationChannel[] {
+  if (severity === "CRITICAL") return [NotificationChannel.IN_APP, NotificationChannel.PUSH, NotificationChannel.EMAIL];
+  if (severity === "WARNING") return [NotificationChannel.IN_APP, NotificationChannel.PUSH];
+  return [NotificationChannel.IN_APP];
+}
+
+/** Central notification dispatcher. Business code never contacts push/email providers directly. */
+export async function notify(db: NotificationDb, input: NotificationDispatchInput) {
+  const configured = await db.notificationRule.findMany({ where: { eventType: input.type, isActive: true }, select: { channel: true } });
+  const channels = configured.length ? [...new Set(configured.map((rule) => rule.channel))] : defaultChannelsForSeverity(input.severity);
+  const mandatory = input.type === NotificationType.SECURITY || input.severity === "CRITICAL";
+  const preferences = mandatory ? [] : await db.notificationPreference.findMany({ where: { userId: input.recipientId, eventType: input.type, channel: { in: channels } }, select: { channel: true, enabled: true } });
+  const disabled = new Set(preferences.filter((item) => !item.enabled).map((item) => item.channel));
+  const created = [];
+  for (const channel of channels.filter((item) => mandatory || !disabled.has(item))) {
+    try {
+      const notification = await db.notification.create({ data: {
+        recipientId: input.recipientId, ticketId: input.ticketId, type: input.type, severity: input.severity,
+        title: input.title, body: input.message, entityType: input.entityType, entityId: input.entityId,
+        actionUrl: input.actionUrl, deduplicationKey: input.deduplicationKey, channel, status: NotificationStatus.PENDING,
+      } });
+      created.push(notification);
+      if (channel !== NotificationChannel.IN_APP) await enqueueOutboxEvent(db, {
+        eventKey: `notification:${notification.id}:${channel.toLowerCase()}`, type: `NOTIFICATION_${channel}_REQUESTED`,
+        aggregateType: "Notification", aggregateId: notification.id,
+        payload: { notificationId: notification.id, channel, recipientId: input.recipientId },
+      });
+    } catch (error) {
+      if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2002") throw error;
+    }
+  }
+  return created;
 }
