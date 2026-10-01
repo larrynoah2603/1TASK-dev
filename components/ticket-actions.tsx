@@ -193,7 +193,7 @@ export function TicketActions({
               <textarea required minLength={10} value={transitionReason} onChange={(event) => setTransitionReason(event.target.value)} placeholder="Motif obligatoire, 10 caractères minimum." className="field-control min-h-24 border-amber-200 bg-amber-50/40 font-normal" />
             </label>
           ) : null}
-            <button disabled={busy || (requiresAdministrativeReason && transitionReason.trim().length < 10)} className="button-primary">Enregistrer la transition</button>
+            <button disabled={busy || (requiresAdministrativeReason && transitionReason.trim().length < 10)} aria-busy={busy} className="button-primary">{busy ? "Enregistrement…" : "Enregistrer la transition"}</button>
           </form>
         </TicketSidePanel>
       ) : null}
@@ -213,7 +213,7 @@ export function TicketActions({
           <label className="field-label">Motif obligatoire
             <input required minLength={10} value={assignmentReason} onChange={(event) => setAssignmentReason(event.target.value)} placeholder="Expliquez l’affectation ou la réaffectation." className="field-control font-normal" />
           </label>
-            <button disabled={busy || !assignedToId || assignmentReason.trim().length < 10} className="button-secondary">Affecter le ticket</button>
+            <button disabled={busy || !assignedToId || assignmentReason.trim().length < 10} aria-busy={busy} className="button-secondary">{busy ? "Affectation…" : "Affecter le ticket"}</button>
           </form>
         </TicketSidePanel>
       ) : null}
@@ -233,7 +233,7 @@ export function TicketActions({
           <label className="field-label">Motif du transfert
             <textarea required minLength={10} value={transferReason} onChange={(event) => setTransferReason(event.target.value)} placeholder="Expliquez pourquoi la file doit changer." className="field-control min-h-24 font-normal" />
           </label>
-            <button disabled={busy || !destinationQueueId || transferReason.trim().length < 10} className="button-secondary">Réorienter le ticket</button>
+            <button disabled={busy || !destinationQueueId || transferReason.trim().length < 10} aria-busy={busy} className="button-secondary">{busy ? "Réorientation…" : "Réorienter le ticket"}</button>
           </form>
         </TicketSidePanel>
       ) : null}

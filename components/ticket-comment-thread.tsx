@@ -103,7 +103,7 @@ export function TicketCommentThread({
                 ]}
               />
             ) : <span className="ticket-comment-helper">Votre message sera visible par le demandeur.</span>}
-            <button type="submit" disabled={busy || !body.trim()} className="button-primary">{busy ? "Publication…" : "Publier le commentaire"}</button>
+            <button type="submit" disabled={busy || !body.trim()} aria-busy={busy} className="button-primary">{busy ? "Publication…" : "Publier le commentaire"}</button>
           </div>
         </form>
       ) : null}

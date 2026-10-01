@@ -45,7 +45,7 @@ describe("routage départemental des tickets", () => {
 
     expect(form).toContain("RECONCILIATION_ATTEMPTS");
     expect(form).toContain("/api/tickets/creation-status?token=");
-    expect(form).toContain("Ticket créé. La réponse initiale avait simplement expiré.");
+    expect(form).toContain("La création a été confirmée après vérification.");
     expect(statusRoute).toContain("findCreatedTicketByToken(actor, token)");
   });
 });

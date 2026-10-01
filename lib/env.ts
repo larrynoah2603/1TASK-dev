@@ -37,6 +37,13 @@ export const serverEnvironmentSchema = z.object({
   MICROSOFT_ENTRA_ID_CLIENT_ID: optionalString,
   MICROSOFT_ENTRA_ID_CLIENT_SECRET: optionalString,
   MICROSOFT_ENTRA_ID_TENANT_ID: optionalString,
+  MICROSOFT_MAIL_TENANT_ID: optionalString,
+  MICROSOFT_MAIL_CLIENT_ID: optionalString,
+  MICROSOFT_MAIL_CLIENT_SECRET: optionalString,
+  MICROSOFT_MAIL_SENDER: z.preprocess(
+    (value) => typeof value === "string" && value.trim() === "" ? undefined : value,
+    z.email().optional(),
+  ),
   ALLOWED_EMAIL_DOMAIN: optionalString,
   ADMIN_EMAILS: emailList,
   CRON_SECRET: optionalString,
@@ -74,6 +81,11 @@ export const serverEnvironmentSchema = z.object({
   const entraValues = [environment.MICROSOFT_ENTRA_ID_CLIENT_ID, environment.MICROSOFT_ENTRA_ID_CLIENT_SECRET, environment.MICROSOFT_ENTRA_ID_TENANT_ID];
   if (strictRuntime && entraValues.some(Boolean) && !entraValues.every(Boolean)) {
     context.addIssue({ code: "custom", path: ["MICROSOFT_ENTRA_ID_CLIENT_ID"], message: "Les trois variables Microsoft Entra ID doivent être configurées ensemble." });
+  }
+
+  const mailValues = [environment.MICROSOFT_MAIL_TENANT_ID, environment.MICROSOFT_MAIL_CLIENT_ID, environment.MICROSOFT_MAIL_CLIENT_SECRET, environment.MICROSOFT_MAIL_SENDER];
+  if (strictRuntime && mailValues.some(Boolean) && !mailValues.every(Boolean)) {
+    context.addIssue({ code: "custom", path: ["MICROSOFT_MAIL_TENANT_ID"], message: "Les quatre variables Microsoft Mail doivent être configurées ensemble." });
   }
 
   if (environment.NODE_ENV === "production" && strictRuntime) {

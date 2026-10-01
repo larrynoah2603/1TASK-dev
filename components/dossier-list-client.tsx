@@ -82,7 +82,9 @@ export function DossierListClient({
       });
       const data = await response.json() as { error?: string; id?: string };
       if (!response.ok) {
-        setError(data.error ?? "La création du dossier a échoué.");
+        const message = data.error ?? "La création du dossier a échoué.";
+        setError(message);
+        toast(message, "error");
         return;
       }
       toast("Dossier créé avec succès.");
@@ -93,7 +95,9 @@ export function DossierListClient({
       setConfidential(false);
       router.push(`/dossiers/${data.id}` as Route);
     } catch {
-      setError("Le serveur n’a pas pu créer le dossier.");
+      const message = "Le serveur n’a pas pu créer le dossier.";
+      setError(message);
+      toast(message, "error");
     } finally {
       setSubmitting(false);
     }

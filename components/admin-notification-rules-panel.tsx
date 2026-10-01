@@ -127,7 +127,7 @@ export function AdminNotificationRulesPanel({
         <label className="field-label">Département<Combobox name="departmentId" options={[{ value: "", label: "Tous" }, ...departments.map((item) => ({ value: item.id, label: item.name }))]} /></label>
         <label className="field-label">File<Combobox name="queueId" options={[{ value: "", label: "Toutes" }, ...queues.map((item) => ({ value: item.id, label: `${item.department.name} — ${item.name}` }))]} /></label>
         <label className="field-label md:col-span-2">Motif<input name="reason" required minLength={10} className="field-control" placeholder="Motif de création de la règle…" /></label>
-        <button disabled={busy} className="button-primary self-end">Créer la règle</button>
+        <button disabled={busy} aria-busy={busy} className="button-primary self-end">{busy ? "Création…" : "Créer la règle"}</button>
       </form>
 
       {!rules.length ? <div className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-sm text-slate-500">Aucune règle de notification n’est configurée.</div> : (

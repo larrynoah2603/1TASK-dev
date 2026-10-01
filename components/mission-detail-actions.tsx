@@ -19,17 +19,21 @@ export function MissionDetailActions({ missionId, status, canManage }: { mission
       const response = await fetch(`/api/production/missions/${missionId}/complete`, { method: "POST" });
       const data = await response.json() as { error?: string };
       if (!response.ok) {
-        setError(data.error ?? "La mission n’a pas pu être clôturée.");
+        const message = data.error ?? "La mission n’a pas pu être clôturée.";
+        setError(message);
+        toast(message, "error");
         return;
       }
       toast("Mission clôturée avec succès.");
       router.refresh();
     } catch {
-      setError("Le serveur n’a pas pu clôturer la mission.");
+      const message = "Le serveur n’a pas pu clôturer la mission.";
+      setError(message);
+      toast(message, "error");
     } finally {
       setSubmitting(false);
     }
   }
 
-  return <div className="flex flex-col items-end gap-2"><button type="button" className="button-primary" disabled={submitting} onClick={completeMission}>{submitting ? "Clôture…" : "Clôturer la mission"}</button>{error ? <p role="alert" className="max-w-xs text-right text-xs text-rose-700">{error}</p> : null}</div>;
+  return <div className="flex flex-col items-end gap-2"><button type="button" className="button-primary" disabled={submitting} aria-busy={submitting} onClick={completeMission}>{submitting ? "Clôture…" : "Clôturer la mission"}</button>{error ? <p role="alert" className="max-w-xs text-right text-xs text-rose-700">{error}</p> : null}</div>;
 }

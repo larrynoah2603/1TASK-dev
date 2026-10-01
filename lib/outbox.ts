@@ -2,8 +2,16 @@ import { Prisma, PrismaClient } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { readServerEnvironment } from "@/lib/env";
 import { deliverPushNotification } from "@/lib/push-notification-service";
+import { deliverEmailNotification } from "@/lib/email-notification-service";
 
 type OutboxDb = Prisma.TransactionClient | PrismaClient;
+
+export async function deliverInternalNotificationEvent(type: string, payload: { notificationId?: string }) {
+  if (!payload.notificationId) throw new Error("Notification id is missing");
+  if (type === "NOTIFICATION_PUSH_REQUESTED") return deliverPushNotification(payload.notificationId);
+  if (type === "NOTIFICATION_EMAIL_REQUESTED") return deliverEmailNotification(payload.notificationId);
+  return null;
+}
 
 export async function enqueueOutboxEvent(db: OutboxDb, input: {
   eventKey: string;
@@ -37,10 +45,9 @@ export async function processOutboxBatch(now = new Date()) {
   for (const event of claimed) {
     try {
       const environment = readServerEnvironment();
-      if (event.type === "NOTIFICATION_PUSH_REQUESTED") {
+      if (event.type === "NOTIFICATION_PUSH_REQUESTED" || event.type === "NOTIFICATION_EMAIL_REQUESTED") {
         const payload = event.payload as { notificationId?: string };
-        if (!payload.notificationId) throw new Error("Push notification id is missing");
-        await deliverPushNotification(payload.notificationId);
+        await deliverInternalNotificationEvent(event.type, payload);
         await prisma.outboxEvent.update({ where: { id: event.id }, data: { status: "PROCESSED", processedAt: new Date(), lockedAt: null, lastError: null } });
         processed += 1;
         continue;
@@ -58,7 +65,20 @@ export async function processOutboxBatch(now = new Date()) {
       processed += 1;
     } catch (error) {
       const attempts = event.attempts + 1;
-      await prisma.outboxEvent.update({ where: { id: event.id }, data: { status: attempts >= 10 ? "DEAD" : "PENDING", attempts, lockedAt: null, availableAt: new Date(Date.now() + Math.min(3_600_000, 1_000 * 2 ** attempts)), lastError: error instanceof Error ? error.message.slice(0, 500) : "delivery failed" } });
+      const providerDelay = typeof error === "object" && error && "retryAfterMs" in error && typeof error.retryAfterMs === "number" ? error.retryAfterMs : 0;
+      const retryDelay = Math.max(providerDelay, Math.min(3_600_000, 1_000 * 2 ** attempts));
+      console.warn("[outbox] delivery failed", {
+        eventId: event.id,
+        eventType: event.type,
+        attempt: attempts,
+        retryInMs: retryDelay,
+        error: error instanceof Error ? error.message : "delivery failed",
+      });
+      await prisma.outboxEvent.update({ where: { id: event.id }, data: { status: attempts >= 10 ? "DEAD" : "PENDING", attempts, lockedAt: null, availableAt: new Date(Date.now() + retryDelay), lastError: error instanceof Error ? error.message.slice(0, 500) : "delivery failed" } });
+      if (attempts >= 10 && event.type === "NOTIFICATION_EMAIL_REQUESTED") {
+        const payload = event.payload as { notificationId?: string };
+        if (payload.notificationId) await prisma.notification.updateMany({ where: { id: payload.notificationId, status: "PENDING" }, data: { status: "FAILED" } });
+      }
       failed += 1;
     }
   }

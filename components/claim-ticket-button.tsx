@@ -43,6 +43,7 @@ export function ClaimTicketButton({ ticketId }: { ticketId: string }) {
         type="button"
         onClick={() => setConfirmOpen(true)}
         disabled={busy}
+        aria-busy={busy}
         className="button-primary min-h-8 px-2.5 text-[11px]"
       >
         {busy ? "Prise en charge…" : "Prendre en charge"}
