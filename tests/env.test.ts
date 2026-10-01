@@ -31,6 +31,18 @@ describe("configuration serveur", () => {
       .toThrow(/trois variables Microsoft Entra ID/);
   });
 
+  it("valide la configuration Microsoft Mail comme un ensemble indivisible", () => {
+    expect(() => readServerEnvironment({ ...databaseEnvironment, MICROSOFT_MAIL_CLIENT_ID: "mail-client" }))
+      .toThrow(/quatre variables Microsoft Mail/);
+    expect(readServerEnvironment({
+      ...databaseEnvironment,
+      MICROSOFT_MAIL_TENANT_ID: "mail-tenant",
+      MICROSOFT_MAIL_CLIENT_ID: "mail-client",
+      MICROSOFT_MAIL_CLIENT_SECRET: "mail-secret",
+      MICROSOFT_MAIL_SENDER: "notifications@example.com",
+    })).toMatchObject({ MICROSOFT_MAIL_TENANT_ID: "mail-tenant", MICROSOFT_MAIL_SENDER: "notifications@example.com" });
+  });
+
   it("autorise une Preview Vercel sans secrets réservés à la production", () => {
     const environment = readServerEnvironment({
       ...databaseEnvironment,
