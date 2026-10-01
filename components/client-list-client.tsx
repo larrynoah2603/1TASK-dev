@@ -48,13 +48,17 @@ export function ClientListClient({ initialClients, canManage }: { initialClients
       });
       const data = await response.json() as { error?: string; id?: string };
       if (!response.ok || !data.id) {
-        setError(data.error ?? "La création du client a échoué.");
+        const message = data.error ?? "La création du client a échoué.";
+        setError(message);
+        toast(message, "error");
         return;
       }
       toast("Client créé avec succès.");
       router.push(`/clients/${data.id}` as Route);
     } catch {
-      setError("Le serveur n’a pas pu créer le client.");
+      const message = "Le serveur n’a pas pu créer le client.";
+      setError(message);
+      toast(message, "error");
     } finally {
       setSubmitting(false);
     }
@@ -72,7 +76,7 @@ export function ClientListClient({ initialClients, canManage }: { initialClients
 
       <section className="panel overflow-hidden"><div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 sm:px-5"><div><p className="eyebrow">Référentiel</p><h2 className="mt-1 text-base font-semibold text-slate-900">Clients</h2></div><span className="text-[11px] text-slate-400">{clients.length} résultat(s)</span></div><div className="overflow-x-auto"><table className="data-table min-w-[680px]"><thead><tr><th>Client</th><th>Dossiers</th><th>État</th><th>Dernière mise à jour</th><th aria-label="Action" /></tr></thead><tbody>{clients.map((client) => <tr key={client.id}><td><Link href={`/clients/${client.id}` as Route} className="font-semibold operational-link hover:underline">{client.name}</Link><p className="mt-0.5 font-mono text-[10px] text-slate-400">{client.code}</p></td><td className="font-semibold text-slate-800">{client._count.dossiers}</td><td><span className={`status-chip ${client.isActive ? "status-chip-active" : "status-chip-archived"}`}>{client.isActive ? "Actif" : "Inactif"}</span></td><td className="text-xs text-slate-500">{formatDate(client.updatedAt)}</td><td><Link href={`/clients/${client.id}` as Route} className="button-ghost text-xs">Ouvrir</Link></td></tr>)}{!clients.length ? <tr><td colSpan={5} className="py-10 text-center text-sm text-slate-500">Aucun client ne correspond à votre recherche.</td></tr> : null}</tbody></table></div></section>
 
-      {showCreate ? <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) setShowCreate(false); }}><section className="modal-panel max-w-lg" role="dialog" aria-modal="true" aria-labelledby="create-client-title"><div className="flex items-start justify-between gap-3"><div><p className="eyebrow">Référentiel</p><h2 id="create-client-title" className="mt-1 text-lg font-semibold text-slate-900">Créer un client</h2></div><button type="button" className="button-ghost" onClick={() => setShowCreate(false)} aria-label="Fermer">×</button></div><form className="mt-5 space-y-4" onSubmit={createClient}>{error ? <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">{error}</div> : null}<label className="field-label">Code client<input className="field-control" required maxLength={80} value={code} onChange={(event) => setCode(event.target.value)} placeholder="CLI-001" /></label><label className="field-label">Nom du client<input className="field-control" required maxLength={180} value={name} onChange={(event) => setName(event.target.value)} placeholder="Nom de la structure…" /></label><div className="flex justify-end gap-2 border-t border-slate-100 pt-4"><button type="button" className="button-secondary" onClick={() => setShowCreate(false)}>Annuler</button><button type="submit" className="button-primary" disabled={submitting}>{submitting ? "Création…" : "Créer le client"}</button></div></form></section></div> : null}
+      {showCreate ? <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) setShowCreate(false); }}><section className="modal-panel max-w-lg" role="dialog" aria-modal="true" aria-labelledby="create-client-title"><div className="flex items-start justify-between gap-3"><div><p className="eyebrow">Référentiel</p><h2 id="create-client-title" className="mt-1 text-lg font-semibold text-slate-900">Créer un client</h2></div><button type="button" className="button-ghost" onClick={() => setShowCreate(false)} aria-label="Fermer">×</button></div><form className="mt-5 space-y-4" onSubmit={createClient}>{error ? <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">{error}</div> : null}<label className="field-label">Code client<input className="field-control" required maxLength={80} value={code} onChange={(event) => setCode(event.target.value)} placeholder="CLI-001" /></label><label className="field-label">Nom du client<input className="field-control" required maxLength={180} value={name} onChange={(event) => setName(event.target.value)} placeholder="Nom de la structure…" /></label><div className="flex justify-end gap-2 border-t border-slate-100 pt-4"><button type="button" className="button-secondary" onClick={() => setShowCreate(false)}>Annuler</button><button type="submit" className="button-primary" disabled={submitting} aria-busy={submitting}>{submitting ? "Création…" : "Créer le client"}</button></div></form></section></div> : null}
     </>
   );
 }

@@ -51,13 +51,17 @@ export function ClientsPage({ initialClients, canManage }: { initialClients: Cli
       });
       const data = await response.json() as { error?: string; id?: string };
       if (!response.ok || !data.id) {
-        setError(data.error ?? "La création du client a échoué.");
+        const message = data.error ?? "La création du client a échoué.";
+        setError(message);
+        toast(message, "error");
         return;
       }
       toast("Client créé avec succès.");
       router.push(`/clients/${data.id}` as Route);
     } catch {
-      setError("Le serveur n’a pas pu créer le client.");
+      const message = "Le serveur n’a pas pu créer le client.";
+      setError(message);
+      toast(message, "error");
     } finally {
       setSubmitting(false);
     }
@@ -81,7 +85,7 @@ export function ClientsPage({ initialClients, canManage }: { initialClients: Cli
               {error ? <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">{error}</div> : null}
               <label className="field-label">Code client<input className="field-control" required maxLength={80} value={code} onChange={(event) => setCode(event.target.value)} placeholder="CLI-001" /></label>
               <label className="field-label">Nom du client<input className="field-control" required maxLength={180} value={name} onChange={(event) => setName(event.target.value)} placeholder="Nom de la structure…" /></label>
-              <div className="flex justify-end gap-2 border-t border-slate-100 pt-4"><button type="button" className="button-secondary" onClick={() => setShowCreate(false)}>Annuler</button><button type="submit" className="button-primary" disabled={submitting}>{submitting ? "Création…" : "Créer le client"}</button></div>
+              <div className="flex justify-end gap-2 border-t border-slate-100 pt-4"><button type="button" className="button-secondary" onClick={() => setShowCreate(false)}>Annuler</button><button type="submit" className="button-primary" disabled={submitting} aria-busy={submitting}>{submitting ? "Création…" : "Créer le client"}</button></div>
             </form>
           </section>
         </div>

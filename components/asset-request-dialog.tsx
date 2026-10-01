@@ -3,6 +3,7 @@
 import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/icons";
+import { useToast } from "@/components/toast-provider";
 
 const assetTypes = [
   ["COMPUTER", "Ordinateur"], ["PHONE", "Téléphone"], ["ACCESSORY", "Accessoire"], ["OTHER", "Autre"],
@@ -10,6 +11,7 @@ const assetTypes = [
 
 export function AssetRequestDialog({ compact = false }: { compact?: boolean }) {
   const router = useRouter();
+  const { toast } = useToast();
   const titleId = useId();
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -22,9 +24,10 @@ export function AssetRequestDialog({ compact = false }: { compact?: boolean }) {
     try {
       const response = await fetch("/api/asset-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ assetType: form.get("assetType"), reason: form.get("reason"), priority: form.get("priority"), comment: form.get("comment") || null }) });
       const data = await response.json();
-      if (!response.ok) { setError(data.error ?? "La demande n’a pas pu être envoyée."); return; }
+      if (!response.ok) { const message = data.error ?? "La demande n’a pas pu être envoyée."; setError(message); toast(message, "error"); return; }
+      toast({ kind: "success", title: "Demande envoyée", description: "La demande d’actif a été transmise pour validation." });
       setOpen(false); router.refresh();
-    } catch { setError("Le service est momentanément indisponible. Réessayez dans quelques instants."); }
+    } catch { const message = "Le service est momentanément indisponible. Réessayez dans quelques instants."; setError(message); toast(message, "error"); }
     finally { setSubmitting(false); }
   }
 
@@ -43,7 +46,7 @@ export function AssetRequestDialog({ compact = false }: { compact?: boolean }) {
             <label className="field-label">Motif de demande<textarea className="field-control" name="reason" required minLength={10} maxLength={2000} rows={4} placeholder="Ex. Mon ordinateur ne permet plus d’exécuter les outils nécessaires…" /><span className="field-help">10 caractères minimum. Décrivez l’impact sur votre activité.</span></label>
             <label className="field-label">Commentaire <span className="field-optional">Optionnel</span><textarea className="field-control" name="comment" maxLength={2000} rows={3} placeholder="Contraintes, référence ou information complémentaire" /></label>
           </fieldset>
-          <footer className="form-actions"><button type="button" className="button-secondary" onClick={() => setOpen(false)}>Annuler</button><button type="submit" className="button-primary" disabled={submitting}>{submitting ? "Envoi…" : "Envoyer la demande"}</button></footer>
+          <footer className="form-actions"><button type="button" className="button-secondary" disabled={submitting} onClick={() => setOpen(false)}>Annuler</button><button type="submit" className="button-primary" disabled={submitting} aria-busy={submitting}>{submitting ? "Envoi…" : "Envoyer la demande"}</button></footer>
         </form>
       </section>
     </div> : null}

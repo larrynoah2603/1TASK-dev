@@ -31,6 +31,20 @@ const urgencyLabels: Record<string, string> = {
   CRITICAL: "Critique",
 };
 
+const statusLabels: Record<string, string> = {
+  NEW: "Nouveau",
+  TO_QUALIFY: "À qualifier",
+  TO_ASSIGN: "À affecter",
+  ASSIGNED: "Affecté",
+};
+
+type CreatedTicketResponse = {
+  id: string;
+  reference?: string;
+  status?: string;
+  queue?: { name?: string };
+};
+
 function createClientIdempotencyToken() {
   const uuid = typeof crypto !== "undefined" && "randomUUID" in crypto
     ? crypto.randomUUID()
@@ -71,6 +85,7 @@ export function NewTicketForm({ onCancel }: { onCancel?: () => void } = {}) {
   const [loadingDepartments, setLoadingDepartments] = useState(true);
   const [preview, setPreview] = useState(false);
   const creationIdempotencyToken = useRef(createClientIdempotencyToken()).current;
+  const submissionInFlight = useRef(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -127,6 +142,8 @@ export function NewTicketForm({ onCancel }: { onCancel?: () => void } = {}) {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submissionInFlight.current) return;
+    submissionInFlight.current = true;
     setSubmitting(true);
     setError("");
     const controller = new AbortController();
@@ -153,13 +170,21 @@ export function NewTicketForm({ onCancel }: { onCancel?: () => void } = {}) {
         signal: controller.signal,
         body: JSON.stringify(payload),
       });
-      const data = await response.json();
+      const data = await response.json() as CreatedTicketResponse & { error?: string };
       if (!response.ok) {
         setError(data.error ?? "La création a échoué.");
         toast(data.error ?? "La création a échoué.", "error");
         return;
       }
-      toast(selectedService ? "Ticket créé et routé directement." : "Ticket créé et routé selon le catalogue.");
+      const destination = data.queue?.name?.trim();
+      toast({
+        kind: "success",
+        title: "Ticket créé",
+        description: destination ? `La demande a été transmise à ${destination}.` : "La demande a été transmise.",
+        metadata: [data.reference, data.status ? statusLabels[data.status] ?? data.status : null].filter(Boolean).join(" · ") || undefined,
+        action: { label: "Voir le ticket", href: `/tickets/${data.id}` },
+        duration: 7_000,
+      });
       router.push(`/tickets/${data.id}`);
     } catch (requestError: unknown) {
       if (requestError instanceof DOMException && requestError.name === "AbortError") {
@@ -172,9 +197,17 @@ export function NewTicketForm({ onCancel }: { onCancel?: () => void } = {}) {
               { cache: "no-store" },
             );
             if (!statusResponse.ok) continue;
-            const statusData = await statusResponse.json() as { ticket: { id: string } | null };
+            const statusData = await statusResponse.json() as { ticket: CreatedTicketResponse | null };
             if (statusData.ticket) {
-              toast("Ticket créé. La réponse initiale avait simplement expiré.");
+              const reconciledTicket = statusData.ticket;
+              toast({
+                kind: "success",
+                title: "Ticket créé",
+                description: "La création a été confirmée après vérification.",
+                metadata: [reconciledTicket.reference, reconciledTicket.status ? statusLabels[reconciledTicket.status] ?? reconciledTicket.status : null].filter(Boolean).join(" · ") || undefined,
+                action: { label: "Voir le ticket", href: `/tickets/${reconciledTicket.id}` },
+                duration: 7_000,
+              });
               router.push(`/tickets/${statusData.ticket.id}`);
               return;
             }
@@ -190,6 +223,7 @@ export function NewTicketForm({ onCancel }: { onCancel?: () => void } = {}) {
       toast(message, "error");
     } finally {
       window.clearTimeout(timeoutId);
+      submissionInFlight.current = false;
       setSubmitting(false);
     }
   }
@@ -235,7 +269,7 @@ export function NewTicketForm({ onCancel }: { onCancel?: () => void } = {}) {
       {canAttachProductionContext ? <section className="rounded-lg border border-slate-200 bg-slate-50/70 p-4"><div><p className="eyebrow">Contexte de production</p><h3 className="mt-1 text-sm font-semibold text-slate-900">Rattacher ce ticket à un dossier ou une mission</h3><p className="mt-1 text-xs leading-5 text-slate-500">Facultatif. Les options sont limitées à votre périmètre autorisé et contrôlées à nouveau lors de la création.</p></div><div className="mt-4 grid gap-4 sm:grid-cols-2"><label className="field-label">Dossier client<Combobox value={dossierId} onChange={(next) => { setDossierId(next); const selectedMission = missions.find((mission) => mission.id === missionId); if (selectedMission && next && selectedMission.dossier.id !== next) setMissionId(""); resetPreview(); }} placeholder="Aucun dossier" options={[{ value: "", label: "Aucun dossier" }, ...dossiers.map((dossier) => ({ value: dossier.id, label: `${dossier.client.name} · ${dossier.code} · ${dossier.name}` }))]} /></label><label className="field-label">Mission<Combobox value={missionId} onChange={(next) => { const selectedMission = missions.find((mission) => mission.id === next); setMissionId(next); if (selectedMission) setDossierId(selectedMission.dossier.id); resetPreview(); }} placeholder="Aucune mission" options={[{ value: "", label: "Aucune mission" }, ...availableMissions.map((mission) => ({ value: mission.id, label: `${mission.code} · ${mission.name}` }))]} /></label></div></section> : null}
       <label className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50/80 p-4 text-sm text-slate-700"><input type="checkbox" checked={confidential} onChange={(event) => { setConfidential(event.target.checked); resetPreview(); }} className="mt-0.5 h-4 w-4 accent-[var(--kit-primary)]" /><span><span className="font-semibold">Dossier confidentiel</span><span className="mt-1 block text-xs leading-5 text-slate-500">L’accès sera limité aux personnes habilitées et nominativement autorisées.</span></span></label>
       {preview ? <section className="preview-panel" aria-labelledby="ticket-preview-title"><div className="flex items-start justify-between gap-3"><div><p className="eyebrow">Dernière vérification</p><h2 id="ticket-preview-title" className="mt-1 text-lg font-bold text-slate-900">Prévisualisation du ticket</h2></div><span className={`rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-[0.1em] ${selectedService ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-800"}`}>{selectedService ? "Nouveau · routage direct" : "Détection automatique"}</span></div><dl className="mt-5 grid gap-4 text-sm sm:grid-cols-2"><div><dt className="text-xs text-slate-500">Besoin</dt><dd className="mt-1 font-semibold text-slate-900">{requestedService}</dd></div><div><dt className="text-xs text-slate-500">Routage</dt><dd className="mt-1 font-semibold text-slate-900">{selectedService ? `${selectedService.name} · ${selectedService.queue.name}` : `${targetDepartment?.name} · catalogue automatique, triage en repli`}</dd></div><div><dt className="text-xs text-slate-500">Nature</dt><dd className="mt-1 font-semibold text-slate-900">{typeLabels[type] ?? type}</dd></div><div><dt className="text-xs text-slate-500">Impact / urgence</dt><dd className="mt-1 font-semibold text-slate-900">{impactLabels[impact]} · {urgencyLabels[urgency]}</dd></div><div className="sm:col-span-2"><dt className="text-xs text-slate-500">Objet</dt><dd className="mt-1 font-semibold text-slate-900">{title}</dd></div><div className="sm:col-span-2"><dt className="text-xs text-slate-500">Description</dt><dd className="mt-1 whitespace-pre-wrap text-slate-700">{description}</dd></div><div><dt className="text-xs text-slate-500">Confidentialité</dt><dd className="mt-1 font-semibold text-slate-900">{confidential ? "Dossier confidentiel" : "Dossier standard"}</dd></div>{dossierId || missionId ? <div><dt className="text-xs text-slate-500">Contexte</dt><dd className="mt-1 font-semibold text-slate-900">{missions.find((mission) => mission.id === missionId)?.code ?? dossiers.find((dossier) => dossier.id === dossierId)?.code ?? "Rattaché"}</dd></div> : null}</dl></section> : null}
-      <div className="form-actions flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end"><button type="button" onClick={() => onCancel ? onCancel() : router.back()} className="button-secondary">Annuler</button>{preview ? <><button type="button" onClick={() => setPreview(false)} className="button-secondary">Modifier</button><button type="submit" disabled={submitting || loadingDepartments} className="button-primary">{submitting ? "Création…" : "Confirmer et créer"}</button></> : <button type="button" disabled={submitting || loadingDepartments || !canPreview} onClick={() => setPreview(true)} className="button-primary">{loadingDepartments ? "Chargement des départements…" : !requestedService.trim() ? "Décrivez votre besoin" : !targetDepartmentId ? "Choisissez un département" : title.trim().length < 5 ? "Objet : 5 caractères minimum" : description.trim().length < 15 ? "Description : 15 caractères minimum" : "Prévisualiser le ticket"}</button>}</div>
+      <div className="form-actions flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end"><button type="button" disabled={submitting} onClick={() => onCancel ? onCancel() : router.back()} className="button-secondary">Annuler</button>{preview ? <><button type="button" disabled={submitting} onClick={() => setPreview(false)} className="button-secondary">Modifier</button><button type="submit" disabled={submitting || loadingDepartments} aria-busy={submitting} className="button-primary">{submitting ? <><span className="action-spinner" aria-hidden="true" />Création du ticket…</> : "Confirmer et créer"}</button></> : <button type="button" disabled={submitting || loadingDepartments || !canPreview} onClick={() => setPreview(true)} className="button-primary">{loadingDepartments ? "Chargement des départements…" : !requestedService.trim() ? "Décrivez votre besoin" : !targetDepartmentId ? "Choisissez un département" : title.trim().length < 5 ? "Objet : 5 caractères minimum" : description.trim().length < 15 ? "Description : 15 caractères minimum" : "Prévisualiser le ticket"}</button>}</div>
     </form>
   );
 }
