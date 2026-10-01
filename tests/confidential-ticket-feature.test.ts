@@ -4,6 +4,7 @@ import { recipientIsEligible, CONFIDENTIAL_DELEGATED_ACTIONS } from "@/lib/confi
 import { catalogAdminSchema, createTicketSchema } from "@/lib/validation";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { hasPermission, type UserContext } from "@/lib/server-auth";
 
 const cuid = "clz123456789012345678901";
 const baseCatalog = { code: "SALARY-COMPLAINT", name: "Salary complaint", ticketType: "SERVICE_REQUEST", category: "Complaint", keywords: [], queueId: cuid, priorityDefault: "MEDIUM", slaId: cuid, isActive: true, reason: "Business configuration" } as const;
@@ -35,6 +36,31 @@ describe("catalog confidentiality", () => {
     const query = readFileSync(join(process.cwd(), "lib/ticket-query-service.ts"), "utf8");
     const access = readFileSync(join(process.cwd(), "lib/ticket-access.ts"), "utf8");
     expect(query).toContain("delegation: { startsAt:");
-    expect(access).toContain("entry.delegation.endsAt > new Date()");
+    expect(access).toContain("entry.delegation.endsAt > now");
+  });
+
+  it("évalue les actions par remplaçant sans repli sur les permissions du rôle", () => {
+    const permission = (code: string) => ({ permission: { code } });
+    const substitute = {
+      id: "substitute-a", departmentId: "other", authorizedQueueId: null,
+      managedQueues: [], teamMemberships: [], status: UserStatus.ACTIVE,
+      roleAssignments: [{ scopeId: null, scope: null, role: { code: "AGENT", permissions: [
+        permission("ticket:read"), permission("ticket:update"), permission("ticket:comment:public"),
+      ] } }],
+    } as unknown as UserContext;
+    const target = {
+      requesterId: "requester", assignedToId: "substitute-a", queueId: "queue", departmentId: "dept",
+      confidential: true, authorizedUserIds: ["substitute-a"],
+      delegatedActionsByUser: { "substitute-a": ["VIEW"] },
+    };
+    expect(hasPermission(substitute, "ticket:read", target)).toBe(true);
+    expect(hasPermission(substitute, "ticket:update", target)).toBe(false);
+    expect(hasPermission(substitute, "ticket:comment:public", target)).toBe(false);
+  });
+
+  it("ne mélange pas les actions de deux remplaçants", () => {
+    const source = readFileSync(join(process.cwd(), "lib/ticket-access.ts"), "utf8");
+    expect(source).toContain("delegatedActionsByUser");
+    expect(source).not.toContain("flatMap((entry) => entry.delegation?.actions");
   });
 });

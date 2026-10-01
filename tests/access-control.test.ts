@@ -15,6 +15,11 @@ describe("cloisonnement", () => {
     expect(canViewTicket({ id: "other", roles: [{ code: RoleCode.FUNCTIONAL_ADMIN }] }, confidential)).toBe(false);
   });
 
+  it("ne transforme jamais une affectation en droit confidentiel permanent", () => {
+    const confidential = { ...target, confidential: true, authorizedUserIds: [] };
+    expect(canViewTicket({ id: "agent", roles: [{ code: RoleCode.AGENT }] }, confidential)).toBe(false);
+  });
+
   it("évalue une portée équipe avec l’appartenance effective", () => {
     const teamTarget = { ...target, teamIds: ["team-network"] };
     const role = { code: RoleCode.AGENT, scope: { type: ScopeType.TEAM, teamId: "team-network" } };

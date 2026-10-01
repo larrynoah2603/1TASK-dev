@@ -1,6 +1,4 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { MessageVisibility } from "@prisma/client";
 import { appendAuditLog } from "@/lib/audit";
 import { DomainError } from "@/lib/domain-error";
@@ -14,6 +12,8 @@ import {
   type UserContext,
 } from "@/lib/server-auth";
 import { canPostInternalMessage } from "@/lib/domain";
+import { privateObjectStorage } from "@/lib/private-object-storage";
+import { delegationAllowsAction } from "@/lib/access-control";
 
 const MAX_TICKET_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 const ALLOWED_TICKET_ATTACHMENT_TYPES = new Set([
@@ -27,10 +27,6 @@ const ALLOWED_TICKET_ATTACHMENT_TYPES = new Set([
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 ]);
-
-function ticketAttachmentRoot() {
-  return path.join(process.cwd(), "var", "ticket-attachments");
-}
 
 function safeAttachmentFileName(name: string) {
   const sanitized = name.normalize("NFKC").replace(/[\\/\u0000-\u001f]/g, "_").trim();
@@ -51,8 +47,10 @@ export async function uploadTicketAttachment(
 ) {
   const context = await authorizedAttachmentContext(actor, ticketId);
   const canUpload =
-    hasPermission(context.actor, "ticket:comment:public", context.target) ||
-    hasPermission(context.actor, "ticket:update", context.target);
+    delegationAllowsAction(context.actor.id, context.target, "ATTACHMENT") && (
+      hasPermission(context.actor, "ticket:comment:public", context.target) ||
+      hasPermission(context.actor, "ticket:update", context.target)
+    );
   if (!canUpload) throw new AuthorizationError("Vous ne pouvez pas ajouter de pièce jointe à ce ticket.");
   if (!input.name.trim()) throw new DomainError("Le nom du fichier est obligatoire.", 422);
   if (!Number.isFinite(input.size) || input.size < 1 || input.size > MAX_TICKET_ATTACHMENT_BYTES) {
@@ -63,9 +61,10 @@ export async function uploadTicketAttachment(
   }
 
   const storageKey = `${ticketId}/${randomUUID()}`;
-  const storagePath = path.join(ticketAttachmentRoot(), storageKey);
-  await mkdir(path.dirname(storagePath), { recursive: true });
-  await writeFile(storagePath, Buffer.from(await input.arrayBuffer()));
+  const content = Buffer.from(await input.arrayBuffer());
+  if (content.length !== input.size) throw new DomainError("La taille réelle de la pièce jointe est invalide.", 422);
+  const storage = privateObjectStorage();
+  await storage.put(storageKey, content, input.type);
   try {
     const attachment = await prisma.attachment.create({
       data: {
@@ -96,13 +95,16 @@ export async function uploadTicketAttachment(
     });
     return attachment;
   } catch (error) {
-    await unlink(storagePath).catch(() => undefined);
+    await storage.delete(storageKey).catch(() => undefined);
     throw error;
   }
 }
 
 export async function getTicketAttachmentForViewer(actor: UserContext, ticketId: string, attachmentId: string) {
   const context = await authorizedAttachmentContext(actor, ticketId);
+  if (!delegationAllowsAction(context.actor.id, context.target, "ATTACHMENT")) {
+    throw new AuthorizationError("La délégation ne permet pas l’accès aux pièces jointes.");
+  }
   const attachment = await prisma.attachment.findFirst({
     where: { id: attachmentId, ticketId },
     include: { message: { select: { visibility: true } } },
@@ -113,18 +115,18 @@ export async function getTicketAttachmentForViewer(actor: UserContext, ticketId:
   if (attachment.message?.visibility === MessageVisibility.INTERNAL && !canSeeInternal) {
     throw new AuthorizationError("Cette pièce jointe est réservée à l’équipe de traitement.");
   }
-  const storagePath = path.join(ticketAttachmentRoot(), attachment.storageKey);
   let content: Buffer;
   try {
-    content = await readFile(storagePath);
+    content = await privateObjectStorage().get(attachment.storageKey);
   } catch {
-    throw new DomainError("Le fichier n’est plus disponible dans le stockage local.", 410);
+    throw new DomainError("Le fichier n’est plus disponible dans le stockage privé.", 410);
   }
   return { content, fileName: attachment.fileName, mimeType: attachment.mimeType, sizeBytes: attachment.sizeBytes };
 }
 
 export async function listTicketAttachmentsForViewer(actor: UserContext, ticketId: string) {
   const context = await authorizedAttachmentContext(actor, ticketId);
+  if (!delegationAllowsAction(context.actor.id, context.target, "ATTACHMENT")) return [];
   const canSeeInternal = canPostInternalMessage(roleCodes(context.actor)) &&
     hasPermission(context.actor, "ticket:internal-comment", context.target);
   return prisma.attachment.findMany({

@@ -144,6 +144,7 @@ export async function listTicketPortfolioFilterOptions(actor: UserContext) {
 export async function getDossierForViewer(actor: UserContext, dossierId: string) {
   actor = await requireCurrentActor(actor);
   ensurePermission(actor, "portfolio:read");
+  const ticketVisibility = await visibleTicketWhere(actor);
   const departmentId = actor.departmentId ?? "__none__";
   const dossier = await prisma.clientDossier.findFirst({
     where: {
@@ -152,9 +153,9 @@ export async function getDossierForViewer(actor: UserContext, dossierId: string)
       ...(isGlobalAdmin(actor) ? {} : {
         OR: [
           { missions: { some: { departmentId } } },
-          { tickets: { some: { requesterId: actor.id } } },
-          { tickets: { some: { sourceDepartmentId: departmentId } } },
-          { tickets: { some: { queue: { departmentId } } } },
+          { tickets: { some: { AND: [ticketVisibility, { requesterId: actor.id }] } } },
+          { tickets: { some: { AND: [ticketVisibility, { sourceDepartmentId: departmentId }] } } },
+          { tickets: { some: { AND: [ticketVisibility, { queue: { departmentId } }] } } },
         ],
       }),
     },
@@ -177,11 +178,12 @@ export async function getDossierForViewer(actor: UserContext, dossierId: string)
           dueAt: true,
           budgetMinutes: true,
           department: { select: { id: true, name: true } },
-          _count: { select: { tickets: true, worklogs: true } },
+          _count: { select: { tickets: { where: ticketVisibility }, worklogs: true } },
         },
         orderBy: [{ status: "asc" }, { dueAt: "asc" }],
       },
       tickets: {
+        where: ticketVisibility,
         select: {
           id: true,
           reference: true,
@@ -443,6 +445,7 @@ export async function getClientForViewer(actor: UserContext, clientId: string) {
 export async function getAssetForViewer(actor: UserContext, assetId: string) {
   actor = await requireCurrentActor(actor);
   assertFunctionalAssetAdministrator(actor);
+  const ticketVisibility = await visibleTicketWhere(actor);
   const asset = await prisma.asset.findUnique({
     where: { id: assetId },
     include: {
@@ -460,6 +463,7 @@ export async function getAssetForViewer(actor: UserContext, assetId: string) {
         take: 100,
       },
       tickets: {
+        where: ticketVisibility,
         select: { id: true, reference: true, title: true, status: true, createdAt: true },
         orderBy: { createdAt: "desc" },
         take: 30,

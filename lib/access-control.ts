@@ -31,8 +31,10 @@ export interface TicketAccessTarget {
   authorizedUserIds?: string[];
   teamIds?: string[];
   portfolioKeys?: string[];
-  delegatedActions?: string[];
-  delegatedUserIds?: string[];
+  /** Active delegation actions, keyed by the user that owns the grant. Keeping
+   * identity and actions together prevents permissions from two substitutes
+   * being accidentally combined. */
+  delegatedActionsByUser?: Record<string, string[]>;
 }
 
 export function subjectRoleCodes(subject: AccessSubject): RoleCode[] {
@@ -87,9 +89,12 @@ export function hasScopedRole(
 }
 
 export function canViewTicket(subject: AccessSubject, target: TicketAccessTarget): boolean {
-  // Requesters and current assignees retain access to their own ticket,
-  // including when it is marked confidential.
-  if (subject.id === target.requesterId || subject.id === target.assignedToId) return true;
+  if (subject.id === target.requesterId) return true;
+
+  // Assignment is an operational state, not an authorization grant. In
+  // particular, an expired substitute may remain assigned while immediately
+  // losing access. Ordinary tickets retain the historical assignee rule.
+  if (!target.confidential && subject.id === target.assignedToId) return true;
 
   // An administrator-assigned queue is an additional operational boundary for
   // every non-personal ticket action, not only for AGENT rows.
@@ -126,6 +131,15 @@ export function canViewTicket(subject: AccessSubject, target: TicketAccessTarget
       agentTeamBoundary?.some((teamId) => subject.teamIds?.includes(teamId)),
     )
   );
+}
+
+export function delegationAllowsAction(
+  subjectId: string,
+  target: TicketAccessTarget,
+  action: string,
+): boolean {
+  const actions = target.delegatedActionsByUser?.[subjectId];
+  return !actions || actions.includes(action);
 }
 
 export function canManageQueue(subject: AccessSubject, target: TicketAccessTarget): boolean {

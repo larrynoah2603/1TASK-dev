@@ -93,6 +93,7 @@ export type AccessTicket = {
 };
 
 export function accessTarget(ticket: AccessTicket) {
+  const now = new Date();
   const assignedTo = ticket.assignedTo as {
     teamMemberships?: { teamId: string; isActive: boolean; team: { isActive: boolean } }[];
   } | null | undefined;
@@ -105,9 +106,8 @@ export function accessTarget(ticket: AccessTicket) {
     assignedToTeamIds: assignedTo?.teamMemberships
       ?.filter((membership) => membership.isActive && membership.team.isActive)
       .map((membership) => membership.teamId),
-    authorizedUserIds: ticket.accessList?.filter((entry) => !entry.delegation || (entry.delegation.substituteId === entry.userId && !entry.delegation.revokedAt && entry.delegation.startsAt <= new Date() && (!entry.delegation.endsAt || entry.delegation.endsAt > new Date()))).map((entry) => entry.userId) ?? [],
-    delegatedActions: ticket.accessList?.filter((entry) => entry.delegation && entry.delegation.substituteId === entry.userId && !entry.delegation.revokedAt && entry.delegation.startsAt <= new Date() && (!entry.delegation.endsAt || entry.delegation.endsAt > new Date())).flatMap((entry) => entry.delegation?.actions ?? []) ?? [],
-    delegatedUserIds: ticket.accessList?.filter((entry) => entry.delegation && entry.delegation.substituteId === entry.userId && !entry.delegation.revokedAt && entry.delegation.startsAt <= new Date() && (!entry.delegation.endsAt || entry.delegation.endsAt > new Date())).map((entry) => entry.userId) ?? [],
+    authorizedUserIds: ticket.accessList?.filter((entry) => !entry.delegation || (entry.delegation.substituteId === entry.userId && !entry.delegation.revokedAt && entry.delegation.startsAt <= now && (!entry.delegation.endsAt || entry.delegation.endsAt > now))).map((entry) => entry.userId) ?? [],
+    delegatedActionsByUser: Object.fromEntries((ticket.accessList ?? []).filter((entry) => entry.delegation && entry.delegation.substituteId === entry.userId && !entry.delegation.revokedAt && entry.delegation.startsAt <= now && (!entry.delegation.endsAt || entry.delegation.endsAt > now)).map((entry) => [entry.userId, entry.delegation?.actions ?? []])),
     teamIds: ticket.queue.teams?.filter((team) => team.isActive).map((team) => team.id),
     portfolioKeys: [
       ticket.category,
@@ -116,4 +116,3 @@ export function accessTarget(ticket: AccessTicket) {
     ].filter((value): value is string => Boolean(value)),
   };
 }
-

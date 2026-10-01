@@ -28,6 +28,8 @@ type SlaAlert = {
   teamIds: string[];
   managerId: string | null;
   assignedToId: string | null;
+  confidential: boolean;
+  authorizedUserIds: string[];
   reference: string;
   metric: SlaMetric;
   thresholdPercent: number;
@@ -90,7 +92,9 @@ async function processSlaAlertBatch(alerts: SlaAlert[]) {
           (scope.type === ScopeType.USER_LIST && scope.members.some((member) => member.userId === assignment.user.id))) recipients.add(assignment.user.id);
       }
     }
-    recipientsByKey.set(alert.eventKey, [...recipients]);
+    recipientsByKey.set(alert.eventKey, alert.confidential
+      ? [...recipients].filter((id) => alert.authorizedUserIds.includes(id))
+      : [...recipients]);
   }
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
@@ -156,6 +160,16 @@ export async function runSlaMonitor(now = new Date()) {
         resolvedAt: true,
         totalPausedMinutes: true,
         assignedToId: true,
+        confidential: true,
+        accessList: {
+          where: {
+            OR: [
+              { delegationId: null },
+              { delegation: { startsAt: { lte: now }, revokedAt: null, OR: [{ endsAt: null }, { endsAt: { gt: now } }] } },
+            ],
+          },
+          select: { userId: true },
+        },
         queue: {
           select: {
             id: true,
@@ -212,6 +226,8 @@ export async function runSlaMonitor(now = new Date()) {
             teamIds: ticket.queue.teams.filter((team) => team.isActive).map((team) => team.id),
             managerId: ticket.queue.managerId,
             assignedToId: ticket.assignedToId,
+            confidential: ticket.confidential,
+            authorizedUserIds: ticket.accessList.map((grant) => grant.userId),
             reference: ticket.reference,
             metric: metric.metric,
             thresholdPercent: threshold,

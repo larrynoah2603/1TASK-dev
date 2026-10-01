@@ -5,14 +5,18 @@ import { describe, expect, it } from "vitest";
 const source = (file: string) => readFileSync(resolve(process.cwd(), file), "utf8");
 
 describe("module des pièces jointes", () => {
-  it("isole le stockage fichier du service métier principal", () => {
+  it("isole le stockage privé du service métier principal", () => {
     const ticketService = source("lib/ticket-service.ts");
     const attachmentService = source("lib/ticket-attachment-service.ts");
 
     expect(ticketService).not.toContain('from "node:fs/promises"');
-    expect(attachmentService).toContain('from "node:fs/promises"');
+    const storageAdapter = source("lib/private-object-storage.ts");
+    expect(attachmentService).not.toContain('from "node:fs/promises"');
+    expect(attachmentService).toContain('from "@/lib/private-object-storage"');
+    expect(storageAdapter).toContain('environment.NODE_ENV === "production"');
+    expect(storageAdapter).toContain("remoteStorage");
     expect(attachmentService).toContain("requireTicketAccess(ticketId)");
-    expect(attachmentService).toContain("unlink(storagePath).catch");
+    expect(attachmentService).toContain("storage.delete(storageKey).catch");
   });
 
   it("branche les deux routes de pièces jointes sur le module dédié", () => {
