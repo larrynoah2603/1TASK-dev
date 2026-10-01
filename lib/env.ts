@@ -52,6 +52,8 @@ export const serverEnvironmentSchema = z.object({
   OUTBOX_BATCH_SIZE: boundedInteger(25, 1, 100),
   OUTBOX_DELIVERY_TOKEN: optionalString,
   OUTBOX_DELIVERY_URL: optionalUrl,
+  PRIVATE_STORAGE_URL: optionalUrl,
+  PRIVATE_STORAGE_TOKEN: optionalString,
   PERFORMANCE_SLOW_OPERATION_MS: nonNegativeNumber(750),
   REDIS_REST_TOKEN: optionalString,
   REDIS_REST_URL: optionalUrl,
@@ -71,6 +73,9 @@ export const serverEnvironmentSchema = z.object({
   }
   if (strictRuntime && environment.OUTBOX_DELIVERY_TOKEN && !environment.OUTBOX_DELIVERY_URL) {
     context.addIssue({ code: "custom", path: ["OUTBOX_DELIVERY_URL"], message: "OUTBOX_DELIVERY_URL est obligatoire lorsqu’un token de livraison est configuré." });
+  }
+  if (strictRuntime && Boolean(environment.PRIVATE_STORAGE_URL) !== Boolean(environment.PRIVATE_STORAGE_TOKEN)) {
+    context.addIssue({ code: "custom", path: [environment.PRIVATE_STORAGE_URL ? "PRIVATE_STORAGE_TOKEN" : "PRIVATE_STORAGE_URL"], message: "PRIVATE_STORAGE_URL et PRIVATE_STORAGE_TOKEN doivent être configurées ensemble." });
   }
 
   const pushValues = [environment.WEB_PUSH_PUBLIC_KEY, environment.WEB_PUSH_PRIVATE_KEY, environment.WEB_PUSH_SUBJECT];

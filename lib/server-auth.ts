@@ -239,10 +239,19 @@ export function hasPermission(
     "ticket:assign": "ASSIGN", "ticket:transfer": "TRANSFER", "ticket:internal-comment": "REPLY",
   };
   const delegatedAction = delegatedActionByPermission[permission];
-  if (target && delegatedAction && target.delegatedUserIds?.includes(user.id) && target.delegatedActions?.includes(delegatedAction)) {
-    // Delegation crosses organizational scope but never manufactures an
-    // intrinsic capability: the substitute must already hold the permission.
-    return user.roleAssignments.some((assignment) => assignment.role.permissions.some((item) => item.permission.code === permission));
+  const intrinsicPermission = user.roleAssignments.some((assignment) =>
+    assignment.role.permissions.some((item) => item.permission.code === permission),
+  );
+  const delegatedActions = target?.delegatedActionsByUser?.[user.id];
+  if (target?.confidential && delegatedActions) {
+    // A delegation is a restriction, never an augmentation. Do not fall back
+    // to a broad scoped/global role when the operation was not delegated.
+    return Boolean(delegatedAction && delegatedActions.includes(delegatedAction) && intrinsicPermission);
+  }
+  if (target?.confidential && target.authorizedUserIds?.includes(user.id)) {
+    // A permanent named grant crosses queue/department boundaries only for
+    // this ticket, while still requiring the user's intrinsic capability.
+    return intrinsicPermission;
   }
   if (
     Object.prototype.hasOwnProperty.call(PERMISSION_CATALOG, permission) &&
@@ -353,8 +362,7 @@ export async function requireTicketAccess(ticketId: string): Promise<{
       .filter((membership) => membership.isActive && membership.team.isActive)
       .map((membership) => membership.teamId),
     authorizedUserIds: ticket.accessList.filter((entry) => !entry.delegation || (entry.delegation.substituteId === entry.userId && !entry.delegation.revokedAt && entry.delegation.startsAt <= new Date() && (!entry.delegation.endsAt || entry.delegation.endsAt > new Date()))).map((entry) => entry.userId),
-    delegatedUserIds: ticket.accessList.filter((entry) => entry.delegation && entry.delegation.substituteId === entry.userId && !entry.delegation.revokedAt && entry.delegation.startsAt <= new Date() && (!entry.delegation.endsAt || entry.delegation.endsAt > new Date())).map((entry) => entry.userId),
-    delegatedActions: ticket.accessList.filter((entry) => entry.delegation && entry.delegation.substituteId === entry.userId && !entry.delegation.revokedAt && entry.delegation.startsAt <= new Date() && (!entry.delegation.endsAt || entry.delegation.endsAt > new Date())).flatMap((entry) => entry.delegation?.actions ?? []),
+    delegatedActionsByUser: Object.fromEntries(ticket.accessList.filter((entry) => entry.delegation && entry.delegation.substituteId === entry.userId && !entry.delegation.revokedAt && entry.delegation.startsAt <= new Date() && (!entry.delegation.endsAt || entry.delegation.endsAt > new Date())).map((entry) => [entry.userId, entry.delegation?.actions ?? []])),
     teamIds: ticket.queue.teams.filter((team) => team.isActive).map((team) => team.id),
   };
   if (!canViewTicket(toAccessSubject(actor), target)) {

@@ -62,8 +62,16 @@ export const activeDelegatedTicketAccessWhere = (userId: string, now = new Date(
 });
 
 export async function confidentialRecipientHasProcessingCapability(userId: string) {
-  return Boolean(await prisma.user.findFirst({
-    where: { id: userId, status: UserStatus.ACTIVE, administrativelyDisabled: false, roleAssignments: { some: { role: { permissions: { some: { permission: { code: "ticket:update" } } } } } } },
-    select: { id: true },
-  }));
+  const user = await prisma.user.findFirst({
+    where: { id: userId, status: UserStatus.ACTIVE, administrativelyDisabled: false },
+    select: { roleAssignments: { select: { role: { select: { permissions: { select: { permission: { select: { code: true } } } } } } } } },
+  });
+  if (!user) return false;
+  const permissions = new Set(user.roleAssignments.flatMap((assignment) =>
+    assignment.role.permissions.map(({ permission }) => permission.code),
+  ));
+  // ticket:update alone is deliberately insufficient: REQUESTER profiles can
+  // hold it but cannot complete the agent resolution workflow.
+  return ["ticket:update", "ticket:resolve", "ticket:internal-comment"]
+    .every((permission) => permissions.has(permission));
 }

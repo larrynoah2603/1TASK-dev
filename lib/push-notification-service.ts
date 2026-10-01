@@ -1,6 +1,7 @@
 import { createRequire } from "node:module";
 import { prisma } from "@/lib/db";
 import { readServerEnvironment } from "@/lib/env";
+import { notificationMayBeDelivered } from "@/lib/notification-authorization";
 
 const require = createRequire(import.meta.url);
 
@@ -25,6 +26,10 @@ export async function deliverPushNotification(notificationId: string) {
   webpush.setVapidDetails(environment.WEB_PUSH_SUBJECT, environment.WEB_PUSH_PUBLIC_KEY, environment.WEB_PUSH_PRIVATE_KEY);
   const notification = await prisma.notification.findUnique({ where: { id: notificationId }, include: { recipient: { select: { pushSubscriptions: true } } } });
   if (!notification) return { delivered: 0 };
+  if (notification.ticketId && !(await notificationMayBeDelivered(notificationId))) {
+    await prisma.notification.updateMany({ where: { id: notificationId, status: "PENDING" }, data: { status: "FAILED" } });
+    return { delivered: 0 };
+  }
   let delivered = 0;
   for (const subscription of notification.recipient.pushSubscriptions) {
     try {

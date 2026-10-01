@@ -46,7 +46,7 @@ function authorizeJob(request: Request) {
 
 
 
-export async function POST(
+async function run(
   request: Request,
 ) {
   const authError =
@@ -75,3 +75,8 @@ export async function POST(
     return errorResponse(error);
   }
 }
+
+/** Vercel Cron invokes routes with GET. POST remains supported for existing
+ * operational callers and both methods use the same bearer authentication. */
+export const GET = run;
+export const POST = run;

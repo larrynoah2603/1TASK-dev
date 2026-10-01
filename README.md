@@ -215,12 +215,17 @@ Le fichier `.env.example` ne contient aucun secret réel :
 - `TICKET_FTS_ENABLED` : activation de la recherche PostgreSQL plein texte ;
 - `CACHE_ENABLED`, `REDIS_REST_URL` et `REDIS_REST_TOKEN` : cache distribué facultatif, l’URL et le token Redis devant être fournis ensemble ;
 - `OUTBOX_DELIVERY_URL` et `OUTBOX_DELIVERY_TOKEN` : destination facultative des événements d’outbox ;
+- `PRIVATE_STORAGE_URL` et `PRIVATE_STORAGE_TOKEN` : passerelle durable privée obligatoire en production pour les pièces jointes ;
 - `RUN_DB_TESTS` : activation explicite des tests d’intégration PostgreSQL.
 
 Les paramètres opérationnels sont analysés et bornés par `lib/env.ts`. Une
 configuration Redis incomplète, une URL invalide ou une taille de lot hors des
 limites acceptées provoque une erreur explicite plutôt qu’un comportement
 implicite différent selon le module.
+
+La politique confidentielle, les méthodes/cadences des jobs, la supervision et
+la migration du stockage local sont détaillées dans
+[`docs/confidential-ticket-operations.md`](docs/confidential-ticket-operations.md).
 
 ## Tests et qualité
 

@@ -1,6 +1,7 @@
 import { NotificationChannel, NotificationStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { readServerEnvironment, type ServerEnvironment } from "@/lib/env";
+import { notificationMayBeDelivered } from "@/lib/notification-authorization";
 
 const GRAPH_SCOPE = "https://graph.microsoft.com/.default";
 const GRAPH_ROOT = "https://graph.microsoft.com/v1.0";
@@ -82,6 +83,10 @@ export async function deliverEmailNotification(notificationId: string) {
   if (!notification) return { delivered: false, reason: "not-found" } as const;
   if (notification.channel !== NotificationChannel.EMAIL) throw new Error("Notification is not an EMAIL notification");
   if (notification.status !== NotificationStatus.PENDING) return { delivered: false, reason: "not-pending" } as const;
+  if (notification.ticketId && !(await notificationMayBeDelivered(notificationId))) {
+    await prisma.notification.updateMany({ where: { id: notificationId, status: NotificationStatus.PENDING }, data: { status: NotificationStatus.FAILED } });
+    return { delivered: false, reason: "authorization-revoked" } as const;
+  }
   const recipient = notification.recipient.email.trim();
   if (!recipient) throw new Error("Email notification recipient has no email address");
 
