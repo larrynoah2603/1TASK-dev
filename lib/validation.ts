@@ -26,6 +26,7 @@ export const createTicketSchema = z.object({
   title: z.string().trim().min(5).max(180),
   description: z.string().trim().min(15).max(20_000),
   confidential: z.boolean().default(false),
+  confidentialityVersion: z.number().int().positive().optional(),
   impact: z.enum(Impact).default(Impact.MEDIUM),
   urgency: z.enum(Urgency).default(Urgency.MEDIUM),
   legalDueAt: z.coerce.date().nullable().optional(),
@@ -383,8 +384,22 @@ export const catalogAdminSchema = z.object({
   priorityDefault: z.enum(Priority),
   slaId: z.string().cuid(),
   isActive: z.boolean().default(true),
+  allowConfidentialTickets: z.boolean().default(false),
+  confidentialPrimaryRecipientId: z.string().cuid().nullable().optional(),
+  confidentialSubstituteId: z.string().cuid().nullable().optional(),
   reason: adminReason,
+}).superRefine((value, context) => {
+  if (value.allowConfidentialTickets && !value.confidentialPrimaryRecipientId) context.addIssue({ code: "custom", path: ["confidentialPrimaryRecipientId"], message: "Un destinataire principal actif est obligatoire." });
+  if (value.confidentialPrimaryRecipientId && value.confidentialPrimaryRecipientId === value.confidentialSubstituteId) context.addIssue({ code: "custom", path: ["confidentialSubstituteId"], message: "Le remplaçant doit être différent du destinataire principal." });
 });
+
+export const confidentialDelegationAdminSchema = z.object({
+  startsAt: z.coerce.date(),
+  endsAt: z.coerce.date().nullable().optional(),
+  actions: z.array(z.enum(["VIEW", "COMMENT", "REPLY", "PROCESS", "STATUS", "ATTACHMENT", "ASSIGN", "TRANSFER", "CLOSE"])).min(1),
+  reason: adminReason,
+}).superRefine((value, context) => { if (value.endsAt && value.endsAt <= value.startsAt) context.addIssue({ code: "custom", path: ["endsAt"], message: "La fin doit être postérieure au début." }); });
+export const confidentialDelegationRevokeSchema = z.object({ reason: adminReason });
 
 export const organizationAdminSchema = z.object({
   code: z.string().trim().min(2).max(80).regex(/^[A-Za-z0-9][A-Za-z0-9_-]*$/),

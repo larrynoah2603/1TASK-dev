@@ -287,6 +287,12 @@ model User {
   ticketLinksCreated   TicketLink[]        @relation("TicketLinkActor")
   slaExceptionsCreated SlaException[]      @relation("SlaExceptionActor")
   confidentialAccess   TicketAccess[]
+  confidentialServices ServiceCatalogItem[] @relation("ConfidentialPrimaryRecipient")
+  substituteServices   ServiceCatalogItem[] @relation("ConfidentialSubstitute")
+  delegationsAsPrimary ConfidentialDelegation[] @relation("DelegationPrimary")
+  delegationsAsSubstitute ConfidentialDelegation[] @relation("DelegationSubstitute")
+  delegationsActivated ConfidentialDelegation[] @relation("DelegationActivator")
+  delegationsRevoked ConfidentialDelegation[] @relation("DelegationRevoker")
   scopeMembers         ScopeMember[]
   profileChanges       UserProfileChange[] @relation("UserProfileChanges")
   profileChangesMade   UserProfileChange[] @relation("UserProfileChangeActors")
@@ -529,15 +535,50 @@ model ServiceCatalogItem {
   priorityDefault Priority         @default(MEDIUM)
   slaId           String?
   isActive        Boolean          @default(true)
+  allowConfidentialTickets Boolean @default(false)
+  confidentialPrimaryRecipientId String?
+  confidentialSubstituteId String?
+  confidentialityVersion Int @default(1)
   queue           Queue            @relation(fields: [queueId], references: [id], onDelete: Restrict)
   sla             SLA?             @relation(fields: [slaId], references: [id], onDelete: SetNull)
   escalationRules EscalationRule[]
   tickets         Ticket[]
+  confidentialPrimaryRecipient User? @relation("ConfidentialPrimaryRecipient", fields: [confidentialPrimaryRecipientId], references: [id], onDelete: Restrict)
+  confidentialSubstitute User? @relation("ConfidentialSubstitute", fields: [confidentialSubstituteId], references: [id], onDelete: Restrict)
+  confidentialDelegations ConfidentialDelegation[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
   @@index([queueId, isActive])
   @@index([category, isActive])
+  @@index([confidentialPrimaryRecipientId])
+  @@index([confidentialSubstituteId])
+}
+
+model ConfidentialDelegation {
+  id String @id @default(cuid())
+  serviceCatalogItemId String
+  primaryRecipientId String
+  substituteId String
+  startsAt DateTime
+  endsAt DateTime?
+  revokedAt DateTime?
+  activatedById String
+  revokedById String?
+  actions String[] @default([])
+  reason String @db.Text
+  revocationReason String? @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  serviceCatalogItem ServiceCatalogItem @relation(fields: [serviceCatalogItemId], references: [id], onDelete: Restrict)
+  primaryRecipient User @relation("DelegationPrimary", fields: [primaryRecipientId], references: [id], onDelete: Restrict)
+  substitute User @relation("DelegationSubstitute", fields: [substituteId], references: [id], onDelete: Restrict)
+  activatedBy User @relation("DelegationActivator", fields: [activatedById], references: [id], onDelete: Restrict)
+  revokedBy User? @relation("DelegationRevoker", fields: [revokedById], references: [id], onDelete: Restrict)
+  ticketAccess TicketAccess[]
+
+  @@index([serviceCatalogItemId, startsAt, endsAt, revokedAt])
+  @@index([substituteId, startsAt, endsAt, revokedAt])
 }
 
 model SLA {
@@ -941,11 +982,14 @@ model TicketAccess {
   userId    String
   grantedBy String?
   grantedAt DateTime @default(now())
+  delegationId String?
   ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  delegation ConfidentialDelegation? @relation(fields: [delegationId], references: [id], onDelete: Restrict)
 
   @@id([ticketId, userId])
   @@index([userId, grantedAt])
+  @@index([delegationId])
 }
 
 model TicketLink {

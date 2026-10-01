@@ -233,6 +233,17 @@ export function hasPermission(
   target?: TicketAccessTarget,
 ): boolean {
   const subject = toAccessSubject(user);
+  const delegatedActionByPermission: Record<string, string> = {
+    "ticket:read": "VIEW", "ticket:comment:public": "COMMENT", "ticket:comment:internal": "COMMENT",
+    "ticket:update": "PROCESS", "ticket:block": "STATUS", "ticket:resolve": "CLOSE",
+    "ticket:assign": "ASSIGN", "ticket:transfer": "TRANSFER", "ticket:internal-comment": "REPLY",
+  };
+  const delegatedAction = delegatedActionByPermission[permission];
+  if (target && delegatedAction && target.delegatedUserIds?.includes(user.id) && target.delegatedActions?.includes(delegatedAction)) {
+    // Delegation crosses organizational scope but never manufactures an
+    // intrinsic capability: the substitute must already hold the permission.
+    return user.roleAssignments.some((assignment) => assignment.role.permissions.some((item) => item.permission.code === permission));
+  }
   if (
     Object.prototype.hasOwnProperty.call(PERMISSION_CATALOG, permission) &&
     hasGlobalRole(subject, RoleCode.FUNCTIONAL_ADMIN)
@@ -302,7 +313,7 @@ export async function requireTicketAccess(ticketId: string): Promise<{
     queueId: string;
     confidential: boolean;
     queue: { departmentId: string; teams: { id: string; isActive: boolean }[] };
-    accessList: { userId: string }[];
+    accessList: { userId: string; delegationId: string | null; delegation: { startsAt: Date; endsAt: Date | null; revokedAt: Date | null; substituteId: string; actions: string[] } | null }[];
   };
 }> {
   const actor = await requireAuthenticatedUser();
@@ -327,7 +338,7 @@ export async function requireTicketAccess(ticketId: string): Promise<{
           teams: { select: { id: true, isActive: true } },
         },
       },
-      accessList: { select: { userId: true } },
+      accessList: { select: { userId: true, delegationId: true, delegation: { select: { startsAt: true, endsAt: true, revokedAt: true, substituteId: true, actions: true } } } },
     },
   });
   if (!ticket) throw new ResourceNotFoundError("Ticket introuvable.");
@@ -341,7 +352,9 @@ export async function requireTicketAccess(ticketId: string): Promise<{
     assignedToTeamIds: ticket.assignedTo?.teamMemberships
       .filter((membership) => membership.isActive && membership.team.isActive)
       .map((membership) => membership.teamId),
-    authorizedUserIds: ticket.accessList.map((entry) => entry.userId),
+    authorizedUserIds: ticket.accessList.filter((entry) => !entry.delegation || (entry.delegation.substituteId === entry.userId && !entry.delegation.revokedAt && entry.delegation.startsAt <= new Date() && (!entry.delegation.endsAt || entry.delegation.endsAt > new Date()))).map((entry) => entry.userId),
+    delegatedUserIds: ticket.accessList.filter((entry) => entry.delegation && entry.delegation.substituteId === entry.userId && !entry.delegation.revokedAt && entry.delegation.startsAt <= new Date() && (!entry.delegation.endsAt || entry.delegation.endsAt > new Date())).map((entry) => entry.userId),
+    delegatedActions: ticket.accessList.filter((entry) => entry.delegation && entry.delegation.substituteId === entry.userId && !entry.delegation.revokedAt && entry.delegation.startsAt <= new Date() && (!entry.delegation.endsAt || entry.delegation.endsAt > new Date())).flatMap((entry) => entry.delegation?.actions ?? []),
     teamIds: ticket.queue.teams.filter((team) => team.isActive).map((team) => team.id),
   };
   if (!canViewTicket(toAccessSubject(actor), target)) {

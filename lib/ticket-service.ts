@@ -54,6 +54,7 @@ import {
   type TicketLinkInput,
 } from "@/lib/validation";
 import { matchCatalogService, routeTicketFromCatalog, type CatalogCandidate } from "@/lib/routing";
+import { resolveConfidentialRecipient } from "@/lib/confidential-ticket-service";
 import { measureServerOperation } from "@/lib/performance";
 import { DomainError } from "@/lib/domain-error";
 import { logServerError } from "@/lib/http";
@@ -196,6 +197,12 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
   if (!service || !service.queue.isActive || !service.queue.department.isActive) {
     throw new DomainError("Le service sélectionné n’est pas disponible.", 422);
   }
+  const confidentialResolution = parsed.confidential
+    ? await resolveConfidentialRecipient(service.id)
+    : null;
+  if (confidentialResolution && parsed.confidentialityVersion !== confidentialResolution.version) {
+    throw new DomainError("La configuration confidentielle a changé. Vérifiez à nouveau le destinataire avant de confirmer.", 409);
+  }
   const canCreateCrossDepartment = hasPermission(
     actor,
     "ticket:create:cross-department",
@@ -306,6 +313,23 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
       include: ticketSecurityInclude,
     });
 
+    if (confidentialResolution) {
+      await tx.ticketAccess.createMany({
+        data: [
+          { ticketId: ticket.id, userId: actor.id, grantedBy: actor.id },
+          { ticketId: ticket.id, userId: confidentialResolution.recipient.id, grantedBy: actor.id, delegationId: confidentialResolution.delegation?.id ?? null },
+        ],
+        skipDuplicates: true,
+      });
+      await appendAuditLog(tx, {
+        actorId: actor.id,
+        action: "CONFIDENTIAL_RECIPIENT_ACCESS_GRANTED",
+        objectType: "Ticket",
+        objectId: ticket.id,
+        newValue: { recipientId: confidentialResolution.recipient.id, delegationId: confidentialResolution.delegation?.id ?? null },
+      });
+    }
+
     await appendAuditLog(tx, {
       actorId: actor.id,
       action: "TICKET_CREATED",
@@ -320,7 +344,7 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
 
     let autoAssigned = false;
     let autoAssignedUserId: string | null = null;
-    if (routingMode !== "TRIAGE" && service.queue.autoAssignment) {
+    if (!parsed.confidential && routingMode !== "TRIAGE" && service.queue.autoAssignment) {
       const candidate = await chooseAutoAssignee(tx, routing.queueId, service.keywords);
       if (candidate) {
         ticket = await tx.ticket.update({
@@ -350,6 +374,7 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
       autoAssignedUserId,
       queueId: ticket.queue.id,
       managerId: ticket.queue.managerId,
+      confidentialRecipientId: confidentialResolution?.recipient.id ?? null,
     };
   }, {
     maxWait: 10_000,
@@ -366,7 +391,15 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
         body: `${result.ticket.reference} a été créé et routé vers ${result.ticket.queue.name}.`,
       });
 
-      if (result.autoAssigned && result.autoAssignedUserId) {
+      if (result.confidentialRecipientId) {
+        await createInAppNotification(prisma, {
+          recipientId: result.confidentialRecipientId,
+          ticketId: result.ticket.id,
+          type: NotificationType.QUEUE_NEW_TICKET,
+          title: "Nouveau ticket confidentiel",
+          body: "Un nouveau ticket confidentiel nécessite votre attention. Ouvrez 1TASK pour le consulter.",
+        });
+      } else if (result.autoAssigned && result.autoAssignedUserId) {
         await createInAppNotification(prisma, {
           recipientId: result.autoAssignedUserId,
           ticketId: result.ticket.id,
