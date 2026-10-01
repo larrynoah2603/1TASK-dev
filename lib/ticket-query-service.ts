@@ -303,7 +303,7 @@ async function calculateVisibleTicketWhere(
     ? []
     : [
         { assignedToId: actor.id },
-        { accessList: { some: { userId: actor.id } } },
+        { accessList: { some: { userId: actor.id, OR: [{ delegationId: null }, { delegation: { startsAt: { lte: new Date() }, revokedAt: null, OR: [{ endsAt: null }, { endsAt: { gt: new Date() } }] } }] } } },
       ];
   if (!reportingMode && !options.workQueue) personalClauses.unshift({ requesterId: actor.id });
   const authorizedQueueId = actor.authorizedQueueId;
@@ -683,6 +683,5 @@ export async function getOperationalTicketSummary(actor: UserContext) {
   const mine = assignmentCounts.find((row) => row.assignedToId === current.id)?._count._all ?? 0;
   return { total, active, unassigned, mine, slaAttention, slaBreached };
 }
-
 
 

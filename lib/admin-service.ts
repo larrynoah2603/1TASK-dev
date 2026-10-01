@@ -103,7 +103,7 @@ async function getAdminConfigurationInternal(
   const needs = (...names: AdminConfigurationSection[]) => names.some((name) => selected.has(name));
   const needsDepartments = needs("departments", "queues", "teams", "catalog", "users");
   const needsQueues = needs("queues", "teams", "catalog", "sla", "users");
-  const needsUsers = needs("queues", "teams", "roles", "users");
+  const needsUsers = needs("queues", "teams", "roles", "users", "catalog");
   const needsTeams = needs("teams", "users");
   const needsServices = needs("catalog", "sla");
   const needsSlas = needs("catalog", "sla");
@@ -170,6 +170,9 @@ async function getAdminConfigurationInternal(
     }) : Promise.resolve([]),
     needsServices ? prisma.serviceCatalogItem.findMany({
       include: {
+        confidentialPrimaryRecipient: { select: { id: true, name: true, email: true, status: true } },
+        confidentialSubstitute: { select: { id: true, name: true, email: true, status: true } },
+        confidentialDelegations: { include: { substitute: { select: { id: true, name: true } } }, orderBy: { createdAt: "desc" }, take: 10 },
         queue: { include: { department: true } },
         sla: { include: { calendar: true } },
         escalationRules: { where: { isActive: true }, orderBy: { thresholdPercent: "asc" } },
@@ -437,6 +440,11 @@ async function validateCatalogReferences(input: CatalogAdminInput) {
   if (!queue) throw new AdminServiceError("Le service doit être rattaché à une file active.", 422);
   const sla = await prisma.sLA.findFirst({ where: { id: input.slaId, isActive: true, calendar: { isActive: true } }, select: { id: true } });
   if (!sla) throw new AdminServiceError("Le service doit utiliser un SLA actif sur un calendrier actif.", 422);
+  const recipientIds = [input.confidentialPrimaryRecipientId, input.confidentialSubstituteId].filter(Boolean) as string[];
+  if (recipientIds.length) {
+    const eligible = await prisma.user.count({ where: { id: { in: recipientIds }, status: UserStatus.ACTIVE, administrativelyDisabled: false, roleAssignments: { some: { role: { permissions: { some: { permission: { code: "ticket:update" } } } } } } } });
+    if (eligible !== new Set(recipientIds).size) throw new AdminServiceError("Les destinataires confidentiels doivent être des comptes actifs autorisés à traiter des tickets.", 422);
+  }
 }
 
 export async function saveCatalogItem(actor: UserContext, id: string | undefined, input: CatalogAdminInput) {
@@ -447,15 +455,15 @@ export async function saveCatalogItem(actor: UserContext, id: string | undefined
   await validateCatalogReferences(parsed);
   const result = await prisma.$transaction(async (tx) => {
     const service = existing
-      ? await tx.serviceCatalogItem.update({ where: { id }, data: { code: parsed.code, name: parsed.name, description: parsed.description ?? null, ticketType: parsed.ticketType, category: parsed.category, keywords: parsed.keywords, queueId: parsed.queueId, priorityDefault: parsed.priorityDefault, slaId: parsed.slaId, isActive: parsed.isActive } })
-      : await tx.serviceCatalogItem.create({ data: { code: parsed.code, name: parsed.name, description: parsed.description ?? null, ticketType: parsed.ticketType, category: parsed.category, keywords: parsed.keywords, queueId: parsed.queueId, priorityDefault: parsed.priorityDefault, slaId: parsed.slaId, isActive: parsed.isActive } });
+      ? await tx.serviceCatalogItem.update({ where: { id }, data: { code: parsed.code, name: parsed.name, description: parsed.description ?? null, ticketType: parsed.ticketType, category: parsed.category, keywords: parsed.keywords, queueId: parsed.queueId, priorityDefault: parsed.priorityDefault, slaId: parsed.slaId, isActive: parsed.isActive, allowConfidentialTickets: parsed.allowConfidentialTickets, confidentialPrimaryRecipientId: parsed.confidentialPrimaryRecipientId ?? null, confidentialSubstituteId: parsed.confidentialSubstituteId ?? null, confidentialityVersion: { increment: 1 } } })
+      : await tx.serviceCatalogItem.create({ data: { code: parsed.code, name: parsed.name, description: parsed.description ?? null, ticketType: parsed.ticketType, category: parsed.category, keywords: parsed.keywords, queueId: parsed.queueId, priorityDefault: parsed.priorityDefault, slaId: parsed.slaId, isActive: parsed.isActive, allowConfidentialTickets: parsed.allowConfidentialTickets, confidentialPrimaryRecipientId: parsed.confidentialPrimaryRecipientId ?? null, confidentialSubstituteId: parsed.confidentialSubstituteId ?? null } });
     await appendAuditLog(tx, {
       actorId: actor.id,
       action: existing ? "CATALOG_ITEM_UPDATED" : "CATALOG_ITEM_CREATED",
       objectType: "ServiceCatalogItem",
       objectId: service.id,
-      oldValue: existing ? { code: existing.code, name: existing.name, ticketType: existing.ticketType, category: existing.category, keywords: existing.keywords, queueId: existing.queueId, priorityDefault: existing.priorityDefault, slaId: existing.slaId, isActive: existing.isActive } : null,
-      newValue: { code: service.code, name: service.name, ticketType: service.ticketType, category: service.category, keywords: service.keywords, queueId: service.queueId, priorityDefault: service.priorityDefault, slaId: service.slaId, isActive: service.isActive },
+      oldValue: existing ? { code: existing.code, name: existing.name, ticketType: existing.ticketType, category: existing.category, keywords: existing.keywords, queueId: existing.queueId, priorityDefault: existing.priorityDefault, slaId: existing.slaId, isActive: existing.isActive, allowConfidentialTickets: existing.allowConfidentialTickets, confidentialPrimaryRecipientId: existing.confidentialPrimaryRecipientId, confidentialSubstituteId: existing.confidentialSubstituteId } : null,
+      newValue: { code: service.code, name: service.name, ticketType: service.ticketType, category: service.category, keywords: service.keywords, queueId: service.queueId, priorityDefault: service.priorityDefault, slaId: service.slaId, isActive: service.isActive, allowConfidentialTickets: service.allowConfidentialTickets, confidentialPrimaryRecipientId: service.confidentialPrimaryRecipientId, confidentialSubstituteId: service.confidentialSubstituteId },
       reason: parsed.reason,
     });
     return service;

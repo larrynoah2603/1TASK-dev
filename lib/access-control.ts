@@ -31,6 +31,8 @@ export interface TicketAccessTarget {
   authorizedUserIds?: string[];
   teamIds?: string[];
   portfolioKeys?: string[];
+  delegatedActions?: string[];
+  delegatedUserIds?: string[];
 }
 
 export function subjectRoleCodes(subject: AccessSubject): RoleCode[] {
