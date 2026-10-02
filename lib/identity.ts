@@ -205,7 +205,8 @@ export function isBootstrapFunctionalAdminEmail(email: string): boolean {
  * Resolves the application status after a Microsoft Entra synchronization.
  * A configured bootstrap administrator is a real Entra user: the first
  * successful sign-in creates/updates that user as ACTIVE and grants the
- * functional-admin role. Other new identities remain pending.
+ * functional-admin role. V1 callers may also activate a narrowly eligible
+ * requester after resolving an active department mapping.
  */
 export function statusAfterEntraSynchronization(input: {
   email: string;
@@ -213,6 +214,7 @@ export function statusAfterEntraSynchronization(input: {
   administrativelyDisabled: boolean;
   firstSynchronization: boolean;
   existingStatus?: UserStatus;
+  v1RequesterProvisioningEligible?: boolean;
 }): UserStatus {
   if (input.accountEnabled === false || input.administrativelyDisabled) {
     return UserStatus.DISABLED;
@@ -224,6 +226,13 @@ export function statusAfterEntraSynchronization(input: {
 
   if (
     isBootstrapFunctionalAdminEmail(input.email) &&
+    (input.firstSynchronization || pendingStatus)
+  ) {
+    return UserStatus.ACTIVE;
+  }
+
+  if (
+    input.v1RequesterProvisioningEligible &&
     (input.firstSynchronization || pendingStatus)
   ) {
     return UserStatus.ACTIVE;

@@ -16,6 +16,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { ShellNavLink } from "@/components/shell-nav-link";
 import { NewTicketLauncher } from "@/components/new-ticket-launcher";
 import { permissionCodes, roleCodes, toAccessSubject, type UserContext } from "@/lib/server-auth";
+import { getProductCapabilities } from "@/lib/product-policy.server";
+import { readServerEnvironment } from "@/lib/env";
 
 type AdminLink = {
   href: string;
@@ -23,6 +25,7 @@ type AdminLink = {
   icon: IconName;
   permission?: string;
   role: "FUNCTIONAL" | "TECHNICAL" | "ANY";
+  v1Only?: boolean;
 };
 
 const adminLinks: AdminLink[] = [
@@ -38,10 +41,14 @@ const adminLinks: AdminLink[] = [
   { href: "/admin/tickets", label: "Supervision des tickets", icon: "ticket", role: "FUNCTIONAL", permission: "ticket:read" },
   { href: "/admin/audit", label: "Journal d’audit", icon: "shield", role: "FUNCTIONAL", permission: "audit:read" },
   { href: "/admin/reporting", label: "Reporting autorisé", icon: "chart", role: "FUNCTIONAL", permission: "reporting:read" },
+  { href: "/assets", label: "Inventaire des actifs", icon: "monitor", role: "FUNCTIONAL", permission: "asset:read", v1Only: true },
+  { href: "/asset-requests", label: "Demandes d’actifs", icon: "clipboard", role: "FUNCTIONAL", permission: "asset:manage", v1Only: true },
   { href: "/admin/technical", label: "Configuration technique", icon: "sliders", role: "TECHNICAL", permission: "technical:manage" },
 ];
 
 export async function AdminShell({ user, children }: { user: UserContext; children: React.ReactNode }) {
+  const capabilities = getProductCapabilities();
+  const profile = readServerEnvironment().PRODUCT_PROFILE;
   const subject = toAccessSubject(user);
   const codes = roleCodes(user);
   const permissions = permissionCodes(user);
@@ -49,7 +56,8 @@ export async function AdminShell({ user, children }: { user: UserContext; childr
   const technical = hasGlobalRole(subject, RoleCode.TECHNICAL_ADMIN);
   const visibleLinks = adminLinks.filter((link) => {
     const roleAllowed = link.role === "ANY" || (link.role === "FUNCTIONAL" ? functional : technical);
-    return roleAllowed && (!link.permission || permissions.includes(link.permission));
+    const assetLinkAllowed = !link.v1Only || (profile === "v1" && capabilities.assetAdministration);
+    return roleAllowed && (!link.permission || permissions.includes(link.permission)) && assetLinkAllowed;
   });
   const roleLabel = codes.map((code) => ROLE_LABELS[code]).join(" · ");
 
