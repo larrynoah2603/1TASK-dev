@@ -54,6 +54,7 @@ import {
   type TicketLinkInput,
 } from "@/lib/validation";
 import { matchCatalogService, routeTicketFromCatalog, type CatalogCandidate } from "@/lib/routing";
+import { assertOperationalGlobalTriage } from "@/lib/triage-configuration";
 import { resolveConfidentialRecipient } from "@/lib/confidential-ticket-service";
 import { measureServerOperation } from "@/lib/performance";
 import { DomainError } from "@/lib/domain-error";
@@ -169,6 +170,7 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
     const candidates = await prisma.serviceCatalogItem.findMany({
       where: {
         isActive: true,
+        provisionedTriageDepartmentId: null,
         queue: { isActive: true, departmentId: targetDepartment?.id, department: { isActive: true } },
       },
       include: serviceInclude,
@@ -189,7 +191,9 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
       matchedBy = automaticMatch.matchedBy;
       routingMode = "AUTO_CATALOG";
     } else {
-      service = candidates.find((candidate) => candidate.code === `TRIAGE-${targetDepartment?.code}`);
+      service = readServerEnvironment().PRODUCT_PROFILE === "v1"
+        ? await assertOperationalGlobalTriage(prisma)
+        : candidates.find((candidate) => candidate.code === `TRIAGE-${targetDepartment?.code}`);
       matchedBy = "catalog-id";
       routingMode = "TRIAGE";
     }

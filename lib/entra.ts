@@ -1,5 +1,5 @@
 import { RoleCode, UserStatus } from "@prisma/client";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import {
   ensureBootstrapFunctionalAdmin,
@@ -8,6 +8,7 @@ import {
   statusAfterEntraSynchronization,
 } from "@/lib/identity";
 import { normalizeEntraDepartmentValue } from "@/lib/department-mapping";
+import { readServerEnvironment } from "@/lib/env";
 
 export interface EntraManagerProfile {
   id?: string;
@@ -35,6 +36,50 @@ const ENTRA_SYNC_TRANSACTION_OPTIONS = {
   maxWait: 10_000,
   timeout: 15_000,
 } as const;
+
+const existingUserSelect = {
+  id: true,
+  entraManagerId: true,
+  entraManagerObjectId: true,
+  entraManagerDisplayName: true,
+  entraManagerEmail: true,
+  administrativelyDisabled: true,
+  managedDisplayName: true,
+  departmentId: true,
+  managerId: true,
+  primaryRoleCode: true,
+  primaryTeamId: true,
+  authorizedQueueId: true,
+  status: true,
+  lastSyncedAt: true,
+  image: true,
+} satisfies Prisma.UserSelect;
+
+type ExistingEntraUser = Prisma.UserGetPayload<{ select: typeof existingUserSelect }>;
+
+/** A profile already curated by functional administration is not a first-login profile. */
+export function hasAdministrativelyManagedProfile(user: ExistingEntraUser): boolean {
+  return user.status === UserStatus.ACTIVE || user.status === UserStatus.DISABLED ||
+    Boolean(user.managedDisplayName || user.departmentId || user.managerId ||
+      user.primaryRoleCode || user.primaryTeamId || user.authorizedQueueId);
+}
+
+export function isFirstEntraSynchronization(user: ExistingEntraUser | null): boolean {
+  return !user || (!user.lastSyncedAt && !hasAdministrativelyManagedProfile(user));
+}
+
+/** Only a completely unassigned pending profile may be provisioned from a later mapping. */
+export function isEligibleForAutomaticRequesterProvisioning(user: ExistingEntraUser | null): boolean {
+  if (!user) return true;
+  const pending = user.status === UserStatus.PENDING_ASSIGNMENT || user.status === UserStatus.PENDING_VALIDATION;
+  return pending && !user.administrativelyDisabled && !user.managedDisplayName &&
+    !user.departmentId && !user.managerId && !user.primaryRoleCode &&
+    !user.primaryTeamId && !user.authorizedQueueId;
+}
+
+function profileChangeJson(value: string | null): Prisma.InputJsonValue | typeof Prisma.JsonNull {
+  return value === null ? Prisma.JsonNull : value;
+}
 
 async function fetchEntraPhoto(accessToken: string): Promise<string | null | undefined> {
   const response = await fetch("https://graph.microsoft.com/v1.0/me/photos/96x96/$value", {
@@ -123,37 +168,53 @@ export async function syncUserFromEntraProfile(input: {
   const normalizedDepartment = entraDepartmentValue
     ? normalizeEntraDepartmentValue(entraDepartmentValue)
     : null;
+  const v1Profile = readServerEnvironment().PRODUCT_PROFILE === "v1";
 
   return prisma.$transaction(async (tx) => {
+    const identityMatches = userId ? [] : await tx.user.findMany({
+      where: {
+        OR: [
+          { entraObjectId: profile.id },
+          { email: { equals: email, mode: "insensitive" } },
+        ],
+      },
+      select: existingUserSelect,
+      orderBy: { id: "asc" },
+      take: 2,
+    });
+    if (identityMatches.length > 1) {
+      throw new Error("L’identité Microsoft correspond à plusieurs comptes 1TASK et doit être corrigée par un administrateur.");
+    }
     const existingUser = userId
       ? await tx.user.findUnique({
           where: { id: userId },
-          select: {
-            entraManagerId: true,
-            entraManagerObjectId: true,
-            entraManagerDisplayName: true,
-            entraManagerEmail: true,
-            administrativelyDisabled: true,
-            managedDisplayName: true,
-            departmentId: true,
-            primaryRoleCode: true,
-            status: true,
-            lastSyncedAt: true,
-            image: true,
+          select: existingUserSelect,
+        })
+      : identityMatches[0] ?? null;
+
+    const canProvisionRequester = v1Profile && profile.accountEnabled !== false &&
+      Boolean(normalizedDepartment) &&
+      isEligibleForAutomaticRequesterProvisioning(existingUser);
+    const mapping = canProvisionRequester
+      ? await tx.entraDepartmentMapping.findFirst({
+          where: {
+            normalizedValue: normalizedDepartment!,
+            isActive: true,
+            department: { isActive: true },
           },
+          select: { id: true, departmentId: true },
         })
       : null;
-    // Department assignment and activation are application-owned decisions.
-    // The mapping remains available for legacy bootstrap screens, but a new
-    // Entra identity is never activated or assigned automatically from it.
-    const firstSynchronization = !existingUser?.lastSyncedAt;
+    const firstSynchronization = isFirstEntraSynchronization(existingUser);
     const isBootstrapAdmin = isBootstrapFunctionalAdminEmail(email);
+    const automaticallyProvisioned = Boolean(mapping) && !isBootstrapAdmin;
     const status = statusAfterEntraSynchronization({
       email,
       accountEnabled: profile.accountEnabled,
       administrativelyDisabled: existingUser?.administrativelyDisabled ?? false,
       firstSynchronization,
       existingStatus: existingUser?.status,
+      v1RequesterProvisioningEligible: automaticallyProvisioned,
     });
 
     let entraManagerId = existingUser?.entraManagerId ?? null;
@@ -187,12 +248,12 @@ export async function syncUserFromEntraProfile(input: {
       email,
       entraDepartmentValue,
       entraDepartmentNormalizedValue: normalizedDepartment,
-      // Preserve an application-managed department and manager. These fields
-      // must never be overwritten by a later Entra synchronization.
-      departmentId: existingUser?.departmentId ?? null,
+      // A mapping is used only for a new or wholly unassigned pending profile.
+      // Every administratively managed field remains authoritative afterwards.
+      departmentId: existingUser?.departmentId ?? (automaticallyProvisioned ? mapping!.departmentId : null),
       primaryRoleCode:
         existingUser?.primaryRoleCode ??
-        (isBootstrapAdmin ? RoleCode.FUNCTIONAL_ADMIN : null),
+        (isBootstrapAdmin ? RoleCode.FUNCTIONAL_ADMIN : automaticallyProvisioned ? RoleCode.REQUESTER : null),
       entraManagerId,
       entraManagerObjectId,
       entraManagerDisplayName,
@@ -204,8 +265,8 @@ export async function syncUserFromEntraProfile(input: {
       lastSyncedAt: new Date(),
     } satisfies Prisma.UserUncheckedUpdateInput;
 
-    const user = userId
-      ? await tx.user.update({ where: { id: userId }, data })
+    const user = existingUser
+      ? await tx.user.update({ where: { id: existingUser.id }, data })
       : await tx.user.upsert({
           where: { entraObjectId: profile.id },
           update: data,
@@ -217,8 +278,8 @@ export async function syncUserFromEntraProfile(input: {
             email,
             entraDepartmentValue,
             entraDepartmentNormalizedValue: normalizedDepartment,
-            departmentId: null,
-            primaryRoleCode: isBootstrapAdmin ? RoleCode.FUNCTIONAL_ADMIN : null,
+            departmentId: automaticallyProvisioned ? mapping!.departmentId : null,
+            primaryRoleCode: isBootstrapAdmin ? RoleCode.FUNCTIONAL_ADMIN : automaticallyProvisioned ? RoleCode.REQUESTER : null,
             entraManagerId,
             entraManagerObjectId,
             entraManagerDisplayName,
@@ -230,8 +291,57 @@ export async function syncUserFromEntraProfile(input: {
           },
         });
 
+    // Serialize role/audit creation for repeated or concurrent callbacks of
+    // the same identity. No Graph token or secret is persisted in metadata.
+    await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${user.id} FOR UPDATE`;
+
     await ensureRequesterRole(tx, user.id);
     await ensureBootstrapFunctionalAdmin(tx, { userId: user.id, email });
+
+    const provisioningAlreadyAudited = automaticallyProvisioned
+      ? await tx.auditLog.findFirst({
+          where: { objectType: "User", objectId: user.id, action: "ENTRA_REQUESTER_AUTO_PROVISIONED" },
+          select: { id: true },
+        })
+      : null;
+    if (automaticallyProvisioned && existingUser?.status !== UserStatus.ACTIVE && !provisioningAlreadyAudited) {
+      const oldValues = {
+        departmentId: existingUser?.departmentId ?? null,
+        primaryRoleCode: existingUser?.primaryRoleCode ?? null,
+        status: existingUser?.status ?? null,
+      };
+      const newValues = {
+        departmentId: mapping!.departmentId,
+        primaryRoleCode: RoleCode.REQUESTER,
+        status: UserStatus.ACTIVE,
+      };
+      await tx.userProfileChange.createMany({
+        data: (Object.keys(newValues) as Array<keyof typeof newValues>).map((field) => ({
+          userId: user.id,
+          actorId: user.id,
+          field,
+          oldValue: profileChangeJson(oldValues[field]),
+          newValue: profileChangeJson(newValues[field]),
+          reason: "Provisionnement automatique depuis une correspondance de département Entra active.",
+        })),
+      });
+      await tx.auditLog.create({
+        data: {
+          actorId: user.id,
+          action: "ENTRA_REQUESTER_AUTO_PROVISIONED",
+          objectType: "User",
+          objectId: user.id,
+          oldValue: oldValues,
+          newValue: {
+            ...newValues,
+            source: "ENTRA_DEPARTMENT_MAPPING",
+            mappingId: mapping!.id,
+            normalizedDepartment,
+          },
+          reason: "Activation V1 après synchronisation Microsoft Entra ID et correspondance active.",
+        },
+      });
+    }
     return { id: user.id, status: user.status, departmentId: user.departmentId };
   }, ENTRA_SYNC_TRANSACTION_OPTIONS);
 }

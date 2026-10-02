@@ -25,6 +25,7 @@ type Queue = {
   code: string;
   name: string;
   isActive: boolean;
+  provisionedTriageDepartmentId: string | null;
   department: Department;
   manager: { id: string; name: string; email: string; status: string } | null;
 };
@@ -46,6 +47,7 @@ type Service = {
   queue: { id: string; name: string; department: Department };
   sla: { id: string; name: string } | null;
   isActive: boolean;
+  provisionedTriageDepartmentId: string | null;
   allowConfidentialTickets: boolean;
   confidentialPrimaryRecipient: { id: string; name: string; email: string } | null;
   confidentialSubstitute: { id: string; name: string; email: string } | null;
@@ -69,6 +71,7 @@ export type AdminConfiguration = {
   escalationRules: EscalationRule[];
   entraMappings: EntraMapping[];
   pendingUsers: { id: string; name: string; email: string; entraDepartmentValue: string | null }[];
+  v1TriageConfiguration: { defaultTriageSlaId: string | null; globalTriageServiceId: string | null } | null;
 };
 
 export type AdminConfigurationSection = "departments" | "queues" | "teams" | "catalog" | "sla" | "roles";
@@ -251,6 +254,16 @@ export function AdminConfigurationPanel({ configuration, sections }: { configura
 
     {enabled("sla") ? <section className="panel admin-config-section p-6">
       <AdminSectionTitle icon="sla">SLA, calendriers et escalades</AdminSectionTitle>
+      <div id="v1-triage" className="mt-4 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+        <p className="text-sm font-semibold text-slate-900">Infrastructure de triage V1</p>
+        <p className="mt-1 text-xs leading-5 text-slate-600">Configurez d’abord le SLA par défaut. Chaque nouveau département reçoit ensuite ses ressources TRIAGE internes. Sélectionnez enfin l’unique service global utilisé pour les demandes non classées.</p>
+        <form onSubmit={(event) => void submit(event, "/api/admin/v1-triage-configuration", { defaultTriageSlaId: value(event.currentTarget, "defaultTriageSlaId") || null, globalTriageServiceId: value(event.currentTarget, "globalTriageServiceId") || null, reason: value(event.currentTarget, "triageReason") })} className="mt-3 grid gap-3 md:grid-cols-3">
+          <Field label="SLA TRIAGE par défaut"><Combobox name="defaultTriageSlaId" defaultValue={configuration.v1TriageConfiguration?.defaultTriageSlaId ?? ""} options={[{ value: "", label: "Non configuré" }, ...configuration.slas.filter((sla) => sla.isActive && sla.calendar.isActive).map((sla) => ({ value: sla.id, label: sla.name }))]} /></Field>
+          <Field label="Service global de repli"><Combobox name="globalTriageServiceId" defaultValue={configuration.v1TriageConfiguration?.globalTriageServiceId ?? ""} options={[{ value: "", label: "Non configuré" }, ...configuration.services.filter((service) => service.isActive && !service.provisionedTriageDepartmentId && service.sla && service.queue.department.isActive).map((service) => ({ value: service.id, label: `${service.name} — ${service.queue.name}` }))]} /></Field>
+          <Field label="Motif"><input name="triageReason" required minLength={10} className={inputClass} placeholder="Motif de configuration…" /></Field>
+          <button disabled={busy} aria-busy={busy} className={buttonClass}>{busy ? "Enregistrement…" : "Enregistrer le triage V1"}</button>
+        </form>
+      </div>
       <AdminCalendarConfiguration organizations={configuration.organizations} calendars={configuration.calendars} />
       <p className="mt-1 text-xs text-slate-500">Les changements de catalogue s’appliquent aux nouveaux tickets sans réécrire l’historique des anciens.</p>
       <form onSubmit={(event) => void submit(event, "/api/admin/slas", { code: value(event.currentTarget, "code"), name: value(event.currentTarget, "name"), firstResponseMinutes: Number(value(event.currentTarget, "firstResponseMinutes")), resolutionMinutes: Number(value(event.currentTarget, "resolutionMinutes")), calendarId: value(event.currentTarget, "calendarId"), calculationMode: "ROLLING", alertThresholds: [50, 80, 100], isActive: true, reason: value(event.currentTarget, "reason") })} className="mt-4 grid gap-3 md:grid-cols-3">

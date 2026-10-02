@@ -30,6 +30,7 @@ const emailList = z.preprocess(
 /** Unique inventory and validation policy for all server-side configuration. */
 export const serverEnvironmentSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  PRODUCT_PROFILE: z.enum(["full", "v1"]).default("full"),
   VERCEL_ENV: z.enum(["development", "preview", "production"]).optional(),
   DATABASE_URL: z.url(),
   NEXTAUTH_URL: optionalUrl,
