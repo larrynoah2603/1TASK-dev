@@ -19,28 +19,30 @@ import { MobileNavigation } from "@/components/layout/mobile-navigation";
 import { Avatar } from "@/components/ui/avatar";
 import { Icon, type IconName } from "@/components/ui/icons";
 import { permissionCodes, roleCodes, toAccessSubject, type UserContext } from "@/lib/server-auth";
+import { getProductCapabilities } from "@/lib/product-policy.server";
+import type { ProductCapability } from "@/lib/product-policy";
 
 /**
  * group "main"    : navigation principale
  * group "account" : administration et paramètres
  * group "mobile"  : présent uniquement dans la barre mobile (déjà accessible via la cloche / le menu utilisateur)
  */
-type AppLink = { href: string; label: string; icon: IconName; group: "main" | "account" | "mobile"; permission?: string; roles?: RoleCode[] };
+type AppLink = { href: string; label: string; icon: IconName; group: "main" | "account" | "mobile"; permission?: string; roles?: RoleCode[]; capability?: ProductCapability };
 
 const links: AppLink[] = [
   { href: "/dashboard", label: "Tableau de bord", icon: "dashboard", group: "main" },
   { href: "/tickets", label: "Tickets", icon: "ticket", group: "main" },
   { href: "/inbox", label: "Boîte agent", icon: "inbox", group: "main", roles: [RoleCode.AGENT, RoleCode.QUEUE_MANAGER, RoleCode.FUNCTIONAL_ADMIN] },
-  { href: "/missions", label: "Missions", icon: "briefcase", group: "main", permission: "portfolio:read" },
+  { href: "/missions", label: "Missions", icon: "briefcase", group: "main", permission: "portfolio:read", capability: "productionPortfolio" },
   { href: "/queues", label: "Files", icon: "layers", group: "main", roles: [RoleCode.QUEUE_MANAGER, RoleCode.FUNCTIONAL_ADMIN] },
-  { href: "/clients", label: "Clients", icon: "users", group: "main", permission: "portfolio:read" },
-  { href: "/dossiers", label: "Dossiers", icon: "folder", group: "main", permission: "portfolio:read" },
-  { href: "/knowledge", label: "Connaissances", icon: "book", group: "main", permission: "knowledge:read" },
+  { href: "/clients", label: "Clients", icon: "users", group: "main", permission: "portfolio:read", capability: "productionPortfolio" },
+  { href: "/dossiers", label: "Dossiers", icon: "folder", group: "main", permission: "portfolio:read", capability: "productionPortfolio" },
+  { href: "/knowledge", label: "Connaissances", icon: "book", group: "main", permission: "knowledge:read", capability: "knowledge" },
   { href: "/reporting", label: "Reporting", icon: "chart", group: "main", permission: "reporting:read" },
   { href: "/dashboard/responsible", label: "Pilotage SLA", icon: "clock", group: "main", permission: "reporting:read" },
   { href: "/my-assets", label: "Mes actifs", icon: "monitor", group: "main" },
-  { href: "/assets", label: "Inventaire", icon: "monitor", group: "main", roles: [RoleCode.FUNCTIONAL_ADMIN] },
-  { href: "/asset-requests", label: "Demandes d’actifs", icon: "clipboard", group: "main", roles: [RoleCode.FUNCTIONAL_ADMIN] },
+  { href: "/assets", label: "Inventaire", icon: "monitor", group: "main", roles: [RoleCode.FUNCTIONAL_ADMIN], capability: "productionPortfolio" },
+  { href: "/asset-requests", label: "Demandes d’actifs", icon: "clipboard", group: "main", roles: [RoleCode.FUNCTIONAL_ADMIN], capability: "productionPortfolio" },
   { href: "/admin", label: "Administration", icon: "shield", group: "account", roles: [RoleCode.FUNCTIONAL_ADMIN, RoleCode.TECHNICAL_ADMIN] },
   { href: "/profile", label: "Paramètres", icon: "sliders", group: "account" },
   { href: "/notifications", label: "Notifications", icon: "bell", group: "mobile" },
@@ -56,6 +58,7 @@ function SidebarBrand() {
 }
 
 export async function AppShell({ user, children }: { user: UserContext; children: React.ReactNode }) {
+  const capabilities = getProductCapabilities();
   const codes = roleCodes(user);
   const permissions = permissionCodes(user);
   const subject = toAccessSubject(user);
@@ -67,7 +70,8 @@ export async function AppShell({ user, children }: { user: UserContext; children
     const roleAllowed = !link.roles || link.roles.some((role) => codes.includes(role));
     const adminAllowed = link.href !== "/admin" || isAdmin;
     const assetsAllowed = link.href !== "/assets" || isFunctionalAssetAdministrator(user);
-    return permissionAllowed && roleAllowed && adminAllowed && assetsAllowed;
+    const capabilityAllowed = !link.capability || capabilities[link.capability];
+    return permissionAllowed && roleAllowed && adminAllowed && assetsAllowed && capabilityAllowed;
   });
   const sections: Array<{ id: "main" | "account"; label: string }> = [
     { id: "main", label: "Espace de travail" },
