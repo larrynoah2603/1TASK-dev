@@ -64,7 +64,7 @@ données ni suppression des modèles dormants.
 | P01 | Terminé | Profil `full\|v1`, politique unique, garde stable et navigation V1 ; `full` inchangé. |
 | P02 | Terminé | Synchroniser un Entra reconnu et mappé en demandeur actif sans seed ni nom codé en dur. |
 | P03 | Terminé (infrastructure) | Persister une destination globale déterministe et provisionner atomiquement les ressources TRIAGE départementales ; la simplification du formulaire reste bornée à la phase dédiée. |
-| P04 | Proposé | Router vers le service choisi ou une unique file globale de triage, sans auto-affectation. |
+| P04 | Terminé | Création V1 objet/description/service facultatif, matching conservateur, repli global et qualification transverse bornée. |
 | P05 | Proposé | Conserver claim concurrent et affectation manuelle avec portées et conflits d’état. |
 | P06 | Proposé | Ajouter l’annulation précoce bornée au state machine et auditée. |
 | P07 | Proposé | Résolution, confirmation demandeur et fermeture automatique en jours ouvrés. |
@@ -86,8 +86,8 @@ repli de stockage public.
 
 - `npm ci` : réussi (634 paquets, génération Prisma réussie).
 - Tests ciblés P00/P01 : 11 fichiers, 60 tests réussis.
-- `DATABASE_URL=postgresql://localhost/test npm run validate` après P03 : réussi ; 85 fichiers et
-  361 tests réussis, 3 fichiers et 10 tests DB ignorés faute de `RUN_DB_TESTS=1`; ESLint
+- `DATABASE_URL=postgresql://localhost/test npm run validate` pendant P04 : réussi ; 86 fichiers et
+  374 tests réussis, 3 fichiers et 10 tests DB ignorés faute de `RUN_DB_TESTS=1`; ESLint
   conserve un avertissement préexistant `@next/next/no-img-element` dans
   `app/(app)/loading.tsx`; typecheck, validation Prisma et build Next.js réussis.
 - `git diff --check` : réussi.
@@ -112,3 +112,13 @@ ensuite un service métier opérationnel comme destination globale. Tant que cet
 n’est pas valide, le routage V1 échoue explicitement au lieu de choisir un département par
 convention. Le retour arrière applicatif conserve les colonnes et ressources ajoutées ; il
 ne supprime ni tickets, ni affectations, ni identifiants historiques.
+
+### P04 — création et qualification
+
+Le profil V1 accepte uniquement l’objet, la description, un service facultatif et le jeton
+d’idempotence technique. Les champs avancés sont rejetés par un schéma strict. Sans service,
+le serveur tente le matching conservateur sur l’objet et la description, puis utilise la
+destination globale P03 avec le statut `TO_QUALIFY`. La migration additive
+`20261002170000_add_global_triage_qualification_permission` attribue la capacité de routage
+depuis cette file aux rôles de traitement existants ; elle n’accorde aucune visibilité globale
+sur les tickets des files de destination.

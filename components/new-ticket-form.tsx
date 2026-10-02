@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/toast-provider";
 import { Combobox } from "@/components/combobox";
+import { V1TicketForm } from "@/components/v1-ticket-form";
 
 type DepartmentOption = { id: string; code: string; name: string };
 type CatalogOption = { id: string; code: string; name: string; category: string; ticketType: string; allowConfidentialTickets: boolean; confidentialityVersion: number; confidentialRecipient: { id: string; name: string } | null; confidentialReplacementActive: boolean; queue: { id: string; code: string; name: string; department: DepartmentOption } };
@@ -60,7 +61,7 @@ function wait(milliseconds: number) {
   return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 }
 
-export function NewTicketForm({ onCancel }: { onCancel?: () => void } = {}) {
+function FullTicketForm({ onCancel }: { onCancel?: () => void } = {}) {
   const router = useRouter();
   const { toast } = useToast();
   const [departments, setDepartments] = useState<DepartmentOption[]>([]);
@@ -273,4 +274,8 @@ export function NewTicketForm({ onCancel }: { onCancel?: () => void } = {}) {
       <div className="form-actions flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end"><button type="button" disabled={submitting} onClick={() => onCancel ? onCancel() : router.back()} className="button-secondary">Annuler</button>{preview ? <><button type="button" disabled={submitting} onClick={() => setPreview(false)} className="button-secondary">Modifier</button><button type="submit" disabled={submitting || loadingDepartments} aria-busy={submitting} className="button-primary">{submitting ? <><span className="action-spinner" aria-hidden="true" />Création du ticket…</> : "Confirmer et créer"}</button></> : <button type="button" disabled={submitting || loadingDepartments || !canPreview} onClick={() => setPreview(true)} className="button-primary">{loadingDepartments ? "Chargement des départements…" : !requestedService.trim() ? "Décrivez votre besoin" : !targetDepartmentId ? "Choisissez un département" : title.trim().length < 5 ? "Objet : 5 caractères minimum" : description.trim().length < 15 ? "Description : 15 caractères minimum" : "Prévisualiser le ticket"}</button>}</div>
     </form>
   );
+}
+
+export function NewTicketForm({ onCancel, simplified = false }: { onCancel?: () => void; simplified?: boolean } = {}) {
+  return simplified ? <V1TicketForm onCancel={onCancel} /> : <FullTicketForm onCancel={onCancel} />;
 }

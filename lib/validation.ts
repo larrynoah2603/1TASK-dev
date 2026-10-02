@@ -43,6 +43,25 @@ export const createTicketSchema = z.object({
   }
 });
 
+export const createV1TicketSchema = z.object({
+  serviceCatalogItemId: z.string().cuid().optional(),
+  creationIdempotencyToken: creationIdempotencyTokenSchema.optional(),
+  title: z.string().trim().min(5).max(180),
+  description: z.string().trim().min(15).max(20_000),
+}).strict().transform((value) => ({
+  ...value,
+  requestedService: undefined,
+  targetDepartmentId: undefined,
+  type: undefined,
+  confidential: false as const,
+  confidentialityVersion: undefined,
+  impact: Impact.MEDIUM,
+  urgency: Urgency.MEDIUM,
+  legalDueAt: null,
+  dossierId: null,
+  missionId: null,
+}));
+
 export const addMessageSchema = z.object({
   body: z.string().trim().min(1).max(20_000),
   visibility: z.enum(MessageVisibility).default(MessageVisibility.REQUESTER),
