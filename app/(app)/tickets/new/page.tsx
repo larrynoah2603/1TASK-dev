@@ -2,6 +2,7 @@ import { TicketWizard } from "@/components/tickets/ticket-wizard";
 import { redirect } from "next/navigation";
 import { requirePermission } from "@/lib/server-auth";
 import { TicketWorkspace } from "@/components/tickets/ticket-workspace";
+import { getProductCapabilities } from "@/lib/product-policy.server";
 
 export default async function NewTicketPage() {
   try {
@@ -9,5 +10,6 @@ export default async function NewTicketPage() {
   } catch {
     redirect("/dashboard");
   }
-  return <TicketWorkspace><TicketWizard /></TicketWorkspace>;
+  const capabilities = getProductCapabilities();
+  return <TicketWorkspace><TicketWizard simplified={!capabilities.confidentialTicketCreation && !capabilities.productionPortfolio} /></TicketWorkspace>;
 }

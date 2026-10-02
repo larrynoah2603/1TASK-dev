@@ -99,7 +99,7 @@ export async function AdminShell({ user, children }: { user: UserContext; childr
       search={<GlobalSearch />}
       actions={
         <>
-          <NewTicketLauncher />
+          <NewTicketLauncher simplified={!capabilities.confidentialTicketCreation && !capabilities.productionPortfolio} />
           <NotificationCenter />
           <span className="kit-hide-mobile"><HelpMenu /></span>
           <span className="kit-hide-mobile"><ThemeToggle /></span>

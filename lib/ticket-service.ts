@@ -43,6 +43,7 @@ import {
   claimTicketSchema,
   confidentialAccessSchema,
   createTicketSchema,
+  createV1TicketSchema,
   queueTransferSchema,
   ticketLinkSchema,
   type AddMessageInput,
@@ -54,6 +55,7 @@ import {
   type TicketLinkInput,
 } from "@/lib/validation";
 import { matchCatalogService, routeTicketFromCatalog, type CatalogCandidate } from "@/lib/routing";
+import { assertOperationalGlobalTriage } from "@/lib/triage-configuration";
 import { resolveConfidentialRecipient } from "@/lib/confidential-ticket-service";
 import { measureServerOperation } from "@/lib/performance";
 import { DomainError } from "@/lib/domain-error";
@@ -125,7 +127,8 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
     throw new AuthorizationError("La permission de créer un ticket n’est pas accordée.");
   }
   ensureActorDepartment(actor);
-  const parsed = createTicketSchema.parse(input);
+  const v1Profile = readServerEnvironment().PRODUCT_PROFILE === "v1";
+  const parsed = (v1Profile ? createV1TicketSchema : createTicketSchema).parse(input);
   if (parsed.creationIdempotencyToken) {
     const existingTicket = await prisma.ticket.findFirst({
       where: {
@@ -136,10 +139,10 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
     });
     if (existingTicket) return existingTicket;
   }
-  const targetDepartment = parsed.targetDepartmentId
+  const targetDepartment = !v1Profile && parsed.targetDepartmentId
     ? await prisma.department.findFirst({ where: { id: parsed.targetDepartmentId, isActive: true }, select: { id: true, code: true, name: true } })
     : null;
-  if (!parsed.serviceCatalogItemId && (!targetDepartment || !parsed.requestedService)) {
+  if (!v1Profile && !parsed.serviceCatalogItemId && (!targetDepartment || !parsed.requestedService)) {
     throw new DomainError("Le besoin libre et le département cible sont obligatoires.", 422);
   }
   if (!parsed.serviceCatalogItemId && targetDepartment && targetDepartment.id !== actor.departmentId && !hasPermission(actor, "ticket:create:cross-department")) {
@@ -162,14 +165,15 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
   let service: Prisma.ServiceCatalogItemGetPayload<{ include: typeof serviceInclude }> | null | undefined;
   if (parsed.serviceCatalogItemId) {
     service = await prisma.serviceCatalogItem.findFirst({
-      where: { id: parsed.serviceCatalogItemId, isActive: true },
+      where: { id: parsed.serviceCatalogItemId, isActive: true, provisionedTriageDepartmentId: null, queue: { isActive: true, department: { isActive: true } } },
       include: serviceInclude,
     });
   } else {
     const candidates = await prisma.serviceCatalogItem.findMany({
       where: {
         isActive: true,
-        queue: { isActive: true, departmentId: targetDepartment?.id, department: { isActive: true } },
+        provisionedTriageDepartmentId: null,
+        queue: { isActive: true, ...(v1Profile ? {} : { departmentId: targetDepartment?.id }), department: { isActive: true } },
       },
       include: serviceInclude,
     });
@@ -179,7 +183,7 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
       priorityDefault: candidate.priorityDefault, keywords: candidate.keywords,
     }));
     const automaticMatch = matchCatalogService({
-      requestedService: parsed.requestedService,
+      requestedService: v1Profile ? undefined : parsed.requestedService,
       title: parsed.title,
       description: parsed.description,
       candidates: catalogCandidates,
@@ -189,7 +193,9 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
       matchedBy = automaticMatch.matchedBy;
       routingMode = "AUTO_CATALOG";
     } else {
-      service = candidates.find((candidate) => candidate.code === `TRIAGE-${targetDepartment?.code}`);
+      service = v1Profile
+        ? await assertOperationalGlobalTriage(prisma)
+        : candidates.find((candidate) => candidate.code === `TRIAGE-${targetDepartment?.code}`);
       matchedBy = "catalog-id";
       routingMode = "TRIAGE";
     }
@@ -225,7 +231,7 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
     throw new DomainError("Le service sélectionné n’a pas de SLA actif configuré.", 422);
   }
 
-  const productionContext = await resolveTicketProductionContext(actor, parsed);
+  const productionContext = v1Profile ? { dossierId: null, missionId: null } : await resolveTicketProductionContext(actor, parsed);
 
   const routing = routeTicketFromCatalog({
     serviceCatalogItemId: service.id,
@@ -260,11 +266,11 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
         reference: makeTicketReference(now),
         title: parsed.title,
         description: parsed.description,
-        requestedService: parsed.requestedService ?? null,
+        requestedService: v1Profile ? null : parsed.requestedService ?? null,
         confidential: parsed.confidential,
         type: routing.type,
         category: routing.category,
-        priority: calculatePriorityFromImpactUrgency(parsed.impact, parsed.urgency),
+        priority: v1Profile ? service.priorityDefault : calculatePriorityFromImpactUrgency(parsed.impact, parsed.urgency),
         impact: parsed.impact,
         urgency: parsed.urgency,
         status: initialStatus,
@@ -288,7 +294,7 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
             toStatus: initialStatus,
             metadata: {
               routingMode,
-              requestedService: parsed.requestedService ?? null,
+              requestedService: v1Profile ? null : parsed.requestedService ?? null,
               matchedBy,
               catalogItemId: service.id,
               catalogCode: service.code,
@@ -297,7 +303,7 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
               ticketType: routing.type,
               category: routing.category,
               initialStatus,
-              priority: calculatePriorityFromImpactUrgency(parsed.impact, parsed.urgency),
+              priority: v1Profile ? service.priorityDefault : calculatePriorityFromImpactUrgency(parsed.impact, parsed.urgency),
               impact: parsed.impact,
               urgency: parsed.urgency,
               legalDueAt: parsed.legalDueAt ?? null,

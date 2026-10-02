@@ -18,6 +18,8 @@ import { chooseAutoAssignee, recordAssignment } from "@/lib/ticket-assignment-se
 import { accessTarget, ticketAccessInclude, ticketSecurityInclude } from "@/lib/ticket-access";
 import { calculateSlaDeadlines } from "@/lib/sla";
 import { queueWorkerIds } from "@/lib/ticket-notification-service";
+import { readServerEnvironment } from "@/lib/env";
+import { V1_CONFIGURATION_ID } from "@/lib/triage-configuration";
 import {
   ticketQualificationSchema,
   transitionTicketSchema,
@@ -39,6 +41,50 @@ function requireAdministrativeReason(actor: UserContext, reason: string | undefi
   }
 }
 
+export function isAuthorizedGlobalTriageOrigin(originQueueId: string, configuredQueueId: string | null | undefined, hasScopedCapability: boolean) {
+  return Boolean(configuredQueueId && originQueueId === configuredQueueId && hasScopedCapability);
+}
+
+async function qualificationScope(actor: UserContext, ticket: { queueId: string; queue: { departmentId: string } }, target: ReturnType<typeof accessTarget>) {
+  const configured = await prisma.v1Configuration.findUnique({
+    where: { id: V1_CONFIGURATION_ID },
+    select: { globalTriageService: { select: { queueId: true } } },
+  });
+  const configuredQueueId = configured?.globalTriageService?.queueId;
+  const globalTriage = configuredQueueId === ticket.queueId;
+  const crossDepartment = isAuthorizedGlobalTriageOrigin(
+    ticket.queueId,
+    configuredQueueId,
+    hasPermission(actor, "ticket:qualify:global-triage", target),
+  );
+  return { globalTriage, crossDepartment, departmentId: ticket.queue.departmentId };
+}
+
+export async function listQualificationDestinationServices(actor: UserContext, ticketId: string) {
+  actor = await requireCurrentActor(actor);
+  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId }, include: ticketAccessInclude });
+  if (!ticket) throw new DomainError("Ticket introuvable.", 404);
+  const target = accessTarget(ticket);
+  if (!canViewTicket(toAccessSubject(actor), target) || !hasPermission(actor, "ticket:update", target) || !roleCodes(actor).some(isStaffRole)) {
+    throw new AuthorizationError("La qualification n’est pas autorisée dans ce périmètre.");
+  }
+  const scope = await qualificationScope(actor, ticket, target);
+  return prisma.serviceCatalogItem.findMany({
+    where: {
+      isActive: true,
+      provisionedTriageDepartmentId: null,
+      queue: {
+        isActive: true,
+        department: { isActive: true },
+        ...(scope.crossDepartment ? {} : { departmentId: scope.departmentId }),
+      },
+      sla: { isActive: true, calendar: { isActive: true } },
+    },
+    select: { id: true, name: true, category: true, queue: { select: { id: true, name: true, department: { select: { id: true, name: true } } } } },
+    orderBy: [{ name: "asc" }],
+  });
+}
+
 export async function qualifyTicket(actor: UserContext, ticketId: string, input: TicketQualificationInput) {
   actor = await requireCurrentActor(actor);
   const parsed = ticketQualificationSchema.parse(input);
@@ -50,14 +96,15 @@ export async function qualifyTicket(actor: UserContext, ticketId: string, input:
     throw new AuthorizationError("La qualification n’est pas autorisée dans ce périmètre.");
   }
   if (ticket.status === TicketStatus.CLOSED) throw new DomainError("Un ticket clôturé ne peut plus être qualifié.", 409);
+  const scope = await qualificationScope(actor, ticket, target);
 
   const selectedService = parsed.serviceCatalogItemId
     ? await prisma.serviceCatalogItem.findFirst({
         where: {
           id: parsed.serviceCatalogItemId,
           isActive: true,
-          code: { not: { startsWith: "TRIAGE-" } },
-          queue: { isActive: true, departmentId: ticket.queue.departmentId, department: { isActive: true } },
+          provisionedTriageDepartmentId: null,
+          queue: { isActive: true, ...(scope.crossDepartment ? {} : { departmentId: ticket.queue.departmentId }), department: { isActive: true } },
         },
         include: { queue: true, sla: { include: { calendar: { include: { holidays: true } } } } },
       })
@@ -69,7 +116,8 @@ export async function qualifyTicket(actor: UserContext, ticketId: string, input:
     throw new DomainError("Le service de destination n’a pas de SLA actif configuré.", 422);
   }
 
-  const priority = parsed.priority ?? calculatePriorityFromImpactUrgency(parsed.impact, parsed.urgency);
+  const v1Profile = readServerEnvironment().PRODUCT_PROFILE === "v1";
+  const priority = parsed.priority ?? (v1Profile && selectedService ? selectedService.priorityDefault : calculatePriorityFromImpactUrgency(parsed.impact, parsed.urgency));
   const now = new Date();
   const deadlines = selectedService?.sla
     ? calculateSlaDeadlines(now, selectedService.sla, {
@@ -83,7 +131,7 @@ export async function qualifyTicket(actor: UserContext, ticketId: string, input:
     let nextStatus = selectedService ? TicketStatus.TO_ASSIGN : ticket.status;
     let assignedToId: string | null | undefined = selectedService ? null : undefined;
     let assignee: Awaited<ReturnType<typeof chooseAutoAssignee>> = null;
-    if (selectedService?.queue.autoAssignment) {
+    if (!v1Profile && selectedService?.queue.autoAssignment) {
       assignee = await chooseAutoAssignee(tx, selectedService.queueId, selectedService.keywords);
       if (assignee) {
         nextStatus = TicketStatus.ASSIGNED;
@@ -178,7 +226,8 @@ export async function qualifyTicket(actor: UserContext, ticketId: string, input:
             : `${updated.reference} a été qualifié et routé vers ${updated.queue.name}.`,
         })));
     }
-    return updated;
+    const stillVisible = canViewTicket(toAccessSubject(actor), accessTarget(updated));
+    return stillVisible ? updated : { id: updated.id, status: updated.status, accessRetained: false as const };
   }, { maxWait: 10_000, timeout: 15_000 });
 }
 

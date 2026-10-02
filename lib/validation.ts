@@ -43,6 +43,25 @@ export const createTicketSchema = z.object({
   }
 });
 
+export const createV1TicketSchema = z.object({
+  serviceCatalogItemId: z.string().cuid().optional(),
+  creationIdempotencyToken: creationIdempotencyTokenSchema.optional(),
+  title: z.string().trim().min(5).max(180),
+  description: z.string().trim().min(15).max(20_000),
+}).strict().transform((value) => ({
+  ...value,
+  requestedService: undefined,
+  targetDepartmentId: undefined,
+  type: undefined,
+  confidential: false as const,
+  confidentialityVersion: undefined,
+  impact: Impact.MEDIUM,
+  urgency: Urgency.MEDIUM,
+  legalDueAt: null,
+  dossierId: null,
+  missionId: null,
+}));
+
 export const addMessageSchema = z.object({
   body: z.string().trim().min(1).max(20_000),
   visibility: z.enum(MessageVisibility).default(MessageVisibility.REQUESTER),
@@ -347,6 +366,12 @@ export const departmentAdminSchema = z.object({
   reason: adminReason,
 });
 
+export const v1TriageConfigurationSchema = z.object({
+  defaultTriageSlaId: z.string().cuid().nullable(),
+  globalTriageServiceId: z.string().cuid().nullable(),
+  reason: adminReason,
+}).strict();
+
 export const queueAdminSchema = z.object({
   code: z.string().trim().min(2).max(80).regex(/^[A-Za-z0-9][A-Za-z0-9_-]*$/),
   name: z.string().trim().min(2).max(160),
@@ -485,6 +510,7 @@ export const notificationRuleAdminSchema = z.object({
 });
 
 export type DepartmentAdminInput = z.infer<typeof departmentAdminSchema>;
+export type V1TriageConfigurationInput = z.infer<typeof v1TriageConfigurationSchema>;
 export type QueueAdminInput = z.infer<typeof queueAdminSchema>;
 export type TeamAdminInput = z.infer<typeof teamAdminSchema>;
 export type TeamMemberAdminInput = z.infer<typeof teamMemberAdminSchema>;
