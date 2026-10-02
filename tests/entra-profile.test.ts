@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchEntraProfile } from "@/lib/entra";
+import { RoleCode, UserStatus } from "@prisma/client";
+import {
+  fetchEntraProfile,
+  isFirstEntraSynchronization,
+} from "@/lib/entra";
 import { normalizeEntraDepartmentValue } from "@/lib/department-mapping";
 
 describe("frontière Microsoft Graph", () => {
@@ -24,5 +28,42 @@ describe("frontière Microsoft Graph", () => {
     expect(normalizeEntraDepartmentValue(profile.department!)).toBe("expertise comptable");
     expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({ cache: "no-store" });
+  });
+
+  it("distingue un vrai premier login d’un profil déjà géré sans lastSyncedAt", () => {
+    type ExistingUser = NonNullable<Parameters<typeof isFirstEntraSynchronization>[0]>;
+    const unmanagedPending = {
+      id: "pending",
+      entraManagerId: null,
+      entraManagerObjectId: null,
+      entraManagerDisplayName: null,
+      entraManagerEmail: null,
+      administrativelyDisabled: false,
+      managedDisplayName: null,
+      departmentId: null,
+      managerId: null,
+      primaryRoleCode: null,
+      primaryTeamId: null,
+      authorizedQueueId: null,
+      status: UserStatus.PENDING_ASSIGNMENT,
+      lastSyncedAt: null,
+      image: null,
+    } satisfies ExistingUser;
+
+    expect(isFirstEntraSynchronization(null)).toBe(true);
+    expect(isFirstEntraSynchronization(unmanagedPending)).toBe(true);
+    expect(isFirstEntraSynchronization({
+      ...unmanagedPending,
+      id: "managed",
+      managedDisplayName: "Nom administré",
+      departmentId: "department-1",
+      primaryRoleCode: RoleCode.AGENT,
+      status: UserStatus.ACTIVE,
+    })).toBe(false);
+    expect(isFirstEntraSynchronization({
+      ...unmanagedPending,
+      id: "already-synced",
+      lastSyncedAt: new Date("2026-10-01T10:00:00.000Z"),
+    })).toBe(false);
   });
 });

@@ -64,6 +64,10 @@ export function hasAdministrativelyManagedProfile(user: ExistingEntraUser): bool
       user.primaryRoleCode || user.primaryTeamId || user.authorizedQueueId);
 }
 
+export function isFirstEntraSynchronization(user: ExistingEntraUser | null): boolean {
+  return !user || (!user.lastSyncedAt && !hasAdministrativelyManagedProfile(user));
+}
+
 /** Only a completely unassigned pending profile may be provisioned from a later mapping. */
 export function isEligibleForAutomaticRequesterProvisioning(user: ExistingEntraUser | null): boolean {
   if (!user) return true;
@@ -201,8 +205,7 @@ export async function syncUserFromEntraProfile(input: {
           select: { id: true, departmentId: true },
         })
       : null;
-    const firstSynchronization = !existingUser ||
-      (!existingUser.lastSyncedAt && !hasAdministrativelyManagedProfile(existingUser));
+    const firstSynchronization = isFirstEntraSynchronization(existingUser);
     const isBootstrapAdmin = isBootstrapFunctionalAdminEmail(email);
     const automaticallyProvisioned = Boolean(mapping) && !isBootstrapAdmin;
     const status = statusAfterEntraSynchronization({

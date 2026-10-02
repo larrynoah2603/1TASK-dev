@@ -87,7 +87,7 @@ repli de stockage public.
 - `npm ci` : réussi (634 paquets, génération Prisma réussie).
 - Tests ciblés P00/P01 : 11 fichiers, 60 tests réussis.
 - `DATABASE_URL=postgresql://localhost/test npm run validate` après P02 : réussi ; 84 fichiers et
-  356 tests réussis, 2 fichiers et 8 tests DB ignorés faute de `RUN_DB_TESTS=1`; ESLint
+  357 tests réussis, 2 fichiers et 8 tests DB ignorés faute de `RUN_DB_TESTS=1`; ESLint
   conserve un avertissement préexistant `@next/next/no-img-element` dans
   `app/(app)/loading.tsx`; typecheck, validation Prisma et build Next.js réussis.
 - `git diff --check` : réussi.
