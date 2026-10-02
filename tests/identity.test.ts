@@ -52,6 +52,40 @@ describe("bootstrap administrateur 1TASK", () => {
     })).toBe(UserStatus.PENDING_ASSIGNMENT);
   });
 
+  it("active un demandeur V1 éligible après résolution de son département", () => {
+    expect(statusAfterEntraSynchronization({
+      email: "demandeur@example.test",
+      administrativelyDisabled: false,
+      firstSynchronization: true,
+      v1RequesterProvisioningEligible: true,
+    })).toBe(UserStatus.ACTIVE);
+
+    expect(statusAfterEntraSynchronization({
+      email: "demandeur@example.test",
+      administrativelyDisabled: false,
+      firstSynchronization: false,
+      existingStatus: UserStatus.PENDING_ASSIGNMENT,
+      v1RequesterProvisioningEligible: true,
+    })).toBe(UserStatus.ACTIVE);
+  });
+
+  it("ne laisse jamais le provisioning réactiver un compte désactivé", () => {
+    expect(statusAfterEntraSynchronization({
+      email: "demandeur@example.test",
+      accountEnabled: false,
+      administrativelyDisabled: false,
+      firstSynchronization: true,
+      v1RequesterProvisioningEligible: true,
+    })).toBe(UserStatus.DISABLED);
+    expect(statusAfterEntraSynchronization({
+      email: "demandeur@example.test",
+      administrativelyDisabled: true,
+      firstSynchronization: false,
+      existingStatus: UserStatus.PENDING_ASSIGNMENT,
+      v1RequesterProvisioningEligible: true,
+    })).toBe(UserStatus.DISABLED);
+  });
+
   it("déclare la permission de création inter-départementale dans le catalogue runtime", () => {
     expect(PERMISSION_CATALOG["ticket:create:cross-department"]).toBeDefined();
     expect(PERMISSION_CATALOG["catalog:propose"]).toBeDefined();
