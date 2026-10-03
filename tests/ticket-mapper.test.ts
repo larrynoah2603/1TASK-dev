@@ -13,7 +13,7 @@ const persistedTicket: Ticket = {
   assetId: null, slaId: "sla", confidential: false,
   firstResponseDueAt: new Date("2026-09-17T10:00:00.000Z"),
   resolutionDueAt: new Date("2026-09-18T10:00:00.000Z"), firstRespondedAt: null,
-  resolvedAt: null, closedAt: null, slaPausedAt: null, totalPausedMinutes: 0,
+  resolvedAt: null, closedAt: null, cancelledAt: null, cancellationReason: null, slaPausedAt: null, totalPausedMinutes: 0,
   blockReason: null, blockDetails: null, resolutionCause: null, resolutionAction: null,
   resolutionSolution: null, preventiveAction: null, reopenedReason: null,
   createdAt: new Date("2026-09-17T08:00:00.000Z"), updatedAt: new Date("2026-09-17T09:00:00.000Z"),

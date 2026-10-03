@@ -59,7 +59,7 @@ export async function listVisibleQueues(
           AND: [
             visibleWhere,
             { queueId: { in: visibleQueueIds } },
-            { status: { notIn: [TicketStatus.CLOSED, TicketStatus.BLOCKED] }, slaPausedAt: null },
+            { status: { notIn: [TicketStatus.CLOSED, TicketStatus.CANCELLED, TicketStatus.BLOCKED] }, slaPausedAt: null },
             {
               OR: [
                 { firstResponseDueAt: { not: null, lte: riskDeadline }, firstRespondedAt: null },
@@ -87,7 +87,7 @@ export async function listVisibleQueues(
   return visibleQueues.map((queue) => {
     const queueStats = ticketStatsByQueue.get(queue.id) ?? [];
     const ticketCount = queueStats.reduce((sum, row) => sum + row._count._all, 0);
-    const activeStats = queueStats.filter((row) => row.status !== TicketStatus.CLOSED);
+    const activeStats = queueStats.filter((row) => row.status !== TicketStatus.CLOSED && row.status !== TicketStatus.CANCELLED);
     return {
       ...queue,
       _count: {

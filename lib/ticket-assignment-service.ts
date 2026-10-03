@@ -17,7 +17,7 @@ export async function chooseAutoAssignee(
   if (!members.length) return null;
   const counts = await db.ticket.groupBy({
     by: ["assignedToId"],
-    where: { queueId, assignedToId: { in: members.map((member) => member.userId) }, status: { not: TicketStatus.CLOSED } },
+    where: { queueId, assignedToId: { in: members.map((member) => member.userId) }, status: { notIn: [TicketStatus.CLOSED, TicketStatus.CANCELLED] } },
     _count: { _all: true },
   });
   const countByUser = new Map(counts.map((entry) => [entry.assignedToId, entry._count._all]));

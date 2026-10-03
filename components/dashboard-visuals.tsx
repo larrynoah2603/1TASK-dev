@@ -302,7 +302,7 @@ function PortfolioMissionWidget({ missions, summary }: { missions: PortfolioMiss
 
 export function ResponsibleDashboard({ queues, summary, tickets, missionSummary, missions = [] }: { queues: QueueSummary[]; summary: ReportingSummary; tickets: DashboardTicket[]; missionSummary?: PortfolioSummary; missions?: PortfolioMission[] }) {
   const healthyRate = summary.total ? Math.max(0, Math.round(((summary.total - summary.overdue) / summary.total) * 100)) : 0;
-  const active = tickets.filter((ticket) => ticket.status !== TicketStatus.CLOSED).length;
+  const active = tickets.filter((ticket) => ticket.status !== TicketStatus.CLOSED && ticket.status !== TicketStatus.CANCELLED).length;
   return (
     <div className="dashboard-responsible-layout">
       <header className="dashboard-hero dashboard-role-hero">

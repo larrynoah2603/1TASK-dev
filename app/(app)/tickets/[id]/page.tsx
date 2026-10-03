@@ -30,6 +30,7 @@ const eventLabels: Record<string, string> = {
   RESOLUTION_SUBMITTED: "Résolution soumise",
   REOPENED: "Ticket réouvert",
   CLOSED: "Ticket clôturé",
+  CANCELLED: "Ticket annulé",
   SLA_ALERT: "Alerte SLA",
   SLA_BREACH: "Dépassement SLA",
   CONFIDENTIAL_ACCESS_GRANTED: "Accès confidentiel accordé",
@@ -43,7 +44,7 @@ type Tone = NonNullable<TimelineItem["tone"]>;
 
 /** Présentation uniquement : icône et couleur de chaque type d'événement. */
 const eventTone: Record<string, Tone> = {
-  RESOLUTION_SUBMITTED: "success", CLOSED: "success", REOPENED: "warning", SLA_ALERT: "warning", SLA_BREACH: "danger",
+  RESOLUTION_SUBMITTED: "success", CLOSED: "success", CANCELLED: "warning", REOPENED: "warning", SLA_ALERT: "warning", SLA_BREACH: "danger",
   CONFIDENTIAL_ACCESS_GRANTED: "warning", MESSAGE_ADDED: "neutral",
 };
 
@@ -159,6 +160,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
           <TicketPanel title="Description" subtitle="Demande initiale">
             {ticket.requestedService ? <div className="kit-need"><p className="kit-need-label">Besoin saisi par le demandeur</p><p className="kit-need-value">{ticket.requestedService}</p></div> : null}
             <p className="kit-prose">{ticket.description}</p>
+            {ticket.status === "CANCELLED" ? <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4"><p className="text-sm font-semibold text-slate-900">Demande annulée</p><p className="mt-1 text-sm text-slate-600">{ticket.cancellationReason}</p></div> : null}
           </TicketPanel>
 
           <TicketConversation>
@@ -184,10 +186,10 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
             legalDueAt={ticket.legalDueAt?.toISOString() ?? null}
             firstResponseDueAt={ticket.firstResponseDueAt?.toISOString() ?? null}
             resolutionDueAt={ticket.resolutionDueAt?.toISOString() ?? null}
-            canQualify={operational && ticket.status !== "CLOSED"}
-            canManageSla={actionContext.canTransfer && ticket.status !== "CLOSED"}
+            canQualify={operational && ticket.status !== "CLOSED" && ticket.status !== "CANCELLED"}
+            canManageSla={actionContext.canTransfer && ticket.status !== "CLOSED" && ticket.status !== "CANCELLED"}
             canUpload={actionContext.canPostPublic}
-            canLink={operational && ticket.status !== "CLOSED"}
+            canLink={operational && ticket.status !== "CLOSED" && ticket.status !== "CANCELLED"}
           />
         </div>
 
@@ -257,10 +259,10 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
             legalDueAt={ticket.legalDueAt?.toISOString() ?? null}
             firstResponseDueAt={ticket.firstResponseDueAt?.toISOString() ?? null}
             resolutionDueAt={ticket.resolutionDueAt?.toISOString() ?? null}
-            canQualify={operational && ticket.status !== "CLOSED"}
-            canManageSla={actionContext.canTransfer && ticket.status !== "CLOSED"}
+            canQualify={operational && ticket.status !== "CLOSED" && ticket.status !== "CANCELLED"}
+            canManageSla={actionContext.canTransfer && ticket.status !== "CLOSED" && ticket.status !== "CANCELLED"}
             canUpload={actionContext.canPostPublic}
-            canLink={operational && ticket.status !== "CLOSED"}
+            canLink={operational && ticket.status !== "CLOSED" && ticket.status !== "CANCELLED"}
           />
         </aside>
       </div>

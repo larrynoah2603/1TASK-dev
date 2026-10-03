@@ -19,7 +19,7 @@ async function getReportingSummaryUncached(current: UserContext) {
   const where = await visibleTicketWhere(current, { mode: "REPORTING" });
   const now = new Date();
   const activeSlaWhere: Prisma.TicketWhereInput = {
-    status: { notIn: [TicketStatus.CLOSED, TicketStatus.BLOCKED, TicketStatus.RESOLUTION_PENDING] },
+    status: { notIn: [TicketStatus.CLOSED, TicketStatus.CANCELLED, TicketStatus.BLOCKED, TicketStatus.RESOLUTION_PENDING] },
     slaPausedAt: null,
   };
   const firstResponseBreachedWhere: Prisma.TicketWhereInput = {
@@ -46,6 +46,8 @@ async function getReportingSummaryUncached(current: UserContext) {
   ]);
   const total = grouped.reduce((sum, item) => sum + item._count._all, 0);
   const closed = grouped.find((item) => item.status === TicketStatus.CLOSED)?._count._all ?? 0;
+  const cancelled = grouped.find((item) => item.status === TicketStatus.CANCELLED)?._count._all ?? 0;
+  const completionDenominator = total - cancelled;
   const byStatus = Object.values(TicketStatus).map((status) => ({
     status,
     count: grouped.find((item) => item.status === status)?._count._all ?? 0,
@@ -53,10 +55,12 @@ async function getReportingSummaryUncached(current: UserContext) {
   return {
     total,
     closed,
+    cancelled,
+    completionDenominator,
     overdue,
     firstResponseBreached,
     resolutionBreached,
-    closureRate: total ? Math.round((closed / total) * 100) : 0,
+    closureRate: completionDenominator ? Math.round((closed / completionDenominator) * 100) : 0,
     byStatus,
   };
 }

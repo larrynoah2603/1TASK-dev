@@ -188,12 +188,12 @@ export function TicketActions({
               <textarea required minLength={1} value={reopenedReason} onChange={(event) => setReopenedReason(event.target.value)} placeholder="Expliquez pourquoi le ticket doit être repris." className="field-control min-h-24 font-normal" />
             </label>
           ) : null}
-          {requiresAdministrativeReason ? (
-            <label className="field-label text-amber-800">Motif de l’action administrative
-              <textarea required minLength={10} value={transitionReason} onChange={(event) => setTransitionReason(event.target.value)} placeholder="Motif obligatoire, 10 caractères minimum." className="field-control min-h-24 border-amber-200 bg-amber-50/40 font-normal" />
+          {requiresAdministrativeReason || nextStatus === TicketStatus.CANCELLED ? (
+            <label className="field-label text-amber-800">{nextStatus === TicketStatus.CANCELLED ? "Motif de l’annulation" : "Motif de l’action administrative"}
+              <textarea required minLength={10} value={transitionReason} onChange={(event) => setTransitionReason(event.target.value)} placeholder={nextStatus === TicketStatus.CANCELLED ? "Expliquez clairement pourquoi cette demande est annulée." : "Motif obligatoire, 10 caractères minimum."} className="field-control min-h-24 border-amber-200 bg-amber-50/40 font-normal" />
             </label>
           ) : null}
-            <button disabled={busy || (requiresAdministrativeReason && transitionReason.trim().length < 10)} aria-busy={busy} className="button-primary">{busy ? "Enregistrement…" : "Enregistrer la transition"}</button>
+            <button disabled={busy || ((requiresAdministrativeReason || nextStatus === TicketStatus.CANCELLED) && transitionReason.trim().length < 10)} aria-busy={busy} className="button-primary">{busy ? "Enregistrement…" : "Enregistrer la transition"}</button>
           </form>
         </TicketSidePanel>
       ) : null}

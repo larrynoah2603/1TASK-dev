@@ -147,10 +147,9 @@ export async function upsertEntraDepartmentMapping(
       reason,
     });
 
-    // The mapping is retained for compatibility with the previous bootstrap
-    // workflow, but it no longer writes a user's internal department or
-    // activates an account. Those values are now assigned explicitly from
-    // /admin/users and must remain auditable as managed profile data.
+    // Existing users are never bulk-updated here. In the V1 profile, only a
+    // wholly unassigned pending user may consume this active mapping during
+    // their next successful Entra synchronization; that activation is audited.
     const affectedUsers = await tx.user.count({
       where: { entraDepartmentNormalizedValue: normalizedValue },
     });
