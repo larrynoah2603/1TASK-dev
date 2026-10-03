@@ -262,6 +262,7 @@ describe("Prompt 8 — transitions, commentaires et SLA", () => {
     expect(allowedNextStatuses(TicketStatus.NEW, [RoleCode.AGENT])).toEqual([
       TicketStatus.TO_QUALIFY,
       TicketStatus.TO_ASSIGN,
+      TicketStatus.CANCELLED,
     ]);
     expect(canTransitionStatus(TicketStatus.ASSIGNED, TicketStatus.IN_PROGRESS, [RoleCode.AGENT])).toBe(true);
     expect(canTransitionStatus(TicketStatus.NEW, TicketStatus.RESOLUTION_PENDING, [RoleCode.FUNCTIONAL_ADMIN])).toBe(false);

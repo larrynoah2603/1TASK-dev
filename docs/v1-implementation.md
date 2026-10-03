@@ -65,7 +65,7 @@ données ni suppression des modèles dormants.
 | P02 | Terminé | Synchroniser un Entra reconnu et mappé en demandeur actif sans seed ni nom codé en dur. |
 | P03 | Terminé (infrastructure) | Persister une destination globale déterministe et provisionner atomiquement les ressources TRIAGE départementales ; la simplification du formulaire reste bornée à la phase dédiée. |
 | P04 | Terminé | Création V1 objet/description/service facultatif, matching conservateur, repli global et qualification transverse bornée. |
-| P05 | Proposé | Conserver claim concurrent et affectation manuelle avec portées et conflits d’état. |
+| P05 | Terminé | Ajouter l’annulation terminale bornée aux demandes précoces, auditée et exclue du travail actif. |
 | P06 | Proposé | Ajouter l’annulation précoce bornée au state machine et auditée. |
 | P07 | Proposé | Résolution, confirmation demandeur et fermeture automatique en jours ouvrés. |
 | P08 | Proposé | Rendre portfolio/connaissance dormants et déplacer inventaire/revue dans l’admin. |
@@ -86,8 +86,8 @@ repli de stockage public.
 
 - `npm ci` : réussi (634 paquets, génération Prisma réussie).
 - Tests ciblés P00/P01 : 11 fichiers, 60 tests réussis.
-- `DATABASE_URL=postgresql://localhost/test npm run validate` pendant P04 : réussi ; 86 fichiers et
-  374 tests réussis, 3 fichiers et 10 tests DB ignorés faute de `RUN_DB_TESTS=1`; ESLint
+- `DATABASE_URL=postgresql://localhost/test npm run validate` pendant P04 : réussi ; 87 fichiers et
+  388 tests réussis, 3 fichiers et 10 tests DB ignorés faute de `RUN_DB_TESTS=1`; ESLint
   conserve un avertissement préexistant `@next/next/no-img-element` dans
   `app/(app)/loading.tsx`; typecheck, validation Prisma et build Next.js réussis.
 - `git diff --check` : réussi.
@@ -122,3 +122,16 @@ destination globale P03 avec le statut `TO_QUALIFY`. La migration additive
 `20261002170000_add_global_triage_qualification_permission` attribue la capacité de routage
 depuis cette file aux rôles de traitement existants ; elle n’accorde aucune visibilité globale
 sur les tickets des files de destination.
+
+
+### P05 — annulation terminale
+
+`CANCELLED` est un état terminal distinct de la clôture réussie. Seuls les agents, responsables
+de file et administrateurs fonctionnels disposant de `ticket:cancel` peuvent annuler depuis
+`NEW`, `TO_QUALIFY` ou `TO_ASSIGN`, avec un motif d’au moins dix caractères. La mutation
+conditionne son écriture au statut et à l’affectation relus : une prise en charge concurrente
+et une annulation ne peuvent donc pas réussir ensemble. Les tickets annulés restent dans les
+recherches, historiques et exports, mais sont exclus des files actives, charges agents et
+calculs SLA. Le taux de clôture utilise explicitement `total - cancelled` comme dénominateur
+et expose les annulations séparément. La migration additive
+`20261003100000_add_cancelled_ticket_status` conserve toutes les données existantes.

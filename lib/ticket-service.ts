@@ -518,14 +518,15 @@ export async function getTicketActionContext(
     throw new AuthorizationError("Vous n’avez pas accès aux actions de ce ticket.");
   }
 
-  const canAssign = hasPermission(actor, "ticket:assign", target) &&
+  const terminal = ticket.status === TicketStatus.CLOSED || ticket.status === TicketStatus.CANCELLED;
+  const canAssign = !terminal && hasPermission(actor, "ticket:assign", target) &&
     canAssignWithRoles(roleCodes(actor)) &&
     canManageQueue(subject, target);
-  const canTransfer = hasPermission(actor, "ticket:transfer", target) &&
+  const canTransfer = !terminal && hasPermission(actor, "ticket:transfer", target) &&
     canManageQueue(subject, target);
   const canPostPublic =
-    hasPermission(actor, "ticket:comment:public", target) ||
-    hasPermission(actor, "ticket:update", target);
+    !terminal && (hasPermission(actor, "ticket:comment:public", target) ||
+    hasPermission(actor, "ticket:update", target));
   const requesterAction = actor.id === ticket.requesterId;
   let allowedStatuses = allowedNextStatuses(ticket.status, roleCodes(actor), requesterAction);
   if (!ticket.assignedToId) {
@@ -544,7 +545,7 @@ export async function getTicketActionContext(
     requiresAdministrativeReason: isFunctionalAdministrator(actor),
     canPostPublic,
     canPostInternal:
-      canPostInternalMessage(roleCodes(actor)) &&
+      !terminal && canPostInternalMessage(roleCodes(actor)) &&
       hasPermission(actor, "ticket:internal-comment", target),
     allowedStatuses,
   };
@@ -575,6 +576,7 @@ export async function listTicketAssignmentOptions(actor: UserContext, ticketId: 
     throw new AuthorizationError("Vous n’êtes pas habilité à affecter ce ticket.");
   }
 
+  if (current.ticket.status === TicketStatus.CLOSED || current.ticket.status === TicketStatus.CANCELLED) return [];
   const memberships = await prisma.teamMember.findMany({
     where: {
       isActive: true,
@@ -596,6 +598,7 @@ export async function listTicketTransferOptions(actor: UserContext, ticketId: st
   }
   if (
     current.ticket.status === TicketStatus.CLOSED ||
+    current.ticket.status === TicketStatus.CANCELLED ||
     current.ticket.status === TicketStatus.RESOLUTION_PENDING
   ) {
     return [];
@@ -642,6 +645,7 @@ export async function createTicketLink(actor: UserContext, ticketId: string, inp
     prisma.ticket.findUnique({ where: { id: parsed.toTicketId }, include: ticketAccessInclude }),
   ]);
   if (!fromTicket || !toTicket) throw new DomainError("Ticket introuvable.", 404);
+  if (fromTicket.status === TicketStatus.CLOSED || fromTicket.status === TicketStatus.CANCELLED) throw new DomainError("Un ticket terminé est conservé en lecture seule.", 409);
   const subject = toAccessSubject(actor);
   if (!canViewTicket(subject, accessTarget(fromTicket)) || !canViewTicket(subject, accessTarget(toTicket)) || !hasPermission(actor, "ticket:update", accessTarget(fromTicket))) {
     throw new AuthorizationError("Vous ne pouvez pas relier ces tickets dans votre périmètre.");
@@ -697,7 +701,7 @@ actor: UserContext, ticketId: string, input: AssignmentInput) {
   ) {
     throw new AuthorizationError("Seul le responsable habilité de la file peut affecter ce ticket.");
   }
-  if (ticket.status === TicketStatus.CLOSED || ticket.status === TicketStatus.RESOLUTION_PENDING) {
+  if (ticket.status === TicketStatus.CLOSED || ticket.status === TicketStatus.CANCELLED || ticket.status === TicketStatus.RESOLUTION_PENDING) {
     throw new DomainError("Ce ticket ne peut plus être affecté dans son état actuel.", 409);
   }
   if (ticket.assignedToId === parsed.assignedToId) {
@@ -905,6 +909,7 @@ export async function addTicketMessage(actor: UserContext, ticketId: string, inp
     include: ticketAccessInclude,
   });
   if (!ticket) throw new DomainError("Ticket introuvable.", 404);
+  if (ticket.status === TicketStatus.CLOSED || ticket.status === TicketStatus.CANCELLED) throw new DomainError("Un ticket terminé est conservé en lecture seule.", 409);
   if (!canViewTicket(toAccessSubject(actor), accessTarget(ticket))) {
     throw new AuthorizationError("Vous n’avez pas accès à ce ticket.");
   }
@@ -971,7 +976,7 @@ export async function transferTicket(
   if (!canViewTicket(subject, sourceTarget) || !hasPermission(actor, "ticket:transfer", sourceTarget) || !canManageQueue(subject, sourceTarget)) {
     throw new AuthorizationError("Seul un responsable habilité ou un administrateur peut transférer ce ticket.");
   }
-  if (ticket.status === TicketStatus.CLOSED || ticket.status === TicketStatus.RESOLUTION_PENDING) {
+  if (ticket.status === TicketStatus.CLOSED || ticket.status === TicketStatus.CANCELLED || ticket.status === TicketStatus.RESOLUTION_PENDING) {
     throw new DomainError("Ce ticket ne peut pas être transféré dans son état actuel.", 409);
   }
   requireAdministrativeReason(actor, parsed.reason);

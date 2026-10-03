@@ -87,6 +87,9 @@ export const transitionTicketSchema = z.object({
     if (!value.resolutionAction) context.addIssue({ code: "custom", path: ["resolutionAction"], message: "L’action est obligatoire." });
     if (!value.resolutionSolution) context.addIssue({ code: "custom", path: ["resolutionSolution"], message: "La solution est obligatoire." });
   }
+  if (value.status === TicketStatus.CANCELLED && !value.reason) {
+    context.addIssue({ code: "custom", path: ["reason"], message: "Le motif d’annulation est obligatoire (10 caractères minimum)." });
+  }
   if (value.status === TicketStatus.REOPENED && !value.reopenedReason) {
     context.addIssue({ code: "custom", path: ["reopenedReason"], message: "Le motif de réouverture est obligatoire." });
   }

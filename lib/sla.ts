@@ -20,7 +20,7 @@ export function getTicketSlaState(
   },
   now = new Date(),
 ): TicketSlaStateResult {
-  if (input.status === TicketStatus.CLOSED) return { state: "NONE", dueAt: null };
+  if (input.status === TicketStatus.CLOSED || input.status === TicketStatus.CANCELLED) return { state: "NONE", dueAt: null };
 
   const dueDates = [
     !input.firstRespondedAt ? input.firstResponseDueAt : null,

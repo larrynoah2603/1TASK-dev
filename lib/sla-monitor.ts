@@ -143,7 +143,7 @@ export async function runSlaMonitor(now = new Date()) {
   do {
     const tickets = await prisma.ticket.findMany({
       where: {
-        status: { notIn: [TicketStatus.CLOSED, TicketStatus.BLOCKED, TicketStatus.RESOLUTION_PENDING] },
+        status: { notIn: [TicketStatus.CLOSED, TicketStatus.CANCELLED, TicketStatus.BLOCKED, TicketStatus.RESOLUTION_PENDING] },
         slaPausedAt: null,
         OR: [
           { firstResponseDueAt: { not: null }, firstRespondedAt: null },

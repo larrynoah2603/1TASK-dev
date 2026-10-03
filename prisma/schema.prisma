@@ -74,6 +74,7 @@ enum TicketStatus {
   RESOLUTION_PENDING
   REOPENED
   CLOSED
+  CANCELLED
 }
 
 enum Priority {
@@ -97,6 +98,7 @@ enum TicketEventType {
   RESOLUTION_SUBMITTED
   REOPENED
   CLOSED
+  CANCELLED
   SLA_ALERT
   SLA_BREACH
   CONFIDENTIAL_ACCESS_GRANTED
@@ -833,6 +835,8 @@ model Ticket {
   firstRespondedAt   DateTime?
   resolvedAt         DateTime?
   closedAt           DateTime?
+  cancelledAt        DateTime?
+  cancellationReason String?            @db.Text
   slaPausedAt        DateTime?
   totalPausedMinutes Int                @default(0)
   blockReason        BlockReason?

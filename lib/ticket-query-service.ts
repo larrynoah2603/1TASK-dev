@@ -367,7 +367,7 @@ async function calculateTicketListWhere(actor: UserContext, options: TicketListO
       ? now
       : new Date(now.getTime() + SLA_RISK_WINDOW_MINUTES * 60_000);
     filters.push({
-      status: { notIn: [TicketStatus.CLOSED, TicketStatus.BLOCKED] },
+      status: { notIn: [TicketStatus.CLOSED, TicketStatus.CANCELLED, TicketStatus.BLOCKED] },
       slaPausedAt: null,
       OR: [
         {
@@ -632,7 +632,7 @@ export async function getRequesterTicketSummary(actor: UserContext) {
 
 export async function getOperationalTicketSummary(actor: UserContext) {
   const { actor: current, where } = await buildTicketListWhere(actor, { workQueue: true });
-  const activeWhere: Prisma.TicketWhereInput = { AND: [where, { status: { not: TicketStatus.CLOSED } }] };
+  const activeWhere: Prisma.TicketWhereInput = { AND: [where, { status: { notIn: [TicketStatus.CLOSED, TicketStatus.CANCELLED] } }] };
   const now = new Date();
   const riskDeadline = new Date(now.getTime() + SLA_RISK_WINDOW_MINUTES * 60_000);
   const slaWhere: Prisma.TicketWhereInput = {
@@ -677,7 +677,7 @@ export async function getOperationalTicketSummary(actor: UserContext) {
   ]);
   const total = statusCounts.reduce((sum, row) => sum + row._count._all, 0);
   const active = statusCounts
-    .filter((row) => row.status !== TicketStatus.CLOSED)
+    .filter((row) => row.status !== TicketStatus.CLOSED && row.status !== TicketStatus.CANCELLED)
     .reduce((sum, row) => sum + row._count._all, 0);
   const unassigned = assignmentCounts.find((row) => row.assignedToId === null)?._count._all ?? 0;
   const mine = assignmentCounts.find((row) => row.assignedToId === current.id)?._count._all ?? 0;

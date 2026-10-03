@@ -2,7 +2,7 @@
 
 export type TicketStatusDomain =
   | "NEW" | "TO_QUALIFY" | "TO_ASSIGN" | "ASSIGNED" | "IN_PROGRESS"
-  | "BLOCKED" | "RESOLUTION_PENDING" | "REOPENED" | "CLOSED";
+  | "BLOCKED" | "RESOLUTION_PENDING" | "REOPENED" | "CLOSED" | "CANCELLED";
 
 export type TicketPriorityDomain = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 export type TicketImpactDomain = TicketPriorityDomain;
@@ -45,6 +45,8 @@ export interface TicketDomain {
   firstRespondedAt: Date | null;
   resolvedAt: Date | null;
   closedAt: Date | null;
+  cancelledAt: Date | null;
+  cancellationReason: string | null;
   slaPausedAt: Date | null;
   totalPausedMinutes: number;
   blockReason: TicketBlockReasonDomain | null;

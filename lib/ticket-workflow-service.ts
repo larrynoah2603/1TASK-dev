@@ -95,7 +95,7 @@ export async function qualifyTicket(actor: UserContext, ticketId: string, input:
   if (!canViewTicket(subject, target) || !hasPermission(actor, "ticket:update", target) || !roleCodes(actor).some((role) => isStaffRole(role))) {
     throw new AuthorizationError("La qualification n’est pas autorisée dans ce périmètre.");
   }
-  if (ticket.status === TicketStatus.CLOSED) throw new DomainError("Un ticket clôturé ne peut plus être qualifié.", 409);
+  if (ticket.status === TicketStatus.CLOSED || ticket.status === TicketStatus.CANCELLED) throw new DomainError("Un ticket terminé ne peut plus être qualifié.", 409);
   const scope = await qualificationScope(actor, ticket, target);
 
   const selectedService = parsed.serviceCatalogItemId
@@ -261,6 +261,9 @@ export async function transitionTicket(
   const actorRoles = roleCodes(actor);
   const transitionTarget = accessTarget(ticket);
   const isFunctionalAdminActor = actorRoles.includes(RoleCode.FUNCTIONAL_ADMIN);
+  if (parsed.status === TicketStatus.CANCELLED && !hasPermission(actor, "ticket:cancel", transitionTarget) && !isFunctionalAdminActor) {
+    throw new AuthorizationError("La permission d’annuler ce ticket n’est pas accordée.");
+  }
   if (parsed.status === TicketStatus.CLOSED) {
     if (!canConfirmResolution(actorRoles, requesterAction)) {
       throw new AuthorizationError("Seul le demandeur peut confirmer la résolution.");
@@ -293,6 +296,7 @@ export async function transitionTicket(
     isAgentOnly &&
     parsed.status !== TicketStatus.TO_QUALIFY &&
     parsed.status !== TicketStatus.TO_ASSIGN &&
+    parsed.status !== TicketStatus.CANCELLED &&
     ticket.assignedToId !== actor.id
   ) {
     throw new AuthorizationError("Un agent ne peut traiter que le ticket qui lui est affecté.");
@@ -346,6 +350,8 @@ export async function transitionTicket(
         : parsed.status === TicketStatus.REOPENED
           ? null
           : undefined,
+    cancelledAt: parsed.status === TicketStatus.CANCELLED ? now : undefined,
+    cancellationReason: parsed.status === TicketStatus.CANCELLED ? parsed.reason : undefined,
     closedAt:
       parsed.status === TicketStatus.CLOSED
         ? now
@@ -385,8 +391,10 @@ export async function transitionTicket(
       include: ticketSecurityInclude,
     });
     if (!updated) throw new DomainError("Ticket introuvable après la transition.", 404);
-    const eventType = parsed.status === TicketStatus.REOPENED
-      ? TicketEventType.REOPENED
+    const eventType = parsed.status === TicketStatus.CANCELLED
+      ? TicketEventType.CANCELLED
+      : parsed.status === TicketStatus.REOPENED
+        ? TicketEventType.REOPENED
       : parsed.status === TicketStatus.CLOSED
         ? TicketEventType.CLOSED
         : parsed.status === TicketStatus.RESOLUTION_PENDING
@@ -414,7 +422,7 @@ export async function transitionTicket(
     });
     await appendAuditLog(tx, {
       actorId: actor.id,
-      action: administrativeOverride ? "ADMINISTRATIVE_WORKFLOW_OVERRIDE" : "TICKET_STATUS_CHANGED",
+      action: administrativeOverride ? "ADMINISTRATIVE_WORKFLOW_OVERRIDE" : parsed.status === TicketStatus.CANCELLED ? "TICKET_CANCELLED" : "TICKET_STATUS_CHANGED",
       objectType: "Ticket",
       objectId: ticketId,
       oldValue: {
@@ -430,6 +438,8 @@ export async function transitionTicket(
         totalPausedMinutes,
         firstResponseDueAt: updated.firstResponseDueAt,
         resolutionDueAt: updated.resolutionDueAt,
+        cancelledAt: updated.cancelledAt,
+        cancellationReason: updated.cancellationReason,
       },
       reason: parsed.reason ?? parsed.reopenedReason ?? parsed.blockDetails,
     });
