@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SlaCalculationMode } from "@prisma/client";
-import { addBusinessMinutes, calculateSlaDeadlines, getTicketSlaState, slaProgressPercent } from "@/lib/sla";
+import { addBusinessMinutes, calculateAutomaticClosureDeadline, calculateSlaDeadlines, getTicketSlaState, slaProgressPercent } from "@/lib/sla";
 
 const calendar = { workingDays: [1, 2, 3, 4, 5], workdayStartMinute: 8 * 60, workdayEndMinute: 17 * 60, holidays: [] };
 
@@ -94,6 +94,37 @@ describe("calcul des SLA", () => {
     deadlines.firstResponseDueAt.getTime(),
   );
 });
+
+  it("calcule cinq durées de journée configurées sans supposer huit heures", () => {
+    const deadline = calculateAutomaticClosureDeadline(new Date("2026-08-07T15:00:00.000Z"), {
+      ...calendar,
+      workdayStartMinute: 9 * 60,
+      workdayEndMinute: 16 * 60,
+      timezone: "UTC",
+      holidays: [new Date("2026-08-10T00:00:00.000Z")],
+    });
+    expect(deadline.toISOString()).toBe("2026-08-17T15:00:00.000Z");
+  });
+
+  it("ancre une résolution hors horaires au prochain créneau dans le fuseau configuré", () => {
+    const deadline = calculateAutomaticClosureDeadline(new Date("2026-08-03T20:00:00.000Z"), {
+      ...calendar,
+      timezone: "Indian/Antananarivo",
+    });
+    expect(deadline.toISOString()).toBe("2026-08-10T14:00:00.000Z");
+  });
+
+  it("refuse les calendriers et fuseaux invalides", () => {
+    expect(() => calculateAutomaticClosureDeadline(new Date(), { ...calendar, workingDays: [1, 1] })).toThrow("calendrier SLA est invalide");
+    expect(() => calculateAutomaticClosureDeadline(new Date(), { ...calendar, timezone: "Fuseau/Inconnu" })).toThrow("fuseau horaire");
+  });
+
+  it("expose l’échéance de confirmation sans réactiver le SLA de résolution", () => {
+    const deadline = new Date("2026-08-10T14:00:00.000Z");
+    const base = { status: "RESOLUTION_PENDING" as const, firstResponseDueAt: null, resolutionDueAt: new Date("2026-08-03T09:00:00.000Z"), firstRespondedAt: new Date(), resolvedAt: new Date(), slaPausedAt: null, autoClosureDueAt: deadline };
+    expect(getTicketSlaState(base, new Date("2026-08-10T13:00:00.000Z"))).toEqual({ state: "CONFIRMATION_PENDING", dueAt: deadline });
+    expect(getTicketSlaState(base, deadline)).toEqual({ state: "CONFIRMATION_DUE", dueAt: deadline });
+  });
 
   it("distingue un SLA proche, dépassé et en pause", () => {
     const now = new Date(2026, 7, 3, 10, 0, 0);

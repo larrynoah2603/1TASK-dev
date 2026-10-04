@@ -17,7 +17,7 @@ export async function addSlaException(actor: UserContext, ticketId: string, inpu
   if (!canViewTicket(subject, target) || !hasPermission(actor, "ticket:update", target) || !canManageQueue(subject, target)) {
     throw new AuthorizationError("Seul un responsable habilité peut accorder une dérogation SLA.");
   }
-  if (ticket.status === TicketStatus.CLOSED) throw new DomainError("Un ticket clôturé ne peut pas recevoir de dérogation SLA.", 409);
+  if (ticket.status === TicketStatus.CLOSED || ticket.status === TicketStatus.CANCELLED) throw new DomainError("Un ticket clôturé ne peut pas recevoir de dérogation SLA.", 409);
   const extension = parsed.addedMinutes * 60_000;
   const firstResponseDueAt = ticket.firstResponseDueAt ? new Date(ticket.firstResponseDueAt.getTime() + extension) : null;
   const resolutionDueAt = ticket.resolutionDueAt ? new Date(ticket.resolutionDueAt.getTime() + extension) : null;

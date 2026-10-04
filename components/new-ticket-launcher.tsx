@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { NewTicketForm } from "@/components/new-ticket-form";
 import { Icon } from "@/components/ui/icons";
 
-export function NewTicketLauncher() {
+export function NewTicketLauncher({ simplified = false }: { simplified?: boolean }) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -29,7 +29,7 @@ export function NewTicketLauncher() {
           <div><p className="eyebrow">Création rapide</p><h2 id="new-ticket-modal-title">Nouveau ticket</h2><p className="mt-1 text-xs text-slate-500">Décrivez votre besoin ; le catalogue le route directement lorsqu’une correspondance fiable existe.</p></div>
           <button type="button" className="modal-close-button" onClick={() => setOpen(false)} aria-label="Fermer la fenêtre">×</button>
         </header>
-        <div className="ticket-launcher-modal-body"><NewTicketForm onCancel={() => setOpen(false)} /></div>
+        <div className="ticket-launcher-modal-body"><NewTicketForm simplified={simplified} onCancel={() => setOpen(false)} /></div>
       </section>
     </div>,
     document.body,

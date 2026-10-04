@@ -133,8 +133,80 @@ async function processSlaAlertBatch(alerts: SlaAlert[]) {
   return { alerts: 0, breaches: 0 };
 }
 
+
+export function automaticClosureEventKey(ticketId: string, deadline: Date): string {
+  return `automatic-closure:${ticketId}:${deadline.toISOString()}`;
+}
+
+export async function runAutomaticClosures(now = new Date(), limit = readServerEnvironment().SLA_MONITOR_BATCH_SIZE) {
+  const candidates = await prisma.ticket.findMany({
+    where: {
+      status: TicketStatus.RESOLUTION_PENDING,
+      autoClosureDueAt: { not: null, lte: now },
+    },
+    select: { id: true },
+    orderBy: [{ autoClosureDueAt: "asc" }, { id: "asc" }],
+    take: limit,
+  });
+  let closed = 0;
+  for (const candidate of candidates) {
+    const didClose = await prisma.$transaction(async (tx) => {
+      const ticket = await tx.ticket.findUnique({
+        where: { id: candidate.id },
+        select: { id: true, reference: true, requesterId: true, queueId: true, status: true, autoClosureDueAt: true },
+      });
+      if (!ticket || ticket.status !== TicketStatus.RESOLUTION_PENDING || !ticket.autoClosureDueAt || ticket.autoClosureDueAt > now) return false;
+      const changed = await tx.ticket.updateMany({
+        where: { id: ticket.id, status: TicketStatus.RESOLUTION_PENDING, autoClosureDueAt: ticket.autoClosureDueAt },
+        data: { status: TicketStatus.CLOSED, closedAt: now, autoClosureDueAt: null },
+      });
+      if (changed.count !== 1) return false;
+      await tx.ticketEvent.create({
+        data: {
+          eventKey: automaticClosureEventKey(ticket.id, ticket.autoClosureDueAt),
+          ticketId: ticket.id,
+          queueId: ticket.queueId,
+          eventType: TicketEventType.CLOSED,
+          fromStatus: TicketStatus.RESOLUTION_PENDING,
+          toStatus: TicketStatus.CLOSED,
+          metadata: { automatic: true, scheduledFor: ticket.autoClosureDueAt, closedAt: now },
+        },
+      });
+      await tx.auditLog.create({
+        data: {
+          actorId: null,
+          action: "TICKET_AUTOMATICALLY_CLOSED",
+          objectType: "Ticket",
+          objectId: ticket.id,
+          oldValue: { status: TicketStatus.RESOLUTION_PENDING, autoClosureDueAt: ticket.autoClosureDueAt },
+          newValue: { status: TicketStatus.CLOSED, closedAt: now, automatic: true },
+          reason: "Délai de confirmation en jours ouvrés expiré.",
+        },
+      });
+      await tx.notification.createMany({
+        data: [{
+          recipientId: ticket.requesterId,
+          ticketId: ticket.id,
+          type: NotificationType.TICKET_RESOLVED,
+          title: "Ticket clôturé automatiquement",
+          body: `${ticket.reference} a été clôturé après expiration du délai de confirmation.`,
+          entityType: "TICKET",
+          entityId: ticket.id,
+          actionUrl: `/tickets/${ticket.id}`,
+          deduplicationKey: automaticClosureEventKey(ticket.id, ticket.autoClosureDueAt),
+        }],
+        skipDuplicates: true,
+      });
+      return true;
+    });
+    if (didClose) closed += 1;
+  }
+  return { scanned: candidates.length, closed };
+}
+
 export async function runSlaMonitor(now = new Date()) {
   const batchSize = readServerEnvironment().SLA_MONITOR_BATCH_SIZE;
+  const automaticClosures = await runAutomaticClosures(now, batchSize);
   let cursor: string | undefined;
   let scanned = 0;
   let alerts = 0;
@@ -143,7 +215,7 @@ export async function runSlaMonitor(now = new Date()) {
   do {
     const tickets = await prisma.ticket.findMany({
       where: {
-        status: { notIn: [TicketStatus.CLOSED, TicketStatus.BLOCKED, TicketStatus.RESOLUTION_PENDING] },
+        status: { notIn: [TicketStatus.CLOSED, TicketStatus.CANCELLED, TicketStatus.BLOCKED, TicketStatus.RESOLUTION_PENDING] },
         slaPausedAt: null,
         OR: [
           { firstResponseDueAt: { not: null }, firstRespondedAt: null },
@@ -244,5 +316,5 @@ export async function runSlaMonitor(now = new Date()) {
     if (tickets.length < batchSize) break;
   } while (cursor);
 
-  return { scanned, alerts, breaches };
+  return { scanned, alerts, breaches, automaticClosures };
 }

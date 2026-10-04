@@ -21,6 +21,7 @@ export type ApiErrorCode =
   | "RESOURCE_NOT_FOUND"
   | "RESOURCE_CONFLICT"
   | "CONFIGURATION_ERROR"
+  | "FEATURE_DISABLED"
   | "HTTP_ERROR"
   | "INTERNAL_ERROR";
 
@@ -130,7 +131,7 @@ function isApiErrorCode(value: string | undefined): value is ApiErrorCode {
   return [
     "VALIDATION_ERROR", "INVALID_JSON", "INVALID_IDENTIFIER", "AUTHENTICATION_REQUIRED",
     "ACCESS_DENIED", "RESOURCE_NOT_FOUND", "RESOURCE_CONFLICT", "CONFIGURATION_ERROR",
-    "HTTP_ERROR", "INTERNAL_ERROR",
+    "FEATURE_DISABLED", "HTTP_ERROR", "INTERNAL_ERROR",
   ].includes(value ?? "");
 }
 

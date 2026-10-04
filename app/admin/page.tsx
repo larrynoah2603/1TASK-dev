@@ -34,8 +34,8 @@ export default async function AdminDashboardPage() {
   const [userSummary, ticketCount, activeTicketCount, overdueCount, notificationCount, auditCount, departmentCount, teamCount, queueCount] = await Promise.all([
     getAdminUserSummary(admin),
     prisma.ticket.count({ where: { confidential: false } }),
-    prisma.ticket.count({ where: { confidential: false, status: { not: TicketStatus.CLOSED } } }),
-    prisma.ticket.count({ where: { confidential: false, status: { not: TicketStatus.CLOSED }, resolutionDueAt: { not: null, lt: new Date() } } }),
+    prisma.ticket.count({ where: { confidential: false, status: { notIn: [TicketStatus.CLOSED, TicketStatus.CANCELLED] } } }),
+    prisma.ticket.count({ where: { confidential: false, status: { notIn: [TicketStatus.CLOSED, TicketStatus.CANCELLED] }, resolutionDueAt: { not: null, lt: new Date() } } }),
     prisma.notificationRule.count({ where: { isActive: true } }),
     prisma.auditLog.count(),
     prisma.department.count({ where: { isActive: true } }),

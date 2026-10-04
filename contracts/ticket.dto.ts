@@ -36,6 +36,9 @@ export interface TicketDTO {
   firstRespondedAt: string | null;
   resolvedAt: string | null;
   closedAt: string | null;
+  cancelledAt: string | null;
+  cancellationReason: string | null;
+  autoClosureDueAt: string | null;
   slaPausedAt: string | null;
   totalPausedMinutes: number;
   blockReason: string | null;
