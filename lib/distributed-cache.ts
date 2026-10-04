@@ -3,6 +3,7 @@
 const inFlight = new Map<string, Promise<unknown>>();
 
 function configuration() {
+  if (process.env.PRODUCT_PROFILE === "v1") return null;
   const cacheEnabled = process.env.CACHE_ENABLED !== "false";
   const url = process.env.REDIS_REST_URL?.replace(/\/$/, "");
   const token = process.env.REDIS_REST_TOKEN;

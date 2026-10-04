@@ -64,7 +64,7 @@ import { DomainError } from "@/lib/domain-error";
 import { logServerError } from "@/lib/http";
 import { accessTarget, ticketAccessInclude, ticketSecurityInclude, type AccessTicket } from "@/lib/ticket-access";
 import { automaticAssignmentOutcome, chooseAutoAssignee, recordAssignment, shouldAutomaticallyAssign, tryAcquireTicketClaim } from "@/lib/ticket-assignment-service";
-import { resolveProductCapabilities } from "@/lib/product-policy";
+import { assertProductCapability, resolveProductCapabilities } from "@/lib/product-policy";
 import { notifyQueueWorkers, queueWorkerIds } from "@/lib/ticket-notification-service";
 
 export { addSlaException } from "@/lib/ticket-sla-service";
@@ -207,9 +207,8 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
   if (!service || !service.queue.isActive || !service.queue.department.isActive) {
     throw new DomainError("Le service sélectionné n’est pas disponible.", 422);
   }
-  const confidentialResolution = parsed.confidential
-    ? await resolveConfidentialRecipient(service.id)
-    : null;
+  if (parsed.confidential) assertProductCapability(productCapabilities, "confidentialTicketCreation");
+  const confidentialResolution = parsed.confidential ? await resolveConfidentialRecipient(service.id) : null;
   if (confidentialResolution && parsed.confidentialityVersion !== confidentialResolution.version) {
     throw new DomainError("La configuration confidentielle a changé. Vérifiez à nouveau le destinataire avant de confirmer.", 409);
   }

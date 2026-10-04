@@ -69,18 +69,22 @@ export const serverEnvironmentSchema = z.object({
   // local runtime keep the strict fail-fast policy.
   const strictRuntime = environment.VERCEL_ENV !== "preview";
 
-  if (strictRuntime && Boolean(environment.REDIS_REST_URL) !== Boolean(environment.REDIS_REST_TOKEN)) {
+  const fullProfile = environment.PRODUCT_PROFILE === "full";
+
+  // Dormant V1 integrations are deliberately ignored, even when stale or
+  // partially configured variables remain in the deployment environment.
+  if (strictRuntime && fullProfile && Boolean(environment.REDIS_REST_URL) !== Boolean(environment.REDIS_REST_TOKEN)) {
     context.addIssue({ code: "custom", path: [environment.REDIS_REST_URL ? "REDIS_REST_TOKEN" : "REDIS_REST_URL"], message: "REDIS_REST_URL et REDIS_REST_TOKEN doivent être configurées ensemble." });
   }
-  if (strictRuntime && environment.OUTBOX_DELIVERY_TOKEN && !environment.OUTBOX_DELIVERY_URL) {
+  if (strictRuntime && fullProfile && environment.OUTBOX_DELIVERY_TOKEN && !environment.OUTBOX_DELIVERY_URL) {
     context.addIssue({ code: "custom", path: ["OUTBOX_DELIVERY_URL"], message: "OUTBOX_DELIVERY_URL est obligatoire lorsqu’un token de livraison est configuré." });
   }
-  if (strictRuntime && Boolean(environment.PRIVATE_STORAGE_URL) !== Boolean(environment.PRIVATE_STORAGE_TOKEN)) {
+  if (strictRuntime && fullProfile && Boolean(environment.PRIVATE_STORAGE_URL) !== Boolean(environment.PRIVATE_STORAGE_TOKEN)) {
     context.addIssue({ code: "custom", path: [environment.PRIVATE_STORAGE_URL ? "PRIVATE_STORAGE_TOKEN" : "PRIVATE_STORAGE_URL"], message: "PRIVATE_STORAGE_URL et PRIVATE_STORAGE_TOKEN doivent être configurées ensemble." });
   }
 
   const pushValues = [environment.WEB_PUSH_PUBLIC_KEY, environment.WEB_PUSH_PRIVATE_KEY, environment.WEB_PUSH_SUBJECT];
-  if (strictRuntime && pushValues.some(Boolean) && !pushValues.every(Boolean)) {
+  if (strictRuntime && fullProfile && pushValues.some(Boolean) && !pushValues.every(Boolean)) {
     context.addIssue({ code: "custom", path: ["WEB_PUSH_PUBLIC_KEY"], message: "Les trois variables Web Push doivent être configurées ensemble." });
   }
 
@@ -90,7 +94,7 @@ export const serverEnvironmentSchema = z.object({
   }
 
   const mailValues = [environment.MICROSOFT_MAIL_TENANT_ID, environment.MICROSOFT_MAIL_CLIENT_ID, environment.MICROSOFT_MAIL_CLIENT_SECRET, environment.MICROSOFT_MAIL_SENDER];
-  if (strictRuntime && mailValues.some(Boolean) && !mailValues.every(Boolean)) {
+  if (strictRuntime && fullProfile && mailValues.some(Boolean) && !mailValues.every(Boolean)) {
     context.addIssue({ code: "custom", path: ["MICROSOFT_MAIL_TENANT_ID"], message: "Les quatre variables Microsoft Mail doivent être configurées ensemble." });
   }
 

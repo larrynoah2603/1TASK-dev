@@ -1,15 +1,21 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { readServerEnvironment } from "@/lib/env";
-import { deliverPushNotification } from "@/lib/push-notification-service";
-import { deliverEmailNotification } from "@/lib/email-notification-service";
+import { getProductCapabilities } from "@/lib/product-policy.server";
 
 type OutboxDb = Prisma.TransactionClient | PrismaClient;
 
 export async function deliverInternalNotificationEvent(type: string, payload: { notificationId?: string }) {
   if (!payload.notificationId) throw new Error("Notification id is missing");
-  if (type === "NOTIFICATION_PUSH_REQUESTED") return deliverPushNotification(payload.notificationId);
-  if (type === "NOTIFICATION_EMAIL_REQUESTED") return deliverEmailNotification(payload.notificationId);
+  const capabilities = getProductCapabilities();
+  if (type === "NOTIFICATION_PUSH_REQUESTED" && capabilities.pushNotifications) {
+    const { deliverPushNotification } = await import("@/lib/push-notification-service");
+    return deliverPushNotification(payload.notificationId);
+  }
+  if (type === "NOTIFICATION_EMAIL_REQUESTED" && capabilities.externalEmailDelivery) {
+    const { deliverEmailNotification } = await import("@/lib/email-notification-service");
+    return deliverEmailNotification(payload.notificationId);
+  }
   return null;
 }
 
@@ -24,6 +30,10 @@ export async function enqueueOutboxEvent(db: OutboxDb, input: {
 }
 
 export async function processOutboxBatch(now = new Date()) {
+  const capabilities = getProductCapabilities();
+  if (!capabilities.externalOutboxDelivery && !capabilities.externalEmailDelivery && !capabilities.pushNotifications) {
+    return { claimed: 0, processed: 0, failed: 0, disabled: true as const };
+  }
   const batchSize = readServerEnvironment().OUTBOX_BATCH_SIZE;
   const leaseBefore = new Date(now.getTime() - 5 * 60_000);
   const claimed = await prisma.$transaction(async (tx) => {

@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { PrismaClient, NotificationChannel, NotificationStatus, NotificationType } from "@prisma/client";
 import { enqueueOutboxEvent } from "@/lib/outbox";
+import { getProductCapabilities } from "@/lib/product-policy.server";
 
 type NotificationDb = Prisma.TransactionClient | PrismaClient;
 
@@ -86,6 +87,7 @@ export async function queueEmailNotification(
     body: string;
   },
 ) {
+  if (!getProductCapabilities().externalEmailDelivery) return null;
   if (!(await notificationEnabled(db, input.recipientId, input.type, NotificationChannel.EMAIL))) return null;
   const notification = await db.notification.create({
     data: {
@@ -129,8 +131,12 @@ export function defaultChannelsForSeverity(severity: import("@prisma/client").No
 
 /** Central notification dispatcher. Business code never contacts push/email providers directly. */
 export async function notify(db: NotificationDb, input: NotificationDispatchInput) {
+  const capabilities = getProductCapabilities();
   const configured = await db.notificationRule.findMany({ where: { eventType: input.type, isActive: true }, select: { channel: true } });
-  const channels = configured.length ? [...new Set(configured.map((rule) => rule.channel))] : defaultChannelsForSeverity(input.severity);
+  const channels = (configured.length ? [...new Set(configured.map((rule) => rule.channel))] : defaultChannelsForSeverity(input.severity))
+    .filter((channel) => channel === NotificationChannel.IN_APP ||
+      (channel === NotificationChannel.EMAIL && capabilities.externalEmailDelivery) ||
+      (channel === NotificationChannel.PUSH && capabilities.pushNotifications));
   const mandatory = input.type === NotificationType.SECURITY || input.severity === "CRITICAL";
   const preferences = mandatory ? [] : await db.notificationPreference.findMany({ where: { userId: input.recipientId, eventType: input.type, channel: { in: channels } }, select: { channel: true, enabled: true } });
   const disabled = new Set(preferences.filter((item) => !item.enabled).map((item) => item.channel));

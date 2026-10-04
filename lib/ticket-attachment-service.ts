@@ -14,6 +14,7 @@ import {
 import { canPostInternalMessage } from "@/lib/domain";
 import { privateObjectStorage } from "@/lib/private-object-storage";
 import { delegationAllowsAction } from "@/lib/access-control";
+import { requireProductCapability } from "@/lib/product-policy.server";
 
 const MAX_TICKET_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 const ALLOWED_TICKET_ATTACHMENT_TYPES = new Set([
@@ -45,6 +46,7 @@ export async function uploadTicketAttachment(
   ticketId: string,
   input: { name: string; type: string; size: number; arrayBuffer: () => Promise<ArrayBuffer> },
 ) {
+  requireProductCapability("attachmentUploads");
   const context = await authorizedAttachmentContext(actor, ticketId);
   const canUpload =
     delegationAllowsAction(context.actor.id, context.target, "ATTACHMENT") && (

@@ -10,7 +10,11 @@ vi.mock("@/lib/db", () => ({ prisma: {} }));
 import { deliverInternalNotificationEvent } from "@/lib/outbox";
 
 describe("routage interne de l'outbox de notifications", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.stubEnv("DATABASE_URL", "postgresql://localhost/test");
+    vi.stubEnv("PRODUCT_PROFILE", "full");
+    vi.clearAllMocks();
+  });
 
   it("route EMAIL vers Microsoft Graph", async () => {
     await deliverInternalNotificationEvent("NOTIFICATION_EMAIL_REQUESTED", { notificationId: "email-1" });
@@ -22,6 +26,14 @@ describe("routage interne de l'outbox de notifications", () => {
     await deliverInternalNotificationEvent("NOTIFICATION_PUSH_REQUESTED", { notificationId: "push-1" });
     expect(delivery.push).toHaveBeenCalledWith("push-1");
     expect(delivery.email).not.toHaveBeenCalled();
+  });
+
+  it("ne charge ni n’appelle aucun fournisseur externe en V1", async () => {
+    vi.stubEnv("PRODUCT_PROFILE", "v1");
+    await deliverInternalNotificationEvent("NOTIFICATION_EMAIL_REQUESTED", { notificationId: "old-email" });
+    await deliverInternalNotificationEvent("NOTIFICATION_PUSH_REQUESTED", { notificationId: "old-push" });
+    expect(delivery.email).not.toHaveBeenCalled();
+    expect(delivery.push).not.toHaveBeenCalled();
   });
 
   it("conserve la mise en file, les préférences et la déduplication hors des transactions réseau", () => {
