@@ -17,6 +17,7 @@ const STATUS_ORDER = [
 
 function statusPosition(status: string) {
   if (status === "BLOCKED") return STATUS_ORDER.indexOf("IN_PROGRESS");
+  if (status === "CANCELLED") return -1;
   if (status === "REOPENED") return STATUS_ORDER.indexOf("TO_QUALIFY");
   const position = STATUS_ORDER.indexOf(status as (typeof STATUS_ORDER)[number]);
   return position >= 0 ? position : 0;

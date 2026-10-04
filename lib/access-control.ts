@@ -153,15 +153,29 @@ export function canAssignTicket(subject: AccessSubject, target: TicketAccessTarg
   return canManageQueue(subject, target);
 }
 
-/** Claim remains narrower than manual assignment: the service layer also
- * verifies active status and active membership in a team of the queue. */
-export function canClaimTicket(subject: AccessSubject, target: TicketAccessTarget): boolean {
-  // The service layer additionally requires an active TeamMember record. This
-  // pure predicate keeps scope matching reusable for portfolio-scoped roles.
+export function canAgentClaimTicket(subject: AccessSubject, target: TicketAccessTarget): boolean {
   return (
     (!subject.authorizedQueueId || subject.authorizedQueueId === target.queueId) &&
     hasScopedRole(subject, [RoleCode.AGENT], target)
   );
+}
+
+export function canManagerClaimTicket(subject: AccessSubject, target: TicketAccessTarget): boolean {
+  if (subject.authorizedQueueId && subject.authorizedQueueId !== target.queueId) return false;
+  const managerRoles = subject.roles.filter((role) => role.code === RoleCode.QUEUE_MANAGER);
+  if (!managerRoles.length) return false;
+  const explicitlyManaged = subject.managedQueueIds?.includes(target.queueId) ?? false;
+  const explicitlyAuthorized = subject.authorizedQueueId === target.queueId;
+  const explicitlyScoped = managerRoles.some((role) =>
+    Boolean(role.scope && role.scope.type !== ScopeType.GLOBAL && roleScopeMatches(subject, role, target)),
+  );
+  return explicitlyManaged || explicitlyAuthorized || explicitlyScoped;
+}
+
+/** Agents require team membership in the service layer; managers require an
+ * explicit managed queue or non-global authorized scope. */
+export function canClaimTicket(subject: AccessSubject, target: TicketAccessTarget): boolean {
+  return canAgentClaimTicket(subject, target) || canManagerClaimTicket(subject, target);
 }
 
 export function canReadReporting(subject: AccessSubject, target: TicketAccessTarget): boolean {

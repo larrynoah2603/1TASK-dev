@@ -1,5 +1,6 @@
 import { AuthorizationError, hasPermission, requireCurrentActor, type UserContext } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
+import { STATUS_LABELS } from "@/lib/domain";
 import { getReportingSummary } from "@/lib/reporting-service";
 import { listVisibleTickets, type TicketListOptions } from "@/lib/ticket-query-service";
 
@@ -21,7 +22,7 @@ export async function exportVisibleTickets(actor: UserContext, options: TicketLi
     .map((ticket) => [
       ticket.reference,
       ticket.title,
-      ticket.status,
+      STATUS_LABELS[ticket.status],
       ticket.priority,
       ticket.serviceCatalogItem.name,
       ticket.queue.department.name,
@@ -55,11 +56,15 @@ export async function exportReportingSummary(actor: UserContext) {
     ["Indicateur", "Valeur"],
     ["Tickets analysés", summary.total],
     ["Tickets clôturés", summary.closed],
+    ["Tickets annulés", summary.cancelled],
+    ["Dénominateur de clôture (hors annulations)", summary.completionDenominator],
     ["SLA en dépassement", summary.overdue],
     ["Premières réponses dépassées", summary.firstResponseBreached],
     ["Résolutions dépassées", summary.resolutionBreached],
+    ["Confirmations proches de l’échéance", summary.pendingConfirmationDue],
+    ["Confirmations arrivées à échéance", summary.pendingConfirmationOverdue],
     ["Taux clôturé", `${summary.closureRate}%`],
-    ...summary.byStatus.map((row) => [`Statut ${row.status}`, row.count]),
+    ...summary.byStatus.map((row) => [`Statut ${STATUS_LABELS[row.status]}`, row.count]),
   ];
   await prisma.auditLog.create({
     data: {

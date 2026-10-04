@@ -23,9 +23,11 @@
     "db:deploy": "prisma generate && prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
+    "repair:v1-triage": "tsx scripts/repair-v1-triage.ts",
     "pretypecheck": "npm run clean:next",
     "typecheck": "prisma generate && tsc --noEmit",
-    "validate": "npm run db:generate && npm test && npm run lint && npm run typecheck && npx prisma validate && npm run build"
+    "validate": "npm run db:generate && npm test && npm run lint && npm run typecheck && npx prisma validate && npm run build",
+    "backfill:auto-closure": "tsx scripts/backfill-auto-closure.ts"
   },
   "dependencies": {
     "@next-auth/prisma-adapter": "1.0.7",

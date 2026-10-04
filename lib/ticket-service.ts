@@ -12,6 +12,7 @@ import { prisma } from "@/lib/db";
 import { readServerEnvironment } from "@/lib/env";
 import {
   canClaimTicket,
+  canManagerClaimTicket,
   canManageQueue,
   canViewTicket,
   hasGlobalRole,
@@ -36,6 +37,7 @@ import {
   hasPermission,
   AuthorizationError,
   requireCurrentActor,
+  userContextInclude,
 } from "@/lib/server-auth";
 import {
   addMessageSchema,
@@ -43,6 +45,7 @@ import {
   claimTicketSchema,
   confidentialAccessSchema,
   createTicketSchema,
+  createV1TicketSchema,
   queueTransferSchema,
   ticketLinkSchema,
   type AddMessageInput,
@@ -54,12 +57,14 @@ import {
   type TicketLinkInput,
 } from "@/lib/validation";
 import { matchCatalogService, routeTicketFromCatalog, type CatalogCandidate } from "@/lib/routing";
+import { assertOperationalGlobalTriage } from "@/lib/triage-configuration";
 import { resolveConfidentialRecipient } from "@/lib/confidential-ticket-service";
 import { measureServerOperation } from "@/lib/performance";
 import { DomainError } from "@/lib/domain-error";
 import { logServerError } from "@/lib/http";
 import { accessTarget, ticketAccessInclude, ticketSecurityInclude, type AccessTicket } from "@/lib/ticket-access";
-import { chooseAutoAssignee, recordAssignment } from "@/lib/ticket-assignment-service";
+import { automaticAssignmentOutcome, chooseAutoAssignee, recordAssignment, shouldAutomaticallyAssign, tryAcquireTicketClaim } from "@/lib/ticket-assignment-service";
+import { resolveProductCapabilities } from "@/lib/product-policy";
 import { notifyQueueWorkers, queueWorkerIds } from "@/lib/ticket-notification-service";
 
 export { addSlaException } from "@/lib/ticket-sla-service";
@@ -125,7 +130,9 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
     throw new AuthorizationError("La permission de créer un ticket n’est pas accordée.");
   }
   ensureActorDepartment(actor);
-  const parsed = createTicketSchema.parse(input);
+  const v1Profile = readServerEnvironment().PRODUCT_PROFILE === "v1";
+  const productCapabilities = resolveProductCapabilities(readServerEnvironment().PRODUCT_PROFILE);
+  const parsed = (v1Profile ? createV1TicketSchema : createTicketSchema).parse(input);
   if (parsed.creationIdempotencyToken) {
     const existingTicket = await prisma.ticket.findFirst({
       where: {
@@ -136,10 +143,10 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
     });
     if (existingTicket) return existingTicket;
   }
-  const targetDepartment = parsed.targetDepartmentId
+  const targetDepartment = !v1Profile && parsed.targetDepartmentId
     ? await prisma.department.findFirst({ where: { id: parsed.targetDepartmentId, isActive: true }, select: { id: true, code: true, name: true } })
     : null;
-  if (!parsed.serviceCatalogItemId && (!targetDepartment || !parsed.requestedService)) {
+  if (!v1Profile && !parsed.serviceCatalogItemId && (!targetDepartment || !parsed.requestedService)) {
     throw new DomainError("Le besoin libre et le département cible sont obligatoires.", 422);
   }
   if (!parsed.serviceCatalogItemId && targetDepartment && targetDepartment.id !== actor.departmentId && !hasPermission(actor, "ticket:create:cross-department")) {
@@ -162,14 +169,15 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
   let service: Prisma.ServiceCatalogItemGetPayload<{ include: typeof serviceInclude }> | null | undefined;
   if (parsed.serviceCatalogItemId) {
     service = await prisma.serviceCatalogItem.findFirst({
-      where: { id: parsed.serviceCatalogItemId, isActive: true },
+      where: { id: parsed.serviceCatalogItemId, isActive: true, provisionedTriageDepartmentId: null, queue: { isActive: true, department: { isActive: true } } },
       include: serviceInclude,
     });
   } else {
     const candidates = await prisma.serviceCatalogItem.findMany({
       where: {
         isActive: true,
-        queue: { isActive: true, departmentId: targetDepartment?.id, department: { isActive: true } },
+        provisionedTriageDepartmentId: null,
+        queue: { isActive: true, ...(v1Profile ? {} : { departmentId: targetDepartment?.id }), department: { isActive: true } },
       },
       include: serviceInclude,
     });
@@ -179,7 +187,7 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
       priorityDefault: candidate.priorityDefault, keywords: candidate.keywords,
     }));
     const automaticMatch = matchCatalogService({
-      requestedService: parsed.requestedService,
+      requestedService: v1Profile ? undefined : parsed.requestedService,
       title: parsed.title,
       description: parsed.description,
       candidates: catalogCandidates,
@@ -189,7 +197,9 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
       matchedBy = automaticMatch.matchedBy;
       routingMode = "AUTO_CATALOG";
     } else {
-      service = candidates.find((candidate) => candidate.code === `TRIAGE-${targetDepartment?.code}`);
+      service = v1Profile
+        ? await assertOperationalGlobalTriage(prisma)
+        : candidates.find((candidate) => candidate.code === `TRIAGE-${targetDepartment?.code}`);
       matchedBy = "catalog-id";
       routingMode = "TRIAGE";
     }
@@ -225,7 +235,7 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
     throw new DomainError("Le service sélectionné n’a pas de SLA actif configuré.", 422);
   }
 
-  const productionContext = await resolveTicketProductionContext(actor, parsed);
+  const productionContext = v1Profile ? { dossierId: null, missionId: null } : await resolveTicketProductionContext(actor, parsed);
 
   const routing = routeTicketFromCatalog({
     serviceCatalogItemId: service.id,
@@ -260,11 +270,11 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
         reference: makeTicketReference(now),
         title: parsed.title,
         description: parsed.description,
-        requestedService: parsed.requestedService ?? null,
+        requestedService: v1Profile ? null : parsed.requestedService ?? null,
         confidential: parsed.confidential,
         type: routing.type,
         category: routing.category,
-        priority: calculatePriorityFromImpactUrgency(parsed.impact, parsed.urgency),
+        priority: v1Profile ? service.priorityDefault : calculatePriorityFromImpactUrgency(parsed.impact, parsed.urgency),
         impact: parsed.impact,
         urgency: parsed.urgency,
         status: initialStatus,
@@ -288,7 +298,7 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
             toStatus: initialStatus,
             metadata: {
               routingMode,
-              requestedService: parsed.requestedService ?? null,
+              requestedService: v1Profile ? null : parsed.requestedService ?? null,
               matchedBy,
               catalogItemId: service.id,
               catalogCode: service.code,
@@ -297,7 +307,7 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
               ticketType: routing.type,
               category: routing.category,
               initialStatus,
-              priority: calculatePriorityFromImpactUrgency(parsed.impact, parsed.urgency),
+              priority: v1Profile ? service.priorityDefault : calculatePriorityFromImpactUrgency(parsed.impact, parsed.urgency),
               impact: parsed.impact,
               urgency: parsed.urgency,
               legalDueAt: parsed.legalDueAt ?? null,
@@ -344,12 +354,13 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
 
     let autoAssigned = false;
     let autoAssignedUserId: string | null = null;
-    if (!parsed.confidential && routingMode !== "TRIAGE" && service.queue.autoAssignment) {
+    if (!parsed.confidential && routingMode !== "TRIAGE" && shouldAutomaticallyAssign(productCapabilities, service.queue.autoAssignment)) {
       const candidate = await chooseAutoAssignee(tx, routing.queueId, service.keywords);
       if (candidate) {
+        const outcome = automaticAssignmentOutcome(candidate.userId, ticket.status);
         ticket = await tx.ticket.update({
           where: { id: ticket.id },
-          data: { assignedToId: candidate.userId, status: TicketStatus.ASSIGNED },
+          data: outcome,
           include: ticketSecurityInclude,
         });
         await recordAssignment(tx, {
@@ -479,22 +490,18 @@ export function canActorClaimTicket(
   actor: UserContext,
   ticket: AccessTicket & { status: TicketStatus },
 ): boolean {
-  if (actor.status !== "ACTIVE" || !isClaimableStatus(ticket.status) || ticket.assignedToId) {
+  if (actor.status !== "ACTIVE" || ticket.queue.isActive === false || ticket.queue.department?.isActive === false || !isClaimableStatus(ticket.status) || ticket.assignedToId) {
     return false;
   }
-  if (!roleCodes(actor).includes(RoleCode.AGENT) || !hasPermission(actor, "ticket:claim")) return false;
-  const member = actor.teamMemberships.some(
-    (item) =>
-      item.team.queueId === ticket.queueId &&
-      item.isActive &&
-      item.team.isActive,
-  );
-  if (!member || (actor.authorizedQueueId && actor.authorizedQueueId !== ticket.queueId)) return false;
   const target = accessTarget(ticket);
-  // The list/detail caller has already applied the row-level visibility
-  // predicate. The mutation route repeats the full confidential check; this
-  // UI hint must not be used as an authorization decision.
-  return canClaimTicket(toAccessSubject(actor), target);
+  const subject = toAccessSubject(actor);
+  if (!hasPermission(actor, "ticket:claim", target) || !canViewTicket(subject, target) || !canClaimTicket(subject, target)) return false;
+  const roles = roleCodes(actor);
+  const activeAgentMembership = roles.includes(RoleCode.AGENT) && actor.teamMemberships.some(
+    (item) => item.team.queueId === ticket.queueId && item.isActive && item.team.isActive,
+  );
+  const managerScope = roles.includes(RoleCode.QUEUE_MANAGER) && canManagerClaimTicket(subject, target);
+  return activeAgentMembership || managerScope;
 }
 
 export async function getTicketActionContext(
@@ -512,14 +519,15 @@ export async function getTicketActionContext(
     throw new AuthorizationError("Vous n’avez pas accès aux actions de ce ticket.");
   }
 
-  const canAssign = hasPermission(actor, "ticket:assign", target) &&
+  const terminal = ticket.status === TicketStatus.CLOSED || ticket.status === TicketStatus.CANCELLED;
+  const canAssign = !terminal && hasPermission(actor, "ticket:assign", target) &&
     canAssignWithRoles(roleCodes(actor)) &&
     canManageQueue(subject, target);
-  const canTransfer = hasPermission(actor, "ticket:transfer", target) &&
+  const canTransfer = !terminal && hasPermission(actor, "ticket:transfer", target) &&
     canManageQueue(subject, target);
   const canPostPublic =
-    hasPermission(actor, "ticket:comment:public", target) ||
-    hasPermission(actor, "ticket:update", target);
+    !terminal && (hasPermission(actor, "ticket:comment:public", target) ||
+    hasPermission(actor, "ticket:update", target));
   const requesterAction = actor.id === ticket.requesterId;
   let allowedStatuses = allowedNextStatuses(ticket.status, roleCodes(actor), requesterAction);
   if (!ticket.assignedToId) {
@@ -538,7 +546,7 @@ export async function getTicketActionContext(
     requiresAdministrativeReason: isFunctionalAdministrator(actor),
     canPostPublic,
     canPostInternal:
-      canPostInternalMessage(roleCodes(actor)) &&
+      !terminal && canPostInternalMessage(roleCodes(actor)) &&
       hasPermission(actor, "ticket:internal-comment", target),
     allowedStatuses,
   };
@@ -569,6 +577,7 @@ export async function listTicketAssignmentOptions(actor: UserContext, ticketId: 
     throw new AuthorizationError("Vous n’êtes pas habilité à affecter ce ticket.");
   }
 
+  if (current.ticket.status === TicketStatus.CLOSED || current.ticket.status === TicketStatus.CANCELLED) return [];
   const memberships = await prisma.teamMember.findMany({
     where: {
       isActive: true,
@@ -590,6 +599,7 @@ export async function listTicketTransferOptions(actor: UserContext, ticketId: st
   }
   if (
     current.ticket.status === TicketStatus.CLOSED ||
+    current.ticket.status === TicketStatus.CANCELLED ||
     current.ticket.status === TicketStatus.RESOLUTION_PENDING
   ) {
     return [];
@@ -636,6 +646,7 @@ export async function createTicketLink(actor: UserContext, ticketId: string, inp
     prisma.ticket.findUnique({ where: { id: parsed.toTicketId }, include: ticketAccessInclude }),
   ]);
   if (!fromTicket || !toTicket) throw new DomainError("Ticket introuvable.", 404);
+  if (fromTicket.status === TicketStatus.CLOSED || fromTicket.status === TicketStatus.CANCELLED) throw new DomainError("Un ticket terminé est conservé en lecture seule.", 409);
   const subject = toAccessSubject(actor);
   if (!canViewTicket(subject, accessTarget(fromTicket)) || !canViewTicket(subject, accessTarget(toTicket)) || !hasPermission(actor, "ticket:update", accessTarget(fromTicket))) {
     throw new AuthorizationError("Vous ne pouvez pas relier ces tickets dans votre périmètre.");
@@ -691,7 +702,7 @@ actor: UserContext, ticketId: string, input: AssignmentInput) {
   ) {
     throw new AuthorizationError("Seul le responsable habilité de la file peut affecter ce ticket.");
   }
-  if (ticket.status === TicketStatus.CLOSED || ticket.status === TicketStatus.RESOLUTION_PENDING) {
+  if (ticket.status === TicketStatus.CLOSED || ticket.status === TicketStatus.CANCELLED || ticket.status === TicketStatus.RESOLUTION_PENDING) {
     throw new DomainError("Ce ticket ne peut plus être affecté dans son état actuel.", 409);
   }
   if (ticket.assignedToId === parsed.assignedToId) {
@@ -791,59 +802,25 @@ export async function claimTicket(
     include: ticketAccessInclude,
   });
   if (!ticket) throw new DomainError("Ticket introuvable.", 404);
-  if (actor.status !== "ACTIVE" || !roleCodes(actor).includes(RoleCode.AGENT) || !hasPermission(actor, "ticket:claim")) {
-    throw new AuthorizationError("Seul un agent actif peut prendre un ticket en charge.");
-  }
   if (!ticket.queue.isActive || !ticket.queue.department.isActive) {
     throw new DomainError("La file ou son département est inactif.", 409);
   }
-  if (ticket.assignedToId) {
-    throw new DomainError("Ce ticket est déjà affecté à un autre agent.", 409);
-  }
-  if (!isClaimableStatus(ticket.status)) {
-    throw new DomainError("Ce ticket ne peut pas être pris en charge dans son état actuel.", 409);
-  }
-  const membership = actor.teamMemberships.some(
-    (item) =>
-      item.team.queueId === ticket.queueId &&
-      item.isActive &&
-      item.team.isActive,
-  );
-  const target = accessTarget(ticket);
-  if (
-    !membership ||
-    (actor.authorizedQueueId && actor.authorizedQueueId !== ticket.queueId) ||
-    !canClaimTicket(toAccessSubject(actor), target)
-  ) {
-    throw new AuthorizationError("Vous devez être agent et membre actif d’une équipe de cette file.");
-  }
-  if (ticket.confidential && !canViewTicket(toAccessSubject(actor), target)) {
-    throw new AuthorizationError("Ce ticket confidentiel ne vous est pas explicitement autorisé.");
+  if (ticket.assignedToId) throw new DomainError("Ce ticket est déjà affecté à un autre agent.", 409);
+  if (!isClaimableStatus(ticket.status)) throw new DomainError("Ce ticket ne peut pas être pris en charge dans son état actuel.", 409);
+  if (!canActorClaimTicket(actor, ticket)) {
+    throw new AuthorizationError("Vous n’êtes plus autorisé à prendre en charge ce ticket dans cette file.");
   }
 
   return prisma.$transaction(async (tx) => {
-    const activeMembership = await tx.teamMember.findFirst({
-      where: {
-        userId: actor.id,
-        isActive: true,
-        team: { queueId: ticket.queueId, isActive: true },
-        user: { status: "ACTIVE", roleAssignments: { some: { role: { code: RoleCode.AGENT } } } },
-      },
-      select: { id: true },
-    });
-    if (!activeMembership) {
-      throw new AuthorizationError("Votre appartenance active à une équipe de cette file n’est plus valide.");
+    const [freshActor, freshTicket] = await Promise.all([
+      tx.user.findUnique({ where: { id: actor.id }, include: userContextInclude }),
+      tx.ticket.findUnique({ where: { id: ticketId }, include: ticketAccessInclude }),
+    ]);
+    if (!freshActor || !freshTicket || !canActorClaimTicket(freshActor, freshTicket)) {
+      throw new AuthorizationError("Votre identité, votre périmètre ou votre accès au ticket n’est plus valide.");
     }
-    const claimed = await tx.ticket.updateMany({
-      where: {
-        id: ticketId,
-        queueId: ticket.queueId,
-        assignedToId: null,
-        status: { in: [...new Set([TicketStatus.NEW, TicketStatus.TO_QUALIFY, TicketStatus.TO_ASSIGN, TicketStatus.REOPENED])] },
-      },
-      data: { assignedToId: actor.id, status: TicketStatus.ASSIGNED },
-    });
-    if (claimed.count !== 1) {
+    const claimed = await tryAcquireTicketClaim(tx, { ticketId, queueId: ticket.queueId, actorId: actor.id });
+    if (!claimed) {
       const current = await tx.ticket.findUnique({
         where: { id: ticketId },
         select: { assignedToId: true, status: true },
@@ -883,7 +860,7 @@ export async function claimTicket(
         recipientId: ticket.queue.managerId,
         ticketId,
         type: NotificationType.TICKET_ASSIGNED,
-        title: "Ticket pris en charge par un agent",
+        title: "Ticket pris en charge",
         body: `${updated.reference} a été pris en charge par ${actor.name}.`,
       });
     }
@@ -899,6 +876,7 @@ export async function addTicketMessage(actor: UserContext, ticketId: string, inp
     include: ticketAccessInclude,
   });
   if (!ticket) throw new DomainError("Ticket introuvable.", 404);
+  if (ticket.status === TicketStatus.CLOSED || ticket.status === TicketStatus.CANCELLED) throw new DomainError("Un ticket terminé est conservé en lecture seule.", 409);
   if (!canViewTicket(toAccessSubject(actor), accessTarget(ticket))) {
     throw new AuthorizationError("Vous n’avez pas accès à ce ticket.");
   }
@@ -965,7 +943,7 @@ export async function transferTicket(
   if (!canViewTicket(subject, sourceTarget) || !hasPermission(actor, "ticket:transfer", sourceTarget) || !canManageQueue(subject, sourceTarget)) {
     throw new AuthorizationError("Seul un responsable habilité ou un administrateur peut transférer ce ticket.");
   }
-  if (ticket.status === TicketStatus.CLOSED || ticket.status === TicketStatus.RESOLUTION_PENDING) {
+  if (ticket.status === TicketStatus.CLOSED || ticket.status === TicketStatus.CANCELLED || ticket.status === TicketStatus.RESOLUTION_PENDING) {
     throw new DomainError("Ce ticket ne peut pas être transféré dans son état actuel.", 409);
   }
   requireAdministrativeReason(actor, parsed.reason);

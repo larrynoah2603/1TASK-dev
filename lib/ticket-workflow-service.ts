@@ -14,10 +14,13 @@ import { DomainError } from "@/lib/domain-error";
 import { AuthorizationError, hasPermission, requireCurrentActor, roleCodes, toAccessSubject, type UserContext } from "@/lib/server-auth";
 import { createInAppNotifications } from "@/lib/notifications";
 import { logServerError } from "@/lib/http";
-import { chooseAutoAssignee, recordAssignment } from "@/lib/ticket-assignment-service";
+import { automaticAssignmentOutcome, chooseAutoAssignee, recordAssignment, shouldAutomaticallyAssign } from "@/lib/ticket-assignment-service";
 import { accessTarget, ticketAccessInclude, ticketSecurityInclude } from "@/lib/ticket-access";
-import { calculateSlaDeadlines } from "@/lib/sla";
+import { calculateAutomaticClosureDeadline, calculateSlaDeadlines } from "@/lib/sla";
 import { queueWorkerIds } from "@/lib/ticket-notification-service";
+import { readServerEnvironment } from "@/lib/env";
+import { V1_CONFIGURATION_ID } from "@/lib/triage-configuration";
+import { resolveProductCapabilities } from "@/lib/product-policy";
 import {
   ticketQualificationSchema,
   transitionTicketSchema,
@@ -39,6 +42,50 @@ function requireAdministrativeReason(actor: UserContext, reason: string | undefi
   }
 }
 
+export function isAuthorizedGlobalTriageOrigin(originQueueId: string, configuredQueueId: string | null | undefined, hasScopedCapability: boolean) {
+  return Boolean(configuredQueueId && originQueueId === configuredQueueId && hasScopedCapability);
+}
+
+async function qualificationScope(actor: UserContext, ticket: { queueId: string; queue: { departmentId: string } }, target: ReturnType<typeof accessTarget>) {
+  const configured = await prisma.v1Configuration.findUnique({
+    where: { id: V1_CONFIGURATION_ID },
+    select: { globalTriageService: { select: { queueId: true } } },
+  });
+  const configuredQueueId = configured?.globalTriageService?.queueId;
+  const globalTriage = configuredQueueId === ticket.queueId;
+  const crossDepartment = isAuthorizedGlobalTriageOrigin(
+    ticket.queueId,
+    configuredQueueId,
+    hasPermission(actor, "ticket:qualify:global-triage", target),
+  );
+  return { globalTriage, crossDepartment, departmentId: ticket.queue.departmentId };
+}
+
+export async function listQualificationDestinationServices(actor: UserContext, ticketId: string) {
+  actor = await requireCurrentActor(actor);
+  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId }, include: ticketAccessInclude });
+  if (!ticket) throw new DomainError("Ticket introuvable.", 404);
+  const target = accessTarget(ticket);
+  if (!canViewTicket(toAccessSubject(actor), target) || !hasPermission(actor, "ticket:update", target) || !roleCodes(actor).some(isStaffRole)) {
+    throw new AuthorizationError("La qualification n’est pas autorisée dans ce périmètre.");
+  }
+  const scope = await qualificationScope(actor, ticket, target);
+  return prisma.serviceCatalogItem.findMany({
+    where: {
+      isActive: true,
+      provisionedTriageDepartmentId: null,
+      queue: {
+        isActive: true,
+        department: { isActive: true },
+        ...(scope.crossDepartment ? {} : { departmentId: scope.departmentId }),
+      },
+      sla: { isActive: true, calendar: { isActive: true } },
+    },
+    select: { id: true, name: true, category: true, queue: { select: { id: true, name: true, department: { select: { id: true, name: true } } } } },
+    orderBy: [{ name: "asc" }],
+  });
+}
+
 export async function qualifyTicket(actor: UserContext, ticketId: string, input: TicketQualificationInput) {
   actor = await requireCurrentActor(actor);
   const parsed = ticketQualificationSchema.parse(input);
@@ -49,15 +96,16 @@ export async function qualifyTicket(actor: UserContext, ticketId: string, input:
   if (!canViewTicket(subject, target) || !hasPermission(actor, "ticket:update", target) || !roleCodes(actor).some((role) => isStaffRole(role))) {
     throw new AuthorizationError("La qualification n’est pas autorisée dans ce périmètre.");
   }
-  if (ticket.status === TicketStatus.CLOSED) throw new DomainError("Un ticket clôturé ne peut plus être qualifié.", 409);
+  if (ticket.status === TicketStatus.CLOSED || ticket.status === TicketStatus.CANCELLED) throw new DomainError("Un ticket terminé ne peut plus être qualifié.", 409);
+  const scope = await qualificationScope(actor, ticket, target);
 
   const selectedService = parsed.serviceCatalogItemId
     ? await prisma.serviceCatalogItem.findFirst({
         where: {
           id: parsed.serviceCatalogItemId,
           isActive: true,
-          code: { not: { startsWith: "TRIAGE-" } },
-          queue: { isActive: true, departmentId: ticket.queue.departmentId, department: { isActive: true } },
+          provisionedTriageDepartmentId: null,
+          queue: { isActive: true, ...(scope.crossDepartment ? {} : { departmentId: ticket.queue.departmentId }), department: { isActive: true } },
         },
         include: { queue: true, sla: { include: { calendar: { include: { holidays: true } } } } },
       })
@@ -69,7 +117,9 @@ export async function qualifyTicket(actor: UserContext, ticketId: string, input:
     throw new DomainError("Le service de destination n’a pas de SLA actif configuré.", 422);
   }
 
-  const priority = parsed.priority ?? calculatePriorityFromImpactUrgency(parsed.impact, parsed.urgency);
+  const v1Profile = readServerEnvironment().PRODUCT_PROFILE === "v1";
+  const productCapabilities = resolveProductCapabilities(readServerEnvironment().PRODUCT_PROFILE);
+  const priority = parsed.priority ?? (v1Profile && selectedService ? selectedService.priorityDefault : calculatePriorityFromImpactUrgency(parsed.impact, parsed.urgency));
   const now = new Date();
   const deadlines = selectedService?.sla
     ? calculateSlaDeadlines(now, selectedService.sla, {
@@ -83,11 +133,12 @@ export async function qualifyTicket(actor: UserContext, ticketId: string, input:
     let nextStatus = selectedService ? TicketStatus.TO_ASSIGN : ticket.status;
     let assignedToId: string | null | undefined = selectedService ? null : undefined;
     let assignee: Awaited<ReturnType<typeof chooseAutoAssignee>> = null;
-    if (selectedService?.queue.autoAssignment) {
+    if (selectedService && shouldAutomaticallyAssign(productCapabilities, selectedService.queue.autoAssignment)) {
       assignee = await chooseAutoAssignee(tx, selectedService.queueId, selectedService.keywords);
       if (assignee) {
-        nextStatus = TicketStatus.ASSIGNED;
-        assignedToId = assignee.userId;
+        const outcome = automaticAssignmentOutcome(assignee.userId, TicketStatus.TO_ASSIGN);
+        nextStatus = outcome.status;
+        assignedToId = outcome.assignedToId;
       }
     }
     const changed = await tx.ticket.updateMany({
@@ -178,7 +229,8 @@ export async function qualifyTicket(actor: UserContext, ticketId: string, input:
             : `${updated.reference} a été qualifié et routé vers ${updated.queue.name}.`,
         })));
     }
-    return updated;
+    const stillVisible = canViewTicket(toAccessSubject(actor), accessTarget(updated));
+    return stillVisible ? updated : { id: updated.id, status: updated.status, accessRetained: false as const };
   }, { maxWait: 10_000, timeout: 15_000 });
 }
 
@@ -195,6 +247,7 @@ export async function transitionTicket(
       ...ticketAccessInclude,
       requester: true,
       assignedTo: true,
+      sla: { include: { calendar: { include: { holidays: true } } } },
     },
   });
   if (!ticket) throw new DomainError("Ticket introuvable.", 404);
@@ -212,6 +265,9 @@ export async function transitionTicket(
   const actorRoles = roleCodes(actor);
   const transitionTarget = accessTarget(ticket);
   const isFunctionalAdminActor = actorRoles.includes(RoleCode.FUNCTIONAL_ADMIN);
+  if (parsed.status === TicketStatus.CANCELLED && !hasPermission(actor, "ticket:cancel", transitionTarget) && !isFunctionalAdminActor) {
+    throw new AuthorizationError("La permission d’annuler ce ticket n’est pas accordée.");
+  }
   if (parsed.status === TicketStatus.CLOSED) {
     if (!canConfirmResolution(actorRoles, requesterAction)) {
       throw new AuthorizationError("Seul le demandeur peut confirmer la résolution.");
@@ -244,6 +300,7 @@ export async function transitionTicket(
     isAgentOnly &&
     parsed.status !== TicketStatus.TO_QUALIFY &&
     parsed.status !== TicketStatus.TO_ASSIGN &&
+    parsed.status !== TicketStatus.CANCELLED &&
     ticket.assignedToId !== actor.id
   ) {
     throw new AuthorizationError("Un agent ne peut traiter que le ticket qui lui est affecté.");
@@ -270,6 +327,24 @@ export async function transitionTicket(
   }
 
   const now = new Date();
+  let automaticClosureDueAt: Date | undefined;
+  if (parsed.status === TicketStatus.RESOLUTION_PENDING) {
+    const calendar = ticket.sla?.calendar;
+    if (!ticket.sla?.isActive || !calendar?.isActive) {
+      throw new DomainError("La clôture automatique nécessite un SLA et un calendrier actifs.", 422);
+    }
+    try {
+      automaticClosureDueAt = calculateAutomaticClosureDeadline(now, {
+        workingDays: calendar.workingDays,
+        workdayStartMinute: calendar.workdayStartMinute,
+        workdayEndMinute: calendar.workdayEndMinute,
+        timezone: calendar.timezone,
+        holidays: calendar.holidays.map((holiday) => holiday.date),
+      });
+    } catch {
+      throw new DomainError("Le calendrier SLA est invalide pour calculer la date de clôture automatique.", 422);
+    }
+  }
   let totalPausedMinutes = ticket.totalPausedMinutes;
   let pauseDurationMinutes = 0;
   if (ticket.status === TicketStatus.BLOCKED && parsed.status !== TicketStatus.BLOCKED && ticket.slaPausedAt) {
@@ -297,6 +372,13 @@ export async function transitionTicket(
         : parsed.status === TicketStatus.REOPENED
           ? null
           : undefined,
+    autoClosureDueAt: parsed.status === TicketStatus.RESOLUTION_PENDING
+      ? automaticClosureDueAt
+      : parsed.status === TicketStatus.REOPENED || parsed.status === TicketStatus.CLOSED
+        ? null
+        : undefined,
+    cancelledAt: parsed.status === TicketStatus.CANCELLED ? now : undefined,
+    cancellationReason: parsed.status === TicketStatus.CANCELLED ? parsed.reason : undefined,
     closedAt:
       parsed.status === TicketStatus.CLOSED
         ? now
@@ -336,8 +418,10 @@ export async function transitionTicket(
       include: ticketSecurityInclude,
     });
     if (!updated) throw new DomainError("Ticket introuvable après la transition.", 404);
-    const eventType = parsed.status === TicketStatus.REOPENED
-      ? TicketEventType.REOPENED
+    const eventType = parsed.status === TicketStatus.CANCELLED
+      ? TicketEventType.CANCELLED
+      : parsed.status === TicketStatus.REOPENED
+        ? TicketEventType.REOPENED
       : parsed.status === TicketStatus.CLOSED
         ? TicketEventType.CLOSED
         : parsed.status === TicketStatus.RESOLUTION_PENDING
@@ -360,12 +444,13 @@ export async function transitionTicket(
           totalPausedMinutes,
           firstResponseDueAt: updated.firstResponseDueAt,
           resolutionDueAt: updated.resolutionDueAt,
+          autoClosureDueAt: updated.autoClosureDueAt,
         },
       },
     });
     await appendAuditLog(tx, {
       actorId: actor.id,
-      action: administrativeOverride ? "ADMINISTRATIVE_WORKFLOW_OVERRIDE" : "TICKET_STATUS_CHANGED",
+      action: administrativeOverride ? "ADMINISTRATIVE_WORKFLOW_OVERRIDE" : parsed.status === TicketStatus.CANCELLED ? "TICKET_CANCELLED" : "TICKET_STATUS_CHANGED",
       objectType: "Ticket",
       objectId: ticketId,
       oldValue: {
@@ -381,6 +466,9 @@ export async function transitionTicket(
         totalPausedMinutes,
         firstResponseDueAt: updated.firstResponseDueAt,
         resolutionDueAt: updated.resolutionDueAt,
+        autoClosureDueAt: updated.autoClosureDueAt,
+        cancelledAt: updated.cancelledAt,
+        cancellationReason: updated.cancellationReason,
       },
       reason: parsed.reason ?? parsed.reopenedReason ?? parsed.blockDetails,
     });

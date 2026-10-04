@@ -19,6 +19,7 @@ export const STATUS_LABELS: Record<TicketStatus, string> = {
   [TicketStatus.RESOLUTION_PENDING]: "Résolution en attente",
   [TicketStatus.REOPENED]: "Réouvert",
   [TicketStatus.CLOSED]: "Clôturé",
+  [TicketStatus.CANCELLED]: "Annulé",
 };
 
 export const IMPACT_LABELS: Record<Impact, string> = {
@@ -72,6 +73,12 @@ const managerRoles = new Set<RoleCode>([
   RoleCode.FUNCTIONAL_ADMIN,
 ]);
 
+export const TERMINAL_TICKET_STATUSES: readonly TicketStatus[] = [TicketStatus.CLOSED, TicketStatus.CANCELLED];
+
+export function isTerminalTicketStatus(status: TicketStatus): boolean {
+  return TERMINAL_TICKET_STATUSES.includes(status);
+}
+
 export const CLAIMABLE_STATUSES: readonly TicketStatus[] = [
   TicketStatus.NEW,
   TicketStatus.TO_QUALIFY,
@@ -80,15 +87,16 @@ export const CLAIMABLE_STATUSES: readonly TicketStatus[] = [
 ];
 
 const transitionMap: Readonly<Record<TicketStatus, readonly TicketStatus[]>> = {
-  [TicketStatus.NEW]: [TicketStatus.TO_QUALIFY, TicketStatus.TO_ASSIGN],
-  [TicketStatus.TO_QUALIFY]: [TicketStatus.TO_ASSIGN],
-  [TicketStatus.TO_ASSIGN]: [TicketStatus.ASSIGNED],
+  [TicketStatus.NEW]: [TicketStatus.TO_QUALIFY, TicketStatus.TO_ASSIGN, TicketStatus.CANCELLED],
+  [TicketStatus.TO_QUALIFY]: [TicketStatus.TO_ASSIGN, TicketStatus.CANCELLED],
+  [TicketStatus.TO_ASSIGN]: [TicketStatus.ASSIGNED, TicketStatus.CANCELLED],
   [TicketStatus.ASSIGNED]: [TicketStatus.IN_PROGRESS, TicketStatus.TO_ASSIGN],
   [TicketStatus.IN_PROGRESS]: [TicketStatus.BLOCKED, TicketStatus.RESOLUTION_PENDING],
   [TicketStatus.BLOCKED]: [TicketStatus.IN_PROGRESS, TicketStatus.TO_ASSIGN],
   [TicketStatus.RESOLUTION_PENDING]: [TicketStatus.CLOSED, TicketStatus.REOPENED],
   [TicketStatus.REOPENED]: [TicketStatus.IN_PROGRESS, TicketStatus.TO_ASSIGN],
   [TicketStatus.CLOSED]: [TicketStatus.REOPENED],
+  [TicketStatus.CANCELLED]: [],
 };
 
 export function isStaffRole(role: RoleCode): boolean {

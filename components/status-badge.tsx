@@ -14,6 +14,7 @@ const STATUS_TONE: Record<string, Tone> = {
   RESOLUTION_PENDING: "success",
   REOPENED: "warning",
   CLOSED: "neutral",
+  CANCELLED: "neutral",
 };
 
 const PRIORITY_TONE: Record<string, Tone> = {

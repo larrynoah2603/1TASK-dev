@@ -85,7 +85,9 @@ export type AccessTicket = {
   confidential: boolean;
   category?: string;
   queue: {
+    isActive?: boolean;
     departmentId: string;
+    department?: { id?: string; name?: string; code?: string; isActive?: boolean };
     teams?: { id: string; isActive: boolean }[];
   };
   accessList?: { userId: string; delegationId?: string | null; delegation?: { startsAt: Date; endsAt: Date | null; revokedAt: Date | null; substituteId: string; actions: string[] } | null }[];
