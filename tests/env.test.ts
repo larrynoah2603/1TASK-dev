@@ -80,4 +80,24 @@ describe("configuration serveur", () => {
     expect(() => readServerEnvironment({ ...databaseEnvironment, OUTBOX_BATCH_SIZE: "101" }))
       .toThrow(/OUTBOX_BATCH_SIZE/);
   });
+
+  it("ignore les configurations partielles des intégrations dormantes en V1", () => {
+    expect(() => readServerEnvironment({
+      ...databaseEnvironment,
+      PRODUCT_PROFILE: "v1",
+      REDIS_REST_URL: "https://stale-redis.example",
+      PRIVATE_STORAGE_TOKEN: "stale-token",
+      WEB_PUSH_PUBLIC_KEY: "stale-public-key",
+      MICROSOFT_MAIL_CLIENT_ID: "stale-mail-client",
+      OUTBOX_DELIVERY_TOKEN: "stale-outbox-token",
+    })).not.toThrow();
+  });
+
+  it("conserve la validation stricte des intégrations pour le profil complet", () => {
+    expect(() => readServerEnvironment({
+      ...databaseEnvironment,
+      PRODUCT_PROFILE: "full",
+      PRIVATE_STORAGE_TOKEN: "partial",
+    })).toThrow(/PRIVATE_STORAGE_URL/);
+  });
 });

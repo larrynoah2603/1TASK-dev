@@ -205,3 +205,25 @@ missions. L’ancienne URL `/dashboard/responsible` redirige après le contrôle
 conserve ses paramètres. L’inventaire et la revue des demandes sont disponibles sous
 `/admin/assets` et `/admin/asset-requests` depuis des cartes secondaires. Les notifications
 adressées au demandeur pointent vers `/my-assets`, jamais vers la revue administrateur.
+# Politique des fonctionnalités dormantes (P10)
+
+Le déploiement V1 doit définir `PRODUCT_PROFILE=v1`. La base PostgreSQL,
+NextAuth, Microsoft Entra ID, le domaine autorisé et `CRON_SECRET` restent
+obligatoires en production. Redis, Web Push, Microsoft Graph Mail et la
+livraison outbox externe sont inactifs : leurs variables peuvent être absentes
+ou contenir une ancienne configuration partielle sans empêcher le démarrage.
+Le profil `full` conserve la validation stricte de chaque ensemble de variables.
+
+En V1, l’API `/api/v1`, les définitions de workflow déclaratives, les nouveaux
+uploads, les nouveaux tickets confidentiels et l’activation de délégations
+confidentielles sont refusés côté serveur. Le moteur d’état des tickets, les
+SLA, les notifications dans l’application, les lectures autorisées de pièces
+jointes historiques et la révocation des délégations existantes restent actifs.
+Les jobs SLA/fermeture automatique restent planifiés. Le job outbox exige
+toujours son secret mais répond par un résultat vide sans acquérir de lignes ni
+initialiser de fournisseur.
+
+Les lignes outbox historiques en attente sont conservées telles quelles. Avant
+toute réactivation ou tout passage au profil `full`, un opérateur doit examiner
+explicitement destinataires, autorisations courantes, ancienneté et impact de
+chaque ligne ; aucun rejeu global automatique ne doit être effectué.
