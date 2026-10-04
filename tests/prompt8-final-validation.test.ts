@@ -51,6 +51,7 @@ function walkTextSources(directory: string): string[] {
 }
 
 const ticketService = source("lib/ticket-service.ts");
+const ticketAssignmentService = source("lib/ticket-assignment-service.ts");
 const ticketWorkflowService = source("lib/ticket-workflow-service.ts");
 const productionService = source("lib/production-service.ts");
 const notificationCenter = source("components/notification-center.tsx");
@@ -228,9 +229,11 @@ describe("Prompt 8 — Claim, affectation et réorientation", () => {
   it("effectue le Claim dans une transaction avec une condition anti-concurrence", () => {
     const claim = section(ticketService, "export async function claimTicket", "export async function transitionTicket");
     expect(claim).toContain("prisma.$transaction");
-    expect(claim).toContain("activeMembership");
-    expect(claim).toContain("tx.ticket.updateMany");
-    expect(claim).toContain("assignedToId: null");
+    expect(claim).toContain("freshActor");
+    expect(claim).toContain("freshTicket");
+    expect(claim).toContain("tryAcquireTicketClaim");
+    expect(ticketAssignmentService).toContain("assignedToId: null");
+    expect(ticketAssignmentService).toContain("ticket.updateMany");
     expect(claim).toContain("Ce ticket vient d’être pris par un autre agent.");
   });
 

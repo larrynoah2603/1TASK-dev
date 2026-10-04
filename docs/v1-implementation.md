@@ -68,7 +68,7 @@ données ni suppression des modèles dormants.
 | P05 | Terminé | Ajouter l’annulation terminale bornée aux demandes précoces, auditée et exclue du travail actif. |
 | P06 | Terminé | Calculer et surveiller la clôture automatique après cinq durées de jour ouvré configurées. |
 | P07 | Terminé | Désactiver toute auto-affectation en V1 sans effacer la configuration avancée du profil full. |
-| P08 | Proposé | Rendre portfolio/connaissance dormants et déplacer inventaire/revue dans l’admin. |
+| P08 | Terminé | Rendre les responsables de file opérationnels pour le claim et le traitement dans leur périmètre explicite. |
 | P09 | Proposé | Bloquer les nouvelles créations confidentielles/uploads tout en gardant les lectures protégées. |
 | P10 | Proposé | Désactiver côté serveur workflows, `/api/v1`, push, Redis, outbox et email externes. |
 | P11 | Proposé | Réparation additive/idempotente, parcours d’intégration complet et préparation du déploiement. |
@@ -86,8 +86,8 @@ repli de stockage public.
 
 - `npm ci` : réussi (634 paquets, génération Prisma réussie).
 - Tests ciblés P00/P01 : 11 fichiers, 60 tests réussis.
-- `DATABASE_URL=postgresql://localhost/test npm run validate` pendant P07 : réussi ; 89 fichiers et
-  399 tests réussis, 3 fichiers et 10 tests DB ignorés faute de `RUN_DB_TESTS=1`; ESLint
+- `DATABASE_URL=postgresql://localhost/test npm run validate` pendant P08 : réussi ; 89 fichiers et
+  404 tests réussis, 3 fichiers et 10 tests DB ignorés faute de `RUN_DB_TESTS=1`; ESLint
   conserve un avertissement préexistant `@next/next/no-img-element` dans
   `app/(app)/loading.tsx`; typecheck, validation Prisma et build Next.js réussis.
 - `git diff --check` : réussi.
@@ -177,3 +177,20 @@ historique. Aucune migration ou réparation de données n’est requise.
 Une réactivation future devra séparer les compétences obligatoires des mots-clés de routage,
 ou introduire une rotation concurrente explicitement testée. Aucun nouvel algorithme de rotation
 n’est ajouté dans cette phase.
+
+
+### P08 — responsables de file opérationnels
+
+Les rôles `QUEUE_MANAGER` reçoivent `ticket:claim` et `ticket:process` dans le catalogue runtime
+et par la migration additive `20261004100000_queue_manager_operational_permissions`. Aucun rôle
+global n’est ajouté aux utilisateurs. Un responsable sans rôle AGENT ni appartenance `TeamMember`
+peut prendre un ticket seulement si la file est explicitement gérée, si `authorizedQueueId` la
+borne, ou si une portée non globale correspond. Un rôle responsable seul et non borné ne suffit
+pas au claim.
+
+Le prédicat utilisé pour le bouton est le même que celui du service. Dans la transaction, identité,
+permission, file active, département actif, portée, accès confidentiel/délégation, absence
+d’affectation et statut claimable sont relus avant l’update conditionnel. Cette condition atomique
+ne laisse qu’un gagnant entre agents et responsables concurrents. Après claim, les permissions
+`ticket:process` et `ticket:resolve` permettent le parcours ordinaire vers traitement puis résolution.
+Aucune donnée métier existante n’est modifiée par la migration.

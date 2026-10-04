@@ -113,6 +113,8 @@ export const ROLE_PERMISSION_CODES: Record<RoleCode, readonly PermissionCode[]> 
     "ticket:comment:public",
     "ticket:comment:internal",
     "ticket:assign",
+    "ticket:claim",
+    "ticket:process",
     "ticket:cancel",
     "ticket:transfer",
     "ticket:qualify:global-triage",

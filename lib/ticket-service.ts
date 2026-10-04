@@ -12,6 +12,7 @@ import { prisma } from "@/lib/db";
 import { readServerEnvironment } from "@/lib/env";
 import {
   canClaimTicket,
+  canManagerClaimTicket,
   canManageQueue,
   canViewTicket,
   hasGlobalRole,
@@ -36,6 +37,7 @@ import {
   hasPermission,
   AuthorizationError,
   requireCurrentActor,
+  userContextInclude,
 } from "@/lib/server-auth";
 import {
   addMessageSchema,
@@ -61,7 +63,7 @@ import { measureServerOperation } from "@/lib/performance";
 import { DomainError } from "@/lib/domain-error";
 import { logServerError } from "@/lib/http";
 import { accessTarget, ticketAccessInclude, ticketSecurityInclude, type AccessTicket } from "@/lib/ticket-access";
-import { automaticAssignmentOutcome, chooseAutoAssignee, recordAssignment, shouldAutomaticallyAssign } from "@/lib/ticket-assignment-service";
+import { automaticAssignmentOutcome, chooseAutoAssignee, recordAssignment, shouldAutomaticallyAssign, tryAcquireTicketClaim } from "@/lib/ticket-assignment-service";
 import { resolveProductCapabilities } from "@/lib/product-policy";
 import { notifyQueueWorkers, queueWorkerIds } from "@/lib/ticket-notification-service";
 
@@ -488,22 +490,18 @@ export function canActorClaimTicket(
   actor: UserContext,
   ticket: AccessTicket & { status: TicketStatus },
 ): boolean {
-  if (actor.status !== "ACTIVE" || !isClaimableStatus(ticket.status) || ticket.assignedToId) {
+  if (actor.status !== "ACTIVE" || ticket.queue.isActive === false || ticket.queue.department?.isActive === false || !isClaimableStatus(ticket.status) || ticket.assignedToId) {
     return false;
   }
-  if (!roleCodes(actor).includes(RoleCode.AGENT) || !hasPermission(actor, "ticket:claim")) return false;
-  const member = actor.teamMemberships.some(
-    (item) =>
-      item.team.queueId === ticket.queueId &&
-      item.isActive &&
-      item.team.isActive,
-  );
-  if (!member || (actor.authorizedQueueId && actor.authorizedQueueId !== ticket.queueId)) return false;
   const target = accessTarget(ticket);
-  // The list/detail caller has already applied the row-level visibility
-  // predicate. The mutation route repeats the full confidential check; this
-  // UI hint must not be used as an authorization decision.
-  return canClaimTicket(toAccessSubject(actor), target);
+  const subject = toAccessSubject(actor);
+  if (!hasPermission(actor, "ticket:claim", target) || !canViewTicket(subject, target) || !canClaimTicket(subject, target)) return false;
+  const roles = roleCodes(actor);
+  const activeAgentMembership = roles.includes(RoleCode.AGENT) && actor.teamMemberships.some(
+    (item) => item.team.queueId === ticket.queueId && item.isActive && item.team.isActive,
+  );
+  const managerScope = roles.includes(RoleCode.QUEUE_MANAGER) && canManagerClaimTicket(subject, target);
+  return activeAgentMembership || managerScope;
 }
 
 export async function getTicketActionContext(
@@ -804,59 +802,25 @@ export async function claimTicket(
     include: ticketAccessInclude,
   });
   if (!ticket) throw new DomainError("Ticket introuvable.", 404);
-  if (actor.status !== "ACTIVE" || !roleCodes(actor).includes(RoleCode.AGENT) || !hasPermission(actor, "ticket:claim")) {
-    throw new AuthorizationError("Seul un agent actif peut prendre un ticket en charge.");
-  }
   if (!ticket.queue.isActive || !ticket.queue.department.isActive) {
     throw new DomainError("La file ou son département est inactif.", 409);
   }
-  if (ticket.assignedToId) {
-    throw new DomainError("Ce ticket est déjà affecté à un autre agent.", 409);
-  }
-  if (!isClaimableStatus(ticket.status)) {
-    throw new DomainError("Ce ticket ne peut pas être pris en charge dans son état actuel.", 409);
-  }
-  const membership = actor.teamMemberships.some(
-    (item) =>
-      item.team.queueId === ticket.queueId &&
-      item.isActive &&
-      item.team.isActive,
-  );
-  const target = accessTarget(ticket);
-  if (
-    !membership ||
-    (actor.authorizedQueueId && actor.authorizedQueueId !== ticket.queueId) ||
-    !canClaimTicket(toAccessSubject(actor), target)
-  ) {
-    throw new AuthorizationError("Vous devez être agent et membre actif d’une équipe de cette file.");
-  }
-  if (ticket.confidential && !canViewTicket(toAccessSubject(actor), target)) {
-    throw new AuthorizationError("Ce ticket confidentiel ne vous est pas explicitement autorisé.");
+  if (ticket.assignedToId) throw new DomainError("Ce ticket est déjà affecté à un autre agent.", 409);
+  if (!isClaimableStatus(ticket.status)) throw new DomainError("Ce ticket ne peut pas être pris en charge dans son état actuel.", 409);
+  if (!canActorClaimTicket(actor, ticket)) {
+    throw new AuthorizationError("Vous n’êtes plus autorisé à prendre en charge ce ticket dans cette file.");
   }
 
   return prisma.$transaction(async (tx) => {
-    const activeMembership = await tx.teamMember.findFirst({
-      where: {
-        userId: actor.id,
-        isActive: true,
-        team: { queueId: ticket.queueId, isActive: true },
-        user: { status: "ACTIVE", roleAssignments: { some: { role: { code: RoleCode.AGENT } } } },
-      },
-      select: { id: true },
-    });
-    if (!activeMembership) {
-      throw new AuthorizationError("Votre appartenance active à une équipe de cette file n’est plus valide.");
+    const [freshActor, freshTicket] = await Promise.all([
+      tx.user.findUnique({ where: { id: actor.id }, include: userContextInclude }),
+      tx.ticket.findUnique({ where: { id: ticketId }, include: ticketAccessInclude }),
+    ]);
+    if (!freshActor || !freshTicket || !canActorClaimTicket(freshActor, freshTicket)) {
+      throw new AuthorizationError("Votre identité, votre périmètre ou votre accès au ticket n’est plus valide.");
     }
-    const claimed = await tx.ticket.updateMany({
-      where: {
-        id: ticketId,
-        queueId: ticket.queueId,
-        assignedToId: null,
-        status: { in: [...new Set([TicketStatus.NEW, TicketStatus.TO_QUALIFY, TicketStatus.TO_ASSIGN, TicketStatus.REOPENED])] },
-      },
-      data: { assignedToId: actor.id, status: TicketStatus.ASSIGNED },
-    });
-    if (claimed.count !== 1) {
+    const claimed = await tryAcquireTicketClaim(tx, { ticketId, queueId: ticket.queueId, actorId: actor.id });
+    if (!claimed) {
       const current = await tx.ticket.findUnique({
         where: { id: ticketId },
         select: { assignedToId: true, status: true },
@@ -896,7 +860,7 @@ export async function claimTicket(
         recipientId: ticket.queue.managerId,
         ticketId,
         type: NotificationType.TICKET_ASSIGNED,
-        title: "Ticket pris en charge par un agent",
+        title: "Ticket pris en charge",
         body: `${updated.reference} a été pris en charge par ${actor.name}.`,
       });
     }

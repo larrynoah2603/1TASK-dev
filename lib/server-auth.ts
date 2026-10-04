@@ -41,7 +41,7 @@ export class ResourceNotFoundError extends Error {
   }
 }
 
-const userContextInclude = {
+export const userContextInclude = {
   department: { select: { id: true, code: true, name: true, isActive: true } },
   manager: { select: { id: true, name: true, email: true, status: true, departmentId: true } },
   entraManager: { select: { id: true, name: true, email: true, status: true } },
@@ -236,7 +236,7 @@ export function hasPermission(
   const delegatedActionByPermission: Record<string, string> = {
     "ticket:read": "VIEW", "ticket:comment:public": "COMMENT", "ticket:comment:internal": "COMMENT",
     "ticket:update": "PROCESS", "ticket:block": "STATUS", "ticket:resolve": "CLOSE",
-    "ticket:assign": "ASSIGN", "ticket:transfer": "TRANSFER", "ticket:internal-comment": "REPLY",
+    "ticket:assign": "ASSIGN", "ticket:claim": "PROCESS", "ticket:transfer": "TRANSFER", "ticket:internal-comment": "REPLY",
   };
   const delegatedAction = delegatedActionByPermission[permission];
   const intrinsicPermission = user.roleAssignments.some((assignment) =>
