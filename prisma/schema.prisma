@@ -74,6 +74,7 @@ enum TicketStatus {
   RESOLUTION_PENDING
   REOPENED
   CLOSED
+  CANCELLED
 }
 
 enum Priority {
@@ -97,6 +98,7 @@ enum TicketEventType {
   RESOLUTION_SUBMITTED
   REOPENED
   CLOSED
+  CANCELLED
   SLA_ALERT
   SLA_BREACH
   CONFIDENTIAL_ACCESS_GRANTED
@@ -375,6 +377,8 @@ model Department {
   assetMovementsFrom AssetMovement[]          @relation("AssetMovementFromDepartment")
   assetMovementsTo   AssetMovement[]          @relation("AssetMovementToDepartment")
   knowledgeArticles  KnowledgeArticle[]
+  provisionedTriageQueue   Queue?              @relation("ProvisionedDepartmentTriageQueue")
+  provisionedTriageService ServiceCatalogItem? @relation("ProvisionedDepartmentTriageService")
 
   @@index([isActive])
 }
@@ -402,6 +406,8 @@ model Queue {
   isActive          Boolean              @default(true)
   autoAssignment    Boolean              @default(false)
   department        Department           @relation("DepartmentQueues", fields: [departmentId], references: [id], onDelete: Restrict)
+  provisionedTriageDepartmentId String?   @unique
+  provisionedTriageDepartment Department? @relation("ProvisionedDepartmentTriageQueue", fields: [provisionedTriageDepartmentId], references: [id], onDelete: Restrict)
   manager           User?                @relation("QueueManager", fields: [managerId], references: [id], onDelete: SetNull)
   teams             Team[]
   authorizedUsers   User[]               @relation("UserAuthorizedQueue")
@@ -546,6 +552,9 @@ model ServiceCatalogItem {
   confidentialPrimaryRecipient User? @relation("ConfidentialPrimaryRecipient", fields: [confidentialPrimaryRecipientId], references: [id], onDelete: Restrict)
   confidentialSubstitute User? @relation("ConfidentialSubstitute", fields: [confidentialSubstituteId], references: [id], onDelete: Restrict)
   confidentialDelegations ConfidentialDelegation[]
+  provisionedTriageDepartmentId String? @unique
+  provisionedTriageDepartment Department? @relation("ProvisionedDepartmentTriageService", fields: [provisionedTriageDepartmentId], references: [id], onDelete: Restrict)
+  globalTriageConfiguration V1Configuration? @relation("GlobalTriageService")
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
@@ -596,6 +605,19 @@ model SLA {
   tickets              Ticket[]
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
+  triageConfigurations V1Configuration[]    @relation("DefaultTriageSla")
+}
+
+model V1Configuration {
+  id                    String              @id @default("default")
+  globalTriageServiceId String?             @unique
+  defaultTriageSlaId    String?
+  globalTriageService   ServiceCatalogItem? @relation("GlobalTriageService", fields: [globalTriageServiceId], references: [id], onDelete: Restrict)
+  defaultTriageSla      SLA?                @relation("DefaultTriageSla", fields: [defaultTriageSlaId], references: [id], onDelete: Restrict)
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  @@index([defaultTriageSlaId])
 }
 
 model BusinessCalendar {
@@ -813,6 +835,9 @@ model Ticket {
   firstRespondedAt   DateTime?
   resolvedAt         DateTime?
   closedAt           DateTime?
+  cancelledAt        DateTime?
+  cancellationReason String?            @db.Text
+  autoClosureDueAt   DateTime?
   slaPausedAt        DateTime?
   totalPausedMinutes Int                @default(0)
   blockReason        BlockReason?
@@ -854,6 +879,7 @@ model Ticket {
   @@index([assignedToId, status, updatedAt])
   @@index([status, firstResponseDueAt])
   @@index([status, resolutionDueAt])
+  @@index([status, autoClosureDueAt])
   @@index([queueId, createdAt])
   @@index([assignedToId, createdAt])
   @@index([requesterId, createdAt])

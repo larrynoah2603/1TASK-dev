@@ -19,7 +19,7 @@ export type TicketRow = {
   requester: { name: string };
   assignedTo: { name: string } | null;
   serviceCatalogItem: { name: string };
-  slaState: "NONE" | "OK" | "AT_RISK" | "BREACHED" | "PAUSED";
+  slaState: "NONE" | "OK" | "AT_RISK" | "BREACHED" | "PAUSED" | "CONFIRMATION_PENDING" | "CONFIRMATION_DUE";
   slaDueAt: Date | null;
 };
 

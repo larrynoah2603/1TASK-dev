@@ -3,7 +3,7 @@ import { normalizeEntraDepartmentValue } from "@/lib/department-mapping";
 
 describe("provisioning du département Entra", () => {
   it("normalise les accents, la casse et les espaces sans modifier la valeur source", () => {
-    expect(normalizeEntraDepartmentValue("  Expertise   Comptable ")).toBe("expertise comptable");
+    expect(normalizeEntraDepartmentValue("  ÉXPERTISE   Comptable ")).toBe("expertise comptable");
     expect(normalizeEntraDepartmentValue("Ressources Humaines")).toBe("ressources humaines");
   });
 

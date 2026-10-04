@@ -7,6 +7,8 @@ const labels: Record<TicketSlaState, string> = {
   AT_RISK: "À surveiller",
   BREACHED: "Dépassement",
   PAUSED: "En pause",
+  CONFIRMATION_PENDING: "Confirmation en attente",
+  CONFIRMATION_DUE: "Confirmation arrivée à échéance",
 };
 
 const toneByState: Record<TicketSlaState, string> = {
@@ -15,6 +17,8 @@ const toneByState: Record<TicketSlaState, string> = {
   AT_RISK: "sla-indicator-risk",
   BREACHED: "sla-indicator-breached",
   PAUSED: "sla-indicator-paused",
+  CONFIRMATION_PENDING: "sla-indicator-risk",
+  CONFIRMATION_DUE: "sla-indicator-breached",
 };
 
 function formatDate(value: Date) {

@@ -1,5 +1,16 @@
 import { Prisma, RoleCode, TicketEventType, TicketStatus } from "@prisma/client";
 import { appendAuditLog } from "@/lib/audit";
+import type { ProductCapabilities } from "@/lib/product-policy";
+
+export function shouldAutomaticallyAssign(capabilities: ProductCapabilities, queueAutoAssignment: boolean): boolean {
+  return capabilities.autoAssignment && queueAutoAssignment;
+}
+
+export function automaticAssignmentOutcome(candidateId: string | null | undefined, unassignedStatus: TicketStatus) {
+  return candidateId
+    ? { assignedToId: candidateId, status: TicketStatus.ASSIGNED }
+    : { assignedToId: null, status: unassignedStatus };
+}
 
 export async function chooseAutoAssignee(
   db: Prisma.TransactionClient,
@@ -17,7 +28,7 @@ export async function chooseAutoAssignee(
   if (!members.length) return null;
   const counts = await db.ticket.groupBy({
     by: ["assignedToId"],
-    where: { queueId, assignedToId: { in: members.map((member) => member.userId) }, status: { not: TicketStatus.CLOSED } },
+    where: { queueId, assignedToId: { in: members.map((member) => member.userId) }, status: { notIn: [TicketStatus.CLOSED, TicketStatus.CANCELLED] } },
     _count: { _all: true },
   });
   const countByUser = new Map(counts.map((entry) => [entry.assignedToId, entry._count._all]));

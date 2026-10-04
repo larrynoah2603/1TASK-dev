@@ -1,6 +1,6 @@
 import type { TicketPriorityDomain, TicketStatusDomain } from "@/lib/domain/ticket";
 
-export type TicketSlaStateDomain = "NONE" | "OK" | "AT_RISK" | "BREACHED" | "PAUSED";
+export type TicketSlaStateDomain = "NONE" | "OK" | "AT_RISK" | "BREACHED" | "PAUSED" | "CONFIRMATION_PENDING" | "CONFIRMATION_DUE";
 
 export interface TicketListItemDomain {
   id: string;
@@ -19,6 +19,7 @@ export interface TicketListItemDomain {
   firstRespondedAt: Date | null;
   resolutionDueAt: Date | null;
   resolvedAt: Date | null;
+  autoClosureDueAt: Date | null;
   slaPausedAt: Date | null;
   totalPausedMinutes: number;
   slaState: TicketSlaStateDomain;

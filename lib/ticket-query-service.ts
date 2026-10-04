@@ -367,9 +367,10 @@ async function calculateTicketListWhere(actor: UserContext, options: TicketListO
       ? now
       : new Date(now.getTime() + SLA_RISK_WINDOW_MINUTES * 60_000);
     filters.push({
-      status: { notIn: [TicketStatus.CLOSED, TicketStatus.BLOCKED] },
+      status: { notIn: [TicketStatus.CLOSED, TicketStatus.CANCELLED, TicketStatus.BLOCKED] },
       slaPausedAt: null,
       OR: [
+        { status: TicketStatus.RESOLUTION_PENDING, autoClosureDueAt: { not: null, ...(options.sla === "breached" ? { lt: deadline } : { lte: deadline }) } },
         {
           firstResponseDueAt: { not: null, ...(options.sla === "breached" ? { lt: deadline } : { lte: deadline }) },
           firstRespondedAt: null,
@@ -514,6 +515,7 @@ const ticketListSelect = {
   firstRespondedAt: true,
   resolutionDueAt: true,
   resolvedAt: true,
+  autoClosureDueAt: true,
   slaPausedAt: true,
   totalPausedMinutes: true,
  queue: {
@@ -632,7 +634,7 @@ export async function getRequesterTicketSummary(actor: UserContext) {
 
 export async function getOperationalTicketSummary(actor: UserContext) {
   const { actor: current, where } = await buildTicketListWhere(actor, { workQueue: true });
-  const activeWhere: Prisma.TicketWhereInput = { AND: [where, { status: { not: TicketStatus.CLOSED } }] };
+  const activeWhere: Prisma.TicketWhereInput = { AND: [where, { status: { notIn: [TicketStatus.CLOSED, TicketStatus.CANCELLED] } }] };
   const now = new Date();
   const riskDeadline = new Date(now.getTime() + SLA_RISK_WINDOW_MINUTES * 60_000);
   const slaWhere: Prisma.TicketWhereInput = {
@@ -641,6 +643,7 @@ export async function getOperationalTicketSummary(actor: UserContext) {
       { status: { not: TicketStatus.BLOCKED }, slaPausedAt: null },
       {
         OR: [
+          { status: TicketStatus.RESOLUTION_PENDING, autoClosureDueAt: { not: null, lte: riskDeadline } },
           { firstResponseDueAt: { not: null, lte: riskDeadline }, firstRespondedAt: null },
           { resolutionDueAt: { not: null, lte: riskDeadline }, resolvedAt: null, status: { not: TicketStatus.RESOLUTION_PENDING } },
         ],
@@ -669,6 +672,7 @@ export async function getOperationalTicketSummary(actor: UserContext) {
         activeWhere,
         { status: { not: TicketStatus.BLOCKED }, slaPausedAt: null },
         { OR: [
+          { status: TicketStatus.RESOLUTION_PENDING, autoClosureDueAt: { not: null, lt: now } },
           { firstResponseDueAt: { not: null, lt: now }, firstRespondedAt: null },
           { resolutionDueAt: { not: null, lt: now }, resolvedAt: null, status: { not: TicketStatus.RESOLUTION_PENDING } },
         ] },
@@ -677,7 +681,7 @@ export async function getOperationalTicketSummary(actor: UserContext) {
   ]);
   const total = statusCounts.reduce((sum, row) => sum + row._count._all, 0);
   const active = statusCounts
-    .filter((row) => row.status !== TicketStatus.CLOSED)
+    .filter((row) => row.status !== TicketStatus.CLOSED && row.status !== TicketStatus.CANCELLED)
     .reduce((sum, row) => sum + row._count._all, 0);
   const unassigned = assignmentCounts.find((row) => row.assignedToId === null)?._count._all ?? 0;
   const mine = assignmentCounts.find((row) => row.assignedToId === current.id)?._count._all ?? 0;
