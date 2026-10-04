@@ -3,6 +3,7 @@ import { z } from "zod";
 import { errorResponse } from "@/lib/http";
 import { completeMission } from "@/lib/production-service";
 import { requirePermission } from "@/lib/server-auth";
+import { requireProductCapability } from "@/lib/product-policy.server";
 
 const missionIdSchema = z.string().cuid();
 
@@ -12,6 +13,7 @@ export async function POST(
 ) {
   try {
     const actor = await requirePermission("portfolio:manage");
+    requireProductCapability("productionPortfolio");
     const { id } = await context.params;
     const mission = await completeMission(actor, missionIdSchema.parse(id));
     return NextResponse.json(mission);

@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { getProductCapabilities } from "@/lib/product-policy.server";
 import { AdminEmptyState, AdminPageHeader, AdminStatCard } from "@/components/admin-primitives";
 import { STATUS_LABELS } from "@/lib/domain";
 import { getReportingSummary } from "@/lib/reporting-service";
@@ -5,6 +7,7 @@ import { requireAdminAccess } from "@/lib/server-auth";
 
 export default async function AdminReportingPage() {
   const admin = await requireAdminAccess("FUNCTIONAL");
+  if (!getProductCapabilities().productionPortfolio) redirect("/reporting");
   const summary = await getReportingSummary(admin);
   return (
     <div className="space-y-6 admin-reporting-industrial sla-reporting-industrial">

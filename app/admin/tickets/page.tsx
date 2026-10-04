@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { getProductCapabilities } from "@/lib/product-policy.server";
 import Link from "next/link";
 import { TicketTable } from "@/components/ticket-table";
 import { TicketFilters } from "@/components/ticket-filters";
@@ -14,6 +16,7 @@ export default async function AdminTicketsPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const admin = await requireAdminAccess("FUNCTIONAL");
+  if (!getProductCapabilities().productionPortfolio) redirect("/tickets");
   const raw = await searchParams;
   const params = ticketListQuerySchema.parse({ ...raw, scope: "all" });
   const [queues, ticketPage] = await Promise.all([

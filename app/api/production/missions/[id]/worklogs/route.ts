@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/http";
 import { listMissionWorklogsPage } from "@/lib/production-service";
 import { requirePermission } from "@/lib/server-auth";
+import { requireProductCapability } from "@/lib/product-policy.server";
 
 
 export async function GET(
@@ -14,6 +15,7 @@ export async function GET(
   try {
 
     const actor = await requirePermission("portfolio:read");
+    requireProductCapability("productionPortfolio");
 
 
     const { id } =

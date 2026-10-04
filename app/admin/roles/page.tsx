@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { getProductCapabilities } from "@/lib/product-policy.server";
 import { RoleCode } from "@prisma/client";
 import { AdminNotice, AdminPageHeader } from "@/components/admin-primitives";
 import { PermissionMatrix } from "@/components/admin/permission-matrix";
@@ -12,6 +14,7 @@ const matrix = [
 
 export default async function AdminRolesPage() {
   await requireAdminAccess("FUNCTIONAL");
+  if (!getProductCapabilities().productionPortfolio) redirect("/admin/users");
   const roles = Object.values(RoleCode);
   return (
     <div className="space-y-6">

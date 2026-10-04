@@ -27,7 +27,7 @@ import type { ProductCapability } from "@/lib/product-policy";
  * group "account" : administration et paramètres
  * group "mobile"  : présent uniquement dans la barre mobile (déjà accessible via la cloche / le menu utilisateur)
  */
-type AppLink = { href: string; label: string; icon: IconName; group: "main" | "account" | "mobile"; permission?: string; roles?: RoleCode[]; capability?: ProductCapability };
+type AppLink = { href: string; label: string; icon: IconName; group: "main" | "account" | "mobile"; permission?: string; roles?: RoleCode[]; capability?: ProductCapability; hiddenInV1?: boolean };
 
 const links: AppLink[] = [
   { href: "/dashboard", label: "Tableau de bord", icon: "dashboard", group: "main" },
@@ -39,7 +39,7 @@ const links: AppLink[] = [
   { href: "/dossiers", label: "Dossiers", icon: "folder", group: "main", permission: "portfolio:read", capability: "productionPortfolio" },
   { href: "/knowledge", label: "Connaissances", icon: "book", group: "main", permission: "knowledge:read", capability: "knowledge" },
   { href: "/reporting", label: "Reporting", icon: "chart", group: "main", permission: "reporting:read" },
-  { href: "/dashboard/responsible", label: "Pilotage SLA", icon: "clock", group: "main", permission: "reporting:read" },
+  { href: "/dashboard/responsible", label: "Pilotage SLA", icon: "clock", group: "main", permission: "reporting:read", hiddenInV1: true },
   { href: "/my-assets", label: "Mes actifs", icon: "monitor", group: "main" },
   { href: "/assets", label: "Inventaire", icon: "monitor", group: "main", roles: [RoleCode.FUNCTIONAL_ADMIN], capability: "productionPortfolio" },
   { href: "/asset-requests", label: "Demandes d’actifs", icon: "clipboard", group: "main", roles: [RoleCode.FUNCTIONAL_ADMIN], capability: "productionPortfolio" },
@@ -70,7 +70,7 @@ export async function AppShell({ user, children }: { user: UserContext; children
     const roleAllowed = !link.roles || link.roles.some((role) => codes.includes(role));
     const adminAllowed = link.href !== "/admin" || isAdmin;
     const assetsAllowed = link.href !== "/assets" || isFunctionalAssetAdministrator(user);
-    const capabilityAllowed = !link.capability || capabilities[link.capability];
+    const capabilityAllowed = (!link.capability || capabilities[link.capability]) && !(link.hiddenInV1 && !capabilities.productionPortfolio);
     return permissionAllowed && roleAllowed && adminAllowed && assetsAllowed && capabilityAllowed;
   });
   const sections: Array<{ id: "main" | "account"; label: string }> = [

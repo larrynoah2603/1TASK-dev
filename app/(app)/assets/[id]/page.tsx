@@ -6,6 +6,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { isFunctionalAssetAdministrator } from "@/lib/asset-access";
 import { getAssetForViewer, listAssetMoveTargets } from "@/lib/production-service";
 import { getSessionUserContext } from "@/lib/server-auth";
+import { getProductCapabilities } from "@/lib/product-policy.server";
 
 const typeLabels: Record<string, string> = { COMPUTER: "Ordinateur", SCREEN: "Écran", PHONE: "Téléphone", LICENSE: "Licence", OTHER: "Autre" };
 const statusLabels: Record<string, string> = { ACTIVE: "Actif", IN_REPAIR: "En réparation", RETIRED: "Retiré", LOST: "Perdu" };
@@ -13,17 +14,23 @@ function formatDate(value: Date | null | undefined) { return value ? new Intl.Da
 function formatDateTime(value: Date) { return new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" }).format(value); }
 
 export default async function AssetDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const id = (await params).id;
+  if (!getProductCapabilities().productionPortfolio) redirect(`/admin/assets/${id}`);
+  return AssetDetailContent({ id });
+}
+
+export async function AssetDetailContent({ id, basePath = "/assets" }: { id: string; basePath?: string }) {
   const user = await getSessionUserContext();
   if (!user) return null;
   const isFunctionalAdmin = isFunctionalAssetAdministrator(user);
   if (!isFunctionalAdmin) redirect("/dashboard");
   const canManage = true;
   let asset;
-  try { asset = await getAssetForViewer(user, (await params).id); } catch { notFound(); }
+  try { asset = await getAssetForViewer(user, id); } catch { notFound(); }
   if (!asset) notFound();
   const targets = canManage ? await listAssetMoveTargets(user) : { departments: [], users: [] };
 
-  return <div className="space-y-5 assets-page-shell assets-detail-page-shell assets-industrial"><div><Link href={"/assets" as Route} className="text-xs font-semibold operational-link hover:underline">← Retour aux actifs</Link><header className="mt-4 flex flex-col justify-between gap-4 lg:flex-row lg:items-start"><div><p className="eyebrow">Référentiel technique · {asset.assetTag}</p><h1 className="mt-1">{asset.name}</h1><p className="page-header-description mt-1">{typeLabels[asset.type] ?? asset.type}{asset.serialNumber ? ` · N° de série ${asset.serialNumber}` : ""}</p></div><div className="flex flex-wrap items-start gap-2"><span className={`status-chip status-chip-${asset.status.toLowerCase()}`}>{statusLabels[asset.status] ?? asset.status}</span><AssetDetailActions assetId={asset.id} canManage={canManage} departments={targets.departments} users={targets.users} /></div></header></div>
+  return <div className="space-y-5 assets-page-shell assets-detail-page-shell assets-industrial"><div><Link href={basePath as Route} className="text-xs font-semibold operational-link hover:underline">← Retour aux actifs</Link><header className="mt-4 flex flex-col justify-between gap-4 lg:flex-row lg:items-start"><div><p className="eyebrow">Référentiel technique · {asset.assetTag}</p><h1 className="mt-1">{asset.name}</h1><p className="page-header-description mt-1">{typeLabels[asset.type] ?? asset.type}{asset.serialNumber ? ` · N° de série ${asset.serialNumber}` : ""}</p></div><div className="flex flex-wrap items-start gap-2"><span className={`status-chip status-chip-${asset.status.toLowerCase()}`}>{statusLabels[asset.status] ?? asset.status}</span><AssetDetailActions assetId={asset.id} canManage={canManage} departments={targets.departments} users={targets.users} /></div></header></div>
 
     <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><div className="metric-card"><p className="text-[11px] text-slate-500">État</p><p className="mt-1 text-xl font-bold tracking-tight text-slate-900">{statusLabels[asset.status] ?? asset.status}</p><p className="mt-1 text-[11px] text-slate-400">Dernière mise à jour le {formatDate(asset.updatedAt)}</p></div><div className="metric-card"><p className="text-[11px] text-slate-500">Département</p><p className="mt-1 text-xl font-bold tracking-tight text-slate-900">{asset.department?.name ?? "Non rattaché"}</p><p className="mt-1 text-[11px] text-slate-400">Périmètre opérationnel</p></div><div className="metric-card"><p className="text-[11px] text-slate-500">Affectation</p><p className="mt-1 text-xl font-bold tracking-tight text-slate-900">{asset.assignedTo?.name ?? "Non affecté"}</p><p className="mt-1 text-[11px] text-slate-400">{asset.assignedTo?.email ?? "Aucun utilisateur"}</p></div><div className="metric-card"><p className="text-[11px] text-slate-500">Licence</p><p className="mt-1 text-xl font-bold tracking-tight text-slate-900">{formatDate(asset.licenseExpiresAt)}</p><p className="mt-1 text-[11px] text-slate-400">Échéance renseignée</p></div></section>
 

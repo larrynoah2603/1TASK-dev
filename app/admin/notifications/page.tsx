@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { getProductCapabilities } from "@/lib/product-policy.server";
 import { AdminNotificationRulesPanel } from "@/components/admin-notification-rules-panel";
 import { AdminNotice, AdminPageHeader } from "@/components/admin-primitives";
 import { getAdminConfiguration } from "@/lib/admin-service";
@@ -6,6 +8,7 @@ import { requireAdminAccess } from "@/lib/server-auth";
 
 export default async function AdminNotificationsPage() {
   const admin = await requireAdminAccess("FUNCTIONAL");
+  if (!getProductCapabilities().productionPortfolio) redirect("/admin");
   const [configuration, rules] = await Promise.all([
     getAdminConfiguration(admin, ["departments", "queues"]),
     listNotificationRules(admin),

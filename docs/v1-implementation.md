@@ -1,11 +1,12 @@
 # 1TASK V1 — état d’implémentation
 
-> Relevé P00/P01, mis à jour par P02 le 2 octobre 2026. Les éléments **vérifiés** décrivent ce dépôt ; les
+> Relevé P00/P01, mis à jour jusqu’à P09 le 4 octobre 2026. Les éléments **vérifiés** décrivent ce dépôt ; les
 > éléments **proposés** restent à réaliser. Aucun réglage de production n’est déduit du code.
 
 ## Référence vérifiée
 
 - Branche observée : `work`, commit initial `0accc5917440f9e73e615f6c79105d3bd87984d6`, arbre propre avant travaux.
+- Point de départ observé pour P09 : `0e209c8`; aucun travail local non lié n’était présent.
 - Référence d’analyse fournie : `60de73123835386444bed330ffc30e7f6f077323`.
   Les trois commits supplémentaires ne modifiaient que `vercel.json` : les deux jobs cron
   Vercel ont été retirés pour le staging Hobby. Les routes des jobs restent présentes.
@@ -30,15 +31,12 @@ demandes d’actifs. Les tests correspondants sont notamment `identity.test.ts`,
 `sla-monitor-performance.test.ts`, `notification-service.test.ts` et
 `asset-requests.test.ts`.
 
-P02 active désormais un nouvel utilisateur Entra ordinaire comme demandeur lorsque son
-département Graph normalisé possède une correspondance active vers un département actif.
-Sans correspondance, il reste en `PENDING_ASSIGNMENT`. Les autres écarts matériels avec la
-cible V1 sont : l’auto-affectation est active ; le
-portfolio de production, la connaissance, les workflows déclaratifs, `/api/v1`, le push,
-Redis et l’outbox externe existent ; la création confidentielle et les nouveaux uploads
-sont possibles ; `TicketStatus` ne contient pas encore `CANCELLED` et aucune fermeture
-automatique en jours ouvrés n’a été trouvée. Ces constats ne demandent ni suppression de
-données ni suppression des modèles dormants.
+Les phases P01–P09 ont ajouté le profil V1, le provisioning Entra demandeur, le triage
+déterministe, la création simplifiée, `CANCELLED`, la clôture automatique en jours ouvrés,
+la désactivation de l’auto-affectation, le claim borné des responsables et la navigation
+simplifiée. Les modules dormants, tables et routes historiques sont conservés. Restent à
+câbler en P10 les workflows déclaratifs, `/api/v1`, push, Redis, outbox et email externes,
+puis les réparations et parcours d’intégration P11.
 
 ## Frontières actuelles
 
@@ -69,14 +67,13 @@ données ni suppression des modèles dormants.
 | P06 | Terminé | Calculer et surveiller la clôture automatique après cinq durées de jour ouvré configurées. |
 | P07 | Terminé | Désactiver toute auto-affectation en V1 sans effacer la configuration avancée du profil full. |
 | P08 | Terminé | Rendre les responsables de file opérationnels pour le claim et le traitement dans leur périmètre explicite. |
-| P09 | Proposé | Bloquer les nouvelles créations confidentielles/uploads tout en gardant les lectures protégées. |
+| P09 | Terminé | Simplifier la navigation, regrouper le pilotage SLA dans Reporting et déplacer la gestion des actifs sous Administration. |
 | P10 | Proposé | Désactiver côté serveur workflows, `/api/v1`, push, Redis, outbox et email externes. |
 | P11 | Proposé | Réparation additive/idempotente, parcours d’intégration complet et préparation du déploiement. |
 
 P01 définit les capacités destinées aux phases aval dans
-[`lib/product-policy.ts`](../lib/product-policy.ts). P03/P09 câblent
-`confidentialTicketCreation` et `attachmentUploads`; P07 `autoAssignment`; P05
-`manualAssignment`/`claim`; P08 `productionPortfolio`, `knowledge`, `myAssets` et
+[`lib/product-policy.ts`](../lib/product-policy.ts). P09 câble `productionPortfolio`,
+`knowledge`, `myAssets` et
 `assetAdministration`; P10 `workflowDefinitions`, `publicApiV1`, `pushNotifications`,
 `redisCache`, `externalOutboxDelivery` et `externalEmailDelivery`. Les lectures historiques
 confidentielles et de pièces jointes restent soumises à leurs autorisations, jamais à un
@@ -86,8 +83,8 @@ repli de stockage public.
 
 - `npm ci` : réussi (634 paquets, génération Prisma réussie).
 - Tests ciblés P00/P01 : 11 fichiers, 60 tests réussis.
-- `DATABASE_URL=postgresql://localhost/test npm run validate` pendant P08 : réussi ; 89 fichiers et
-  404 tests réussis, 3 fichiers et 10 tests DB ignorés faute de `RUN_DB_TESTS=1`; ESLint
+- `DATABASE_URL=postgresql://localhost/test npm run validate` pendant P09 : réussi ; 90 fichiers et
+  408 tests réussis, 3 fichiers et 10 tests DB ignorés faute de `RUN_DB_TESTS=1`; ESLint
   conserve un avertissement préexistant `@next/next/no-img-element` dans
   `app/(app)/loading.tsx`; typecheck, validation Prisma et build Next.js réussis.
 - `git diff --check` : réussi.
@@ -194,3 +191,17 @@ d’affectation et statut claimable sont relus avant l’update conditionnel. Ce
 ne laisse qu’un gagnant entre agents et responsables concurrents. Après claim, les permissions
 `ticket:process` et `ticket:resolve` permettent le parcours ordinaire vers traitement puis résolution.
 Aucune donnée métier existante n’est modifiée par la migration.
+
+### P09 — navigation, administration et reporting
+
+En V1, la navigation principale est réduite à Tableau de bord, Tickets, Boîte agent, Files,
+Mes actifs et Reporting, toujours filtrés par les rôles et permissions existants. Clients,
+Dossiers, Missions et Connaissances sont masqués et leurs pages/API refusent le profil V1 ;
+les sources et données historiques restent intactes. Les API d’actifs sous `/api/production/assets`
+restent actives et conservent leurs contrôles fonctionnels.
+
+Le pilotage SLA est rendu dans `/reporting` avec les mêmes requêtes bornées et sans données de
+missions. L’ancienne URL `/dashboard/responsible` redirige après le contrôle `reporting:read` et
+conserve ses paramètres. L’inventaire et la revue des demandes sont disponibles sous
+`/admin/assets` et `/admin/asset-requests` depuis des cartes secondaires. Les notifications
+adressées au demandeur pointent vers `/my-assets`, jamais vers la revue administrateur.

@@ -3,6 +3,7 @@ import { errorResponse } from "@/lib/http";
 import { transitionKnowledgeArticle } from "@/lib/knowledge-service";
 import { requirePermission } from "@/lib/server-auth";
 import { knowledgeArticleStatusSchema } from "@/lib/validation";
+import { requireProductCapability } from "@/lib/product-policy.server";
 
 
 export async function PATCH(
@@ -15,6 +16,7 @@ export async function PATCH(
   try {
 
     const actor = await requirePermission("knowledge:manage");
+    requireProductCapability("knowledge");
 
 
     const { id } =

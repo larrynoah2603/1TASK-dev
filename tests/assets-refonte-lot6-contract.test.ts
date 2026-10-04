@@ -30,7 +30,7 @@ describe("lot 6 assets industrial visual contract", () => {
     const detailPage = source("app/(app)/assets/[id]/page.tsx");
 
     expect(list).toContain('fetch("/api/production/assets"');
-    expect(list).toContain("router.push(`/assets/${data.id}`");
+    expect(list).toContain("router.push(`${basePath}/${data.id}`");
     expect(actions).toContain("if (!canManage) return null");
     expect(actions).toContain("fetch(`/api/production/assets/${assetId}/move`");
     expect(detailPage).toContain("getAssetForViewer(user");

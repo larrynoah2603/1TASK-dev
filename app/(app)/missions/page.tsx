@@ -2,10 +2,12 @@ import { redirect } from "next/navigation";
 import { MissionListClient } from "@/components/mission-list-client";
 import { getProductionTimestamp, listMissionsForViewer } from "@/lib/production-service";
 import { getSessionUserContext, permissionCodes } from "@/lib/server-auth";
+import { getProductCapabilities } from "@/lib/product-policy.server";
 
 export default async function MissionsPage() {
   const user = await getSessionUserContext();
   if (!user) return null;
+  if (!getProductCapabilities().productionPortfolio) redirect("/dashboard?error=FeatureDisabled");
   if (!permissionCodes(user).includes("portfolio:read")) redirect("/dashboard");
 
   const missions = await listMissionsForViewer(user);

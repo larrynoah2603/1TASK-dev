@@ -1,9 +1,10 @@
 import Link from "next/link";
 import type { Route } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { PriorityBadge, StatusBadge } from "@/components/status-badge";
 import { getClientForViewer } from "@/lib/production-service";
 import { getSessionUserContext } from "@/lib/server-auth";
+import { getProductCapabilities } from "@/lib/product-policy.server";
 
 const missionStatusLabels: Record<string, string> = { DRAFT: "Brouillon", ACTIVE: "Active", BLOCKED: "Bloquée", COMPLETED: "Terminée", ARCHIVED: "Archivée" };
 function formatDate(value: Date | null | undefined) { return value ? new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" }).format(value) : "Non définie"; }
@@ -12,6 +13,7 @@ function formatMinutes(minutes: number) { const hours = Math.floor(minutes / 60)
 export default async function ClientDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUserContext();
   if (!user) return null;
+  if (!getProductCapabilities().productionPortfolio) redirect("/dashboard?error=FeatureDisabled");
   let result;
   try { result = await getClientForViewer(user, (await params).id); } catch { notFound(); }
   if (!result) notFound();

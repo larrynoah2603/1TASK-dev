@@ -1,10 +1,11 @@
 import Link from "next/link";
 import type { Route } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { MissionDetailActions } from "@/components/mission-detail-actions";
 import { PriorityBadge, StatusBadge } from "@/components/status-badge";
 import { getMissionForViewer, getProductionTimestamp } from "@/lib/production-service";
 import { getSessionUserContext, permissionCodes } from "@/lib/server-auth";
+import { getProductCapabilities } from "@/lib/product-policy.server";
 
 const missionStatusLabels: Record<string, string> = { DRAFT: "Brouillon", ACTIVE: "Active", BLOCKED: "Bloquée", COMPLETED: "Terminée", ARCHIVED: "Archivée" };
 function formatDate(value: Date | null | undefined) { return value ? new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" }).format(value) : "Non définie"; }
@@ -14,6 +15,7 @@ function formatMinutes(minutes: number) { const hours = Math.floor(minutes / 60)
 export default async function MissionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUserContext();
   if (!user) return null;
+  if (!getProductCapabilities().productionPortfolio) redirect("/dashboard?error=FeatureDisabled");
   let mission;
   try { mission = await getMissionForViewer(user, (await params).id); } catch { notFound(); }
   if (!mission) notFound();
