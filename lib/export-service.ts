@@ -61,6 +61,8 @@ export async function exportReportingSummary(actor: UserContext) {
     ["SLA en dépassement", summary.overdue],
     ["Premières réponses dépassées", summary.firstResponseBreached],
     ["Résolutions dépassées", summary.resolutionBreached],
+    ["Confirmations proches de l’échéance", summary.pendingConfirmationDue],
+    ["Confirmations arrivées à échéance", summary.pendingConfirmationOverdue],
     ["Taux clôturé", `${summary.closureRate}%`],
     ...summary.byStatus.map((row) => [`Statut ${STATUS_LABELS[row.status]}`, row.count]),
   ];

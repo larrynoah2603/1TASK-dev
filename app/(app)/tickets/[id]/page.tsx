@@ -161,6 +161,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
             {ticket.requestedService ? <div className="kit-need"><p className="kit-need-label">Besoin saisi par le demandeur</p><p className="kit-need-value">{ticket.requestedService}</p></div> : null}
             <p className="kit-prose">{ticket.description}</p>
             {ticket.status === "CANCELLED" ? <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4"><p className="text-sm font-semibold text-slate-900">Demande annulée</p><p className="mt-1 text-sm text-slate-600">{ticket.cancellationReason}</p></div> : null}
+            {ticket.status === "RESOLUTION_PENDING" && ticket.autoClosureDueAt ? <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4"><p className="text-sm font-semibold text-emerald-900">Résolution en attente de confirmation</p><p className="mt-1 text-sm text-emerald-800">Sans confirmation ou réouverture, ce ticket sera clôturé automatiquement le {formatDate(ticket.autoClosureDueAt)}.</p></div> : null}
           </TicketPanel>
 
           <TicketConversation>

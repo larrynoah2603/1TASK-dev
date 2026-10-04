@@ -16,7 +16,7 @@ import { createInAppNotifications } from "@/lib/notifications";
 import { logServerError } from "@/lib/http";
 import { chooseAutoAssignee, recordAssignment } from "@/lib/ticket-assignment-service";
 import { accessTarget, ticketAccessInclude, ticketSecurityInclude } from "@/lib/ticket-access";
-import { calculateSlaDeadlines } from "@/lib/sla";
+import { calculateAutomaticClosureDeadline, calculateSlaDeadlines } from "@/lib/sla";
 import { queueWorkerIds } from "@/lib/ticket-notification-service";
 import { readServerEnvironment } from "@/lib/env";
 import { V1_CONFIGURATION_ID } from "@/lib/triage-configuration";
@@ -244,6 +244,7 @@ export async function transitionTicket(
       ...ticketAccessInclude,
       requester: true,
       assignedTo: true,
+      sla: { include: { calendar: { include: { holidays: true } } } },
     },
   });
   if (!ticket) throw new DomainError("Ticket introuvable.", 404);
@@ -323,6 +324,24 @@ export async function transitionTicket(
   }
 
   const now = new Date();
+  let automaticClosureDueAt: Date | undefined;
+  if (parsed.status === TicketStatus.RESOLUTION_PENDING) {
+    const calendar = ticket.sla?.calendar;
+    if (!ticket.sla?.isActive || !calendar?.isActive) {
+      throw new DomainError("La clôture automatique nécessite un SLA et un calendrier actifs.", 422);
+    }
+    try {
+      automaticClosureDueAt = calculateAutomaticClosureDeadline(now, {
+        workingDays: calendar.workingDays,
+        workdayStartMinute: calendar.workdayStartMinute,
+        workdayEndMinute: calendar.workdayEndMinute,
+        timezone: calendar.timezone,
+        holidays: calendar.holidays.map((holiday) => holiday.date),
+      });
+    } catch {
+      throw new DomainError("Le calendrier SLA est invalide pour calculer la date de clôture automatique.", 422);
+    }
+  }
   let totalPausedMinutes = ticket.totalPausedMinutes;
   let pauseDurationMinutes = 0;
   if (ticket.status === TicketStatus.BLOCKED && parsed.status !== TicketStatus.BLOCKED && ticket.slaPausedAt) {
@@ -350,6 +369,11 @@ export async function transitionTicket(
         : parsed.status === TicketStatus.REOPENED
           ? null
           : undefined,
+    autoClosureDueAt: parsed.status === TicketStatus.RESOLUTION_PENDING
+      ? automaticClosureDueAt
+      : parsed.status === TicketStatus.REOPENED || parsed.status === TicketStatus.CLOSED
+        ? null
+        : undefined,
     cancelledAt: parsed.status === TicketStatus.CANCELLED ? now : undefined,
     cancellationReason: parsed.status === TicketStatus.CANCELLED ? parsed.reason : undefined,
     closedAt:
@@ -417,6 +441,7 @@ export async function transitionTicket(
           totalPausedMinutes,
           firstResponseDueAt: updated.firstResponseDueAt,
           resolutionDueAt: updated.resolutionDueAt,
+          autoClosureDueAt: updated.autoClosureDueAt,
         },
       },
     });
@@ -438,6 +463,7 @@ export async function transitionTicket(
         totalPausedMinutes,
         firstResponseDueAt: updated.firstResponseDueAt,
         resolutionDueAt: updated.resolutionDueAt,
+        autoClosureDueAt: updated.autoClosureDueAt,
         cancelledAt: updated.cancelledAt,
         cancellationReason: updated.cancellationReason,
       },

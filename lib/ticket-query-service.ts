@@ -370,6 +370,7 @@ async function calculateTicketListWhere(actor: UserContext, options: TicketListO
       status: { notIn: [TicketStatus.CLOSED, TicketStatus.CANCELLED, TicketStatus.BLOCKED] },
       slaPausedAt: null,
       OR: [
+        { status: TicketStatus.RESOLUTION_PENDING, autoClosureDueAt: { not: null, ...(options.sla === "breached" ? { lt: deadline } : { lte: deadline }) } },
         {
           firstResponseDueAt: { not: null, ...(options.sla === "breached" ? { lt: deadline } : { lte: deadline }) },
           firstRespondedAt: null,
@@ -514,6 +515,7 @@ const ticketListSelect = {
   firstRespondedAt: true,
   resolutionDueAt: true,
   resolvedAt: true,
+  autoClosureDueAt: true,
   slaPausedAt: true,
   totalPausedMinutes: true,
  queue: {
@@ -641,6 +643,7 @@ export async function getOperationalTicketSummary(actor: UserContext) {
       { status: { not: TicketStatus.BLOCKED }, slaPausedAt: null },
       {
         OR: [
+          { status: TicketStatus.RESOLUTION_PENDING, autoClosureDueAt: { not: null, lte: riskDeadline } },
           { firstResponseDueAt: { not: null, lte: riskDeadline }, firstRespondedAt: null },
           { resolutionDueAt: { not: null, lte: riskDeadline }, resolvedAt: null, status: { not: TicketStatus.RESOLUTION_PENDING } },
         ],
@@ -669,6 +672,7 @@ export async function getOperationalTicketSummary(actor: UserContext) {
         activeWhere,
         { status: { not: TicketStatus.BLOCKED }, slaPausedAt: null },
         { OR: [
+          { status: TicketStatus.RESOLUTION_PENDING, autoClosureDueAt: { not: null, lt: now } },
           { firstResponseDueAt: { not: null, lt: now }, firstRespondedAt: null },
           { resolutionDueAt: { not: null, lt: now }, resolvedAt: null, status: { not: TicketStatus.RESOLUTION_PENDING } },
         ] },

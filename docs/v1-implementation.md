@@ -66,7 +66,7 @@ données ni suppression des modèles dormants.
 | P03 | Terminé (infrastructure) | Persister une destination globale déterministe et provisionner atomiquement les ressources TRIAGE départementales ; la simplification du formulaire reste bornée à la phase dédiée. |
 | P04 | Terminé | Création V1 objet/description/service facultatif, matching conservateur, repli global et qualification transverse bornée. |
 | P05 | Terminé | Ajouter l’annulation terminale bornée aux demandes précoces, auditée et exclue du travail actif. |
-| P06 | Proposé | Ajouter l’annulation précoce bornée au state machine et auditée. |
+| P06 | Terminé | Calculer et surveiller la clôture automatique après cinq durées de jour ouvré configurées. |
 | P07 | Proposé | Résolution, confirmation demandeur et fermeture automatique en jours ouvrés. |
 | P08 | Proposé | Rendre portfolio/connaissance dormants et déplacer inventaire/revue dans l’admin. |
 | P09 | Proposé | Bloquer les nouvelles créations confidentielles/uploads tout en gardant les lectures protégées. |
@@ -86,8 +86,8 @@ repli de stockage public.
 
 - `npm ci` : réussi (634 paquets, génération Prisma réussie).
 - Tests ciblés P00/P01 : 11 fichiers, 60 tests réussis.
-- `DATABASE_URL=postgresql://localhost/test npm run validate` pendant P04 : réussi ; 87 fichiers et
-  388 tests réussis, 3 fichiers et 10 tests DB ignorés faute de `RUN_DB_TESTS=1`; ESLint
+- `DATABASE_URL=postgresql://localhost/test npm run validate` pendant P04 : réussi ; 88 fichiers et
+  395 tests réussis, 3 fichiers et 10 tests DB ignorés faute de `RUN_DB_TESTS=1`; ESLint
   conserve un avertissement préexistant `@next/next/no-img-element` dans
   `app/(app)/loading.tsx`; typecheck, validation Prisma et build Next.js réussis.
 - `git diff --check` : réussi.
@@ -135,3 +135,27 @@ recherches, historiques et exports, mais sont exclus des files actives, charges 
 calculs SLA. Le taux de clôture utilise explicitement `total - cancelled` comme dénominateur
 et expose les annulations séparément. La migration additive
 `20261003100000_add_cancelled_ticket_status` conserve toutes les données existantes.
+
+
+### P06 — confirmation et clôture automatique
+
+À chaque entrée dans `RESOLUTION_PENDING`, le serveur conserve `resolvedAt` comme date de
+soumission et persiste `autoClosureDueAt`. L’échéance correspond à cinq fois la durée configurée
+d’une journée (`workdayEndMinute - workdayStartMinute`), consommée par le moteur de calendrier
+existant avec jours ouvrés, jours fériés et fuseau. Une réouverture efface cette échéance ; une
+nouvelle résolution la recalcule. Les SLA techniques de résolution et l’attente de confirmation
+restent deux indicateurs distincts.
+
+Le moniteur SLA authentifié exécute également un lot borné de clôtures dues. La mise à jour
+conditionnelle sur le statut et l’échéance rend les jobs superposés et la course avec une
+confirmation/réouverture idempotents. L’événement, l’audit système sans faux utilisateur et la
+notification in-app sont créés dans la même transaction ; aucune livraison externe n’est émise.
+`vercel.json` ne programme actuellement aucun cron sur le profil Hobby : l’exploitation doit
+appeler GET ou POST `/api/jobs/sla-monitor` avec `CRON_SECRET` toutes les cinq minutes. Le retard
+maximal attendu est donc la fréquence choisie plus la durée d’un lot ; aucun planning partagé
+n’est activé par cette phase.
+
+Après migration, exécuter `npm run backfill:auto-closure` en dry-run. `--apply` ne renseigne que
+les tickets dont `resolvedAt`, le SLA et le calendrier sont fiables et dont l’échéance calculée
+est encore future. Les enregistrements incomplets ou déjà échus sont signalés pour revue, sans
+horodatage inventé ni clôture immédiate.

@@ -30,7 +30,7 @@ async function getReportingSummaryUncached(current: UserContext) {
     resolutionDueAt: { not: null, lt: now },
     resolvedAt: null,
   };
-  const [overdue, firstResponseBreached, resolutionBreached, grouped] = await Promise.all([
+  const [overdue, firstResponseBreached, resolutionBreached, pendingConfirmationDue, pendingConfirmationOverdue, grouped] = await Promise.all([
     prisma.ticket.count({
       where: {
         AND: [
@@ -42,6 +42,8 @@ async function getReportingSummaryUncached(current: UserContext) {
     }),
     prisma.ticket.count({ where: { AND: [where, activeSlaWhere, firstResponseBreachedWhere] } }),
     prisma.ticket.count({ where: { AND: [where, activeSlaWhere, resolutionBreachedWhere] } }),
+    prisma.ticket.count({ where: { AND: [where, { status: TicketStatus.RESOLUTION_PENDING, autoClosureDueAt: { not: null, lte: new Date(now.getTime() + 60 * 60_000) } }] } }),
+    prisma.ticket.count({ where: { AND: [where, { status: TicketStatus.RESOLUTION_PENDING, autoClosureDueAt: { not: null, lt: now } }] } }),
     prisma.ticket.groupBy({ by: ["status"], where, _count: { _all: true } }),
   ]);
   const total = grouped.reduce((sum, item) => sum + item._count._all, 0);
@@ -60,6 +62,8 @@ async function getReportingSummaryUncached(current: UserContext) {
     overdue,
     firstResponseBreached,
     resolutionBreached,
+    pendingConfirmationDue,
+    pendingConfirmationOverdue,
     closureRate: completionDenominator ? Math.round((closed / completionDenominator) * 100) : 0,
     byStatus,
   };

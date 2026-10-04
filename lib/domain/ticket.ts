@@ -47,6 +47,7 @@ export interface TicketDomain {
   closedAt: Date | null;
   cancelledAt: Date | null;
   cancellationReason: string | null;
+  autoClosureDueAt: Date | null;
   slaPausedAt: Date | null;
   totalPausedMinutes: number;
   blockReason: TicketBlockReasonDomain | null;

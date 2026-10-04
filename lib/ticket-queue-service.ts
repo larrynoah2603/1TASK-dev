@@ -62,6 +62,7 @@ export async function listVisibleQueues(
             { status: { notIn: [TicketStatus.CLOSED, TicketStatus.CANCELLED, TicketStatus.BLOCKED] }, slaPausedAt: null },
             {
               OR: [
+                { status: TicketStatus.RESOLUTION_PENDING, autoClosureDueAt: { not: null, lte: riskDeadline } },
                 { firstResponseDueAt: { not: null, lte: riskDeadline }, firstRespondedAt: null },
                 {
                   resolutionDueAt: { not: null, lte: riskDeadline },

@@ -837,6 +837,7 @@ model Ticket {
   closedAt           DateTime?
   cancelledAt        DateTime?
   cancellationReason String?            @db.Text
+  autoClosureDueAt   DateTime?
   slaPausedAt        DateTime?
   totalPausedMinutes Int                @default(0)
   blockReason        BlockReason?
@@ -878,6 +879,7 @@ model Ticket {
   @@index([assignedToId, status, updatedAt])
   @@index([status, firstResponseDueAt])
   @@index([status, resolutionDueAt])
+  @@index([status, autoClosureDueAt])
   @@index([queueId, createdAt])
   @@index([assignedToId, createdAt])
   @@index([requesterId, createdAt])

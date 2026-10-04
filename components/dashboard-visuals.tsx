@@ -18,7 +18,7 @@ type DashboardTicket = {
   queue: { name: string; department: { name: string }; manager?: { name: string } | null };
   sourceDepartment?: { name: string } | null;
   serviceCatalogItem?: { name: string } | null;
-  slaState: "NONE" | "OK" | "AT_RISK" | "BREACHED" | "PAUSED";
+  slaState: "NONE" | "OK" | "AT_RISK" | "BREACHED" | "PAUSED" | "CONFIRMATION_PENDING" | "CONFIRMATION_DUE";
   slaDueAt: Date | null;
 };
 

@@ -2,7 +2,7 @@ import { SlaCalculationMode, TicketStatus } from "@prisma/client";
 
 export const SLA_RISK_WINDOW_MINUTES = 60;
 
-export type TicketSlaState = "NONE" | "OK" | "AT_RISK" | "BREACHED" | "PAUSED";
+export type TicketSlaState = "NONE" | "OK" | "AT_RISK" | "BREACHED" | "PAUSED" | "CONFIRMATION_PENDING" | "CONFIRMATION_DUE";
 
 export interface TicketSlaStateResult {
   state: TicketSlaState;
@@ -17,16 +17,20 @@ export function getTicketSlaState(
     firstRespondedAt: Date | null;
     resolvedAt: Date | null;
     slaPausedAt: Date | null;
+    autoClosureDueAt?: Date | null;
   },
   now = new Date(),
 ): TicketSlaStateResult {
   if (input.status === TicketStatus.CLOSED || input.status === TicketStatus.CANCELLED) return { state: "NONE", dueAt: null };
+  if (input.status === TicketStatus.RESOLUTION_PENDING) {
+    const dueAt = input.autoClosureDueAt ?? null;
+    if (!dueAt) return { state: "NONE", dueAt: null };
+    return { state: dueAt <= now ? "CONFIRMATION_DUE" : "CONFIRMATION_PENDING", dueAt };
+  }
 
   const dueDates = [
     !input.firstRespondedAt ? input.firstResponseDueAt : null,
-    input.status !== TicketStatus.RESOLUTION_PENDING && !input.resolvedAt
-      ? input.resolutionDueAt
-      : null,
+    !input.resolvedAt ? input.resolutionDueAt : null,
   ].filter((value): value is Date => value instanceof Date);
 
   if (!dueDates.length) return { state: "NONE", dueAt: null };
@@ -131,18 +135,24 @@ export function addBusinessMinutes(
   minutes: number,
   calendar: BusinessCalendarInput,
 ): Date {
-  if (minutes <= 0) return new Date(start);
-
-  if (
-    !calendar.workingDays.length ||
-    calendar.workdayEndMinute <= calendar.workdayStartMinute
-  ) {
+  const timezone = calendar.timezone ?? "UTC";
+  const validWorkingDays = calendar.workingDays.length > 0 &&
+    new Set(calendar.workingDays).size === calendar.workingDays.length &&
+    calendar.workingDays.every((day) => Number.isInteger(day) && day >= 1 && day <= 7);
+  try {
+    new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(start);
+  } catch {
+    throw new Error("Le fuseau horaire du calendrier SLA est invalide.");
+  }
+  if (!validWorkingDays || !Number.isInteger(calendar.workdayStartMinute) ||
+    !Number.isInteger(calendar.workdayEndMinute) || calendar.workdayStartMinute < 0 ||
+    calendar.workdayEndMinute > 1_440 || calendar.workdayEndMinute <= calendar.workdayStartMinute) {
     throw new Error("Le calendrier SLA est invalide.");
   }
+  if (minutes <= 0) return new Date(start);
 
   let cursor = new Date(start);
   let remainingMs = minutes * 60_000;
-  const timezone = calendar.timezone ?? "UTC";
 
   while (remainingMs > 0) {
     let local = zonedParts(cursor, timezone);
@@ -243,4 +253,12 @@ export function slaProgressPercent(
   if (total <= 0) return 100;
   const elapsed = now.getTime() - start.getTime() - pausedMilliseconds;
   return Math.max(0, Math.min(100, (elapsed / total) * 100));
+}
+
+
+export const AUTOMATIC_CLOSURE_BUSINESS_DAYS = 5;
+
+export function calculateAutomaticClosureDeadline(start: Date, calendar: BusinessCalendarInput): Date {
+  const configuredWorkdayMinutes = calendar.workdayEndMinute - calendar.workdayStartMinute;
+  return addBusinessMinutes(start, AUTOMATIC_CLOSURE_BUSINESS_DAYS * configuredWorkdayMinutes, calendar);
 }
