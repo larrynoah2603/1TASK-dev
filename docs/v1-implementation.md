@@ -67,7 +67,7 @@ données ni suppression des modèles dormants.
 | P04 | Terminé | Création V1 objet/description/service facultatif, matching conservateur, repli global et qualification transverse bornée. |
 | P05 | Terminé | Ajouter l’annulation terminale bornée aux demandes précoces, auditée et exclue du travail actif. |
 | P06 | Terminé | Calculer et surveiller la clôture automatique après cinq durées de jour ouvré configurées. |
-| P07 | Proposé | Résolution, confirmation demandeur et fermeture automatique en jours ouvrés. |
+| P07 | Terminé | Désactiver toute auto-affectation en V1 sans effacer la configuration avancée du profil full. |
 | P08 | Proposé | Rendre portfolio/connaissance dormants et déplacer inventaire/revue dans l’admin. |
 | P09 | Proposé | Bloquer les nouvelles créations confidentielles/uploads tout en gardant les lectures protégées. |
 | P10 | Proposé | Désactiver côté serveur workflows, `/api/v1`, push, Redis, outbox et email externes. |
@@ -75,7 +75,7 @@ données ni suppression des modèles dormants.
 
 P01 définit les capacités destinées aux phases aval dans
 [`lib/product-policy.ts`](../lib/product-policy.ts). P03/P09 câblent
-`confidentialTicketCreation` et `attachmentUploads`; P04 `autoAssignment`; P05
+`confidentialTicketCreation` et `attachmentUploads`; P07 `autoAssignment`; P05
 `manualAssignment`/`claim`; P08 `productionPortfolio`, `knowledge`, `myAssets` et
 `assetAdministration`; P10 `workflowDefinitions`, `publicApiV1`, `pushNotifications`,
 `redisCache`, `externalOutboxDelivery` et `externalEmailDelivery`. Les lectures historiques
@@ -86,8 +86,8 @@ repli de stockage public.
 
 - `npm ci` : réussi (634 paquets, génération Prisma réussie).
 - Tests ciblés P00/P01 : 11 fichiers, 60 tests réussis.
-- `DATABASE_URL=postgresql://localhost/test npm run validate` pendant P04 : réussi ; 88 fichiers et
-  395 tests réussis, 3 fichiers et 10 tests DB ignorés faute de `RUN_DB_TESTS=1`; ESLint
+- `DATABASE_URL=postgresql://localhost/test npm run validate` pendant P07 : réussi ; 89 fichiers et
+  399 tests réussis, 3 fichiers et 10 tests DB ignorés faute de `RUN_DB_TESTS=1`; ESLint
   conserve un avertissement préexistant `@next/next/no-img-element` dans
   `app/(app)/loading.tsx`; typecheck, validation Prisma et build Next.js réussis.
 - `git diff --check` : réussi.
@@ -159,3 +159,21 @@ Après migration, exécuter `npm run backfill:auto-closure` en dry-run. `--apply
 les tickets dont `resolvedAt`, le SLA et le calendrier sont fiables et dont l’échéance calculée
 est encore future. Les enregistrements incomplets ou déjà échus sont signalés pour revue, sans
 horodatage inventé ni clôture immédiate.
+
+
+### P07 — auto-affectation désactivée en V1
+
+La capacité centrale `autoAssignment` protège désormais les deux appels existants : création
+catalogue et qualification. En V1, une file conserve sa valeur `Queue.autoAssignment`, mais
+aucun agent n’est choisi : une création catalogue reste non affectée dans son état initial et
+une qualification aboutit à `TO_ASSIGN`. Le claim, l’affectation manuelle, leurs contrôles de
+périmètre, l’historique, l’audit et les notifications restent inchangés.
+
+L’administration des files affiche l’auto-affectation comme inactive en V1. L’API refuse avec
+la réponse stable `FEATURE_DISABLED` toute tentative de l’activer et préserve la valeur déjà
+stockée lors des autres modifications ; le retour au profil `full` retrouve donc le comportement
+historique. Aucune migration ou réparation de données n’est requise.
+
+Une réactivation future devra séparer les compétences obligatoires des mots-clés de routage,
+ou introduire une rotation concurrente explicitement testée. Aucun nouvel algorithme de rotation
+n’est ajouté dans cette phase.

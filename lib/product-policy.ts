@@ -90,3 +90,16 @@ export function assertProductCapability(
 ): void {
   if (!capabilities[capability]) throw new ProductCapabilityDisabledError(capability);
 }
+
+/** Queue configuration remains stored in V1, but cannot be enabled or overwritten there. */
+export function resolveQueueAutoAssignmentSetting(
+  capabilities: ProductCapabilities,
+  requested: boolean,
+  existing?: boolean,
+): boolean {
+  if (!capabilities.autoAssignment) {
+    if (requested) assertProductCapability(capabilities, "autoAssignment");
+    return existing ?? false;
+  }
+  return requested;
+}

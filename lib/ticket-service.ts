@@ -61,7 +61,8 @@ import { measureServerOperation } from "@/lib/performance";
 import { DomainError } from "@/lib/domain-error";
 import { logServerError } from "@/lib/http";
 import { accessTarget, ticketAccessInclude, ticketSecurityInclude, type AccessTicket } from "@/lib/ticket-access";
-import { chooseAutoAssignee, recordAssignment } from "@/lib/ticket-assignment-service";
+import { automaticAssignmentOutcome, chooseAutoAssignee, recordAssignment, shouldAutomaticallyAssign } from "@/lib/ticket-assignment-service";
+import { resolveProductCapabilities } from "@/lib/product-policy";
 import { notifyQueueWorkers, queueWorkerIds } from "@/lib/ticket-notification-service";
 
 export { addSlaException } from "@/lib/ticket-sla-service";
@@ -128,6 +129,7 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
   }
   ensureActorDepartment(actor);
   const v1Profile = readServerEnvironment().PRODUCT_PROFILE === "v1";
+  const productCapabilities = resolveProductCapabilities(readServerEnvironment().PRODUCT_PROFILE);
   const parsed = (v1Profile ? createV1TicketSchema : createTicketSchema).parse(input);
   if (parsed.creationIdempotencyToken) {
     const existingTicket = await prisma.ticket.findFirst({
@@ -350,12 +352,13 @@ export async function createTicket(actor: UserContext, input: CreateTicketInput)
 
     let autoAssigned = false;
     let autoAssignedUserId: string | null = null;
-    if (!parsed.confidential && routingMode !== "TRIAGE" && service.queue.autoAssignment) {
+    if (!parsed.confidential && routingMode !== "TRIAGE" && shouldAutomaticallyAssign(productCapabilities, service.queue.autoAssignment)) {
       const candidate = await chooseAutoAssignee(tx, routing.queueId, service.keywords);
       if (candidate) {
+        const outcome = automaticAssignmentOutcome(candidate.userId, ticket.status);
         ticket = await tx.ticket.update({
           where: { id: ticket.id },
-          data: { assignedToId: candidate.userId, status: TicketStatus.ASSIGNED },
+          data: outcome,
           include: ticketSecurityInclude,
         });
         await recordAssignment(tx, {

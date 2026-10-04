@@ -14,12 +14,13 @@ import { DomainError } from "@/lib/domain-error";
 import { AuthorizationError, hasPermission, requireCurrentActor, roleCodes, toAccessSubject, type UserContext } from "@/lib/server-auth";
 import { createInAppNotifications } from "@/lib/notifications";
 import { logServerError } from "@/lib/http";
-import { chooseAutoAssignee, recordAssignment } from "@/lib/ticket-assignment-service";
+import { automaticAssignmentOutcome, chooseAutoAssignee, recordAssignment, shouldAutomaticallyAssign } from "@/lib/ticket-assignment-service";
 import { accessTarget, ticketAccessInclude, ticketSecurityInclude } from "@/lib/ticket-access";
 import { calculateAutomaticClosureDeadline, calculateSlaDeadlines } from "@/lib/sla";
 import { queueWorkerIds } from "@/lib/ticket-notification-service";
 import { readServerEnvironment } from "@/lib/env";
 import { V1_CONFIGURATION_ID } from "@/lib/triage-configuration";
+import { resolveProductCapabilities } from "@/lib/product-policy";
 import {
   ticketQualificationSchema,
   transitionTicketSchema,
@@ -117,6 +118,7 @@ export async function qualifyTicket(actor: UserContext, ticketId: string, input:
   }
 
   const v1Profile = readServerEnvironment().PRODUCT_PROFILE === "v1";
+  const productCapabilities = resolveProductCapabilities(readServerEnvironment().PRODUCT_PROFILE);
   const priority = parsed.priority ?? (v1Profile && selectedService ? selectedService.priorityDefault : calculatePriorityFromImpactUrgency(parsed.impact, parsed.urgency));
   const now = new Date();
   const deadlines = selectedService?.sla
@@ -131,11 +133,12 @@ export async function qualifyTicket(actor: UserContext, ticketId: string, input:
     let nextStatus = selectedService ? TicketStatus.TO_ASSIGN : ticket.status;
     let assignedToId: string | null | undefined = selectedService ? null : undefined;
     let assignee: Awaited<ReturnType<typeof chooseAutoAssignee>> = null;
-    if (!v1Profile && selectedService?.queue.autoAssignment) {
+    if (selectedService && shouldAutomaticallyAssign(productCapabilities, selectedService.queue.autoAssignment)) {
       assignee = await chooseAutoAssignee(tx, selectedService.queueId, selectedService.keywords);
       if (assignee) {
-        nextStatus = TicketStatus.ASSIGNED;
-        assignedToId = assignee.userId;
+        const outcome = automaticAssignmentOutcome(assignee.userId, TicketStatus.TO_ASSIGN);
+        nextStatus = outcome.status;
+        assignedToId = outcome.assignedToId;
       }
     }
     const changed = await tx.ticket.updateMany({

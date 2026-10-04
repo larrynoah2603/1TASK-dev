@@ -1,5 +1,16 @@
 import { Prisma, RoleCode, TicketEventType, TicketStatus } from "@prisma/client";
 import { appendAuditLog } from "@/lib/audit";
+import type { ProductCapabilities } from "@/lib/product-policy";
+
+export function shouldAutomaticallyAssign(capabilities: ProductCapabilities, queueAutoAssignment: boolean): boolean {
+  return capabilities.autoAssignment && queueAutoAssignment;
+}
+
+export function automaticAssignmentOutcome(candidateId: string | null | undefined, unassignedStatus: TicketStatus) {
+  return candidateId
+    ? { assignedToId: candidateId, status: TicketStatus.ASSIGNED }
+    : { assignedToId: null, status: unassignedStatus };
+}
 
 export async function chooseAutoAssignee(
   db: Prisma.TransactionClient,

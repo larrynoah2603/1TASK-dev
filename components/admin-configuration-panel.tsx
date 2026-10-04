@@ -26,6 +26,7 @@ type Queue = {
   name: string;
   isActive: boolean;
   provisionedTriageDepartmentId: string | null;
+  autoAssignment: boolean;
   department: Department;
   manager: { id: string; name: string; email: string; status: string } | null;
 };
@@ -101,7 +102,7 @@ function value(form: HTMLFormElement, name: string): string {
   return String((form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement).value);
 }
 
-export function AdminConfigurationPanel({ configuration, sections }: { configuration: AdminConfiguration; sections?: readonly AdminConfigurationSection[] }) {
+export function AdminConfigurationPanel({ configuration, sections, autoAssignmentEnabled = true }: { configuration: AdminConfiguration; sections?: readonly AdminConfigurationSection[]; autoAssignmentEnabled?: boolean }) {
   const router = useRouter();
   const { toast } = useToast();
   const [message, setMessage] = useState("");
@@ -203,11 +204,11 @@ export function AdminConfigurationPanel({ configuration, sections }: { configura
         <Field label="Nom"><input name="name" required className={inputClass} placeholder="Support réseau" /></Field>
         <Field label="Département"><Combobox name="departmentId" required options={[{ value: "", label: "Sélectionner" }, ...configuration.departments.filter((department) => department.isActive).map((department) => ({ value: department.id, label: department.name }))]} /></Field>
         <Field label="Responsable de file"><Combobox name="managerId" options={[{ value: "", label: "Non désigné" }, ...managerUsers.map((user) => ({ value: user.id, label: `${user.name} — ${user.email}` }))]} /></Field>
-        <label className="flex items-center gap-2 self-end text-xs font-semibold text-slate-600"><input type="checkbox" name="autoAssignment" /> Auto-affectation</label>
+        <label className="flex items-center gap-2 self-end text-xs font-semibold text-slate-600"><input type="checkbox" name="autoAssignment" disabled={!autoAssignmentEnabled} /> {autoAssignmentEnabled ? "Auto-affectation" : "Auto-affectation inactive en V1"}</label>
         <Field label="Motif"><input name="reason" required minLength={10} className={inputClass} placeholder="Motif de création…" /></Field>
         <button disabled={busy} aria-busy={busy} className={buttonClass}>{busy ? "Création…" : "Créer la file"}</button>
       </form>
-      <div className="mt-5 grid gap-2 md:grid-cols-2">{configuration.queues.map((queue) => <div key={queue.id} className="rounded-lg bg-slate-50 px-3 py-3 text-sm"><p className="font-semibold">{queue.name} <span className="font-normal text-slate-400">({queue.code})</span></p><p className="mt-1 text-xs text-slate-500">{queue.department.name} · Responsable : {queue.manager?.name ?? "Non désigné"} · {queue.isActive ? "active" : "inactive"}</p><button type="button" disabled={busy} onClick={() => void requestDelete(`/api/admin/queues/${queue.id}`, `${queue.name} (${queue.code})`, "QUEUE", queue.id)} className="button-danger mt-2 min-h-8 px-2 py-1 text-xs">Supprimer</button></div>)}</div>
+      <div className="mt-5 grid gap-2 md:grid-cols-2">{configuration.queues.map((queue) => <div key={queue.id} className="rounded-lg bg-slate-50 px-3 py-3 text-sm"><p className="font-semibold">{queue.name} <span className="font-normal text-slate-400">({queue.code})</span></p><p className="mt-1 text-xs text-slate-500">{queue.department.name} · Responsable : {queue.manager?.name ?? "Non désigné"} · {queue.isActive ? "active" : "inactive"} · Auto-affectation : {autoAssignmentEnabled ? (queue.autoAssignment ? "activée" : "désactivée") : "inactive en V1 (valeur conservée)"}</p><button type="button" disabled={busy} onClick={() => void requestDelete(`/api/admin/queues/${queue.id}`, `${queue.name} (${queue.code})`, "QUEUE", queue.id)} className="button-danger mt-2 min-h-8 px-2 py-1 text-xs">Supprimer</button></div>)}</div>
     </section> : null}
 
     {enabled("teams") ? <section className="panel admin-config-section p-6">

@@ -11,6 +11,8 @@ import { getDeletionImpact, type DeletionEntityType } from "@/lib/services/delet
 import { createInAppNotification } from "@/lib/notifications";
 import { normalizePageSize, toCursorPage, type CursorPageOptions } from "@/lib/cursor-pagination";
 import { provisionDepartmentTriage, V1_CONFIGURATION_ID } from "@/lib/triage-configuration";
+import { resolveProductCapabilities, resolveQueueAutoAssignmentSetting } from "@/lib/product-policy";
+import { readServerEnvironment } from "@/lib/env";
 import {
   requireAdminAccess,
   permissionCodes,
@@ -426,6 +428,8 @@ export async function saveQueue(actor: UserContext, id: string | undefined, inpu
   await requireFunctionalAdminFor(actor, "organization:manage");
   const parsed = queueAdminSchema.parse(input);
   const existing = id ? await prisma.queue.findUnique({ where: { id } }) : null;
+  const capabilities = resolveProductCapabilities(readServerEnvironment().PRODUCT_PROFILE);
+  const persistedAutoAssignment = resolveQueueAutoAssignmentSetting(capabilities, parsed.autoAssignment, existing?.autoAssignment);
   if (id && !existing) throw new AdminServiceError("File introuvable.", 404);
   if (existing?.provisionedTriageDepartmentId) {
     throw new AdminServiceError("Cette file TRIAGE interne est gérée avec son département.", 409);
@@ -438,8 +442,8 @@ export async function saveQueue(actor: UserContext, id: string | undefined, inpu
   await validateManager(parsed.managerId);
   const result = await prisma.$transaction(async (tx) => {
     const queue = existing
-      ? await tx.queue.update({ where: { id }, data: { code: parsed.code, name: parsed.name, departmentId: parsed.departmentId, managerId: parsed.managerId ?? null, autoAssignment: parsed.autoAssignment, isActive: parsed.isActive } })
-      : await tx.queue.create({ data: { code: parsed.code, name: parsed.name, departmentId: parsed.departmentId, managerId: parsed.managerId ?? null, autoAssignment: parsed.autoAssignment, isActive: parsed.isActive } });
+      ? await tx.queue.update({ where: { id }, data: { code: parsed.code, name: parsed.name, departmentId: parsed.departmentId, managerId: parsed.managerId ?? null, autoAssignment: persistedAutoAssignment, isActive: parsed.isActive } })
+      : await tx.queue.create({ data: { code: parsed.code, name: parsed.name, departmentId: parsed.departmentId, managerId: parsed.managerId ?? null, autoAssignment: persistedAutoAssignment, isActive: parsed.isActive } });
     await appendAuditLog(tx, {
       actorId: actor.id,
       action: existing ? "QUEUE_UPDATED" : "QUEUE_CREATED",
