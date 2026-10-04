@@ -36,6 +36,9 @@ export function toTicketDomain(ticket: PrismaTicket): TicketDomain {
     firstRespondedAt: ticket.firstRespondedAt,
     resolvedAt: ticket.resolvedAt,
     closedAt: ticket.closedAt,
+    cancelledAt: ticket.cancelledAt,
+    cancellationReason: ticket.cancellationReason,
+    autoClosureDueAt: ticket.autoClosureDueAt,
     slaPausedAt: ticket.slaPausedAt,
     totalPausedMinutes: ticket.totalPausedMinutes,
     blockReason: ticket.blockReason,
@@ -80,6 +83,8 @@ export function toTicketDTO(ticket: TicketDomain): TicketDTO {
     resolutionDueAt: ticket.resolutionDueAt?.toISOString() ?? null,
     firstRespondedAt: ticket.firstRespondedAt?.toISOString() ?? null,
     resolvedAt: ticket.resolvedAt?.toISOString() ?? null, closedAt: ticket.closedAt?.toISOString() ?? null,
+    cancelledAt: ticket.cancelledAt?.toISOString() ?? null, cancellationReason: ticket.cancellationReason,
+    autoClosureDueAt: ticket.autoClosureDueAt?.toISOString() ?? null,
     slaPausedAt: ticket.slaPausedAt?.toISOString() ?? null, totalPausedMinutes: ticket.totalPausedMinutes,
     blockReason: ticket.blockReason, createdAt: ticket.createdAt.toISOString(), updatedAt: ticket.updatedAt.toISOString(),
   };

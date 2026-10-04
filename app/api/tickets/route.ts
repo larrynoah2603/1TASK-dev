@@ -8,8 +8,10 @@ import { listVisibleTicketsPage } from "@/lib/ticket-query-service";
 import { toTicketListItemDTO } from "@/lib/mappers/ticket.mapper";
 import {
   createTicketSchema,
+  createV1TicketSchema,
   ticketListQuerySchema,
 } from "@/lib/validation";
+import { readServerEnvironment } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -67,7 +69,8 @@ export async function POST(request: Request) {
   try {
     const actor = await requirePermission("ticket:create");
 
-    const body = createTicketSchema.parse(
+    const schema = readServerEnvironment().PRODUCT_PROFILE === "v1" ? createV1TicketSchema : createTicketSchema;
+    const body = schema.parse(
       await request.json()
     );
 

@@ -10,7 +10,7 @@ export async function GET() {
     await requireSessionUserContext();
     const now = new Date();
     const services = await prisma.serviceCatalogItem.findMany({
-      where: { isActive: true, queue: { isActive: true, department: { isActive: true } } },
+      where: { isActive: true, provisionedTriageDepartmentId: null, queue: { isActive: true, department: { isActive: true } } },
       select: {
         id: true,
         code: true,

@@ -16,6 +16,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { ShellNavLink } from "@/components/shell-nav-link";
 import { NewTicketLauncher } from "@/components/new-ticket-launcher";
 import { permissionCodes, roleCodes, toAccessSubject, type UserContext } from "@/lib/server-auth";
+import { getProductCapabilities } from "@/lib/product-policy.server";
+import { readServerEnvironment } from "@/lib/env";
 
 type AdminLink = {
   href: string;
@@ -23,25 +25,28 @@ type AdminLink = {
   icon: IconName;
   permission?: string;
   role: "FUNCTIONAL" | "TECHNICAL" | "ANY";
+  hiddenInV1?: boolean;
 };
 
 const adminLinks: AdminLink[] = [
   { href: "/admin", label: "Vue d’ensemble", icon: "dashboard", role: "ANY" },
   { href: "/admin/users", label: "Utilisateurs", icon: "users", role: "FUNCTIONAL", permission: "organization:manage" },
-  { href: "/admin/roles", label: "Rôles & permissions", icon: "shield", role: "FUNCTIONAL", permission: "organization:manage" },
+  { href: "/admin/roles", label: "Rôles & permissions", icon: "shield", role: "FUNCTIONAL", permission: "organization:manage", hiddenInV1: true },
   { href: "/admin/departments", label: "Départements / Entra", icon: "folder", role: "FUNCTIONAL", permission: "organization:manage" },
   { href: "/admin/queues", label: "Files et responsables", icon: "layers", role: "FUNCTIONAL", permission: "organization:manage" },
-  { href: "/admin/teams", label: "Équipes et agents", icon: "users", role: "FUNCTIONAL", permission: "organization:manage" },
+  { href: "/admin/teams", label: "Équipes et agents", icon: "users", role: "FUNCTIONAL", permission: "organization:manage", hiddenInV1: true },
   { href: "/admin/catalog", label: "Catalogue de services", icon: "book", role: "FUNCTIONAL", permission: "catalog:manage" },
   { href: "/admin/sla", label: "SLA et escalades", icon: "clock", role: "FUNCTIONAL", permission: "sla:manage" },
-  { href: "/admin/notifications", label: "Notifications", icon: "bell", role: "FUNCTIONAL", permission: "organization:manage" },
-  { href: "/admin/tickets", label: "Supervision des tickets", icon: "ticket", role: "FUNCTIONAL", permission: "ticket:read" },
+  { href: "/admin/notifications", label: "Notifications", icon: "bell", role: "FUNCTIONAL", permission: "organization:manage", hiddenInV1: true },
+  { href: "/admin/tickets", label: "Supervision des tickets", icon: "ticket", role: "FUNCTIONAL", permission: "ticket:read", hiddenInV1: true },
   { href: "/admin/audit", label: "Journal d’audit", icon: "shield", role: "FUNCTIONAL", permission: "audit:read" },
-  { href: "/admin/reporting", label: "Reporting autorisé", icon: "chart", role: "FUNCTIONAL", permission: "reporting:read" },
-  { href: "/admin/technical", label: "Configuration technique", icon: "sliders", role: "TECHNICAL", permission: "technical:manage" },
+  { href: "/admin/reporting", label: "Reporting autorisé", icon: "chart", role: "FUNCTIONAL", permission: "reporting:read", hiddenInV1: true },
+  { href: "/admin/technical", label: "Configuration technique", icon: "sliders", role: "TECHNICAL", permission: "technical:manage", hiddenInV1: true },
 ];
 
 export async function AdminShell({ user, children }: { user: UserContext; children: React.ReactNode }) {
+  const capabilities = getProductCapabilities();
+  const profile = readServerEnvironment().PRODUCT_PROFILE;
   const subject = toAccessSubject(user);
   const codes = roleCodes(user);
   const permissions = permissionCodes(user);
@@ -49,7 +54,8 @@ export async function AdminShell({ user, children }: { user: UserContext; childr
   const technical = hasGlobalRole(subject, RoleCode.TECHNICAL_ADMIN);
   const visibleLinks = adminLinks.filter((link) => {
     const roleAllowed = link.role === "ANY" || (link.role === "FUNCTIONAL" ? functional : technical);
-    return roleAllowed && (!link.permission || permissions.includes(link.permission));
+    const profileAllowed = !(link.hiddenInV1 && profile === "v1");
+    return roleAllowed && (!link.permission || permissions.includes(link.permission)) && profileAllowed;
   });
   const roleLabel = codes.map((code) => ROLE_LABELS[code]).join(" · ");
 
@@ -91,7 +97,7 @@ export async function AdminShell({ user, children }: { user: UserContext; childr
       search={<GlobalSearch />}
       actions={
         <>
-          <NewTicketLauncher />
+          <NewTicketLauncher simplified={!capabilities.confidentialTicketCreation && !capabilities.productionPortfolio} />
           <NotificationCenter />
           <span className="kit-hide-mobile"><HelpMenu /></span>
           <span className="kit-hide-mobile"><ThemeToggle /></span>

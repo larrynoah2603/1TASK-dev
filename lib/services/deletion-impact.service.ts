@@ -32,6 +32,7 @@ export async function getDeletionImpact(input: { entityType: DeletionEntityType;
       blocker({ type: "ASSET", label: "Actifs", count: prisma.asset.count({ where: { departmentId: id } }), severity: "BLOCKING", resolution: "REASSIGN", adminPath: `/assets?departmentId=${id}`, protectedHistory: false }),
       blocker({ type: "ASSET_HISTORY", label: "Historique des mouvements d’actifs", count: prisma.assetMovement.count({ where: { OR: [{ fromDepartmentId: id }, { toDepartmentId: id }] } }), severity: "BLOCKING", resolution: "HISTORY_PROTECTED", adminPath: `/assets?departmentId=${id}`, protectedHistory: true }),
       blocker({ type: "KNOWLEDGE", label: "Articles de connaissance", count: prisma.knowledgeArticle.count({ where: { departmentId: id } }), severity: "BLOCKING", resolution: "REASSIGN", adminPath: `/knowledge?departmentId=${id}`, protectedHistory: false }),
+      blocker({ type: "V1_GLOBAL_TRIAGE", label: "Destination globale TRIAGE V1", count: prisma.v1Configuration.count({ where: { globalTriageService: { queue: { departmentId: id } } } }), severity: "BLOCKING", resolution: "REASSIGN", adminPath: "/admin/sla#v1-triage", protectedHistory: false }),
     ]);
   }
   if (input.entityType === "QUEUE") {
@@ -42,11 +43,17 @@ export async function getDeletionImpact(input: { entityType: DeletionEntityType;
       blocker({ type: "TEAM", label: "Équipes", count: prisma.team.count({ where: { queueId: id } }), severity: "BLOCKING", resolution: "REASSIGN", adminPath: `/admin/teams?queueId=${id}`, protectedHistory: false }),
       blocker({ type: "ASSIGNMENT_HISTORY", label: "Historique des affectations", count: prisma.ticketAssignment.count({ where: { queueId: id } }), severity: "BLOCKING", resolution: "HISTORY_PROTECTED", adminPath: `/admin/dependencies/queue/${id}`, protectedHistory: true }),
       blocker({ type: "EVENT_HISTORY", label: "Historique des événements", count: prisma.ticketEvent.count({ where: { queueId: id } }), severity: "BLOCKING", resolution: "HISTORY_PROTECTED", adminPath: `/admin/dependencies/queue/${id}`, protectedHistory: true }),
+      blocker({ type: "V1_GLOBAL_TRIAGE", label: "Destination globale TRIAGE V1", count: prisma.v1Configuration.count({ where: { globalTriageService: { queueId: id } } }), severity: "BLOCKING", resolution: "REASSIGN", adminPath: "/admin/sla#v1-triage", protectedHistory: false }),
+      blocker({ type: "PROVISIONED_TRIAGE", label: "File TRIAGE interne gérée", count: prisma.queue.count({ where: { id, provisionedTriageDepartmentId: { not: null } } }), severity: "BLOCKING", resolution: "DISABLE", adminPath: "/admin/departments", protectedHistory: false }),
     ]);
   }
   if (input.entityType === "CATALOG_ITEM") {
     const entity = await prisma.serviceCatalogItem.findUnique({ where: { id }, select: { name: true } }); if (!entity) return null;
-    return resolve(input.entityType, id, entity.name, [blocker({ type: "TICKET", label: "Tickets historiques", count: prisma.ticket.count({ where: { serviceCatalogItemId: id } }), severity: "BLOCKING", resolution: "HISTORY_PROTECTED", adminPath: `/admin/tickets?serviceCatalogItemId=${id}`, protectedHistory: true })]);
+    return resolve(input.entityType, id, entity.name, [
+      blocker({ type: "TICKET", label: "Tickets historiques", count: prisma.ticket.count({ where: { serviceCatalogItemId: id } }), severity: "BLOCKING", resolution: "HISTORY_PROTECTED", adminPath: `/admin/tickets?serviceCatalogItemId=${id}`, protectedHistory: true }),
+      blocker({ type: "V1_GLOBAL_TRIAGE", label: "Destination globale TRIAGE V1", count: prisma.v1Configuration.count({ where: { globalTriageServiceId: id } }), severity: "BLOCKING", resolution: "REASSIGN", adminPath: "/admin/sla#v1-triage", protectedHistory: false }),
+      blocker({ type: "PROVISIONED_TRIAGE", label: "Service TRIAGE interne géré", count: prisma.serviceCatalogItem.count({ where: { id, provisionedTriageDepartmentId: { not: null } } }), severity: "BLOCKING", resolution: "DISABLE", adminPath: "/admin/departments", protectedHistory: false }),
+    ]);
   }
   if (input.entityType === "TEAM") {
     const entity = await prisma.team.findUnique({ where: { id }, select: { name: true } }); if (!entity) return null;

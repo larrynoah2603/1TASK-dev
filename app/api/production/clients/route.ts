@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/http";
+import { requireProductCapability } from "@/lib/product-policy.server";
 import {
   createClientAccount,
   listClientAccountsPage,
@@ -15,6 +16,7 @@ export async function GET(
   try {
 
     const actor = await requirePermission("portfolio:read");
+    requireProductCapability("productionPortfolio");
 
 
     const searchParams = new URL(request.url).searchParams;
@@ -54,6 +56,7 @@ export async function POST(
   try {
 
     const actor = await requirePermission("portfolio:manage");
+    requireProductCapability("productionPortfolio");
 
 
     const client =

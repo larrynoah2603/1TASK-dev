@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { getProductCapabilities } from "@/lib/product-policy.server";
 import { AdminConfigurationPanel } from "@/components/admin-configuration-panel";
 import { AdminPageHeader } from "@/components/admin-primitives";
 import { getAdminConfiguration } from "@/lib/admin-service";
@@ -5,6 +7,7 @@ import { requireAdminAccess } from "@/lib/server-auth";
 
 export default async function AdminTeamsPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const admin = await requireAdminAccess("FUNCTIONAL");
+  if (!getProductCapabilities().productionPortfolio) redirect("/admin/queues");
   const raw = await searchParams;
   const filter = raw.queueId;
   const configuration = await getAdminConfiguration(admin, ["teams"]);

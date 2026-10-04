@@ -37,7 +37,7 @@ export async function createAssetRequest(actor: UserContext, input: AssetRequest
       body: "Votre demande d’actif a été transmise pour validation.",
       entityType: "ASSET_REQUEST",
       entityId: request.id,
-      actionUrl: "/asset-requests",
+      actionUrl: "/my-assets",
       deduplicationKey: `ASSET_REQUEST:${request.id}`,
     });
     return request;
@@ -85,13 +85,13 @@ export async function reviewAssetRequest(actor: UserContext, requestId: string, 
       if (assignment.count !== 1) throw new AuthorizationError("L’actif vient d’être attribué à un autre utilisateur.");
       await tx.assetMovement.create({ data: { assetId: asset.id, toUserId: request.requesterId, toDepartmentId: asset.departmentId, reason: `Attribution après validation de la demande ${request.id}`, createdById: actor.id } });
       const updated = await tx.assetRequest.update({ where: { id: request.id }, data: { status: AssetRequestStatus.APPROVED, assetId: asset.id, approvedById: actor.id, approvedAt } });
-      await notify(tx, { recipientId: request.requesterId, type: NotificationType.ASSET_APPROVED, severity: "SUCCESS", title: "Demande d’actif approuvée", message: `${asset.name} (${asset.assetTag}) vous a été attribué.`, entityType: "ASSET_REQUEST", entityId: request.id, actionUrl: "/asset-requests", deduplicationKey: `ASSET_APPROVED:${request.id}` });
+      await notify(tx, { recipientId: request.requesterId, type: NotificationType.ASSET_APPROVED, severity: "SUCCESS", title: "Demande d’actif approuvée", message: `${asset.name} (${asset.assetTag}) vous a été attribué.`, entityType: "ASSET_REQUEST", entityId: request.id, actionUrl: "/my-assets", deduplicationKey: `ASSET_APPROVED:${request.id}` });
       await appendAuditLog(tx, { actorId: actor.id, action: "ASSET_REQUEST_APPROVED", objectType: "AssetRequest", objectId: request.id, newValue: { assetId: asset.id, requesterId: request.requesterId }, reason: "Validation et attribution d’un actif." });
       return updated;
     }
 
     const updated = await tx.assetRequest.update({ where: { id: request.id }, data: { status: AssetRequestStatus.REJECTED, rejectedReason: parsed.rejectedReason, approvedById: actor.id, approvedAt: new Date() } });
-    await notify(tx, { recipientId: request.requesterId, type: NotificationType.ASSET_REJECTED, severity: "WARNING", title: "Demande d’actif refusée", message: parsed.rejectedReason, entityType: "ASSET_REQUEST", entityId: request.id, actionUrl: "/asset-requests", deduplicationKey: `ASSET_REJECTED:${request.id}` });
+    await notify(tx, { recipientId: request.requesterId, type: NotificationType.ASSET_REJECTED, severity: "WARNING", title: "Demande d’actif refusée", message: parsed.rejectedReason, entityType: "ASSET_REQUEST", entityId: request.id, actionUrl: "/my-assets", deduplicationKey: `ASSET_REJECTED:${request.id}` });
     await appendAuditLog(tx, { actorId: actor.id, action: "ASSET_REQUEST_REJECTED", objectType: "AssetRequest", objectId: request.id, newValue: { rejectedReason: parsed.rejectedReason }, reason: "Refus motivé d’une demande d’actif." });
     return updated;
   });

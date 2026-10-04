@@ -3,8 +3,14 @@ import { AssetRequestReviewTable } from "@/components/asset-request-review-table
 import { isFunctionalAssetAdministrator } from "@/lib/asset-access";
 import { listAssetRequestsForReview } from "@/lib/asset-request-service";
 import { getSessionUserContext } from "@/lib/server-auth";
+import { getProductCapabilities } from "@/lib/product-policy.server";
 
 export default async function AssetRequestsPage() {
+  if (!getProductCapabilities().productionPortfolio) redirect("/admin/asset-requests");
+  return AssetRequestsContent();
+}
+
+export async function AssetRequestsContent() {
   const user = await getSessionUserContext();
   if (!user || !isFunctionalAssetAdministrator(user)) redirect("/dashboard");
   const { requests, availableAssets } = await listAssetRequestsForReview(user);

@@ -10,6 +10,9 @@ import { deleteCacheKey } from "@/lib/distributed-cache";
 import { getDeletionImpact, type DeletionEntityType } from "@/lib/services/deletion-impact.service";
 import { createInAppNotification } from "@/lib/notifications";
 import { normalizePageSize, toCursorPage, type CursorPageOptions } from "@/lib/cursor-pagination";
+import { provisionDepartmentTriage, V1_CONFIGURATION_ID } from "@/lib/triage-configuration";
+import { resolveProductCapabilities, resolveQueueAutoAssignmentSetting } from "@/lib/product-policy";
+import { readServerEnvironment } from "@/lib/env";
 import {
   requireAdminAccess,
   permissionCodes,
@@ -31,6 +34,7 @@ import {
   teamMemberAdminSchema,
   userStatusAdminSchema,
   userProfileAdminSchema,
+  v1TriageConfigurationSchema,
   type CalendarAdminInput,
   type CatalogAdminInput,
   type HolidayAdminInput,
@@ -44,6 +48,7 @@ import {
   type TeamMemberAdminInput,
   type UserStatusAdminInput,
   type UserProfileAdminInput,
+  type V1TriageConfigurationInput,
 } from "@/lib/validation";
 
 export class AdminServiceError extends Error {
@@ -110,7 +115,7 @@ async function getAdminConfigurationInternal(
   const needsSlaData = selected.has("sla");
   const userPageSize = normalizePageSize(pagination.users?.pageSize, 50);
 
-  const [organizations, departments, queues, teams, users, services, slas, calendars, escalationRules, roles, entraMappings, pendingUsers] = await Promise.all([
+  const [organizations, departments, queues, teams, users, services, slas, calendars, escalationRules, roles, entraMappings, pendingUsers, v1TriageConfiguration] = await Promise.all([
     needsSlaData ? prisma.organization.findMany({ orderBy: { name: "asc" } }) : Promise.resolve([]),
     needsDepartments ? prisma.department.findMany({ orderBy: { name: "asc" } }) : Promise.resolve([]),
     needsQueues ? prisma.queue.findMany({
@@ -191,11 +196,12 @@ async function getAdminConfigurationInternal(
     (selected.has("roles") || selected.has("users") || !sections) ? prisma.role.findMany({ include: { permissions: { include: { permission: true } } }, orderBy: { code: "asc" } }) : Promise.resolve([]),
     selected.has("departments") || !sections ? prisma.entraDepartmentMapping.findMany({ include: { department: true }, orderBy: { externalValue: "asc" } }) : Promise.resolve([]),
     selected.has("departments") || !sections ? prisma.user.findMany({ where: { status: { in: [UserStatus.PENDING_ASSIGNMENT, UserStatus.PENDING_VALIDATION] } }, select: { id: true, name: true, email: true, entraDepartmentValue: true }, orderBy: { createdAt: "asc" } }) : Promise.resolve([]),
+    needs("departments", "queues", "catalog", "sla") ? prisma.v1Configuration.findUnique({ where: { id: V1_CONFIGURATION_ID } }) : Promise.resolve(null),
   ]);
   const userPage = toCursorPage(users, userPageSize);
   return {
     organizations, departments, queues, teams, users: userPage.items, services, slas, calendars,
-    escalationRules, roles, entraMappings, pendingUsers,
+    escalationRules, roles, entraMappings, pendingUsers, v1TriageConfiguration,
     pagination: { users: { pageSize: userPage.pageSize, hasMore: userPage.hasMore, nextCursor: userPage.nextCursor } },
   };
 }
@@ -323,10 +329,17 @@ export async function saveDepartment(actor: UserContext, id: string | undefined,
   const parsed = departmentAdminSchema.parse(input);
   const existing = id ? await prisma.department.findUnique({ where: { id } }) : null;
   if (id && !existing) throw new AdminServiceError("Département introuvable.", 404);
+  if (id && !parsed.isActive) {
+    const configured = await prisma.v1Configuration.count({
+      where: { id: V1_CONFIGURATION_ID, globalTriageService: { queue: { departmentId: id } } },
+    });
+    if (configured) throw new AdminServiceError("Sélectionnez atomiquement un autre triage global avant de désactiver ce département.", 409);
+  }
   const result = await prisma.$transaction(async (tx) => {
     const department = existing
       ? await tx.department.update({ where: { id }, data: { code: parsed.code, name: parsed.name, isActive: parsed.isActive } })
       : await tx.department.create({ data: { code: parsed.code, name: parsed.name, isActive: parsed.isActive } });
+    await provisionDepartmentTriage(tx, department);
     await appendAuditLog(tx, {
       actorId: actor.id,
       action: existing ? "DEPARTMENT_UPDATED" : "DEPARTMENT_CREATED",
@@ -340,6 +353,62 @@ export async function saveDepartment(actor: UserContext, id: string | undefined,
   });
   await deleteCacheKey("catalog:active:v1");
   return result;
+}
+
+export async function saveV1TriageConfiguration(actor: UserContext, input: V1TriageConfigurationInput) {
+  const current = await requireFunctionalAdminFor(actor, "organization:manage");
+  const parsed = v1TriageConfigurationSchema.parse(input);
+  return prisma.$transaction(async (tx) => {
+    if (parsed.defaultTriageSlaId) {
+      const sla = await tx.sLA.findFirst({
+        where: { id: parsed.defaultTriageSlaId, isActive: true, calendar: { isActive: true } },
+        select: { id: true },
+      });
+      if (!sla) throw new AdminServiceError("Le SLA de triage et son calendrier doivent être actifs.", 422);
+    }
+    if (parsed.globalTriageServiceId) {
+      const service = await tx.serviceCatalogItem.findFirst({
+        where: {
+          id: parsed.globalTriageServiceId,
+          provisionedTriageDepartmentId: null,
+          isActive: true,
+          queue: { isActive: true, department: { isActive: true } },
+          sla: { isActive: true, calendar: { isActive: true } },
+        },
+        select: { id: true },
+      });
+      if (!service) throw new AdminServiceError("Le service de triage global doit être entièrement opérationnel.", 422);
+    }
+    const previous = await tx.v1Configuration.findUnique({
+      where: { id: V1_CONFIGURATION_ID },
+      select: { defaultTriageSlaId: true, globalTriageServiceId: true },
+    });
+    const configuration = await tx.v1Configuration.upsert({
+      where: { id: V1_CONFIGURATION_ID },
+      update: {
+        defaultTriageSlaId: parsed.defaultTriageSlaId,
+        globalTriageServiceId: parsed.globalTriageServiceId,
+      },
+      create: {
+        id: V1_CONFIGURATION_ID,
+        defaultTriageSlaId: parsed.defaultTriageSlaId,
+        globalTriageServiceId: parsed.globalTriageServiceId,
+      },
+    });
+    await appendAuditLog(tx, {
+      actorId: current.id,
+      action: "V1_TRIAGE_CONFIGURATION_UPDATED",
+      objectType: "V1Configuration",
+      objectId: configuration.id,
+      oldValue: previous,
+      newValue: {
+        defaultTriageSlaId: configuration.defaultTriageSlaId,
+        globalTriageServiceId: configuration.globalTriageServiceId,
+      },
+      reason: parsed.reason,
+    });
+    return configuration;
+  });
 }
 
 async function validateManager(managerId: string | null | undefined) {
@@ -359,14 +428,22 @@ export async function saveQueue(actor: UserContext, id: string | undefined, inpu
   await requireFunctionalAdminFor(actor, "organization:manage");
   const parsed = queueAdminSchema.parse(input);
   const existing = id ? await prisma.queue.findUnique({ where: { id } }) : null;
+  const capabilities = resolveProductCapabilities(readServerEnvironment().PRODUCT_PROFILE);
+  const persistedAutoAssignment = resolveQueueAutoAssignmentSetting(capabilities, parsed.autoAssignment, existing?.autoAssignment);
   if (id && !existing) throw new AdminServiceError("File introuvable.", 404);
+  if (existing?.provisionedTriageDepartmentId) {
+    throw new AdminServiceError("Cette file TRIAGE interne est gérée avec son département.", 409);
+  }
+  if (id && !parsed.isActive && await prisma.v1Configuration.count({ where: { globalTriageService: { queueId: id } } })) {
+    throw new AdminServiceError("Sélectionnez atomiquement un autre triage global avant de désactiver cette file.", 409);
+  }
   const department = await prisma.department.findFirst({ where: { id: parsed.departmentId, isActive: true }, select: { id: true } });
   if (!department) throw new AdminServiceError("La file doit être rattachée à un département actif.", 422);
   await validateManager(parsed.managerId);
   const result = await prisma.$transaction(async (tx) => {
     const queue = existing
-      ? await tx.queue.update({ where: { id }, data: { code: parsed.code, name: parsed.name, departmentId: parsed.departmentId, managerId: parsed.managerId ?? null, autoAssignment: parsed.autoAssignment, isActive: parsed.isActive } })
-      : await tx.queue.create({ data: { code: parsed.code, name: parsed.name, departmentId: parsed.departmentId, managerId: parsed.managerId ?? null, autoAssignment: parsed.autoAssignment, isActive: parsed.isActive } });
+      ? await tx.queue.update({ where: { id }, data: { code: parsed.code, name: parsed.name, departmentId: parsed.departmentId, managerId: parsed.managerId ?? null, autoAssignment: persistedAutoAssignment, isActive: parsed.isActive } })
+      : await tx.queue.create({ data: { code: parsed.code, name: parsed.name, departmentId: parsed.departmentId, managerId: parsed.managerId ?? null, autoAssignment: persistedAutoAssignment, isActive: parsed.isActive } });
     await appendAuditLog(tx, {
       actorId: actor.id,
       action: existing ? "QUEUE_UPDATED" : "QUEUE_CREATED",
@@ -452,6 +529,12 @@ export async function saveCatalogItem(actor: UserContext, id: string | undefined
   const parsed = catalogAdminSchema.parse(input);
   const existing = id ? await prisma.serviceCatalogItem.findUnique({ where: { id } }) : null;
   if (id && !existing) throw new AdminServiceError("Service du catalogue introuvable.", 404);
+  if (existing?.provisionedTriageDepartmentId) {
+    throw new AdminServiceError("Ce service TRIAGE interne est géré avec son département.", 409);
+  }
+  if (id && !parsed.isActive && await prisma.v1Configuration.count({ where: { globalTriageServiceId: id } })) {
+    throw new AdminServiceError("Sélectionnez atomiquement un autre triage global avant de désactiver ce service.", 409);
+  }
   await validateCatalogReferences(parsed);
   const result = await prisma.$transaction(async (tx) => {
     const service = existing
@@ -499,6 +582,9 @@ export async function saveCalendar(actor: UserContext, id: string | undefined, i
   const parsed = calendarAdminSchema.parse(input);
   const existing = id ? await prisma.businessCalendar.findUnique({ where: { id } }) : null;
   if (id && !existing) throw new AdminServiceError("Calendrier introuvable.", 404);
+  if (id && !parsed.isActive && await prisma.v1Configuration.count({
+    where: { OR: [{ defaultTriageSla: { calendarId: id } }, { globalTriageService: { sla: { calendarId: id } } }] },
+  })) throw new AdminServiceError("Sélectionnez une configuration TRIAGE de remplacement avant de désactiver ce calendrier.", 409);
   const organization = await prisma.organization.findFirst({ where: { id: parsed.organizationId, isActive: true }, select: { id: true } });
   if (!organization) throw new AdminServiceError("Le calendrier doit être rattaché à une organisation active.", 422);
   return prisma.$transaction(async (tx) => {
@@ -566,6 +652,9 @@ export async function saveSla(actor: UserContext, id: string | undefined, input:
   const parsed = slaAdminSchema.parse(input);
   const existing = id ? await prisma.sLA.findUnique({ where: { id } }) : null;
   if (id && !existing) throw new AdminServiceError("SLA introuvable.", 404);
+  if (id && !parsed.isActive && await prisma.v1Configuration.count({
+    where: { OR: [{ defaultTriageSlaId: id }, { globalTriageService: { slaId: id } }] },
+  })) throw new AdminServiceError("Sélectionnez une configuration TRIAGE de remplacement avant de désactiver ce SLA.", 409);
   const calendar = await prisma.businessCalendar.findFirst({ where: { id: parsed.calendarId, isActive: true }, select: { id: true } });
   if (!calendar) throw new AdminServiceError("Le SLA doit être rattaché à un calendrier actif.", 422);
   const result = await prisma.$transaction(async (tx) => {

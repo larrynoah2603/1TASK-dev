@@ -1,8 +1,11 @@
+import { redirect } from "next/navigation";
+import { getProductCapabilities } from "@/lib/product-policy.server";
 import { AdminNotice, AdminPageHeader, AdminStatCard } from "@/components/admin-primitives";
 import { requireAdminAccess } from "@/lib/server-auth";
 
 export default async function AdminTechnicalPage() {
   await requireAdminAccess("TECHNICAL");
+  if (!getProductCapabilities().productionPortfolio) redirect("/admin");
   return (
     <div className="space-y-6">
       <AdminPageHeader eyebrow="Périmètre technique" title="Configuration technique autorisée" description="Cette rubrique est volontairement séparée de la configuration fonctionnelle. Elle ne donne pas accès aux données sensibles des tickets ni à leur historique métier." />

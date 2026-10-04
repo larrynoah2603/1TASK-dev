@@ -7,9 +7,11 @@ import { getAdminUserSummary } from "@/lib/admin-service";
 import { AdminNotice, AdminPageHeader, AdminStatCard } from "@/components/admin-primitives";
 import { AdminDashboard } from "@/components/admin/admin-dashboard";
 import { requireAdminAccess, toAccessSubject } from "@/lib/server-auth";
+import { getProductCapabilities } from "@/lib/product-policy.server";
 
 export default async function AdminDashboardPage() {
   const admin = await requireAdminAccess("ANY");
+  const capabilities = getProductCapabilities();
   const functional = hasGlobalRole(toAccessSubject(admin), RoleCode.FUNCTIONAL_ADMIN);
 
   if (!functional) {
@@ -19,7 +21,7 @@ export default async function AdminDashboardPage() {
           eyebrow="Périmètre technique"
           title="Administration technique"
           description="Votre rôle est limité aux paramètres techniques autorisés. Les tickets, commentaires internes, audits fonctionnels et données confidentielles restent hors de ce périmètre."
-          actions={<Link href={"/admin/technical" as Route} className="button-primary">Voir les paramètres autorisés</Link>}
+          actions={capabilities.productionPortfolio ? <Link href={"/admin/technical" as Route} className="button-primary">Voir les paramètres autorisés</Link> : undefined}
         />
         <AdminNotice tone="warning">L’administrateur technique ne peut pas modifier l’auteur, le statut métier, l’affectation ou l’historique d’un ticket.</AdminNotice>
         <div className="grid gap-4 md:grid-cols-3">
@@ -31,16 +33,18 @@ export default async function AdminDashboardPage() {
     );
   }
 
-  const [userSummary, ticketCount, activeTicketCount, overdueCount, notificationCount, auditCount, departmentCount, teamCount, queueCount] = await Promise.all([
+  const [userSummary, ticketCount, activeTicketCount, overdueCount, notificationCount, auditCount, departmentCount, teamCount, queueCount, assetCount, pendingAssetRequests] = await Promise.all([
     getAdminUserSummary(admin),
     prisma.ticket.count({ where: { confidential: false } }),
-    prisma.ticket.count({ where: { confidential: false, status: { not: TicketStatus.CLOSED } } }),
-    prisma.ticket.count({ where: { confidential: false, status: { not: TicketStatus.CLOSED }, resolutionDueAt: { not: null, lt: new Date() } } }),
+    prisma.ticket.count({ where: { confidential: false, status: { notIn: [TicketStatus.CLOSED, TicketStatus.CANCELLED] } } }),
+    prisma.ticket.count({ where: { confidential: false, status: { notIn: [TicketStatus.CLOSED, TicketStatus.CANCELLED] }, resolutionDueAt: { not: null, lt: new Date() } } }),
     prisma.notificationRule.count({ where: { isActive: true } }),
     prisma.auditLog.count(),
     prisma.department.count({ where: { isActive: true } }),
     prisma.team.count({ where: { isActive: true } }),
     prisma.queue.count({ where: { isActive: true } }),
+    prisma.asset.count(),
+    prisma.assetRequest.count({ where: { status: "PENDING" } }),
   ]);
 
   return (
@@ -59,6 +63,8 @@ export default async function AdminDashboardPage() {
         <AdminStatCard label="Règles notification" value={notificationCount} detail="Règles actives" tone="warning" />
         <AdminStatCard label="Événements d’audit" value={auditCount} detail="Historique conservé" />
       </div>
+
+      {!capabilities.productionPortfolio ? <section className="panel p-5 sm:p-6"><div><p className="eyebrow">Gestion secondaire</p><h2 className="text-lg font-semibold text-slate-900">Actifs</h2><p className="mt-1 text-sm text-slate-600">L’inventaire et les validations restent administrés sans encombrer la navigation principale.</p></div><div className="mt-4 grid gap-3 sm:grid-cols-2"><Link href={"/admin/assets" as Route} className="metric-card"><strong>Inventaire</strong><p>{assetCount} actif(s)</p></Link><Link href={"/admin/asset-requests" as Route} className="metric-card"><strong>Demandes d’actifs</strong><p>{pendingAssetRequests} à traiter</p></Link></div></section> : null}
 
       <section className="panel p-5 sm:p-6">
         <h2 className="text-lg font-semibold text-slate-900">Garde-fous actifs</h2>

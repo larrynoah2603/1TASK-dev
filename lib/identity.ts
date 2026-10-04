@@ -47,7 +47,9 @@ export const PERMISSION_CATALOG = {
   "ticket:reopen": "Rouvrir un ticket avec justification",
   "ticket:assign": "Affecter un ticket dans une file autorisée",
   "ticket:claim": "Prendre en charge un ticket de sa file",
+  "ticket:cancel": "Annuler une demande invalide avant traitement",
   "ticket:transfer": "Transférer un ticket vers une file autorisée",
+  "ticket:qualify:global-triage": "Qualifier un ticket de la file globale vers un service autorisé",
   "ticket:confidential-access": "Accorder un accès nominatif à un ticket confidentiel",
   "ticket:internal-comment": "Ajouter un commentaire interne",
   "ticket:export": "Exporter les tickets non confidentiels autorisés",
@@ -92,8 +94,10 @@ export const ROLE_PERMISSION_CODES: Record<RoleCode, readonly PermissionCode[]> 
     "ticket:comment:public",
     "ticket:comment:internal",
     "ticket:claim",
+    "ticket:cancel",
     "ticket:internal-comment",
     "ticket:process",
+    "ticket:qualify:global-triage",
     "ticket:block",
     "ticket:resolve",
     "portfolio:read",
@@ -109,7 +113,11 @@ export const ROLE_PERMISSION_CODES: Record<RoleCode, readonly PermissionCode[]> 
     "ticket:comment:public",
     "ticket:comment:internal",
     "ticket:assign",
+    "ticket:claim",
+    "ticket:process",
+    "ticket:cancel",
     "ticket:transfer",
+    "ticket:qualify:global-triage",
     "ticket:confidential-access",
     "ticket:internal-comment",
     "ticket:block",
@@ -205,7 +213,8 @@ export function isBootstrapFunctionalAdminEmail(email: string): boolean {
  * Resolves the application status after a Microsoft Entra synchronization.
  * A configured bootstrap administrator is a real Entra user: the first
  * successful sign-in creates/updates that user as ACTIVE and grants the
- * functional-admin role. Other new identities remain pending.
+ * functional-admin role. V1 callers may also activate a narrowly eligible
+ * requester after resolving an active department mapping.
  */
 export function statusAfterEntraSynchronization(input: {
   email: string;
@@ -213,9 +222,16 @@ export function statusAfterEntraSynchronization(input: {
   administrativelyDisabled: boolean;
   firstSynchronization: boolean;
   existingStatus?: UserStatus;
+  v1RequesterProvisioningEligible?: boolean;
 }): UserStatus {
   if (input.accountEnabled === false || input.administrativelyDisabled) {
     return UserStatus.DISABLED;
+  }
+
+  // An existing administrative decision remains authoritative even when the
+  // profile predates Entra synchronization and therefore has no lastSyncedAt.
+  if (input.existingStatus === UserStatus.ACTIVE || input.existingStatus === UserStatus.DISABLED) {
+    return input.existingStatus;
   }
 
   const pendingStatus =
@@ -224,6 +240,13 @@ export function statusAfterEntraSynchronization(input: {
 
   if (
     isBootstrapFunctionalAdminEmail(input.email) &&
+    (input.firstSynchronization || pendingStatus)
+  ) {
+    return UserStatus.ACTIVE;
+  }
+
+  if (
+    input.v1RequesterProvisioningEligible &&
     (input.firstSynchronization || pendingStatus)
   ) {
     return UserStatus.ACTIVE;

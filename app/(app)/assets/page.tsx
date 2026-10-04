@@ -3,8 +3,14 @@ import { AssetListClient } from "@/components/asset-list-client";
 import { isFunctionalAssetAdministrator } from "@/lib/asset-access";
 import { listAssetMoveTargets, listAssetsForViewer } from "@/lib/production-service";
 import { getSessionUserContext } from "@/lib/server-auth";
+import { getProductCapabilities } from "@/lib/product-policy.server";
 
 export default async function AssetsPage() {
+  if (!getProductCapabilities().productionPortfolio) redirect("/admin/assets");
+  return AssetsContent();
+}
+
+export async function AssetsContent({ basePath = "/assets" }: { basePath?: string } = {}) {
   const user = await getSessionUserContext();
   if (!user) return null;
   const isFunctionalAdmin = isFunctionalAssetAdministrator(user);
@@ -15,5 +21,5 @@ export default async function AssetsPage() {
     canManage ? listAssetMoveTargets(user) : Promise.resolve({ departments: [], users: [] }),
   ]);
 
-  return <div className="space-y-5 assets-page-shell assets-industrial"><header className="page-header"><div><p className="eyebrow">Référentiel technique</p><h1 className="mt-1">Actifs</h1><p className="page-header-description mt-1">Suivez les équipements, licences, affectations et états visibles dans votre périmètre.</p></div></header><AssetListClient initialAssets={assets.map((asset) => ({ ...asset, licenseExpiresAt: asset.licenseExpiresAt?.toISOString() ?? null }))} departments={targets.departments} users={targets.users} canManage={canManage} /></div>;
+  return <div className="space-y-5 assets-page-shell assets-industrial"><header className="page-header"><div><p className="eyebrow">Référentiel technique</p><h1 className="mt-1">Actifs</h1><p className="page-header-description mt-1">Suivez les équipements, licences, affectations et états visibles dans votre périmètre.</p></div></header><AssetListClient initialAssets={assets.map((asset) => ({ ...asset, licenseExpiresAt: asset.licenseExpiresAt?.toISOString() ?? null }))} departments={targets.departments} users={targets.users} canManage={canManage} basePath={basePath} /></div>;
 }

@@ -52,7 +52,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
   ]);
   const [dossiers, missions] = portfolioOptions;
 
-  const currentRows = ticketPage.tickets.filter((ticket) => ticket.status !== "CLOSED");
+  const currentRows = ticketPage.tickets.filter((ticket) => ticket.status !== "CLOSED" && ticket.status !== "CANCELLED");
   const claimableTicketIds = currentRows.filter((ticket) => canActorClaimTicket(user, ticket)).map((ticket) => ticket.id);
   const canReport = permissionCodes(user).includes("reporting:read");
   const waiting = currentRows.filter((ticket) => ticket.status === "BLOCKED" || ticket.status === "RESOLUTION_PENDING").length;

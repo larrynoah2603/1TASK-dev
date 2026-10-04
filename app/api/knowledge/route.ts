@@ -4,10 +4,12 @@ import { addWorklog } from "@/lib/production-service";
 import { requirePermission } from "@/lib/server-auth";
 import { productionSearchQuerySchema, worklogSchema } from "@/lib/validation";
 import { listKnowledgeArticlesPage } from "@/lib/knowledge-service";
+import { requireProductCapability } from "@/lib/product-policy.server";
 
 export async function GET(request: Request) {
   try {
     const actor = await requirePermission("knowledge:read");
+    requireProductCapability("knowledge");
     const searchParams = new URL(request.url).searchParams;
     const filters = productionSearchQuerySchema.parse({
       q: searchParams.get("q") ?? undefined,
@@ -32,6 +34,7 @@ export async function POST(
   try {
 
     const actor = await requirePermission("worklog:create");
+    requireProductCapability("knowledge");
 
 
     const worklog =

@@ -4,10 +4,12 @@ import { KnowledgeListClient } from "@/components/knowledge-list-client";
 import { prisma } from "@/lib/db";
 import { listKnowledgeArticles } from "@/lib/knowledge-service";
 import { getSessionUserContext, permissionCodes, roleCodes } from "@/lib/server-auth";
+import { getProductCapabilities } from "@/lib/product-policy.server";
 
 export default async function KnowledgePage() {
   const user = await getSessionUserContext();
   if (!user) return null;
+  if (!getProductCapabilities().knowledge) redirect("/dashboard?error=FeatureDisabled");
   const permissions = permissionCodes(user);
   const canManage = permissions.includes("knowledge:manage");
   if (!permissions.includes("knowledge:read") && !canManage) redirect("/dashboard");

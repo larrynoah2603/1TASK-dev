@@ -18,7 +18,7 @@ type DashboardTicket = {
   queue: { name: string; department: { name: string }; manager?: { name: string } | null };
   sourceDepartment?: { name: string } | null;
   serviceCatalogItem?: { name: string } | null;
-  slaState: "NONE" | "OK" | "AT_RISK" | "BREACHED" | "PAUSED";
+  slaState: "NONE" | "OK" | "AT_RISK" | "BREACHED" | "PAUSED" | "CONFIRMATION_PENDING" | "CONFIRMATION_DUE";
   slaDueAt: Date | null;
 };
 
@@ -302,7 +302,7 @@ function PortfolioMissionWidget({ missions, summary }: { missions: PortfolioMiss
 
 export function ResponsibleDashboard({ queues, summary, tickets, missionSummary, missions = [] }: { queues: QueueSummary[]; summary: ReportingSummary; tickets: DashboardTicket[]; missionSummary?: PortfolioSummary; missions?: PortfolioMission[] }) {
   const healthyRate = summary.total ? Math.max(0, Math.round(((summary.total - summary.overdue) / summary.total) * 100)) : 0;
-  const active = tickets.filter((ticket) => ticket.status !== TicketStatus.CLOSED).length;
+  const active = tickets.filter((ticket) => ticket.status !== TicketStatus.CLOSED && ticket.status !== TicketStatus.CANCELLED).length;
   return (
     <div className="dashboard-responsible-layout">
       <header className="dashboard-hero dashboard-role-hero">
@@ -315,4 +315,9 @@ export function ResponsibleDashboard({ queues, summary, tickets, missionSummary,
       <ResponsibleEscalations tickets={tickets} />
     </div>
   );
+}
+
+/** SLA oversight reused by the V1 reporting destination without production portfolio data. */
+export function ReportingSlaOversight({ queues, summary, tickets }: { queues: QueueSummary[]; summary: ReportingSummary; tickets: DashboardTicket[] }) {
+  return <section className="dashboard-responsible-layout" aria-labelledby="reporting-sla-title"><header className="dashboard-hero dashboard-role-hero"><div><p className="eyebrow">Pilotage opérationnel</p><h2 id="reporting-sla-title">Supervision SLA</h2><p className="page-header-description">Charge des files et alertes dans votre périmètre autorisé.</p></div></header><div className="dashboard-responsible-grid"><SlaPerformanceWidget summary={summary} /><TeamLoadPanel queues={queues} /></div><ResponsibleEscalations tickets={tickets} /></section>;
 }

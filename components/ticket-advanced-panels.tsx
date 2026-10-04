@@ -33,7 +33,7 @@ const LINK_TYPES = [
   { value: "CHILD", label: "Enfant de" },
 ];
 
-type QualificationService = { id: string; code: string; name: string; category: string; queue: { name: string; department: { id: string } } };
+type QualificationService = { id: string; name: string; category: string; queue: { name: string; department: { id: string; name: string } } };
 
 type TicketRef = { id: string; reference: string; title: string; status: string; priority: string };
 type TicketLink = {
@@ -117,11 +117,11 @@ export function TicketAdvancedPanels(props: Props) {
 
   useEffect(() => {
     if (!props.canQualify) return;
-    fetch("/api/catalog", { cache: "no-store" })
-      .then(async (response) => response.ok ? response.json() as Promise<QualificationService[]> : [])
-      .then((services) => setQualificationServices(services.filter((service) => service.queue.department.id === props.targetDepartmentId && !service.code.startsWith("TRIAGE-"))))
+    fetch(`/api/tickets/${props.ticketId}/qualification-options`, { cache: "no-store" })
+      .then(async (response) => response.ok ? response.json() as Promise<{ services: QualificationService[] }> : { services: [] })
+      .then((data) => setQualificationServices(data.services))
       .catch(() => undefined);
-  }, [props.canQualify, props.targetDepartmentId]);
+  }, [props.canQualify, props.ticketId]);
 
   const loadLinks = useCallback(async (force = false) => {
     if ((linksLoaded && !force) || linksLoading) return;
@@ -223,6 +223,11 @@ export function TicketAdvancedPanels(props: Props) {
               toast(data.error ?? "Qualification refusée.", "error");
               return;
             }
+            if (data.accessRetained === false) {
+              toast("Qualification enregistrée. Le ticket appartient désormais à la file de destination.");
+              router.push("/inbox");
+              return;
+            }
             setImpact(data.impact ?? impact);
             setUrgency(data.urgency ?? urgency);
             setPriority(data.priority ?? priority);
@@ -297,7 +302,7 @@ export function TicketAdvancedPanels(props: Props) {
           <p className="eyebrow">Qualification</p>
           <h2 className="mt-1 text-base font-semibold text-slate-900">Impact, urgence et priorité</h2>
           <form onSubmit={submitQualification} className="mt-4 space-y-3">
-            <label className="field-label">Service catalogue de destination<Combobox value={qualificationServiceId} onChange={setQualificationServiceId} options={[{ value: "", label: "Conserver le service et la file actuels" }, ...qualificationServices.map((service) => ({ value: service.id, label: `${service.name} · ${service.category} · ${service.queue.name}` }))]} /></label>
+            <label className="field-label">Service catalogue de destination<Combobox value={qualificationServiceId} onChange={setQualificationServiceId} options={[{ value: "", label: "Conserver le service et la file actuels" }, ...qualificationServices.map((service) => ({ value: service.id, label: `${service.name} · ${service.category} · ${service.queue.department.name} / ${service.queue.name}` }))]} /></label>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="field-label">Impact<Combobox value={impact} onChange={setImpact} options={IMPACTS} /></label>
               <label className="field-label">Urgence<Combobox value={urgency} onChange={setUrgency} options={URGENCIES} /></label>
