@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { AuthorizationError, requireCurrentActor, type UserContext } from "@/lib/server-auth";
 import { appendAuditLog } from "@/lib/audit";
 import { workflowDefinitionSchema, type WorkflowDefinitionInput } from "@/lib/validation";
+import { requireProductCapability } from "@/lib/product-policy.server";
 
 function ensureWorkflowPermission(actor: UserContext) {
   const permissions = actor.roleAssignments.flatMap((assignment) => assignment.role.permissions.map((item) => item.permission.code));
@@ -10,12 +11,14 @@ function ensureWorkflowPermission(actor: UserContext) {
 }
 
 export async function listWorkflowDefinitions(actor: UserContext) {
+  requireProductCapability("workflowDefinitions");
   actor = await requireCurrentActor(actor);
   ensureWorkflowPermission(actor);
   return prisma.workflowDefinition.findMany({ orderBy: [{ entityType: "asc" }, { name: "asc" }, { version: "desc" }] });
 }
 
 export async function saveWorkflowDefinition(actor: UserContext, input: WorkflowDefinitionInput) {
+  requireProductCapability("workflowDefinitions");
   actor = await requireCurrentActor(actor);
   ensureWorkflowPermission(actor);
   const parsed = workflowDefinitionSchema.parse(input);
@@ -29,6 +32,7 @@ export async function saveWorkflowDefinition(actor: UserContext, input: Workflow
 }
 
 export async function publishWorkflowDefinition(actor: UserContext, code: string) {
+  requireProductCapability("workflowDefinitions");
   actor = await requireCurrentActor(actor);
   ensureWorkflowPermission(actor);
   const definition = await prisma.workflowDefinition.findUnique({ where: { code } });

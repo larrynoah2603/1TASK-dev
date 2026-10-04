@@ -1,6 +1,6 @@
 # 1TASK V1 — état d’implémentation
 
-> Relevé P00/P01, mis à jour jusqu’à P09 le 4 octobre 2026. Les éléments **vérifiés** décrivent ce dépôt ; les
+> Relevé P00/P01, mis à jour jusqu’à P11 le 4 octobre 2026. Les éléments **vérifiés** décrivent ce dépôt ; les
 > éléments **proposés** restent à réaliser. Aucun réglage de production n’est déduit du code.
 
 ## Référence vérifiée
@@ -31,12 +31,12 @@ demandes d’actifs. Les tests correspondants sont notamment `identity.test.ts`,
 `sla-monitor-performance.test.ts`, `notification-service.test.ts` et
 `asset-requests.test.ts`.
 
-Les phases P01–P09 ont ajouté le profil V1, le provisioning Entra demandeur, le triage
+Les phases P01–P10 ont ajouté le profil V1, le provisioning Entra demandeur, le triage
 déterministe, la création simplifiée, `CANCELLED`, la clôture automatique en jours ouvrés,
 la désactivation de l’auto-affectation, le claim borné des responsables et la navigation
-simplifiée. Les modules dormants, tables et routes historiques sont conservés. Restent à
-câbler en P10 les workflows déclaratifs, `/api/v1`, push, Redis, outbox et email externes,
-puis les réparations et parcours d’intégration P11.
+simplifiée, puis les gardes des fonctionnalités dormantes. Les modules dormants, tables et
+routes historiques sont conservés. P11 ne change pas le modèle métier : il audite la livraison,
+consigne les preuves reproductibles et fixe les conditions de passage en staging.
 
 ## Frontières actuelles
 
@@ -68,8 +68,8 @@ puis les réparations et parcours d’intégration P11.
 | P07 | Terminé | Désactiver toute auto-affectation en V1 sans effacer la configuration avancée du profil full. |
 | P08 | Terminé | Rendre les responsables de file opérationnels pour le claim et le traitement dans leur périmètre explicite. |
 | P09 | Terminé | Simplifier la navigation, regrouper le pilotage SLA dans Reporting et déplacer la gestion des actifs sous Administration. |
-| P10 | Proposé | Désactiver côté serveur workflows, `/api/v1`, push, Redis, outbox et email externes. |
-| P11 | Proposé | Réparation additive/idempotente, parcours d’intégration complet et préparation du déploiement. |
+| P10 | Terminé | Désactiver côté serveur workflows, `/api/v1`, push, Redis, outbox et email externes. |
+| P11 | Terminé (préparation, GO conditionnel) | Matrice d’acceptation auditée et runbook de release ; les contrôles Entra, navigateur et fixtures PostgreSQL restent des portes de staging tant qu’ils ne sont pas exécutés. |
 
 P01 définit les capacités destinées aux phases aval dans
 [`lib/product-policy.ts`](../lib/product-policy.ts). P09 câble `productionPortfolio`,
@@ -205,3 +205,39 @@ missions. L’ancienne URL `/dashboard/responsible` redirige après le contrôle
 conserve ses paramètres. L’inventaire et la revue des demandes sont disponibles sous
 `/admin/assets` et `/admin/asset-requests` depuis des cartes secondaires. Les notifications
 adressées au demandeur pointent vers `/my-assets`, jamais vers la revue administrateur.
+# Politique des fonctionnalités dormantes (P10)
+
+Le déploiement V1 doit définir `PRODUCT_PROFILE=v1`. La base PostgreSQL,
+NextAuth, Microsoft Entra ID, le domaine autorisé et `CRON_SECRET` restent
+obligatoires en production. Redis, Web Push, Microsoft Graph Mail et la
+livraison outbox externe sont inactifs : leurs variables peuvent être absentes
+ou contenir une ancienne configuration partielle sans empêcher le démarrage.
+Le profil `full` conserve la validation stricte de chaque ensemble de variables.
+
+En V1, l’API `/api/v1`, les définitions de workflow déclaratives, les nouveaux
+uploads, les nouveaux tickets confidentiels et l’activation de délégations
+confidentielles sont refusés côté serveur. Le moteur d’état des tickets, les
+SLA, les notifications dans l’application, les lectures autorisées de pièces
+jointes historiques et la révocation des délégations existantes restent actifs.
+Les jobs SLA/fermeture automatique restent planifiés. Le job outbox exige
+toujours son secret mais répond par un résultat vide sans acquérir de lignes ni
+initialiser de fournisseur.
+
+Les lignes outbox historiques en attente sont conservées telles quelles. Avant
+toute réactivation ou tout passage au profil `full`, un opérateur doit examiner
+explicitement destinataires, autorisations courantes, ancienneté et impact de
+chaque ligne ; aucun rejeu global automatique ne doit être effectué.
+
+## P11 — acceptation intégrée et préparation de release
+
+La matrice de 25 contrôles et le statut exact de leurs preuves se trouvent dans
+[`v1-acceptance-matrix.md`](./v1-acceptance-matrix.md). Le runbook opératoire, y compris
+l’ordre des migrations, les deux dry-runs, l’activation staging, la surveillance et les
+frontières de rollback, se trouve dans [`v1-release-runbook.md`](./v1-release-runbook.md).
+
+La revue P11 n’autorise pas un déploiement à elle seule. Une exécution PostgreSQL isolée des
+deux fixtures (base fraîche et copie d’upgrade synthétique), une session Entra de test et la
+revue desktop/mobile doivent encore produire leurs artefacts dans l’environnement de staging.
+Un test unitaire ou contractuel est indiqué comme tel dans la matrice et n’est jamais présenté
+comme une preuve navigateur ou infrastructure. Aucun seed, migration ou script de réparation
+n’a été exécuté sur une base partagée pendant cette phase.

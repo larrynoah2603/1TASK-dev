@@ -11,7 +11,7 @@ import { getDeletionImpact, type DeletionEntityType } from "@/lib/services/delet
 import { createInAppNotification } from "@/lib/notifications";
 import { normalizePageSize, toCursorPage, type CursorPageOptions } from "@/lib/cursor-pagination";
 import { provisionDepartmentTriage, V1_CONFIGURATION_ID } from "@/lib/triage-configuration";
-import { resolveProductCapabilities, resolveQueueAutoAssignmentSetting } from "@/lib/product-policy";
+import { assertProductCapability, resolveProductCapabilities, resolveQueueAutoAssignmentSetting } from "@/lib/product-policy";
 import { readServerEnvironment } from "@/lib/env";
 import {
   requireAdminAccess,
@@ -529,6 +529,14 @@ export async function saveCatalogItem(actor: UserContext, id: string | undefined
   const parsed = catalogAdminSchema.parse(input);
   const existing = id ? await prisma.serviceCatalogItem.findUnique({ where: { id } }) : null;
   if (id && !existing) throw new AdminServiceError("Service du catalogue introuvable.", 404);
+  const changesConfidentialConfiguration = existing
+    ? parsed.allowConfidentialTickets !== existing.allowConfidentialTickets ||
+      (parsed.confidentialPrimaryRecipientId ?? null) !== existing.confidentialPrimaryRecipientId ||
+      (parsed.confidentialSubstituteId ?? null) !== existing.confidentialSubstituteId
+    : parsed.allowConfidentialTickets || Boolean(parsed.confidentialPrimaryRecipientId || parsed.confidentialSubstituteId);
+  if (changesConfidentialConfiguration) {
+    assertProductCapability(resolveProductCapabilities(readServerEnvironment().PRODUCT_PROFILE), "confidentialTicketCreation");
+  }
   if (existing?.provisionedTriageDepartmentId) {
     throw new AdminServiceError("Ce service TRIAGE interne est géré avec son département.", 409);
   }

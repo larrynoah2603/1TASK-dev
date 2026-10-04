@@ -22,6 +22,9 @@ describe("livraison des notifications e-mail par Microsoft Graph", () => {
     vi.clearAllMocks();
     resetMicrosoftGraphTokenCacheForTests();
     vi.stubEnv("DATABASE_URL", "postgresql://user:pass@localhost:5432/1task");
+    // This suite exercises the dormant provider itself. Keep it independent from
+    // the profile selected by the parent validation command.
+    vi.stubEnv("PRODUCT_PROFILE", "full");
     vi.stubEnv("NEXTAUTH_URL", "https://1task.example.com");
     vi.stubEnv("MICROSOFT_MAIL_TENANT_ID", "mail-tenant");
     vi.stubEnv("MICROSOFT_MAIL_CLIENT_ID", "mail-client");

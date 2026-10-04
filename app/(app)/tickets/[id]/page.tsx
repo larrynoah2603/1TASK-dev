@@ -19,6 +19,7 @@ import { TicketSidebarActions } from "@/components/tickets/detail/ticket-sidebar
 import { Avatar } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icons";
 import { formatRelativeActivityDate } from "@/components/activity-icon";
+import { getProductCapabilities } from "@/lib/product-policy.server";
 import { Timeline, type TimelineItem } from "@/components/ui/timeline";
 
 const eventLabels: Record<string, string> = {
@@ -65,6 +66,7 @@ function assignmentMode(metadata: unknown) {
 }
 
 export default async function TicketDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const capabilities = getProductCapabilities();
   const user = await getSessionUserContext();
   if (!user) return null;
   const { id: ticketId } = await params;
@@ -189,7 +191,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
             resolutionDueAt={ticket.resolutionDueAt?.toISOString() ?? null}
             canQualify={operational && ticket.status !== "CLOSED" && ticket.status !== "CANCELLED"}
             canManageSla={actionContext.canTransfer && ticket.status !== "CLOSED" && ticket.status !== "CANCELLED"}
-            canUpload={actionContext.canPostPublic}
+            canUpload={capabilities.attachmentUploads && actionContext.canPostPublic}
             canLink={operational && ticket.status !== "CLOSED" && ticket.status !== "CANCELLED"}
           />
         </div>
@@ -262,7 +264,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
             resolutionDueAt={ticket.resolutionDueAt?.toISOString() ?? null}
             canQualify={operational && ticket.status !== "CLOSED" && ticket.status !== "CANCELLED"}
             canManageSla={actionContext.canTransfer && ticket.status !== "CLOSED" && ticket.status !== "CANCELLED"}
-            canUpload={actionContext.canPostPublic}
+            canUpload={capabilities.attachmentUploads && actionContext.canPostPublic}
             canLink={operational && ticket.status !== "CLOSED" && ticket.status !== "CANCELLED"}
           />
         </aside>
