@@ -2,6 +2,11 @@ import { Priority, TicketType, type Prisma } from "@prisma/client";
 
 export const V1_CONFIGURATION_ID = "default";
 
+export const TRIAGE_TRANSACTION_OPTIONS = {
+  maxWait: 10_000,
+  timeout: 15_000,
+} as const;
+
 export class TriageConfigurationError extends Error {
   readonly statusCode = 409;
 
