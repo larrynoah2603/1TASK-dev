@@ -107,6 +107,18 @@ describe("bootstrap administrateur 1TASK", () => {
     expect(PERMISSION_CATALOG["catalog:propose"]).toBeDefined();
   });
 
+  it("garde le catalogue de rôles cohérent et le responsable de file opérationnel", () => {
+    for (const permissions of Object.values(ROLE_PERMISSION_CODES)) {
+      for (const permission of permissions) {
+        expect(PERMISSION_CATALOG[permission]).toBeDefined();
+      }
+    }
+
+    expect(ROLE_PERMISSION_CODES[RoleCode.QUEUE_MANAGER]).toEqual(
+      expect.arrayContaining(["ticket:claim", "ticket:process"]),
+    );
+  });
+
   it("réserve les permissions Actifs à l’administrateur fonctionnel", () => {
     expect(ROLE_PERMISSION_CODES[RoleCode.FUNCTIONAL_ADMIN]).toContain("asset:read");
     expect(ROLE_PERMISSION_CODES[RoleCode.FUNCTIONAL_ADMIN]).toContain("asset:manage");
