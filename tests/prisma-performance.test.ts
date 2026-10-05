@@ -193,7 +193,7 @@ describe("contrats de performance Prisma", () => {
     expect(dossier).toContain("select:");
     expect(dossier).not.toContain("include:");
     expect(dossier).toContain("_count: { select: { tickets: { where: ticketVisibility }, worklogs: true } }");
-    expect(dossier).toContain("tickets: {\n        where: ticketVisibility");
+    expect(dossier).toMatch(/tickets:\s*\{\s*where:\s*ticketVisibility,/);
     expect(client).toContain("visibleTicketWhere(actor)");
     expect(client).toContain("select:");
     expect(client).not.toContain("include:");
