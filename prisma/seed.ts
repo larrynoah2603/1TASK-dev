@@ -1,67 +1,28 @@
 import { PrismaClient, Priority, RoleCode, ScopeType, TicketType, UserStatus } from "@prisma/client";
 import { normalizeEntraDepartmentValue } from "@/lib/department-mapping";
-import { ROLE_DESCRIPTIONS, ROLE_LABELS } from "@/lib/identity";
+import { PERMISSION_CATALOG, ROLE_DESCRIPTIONS, ROLE_LABELS, ROLE_PERMISSION_CODES } from "@/lib/identity";
 
 const prisma = new PrismaClient();
 
-const permissionCatalog = [
-  ["ticket:create", "Créer un ticket"],
-  ["ticket:create:cross-department", "Créer un ticket vers une file d’un autre département"],
-  ["ticket:read", "Lire les tickets autorisés"],
-  ["ticket:update", "Modifier un ticket autorisé"],
-  ["ticket:comment:public", "Ajouter un commentaire public"],
-  ["ticket:comment:internal", "Ajouter un commentaire interne"],
-  ["ticket:process", "Démarrer et poursuivre le traitement"],
-  ["ticket:block", "Bloquer ou mettre un ticket en attente"],
-  ["ticket:resolve", "Soumettre une résolution"],
-  ["ticket:confirm-resolution", "Confirmer une résolution"],
-  ["ticket:reopen", "Rouvrir un ticket avec justification"],
-  ["ticket:assign", "Affecter un ticket dans une file autorisée"],
-  ["ticket:claim", "Prendre en charge un ticket de sa file"],
-  ["ticket:transfer", "Transférer un ticket vers une file autorisée"],
-  ["ticket:confidential-access", "Accorder un accès nominatif à un ticket confidentiel"],
-  ["ticket:internal-comment", "Ajouter un commentaire interne"],
-  ["ticket:export", "Exporter les tickets non confidentiels autorisés"],
-  ["catalog:manage", "Administrer le catalogue"],
-  ["catalog:propose", "Proposer un nouveau service catalogue"],
-  ["organization:manage", "Administrer l’organisation"],
-  ["role:manage", "Administrer les rôles et les droits"],
-  ["entra-department:manage", "Gérer les correspondances Entra-département"],
-  ["user:validate", "Valider le provisioning d’un utilisateur"],
-  ["sla:manage", "Administrer les SLA et calendriers"],
-  ["reporting:read", "Lire les indicateurs autorisés"],
-  ["reporting:export", "Exporter les indicateurs autorisés"],
-  ["audit:read", "Lire le journal d’audit"],
-  ["technical:manage", "Gérer la configuration technique autorisée"],
-] as const;
-
 async function main() {
-  for (const [code, description] of permissionCatalog) {
+  for (const [code, description] of Object.entries(PERMISSION_CATALOG)) {
     await prisma.permission.upsert({ where: { code }, update: { description }, create: { code, description } });
   }
 
   const permissionIds = Object.fromEntries((await prisma.permission.findMany()).map((permission) => [permission.code, permission.id]));
-  const rolePermissions: Record<RoleCode, string[]> = {
-    REQUESTER: ["ticket:create", "ticket:create:cross-department", "ticket:read", "ticket:update", "ticket:comment:public", "ticket:confirm-resolution", "ticket:reopen"],
-    AGENT: ["ticket:create:cross-department", "ticket:read", "ticket:update", "ticket:comment:public", "ticket:comment:internal", "ticket:claim", "ticket:internal-comment", "ticket:process", "ticket:block", "ticket:resolve", "catalog:propose"],
-    QUEUE_MANAGER: ["ticket:create:cross-department", "ticket:read", "ticket:update", "ticket:comment:public", "ticket:comment:internal", "ticket:assign", "ticket:transfer", "ticket:confidential-access", "ticket:internal-comment", "ticket:block", "ticket:resolve", "ticket:export", "reporting:read", "catalog:propose"],
-    FUNCTIONAL_ADMIN: permissionCatalog.map(([code]) => code),
-    TECHNICAL_ADMIN: ["technical:manage"],
-    REPORTING_READER: ["reporting:read", "reporting:export"],
-  };
   for (const code of Object.values(RoleCode)) {
     const role = await prisma.role.upsert({
       where: { code },
       update: { name: ROLE_LABELS[code], description: ROLE_DESCRIPTIONS[code] },
       create: { code, name: ROLE_LABELS[code], description: ROLE_DESCRIPTIONS[code] },
     });
-    const desiredPermissionIds = rolePermissions[code]
+    const desiredPermissionIds = ROLE_PERMISSION_CODES[code]
       .map((permissionCode) => permissionIds[permissionCode])
       .filter((permissionId): permissionId is string => Boolean(permissionId));
     await prisma.rolePermission.deleteMany({
       where: { roleId: role.id, permissionId: { notIn: desiredPermissionIds } },
     });
-    for (const permissionCode of rolePermissions[code]) {
+    for (const permissionCode of ROLE_PERMISSION_CODES[code]) {
       const permissionId = permissionIds[permissionCode];
       if (permissionId) await prisma.rolePermission.upsert({ where: { roleId_permissionId: { roleId: role.id, permissionId } }, update: {}, create: { roleId: role.id, permissionId } });
     }
