@@ -57,7 +57,7 @@ import {
   type TicketLinkInput,
 } from "@/lib/validation";
 import { matchCatalogService, routeTicketFromCatalog, type CatalogCandidate } from "@/lib/routing";
-import { assertOperationalGlobalTriage } from "@/lib/triage-configuration";
+import { assertOperationalGlobalTriage, V1_CONFIGURATION_ID } from "@/lib/triage-configuration";
 import { resolveConfidentialRecipient } from "@/lib/confidential-ticket-service";
 import { measureServerOperation } from "@/lib/performance";
 import { DomainError } from "@/lib/domain-error";
@@ -164,10 +164,20 @@ export async function createTicket(actor: UserContext, input: unknown) {
     escalationRules: { where: { isActive: true }, select: { id: true, thresholdPercent: true, targetRole: true } },
   } satisfies Prisma.ServiceCatalogItemInclude;
 
+  const configuredGlobalTriageServiceId = v1Profile
+    ? (await prisma.v1Configuration.findUnique({
+        where: { id: V1_CONFIGURATION_ID },
+        select: { globalTriageServiceId: true },
+      }))?.globalTriageServiceId ?? null
+    : null;
+
   let matchedBy: "catalog-id" | "keyword" | "name" | "category" | "text" = "catalog-id";
   let routingMode: "CATALOG" | "AUTO_CATALOG" | "TRIAGE" = "CATALOG";
   let service: Prisma.ServiceCatalogItemGetPayload<{ include: typeof serviceInclude }> | null | undefined;
   if (parsed.serviceCatalogItemId) {
+    if (v1Profile && parsed.serviceCatalogItemId === configuredGlobalTriageServiceId) {
+      throw new DomainError("Le service de triage global est réservé au routage automatique.", 422);
+    }
     service = await prisma.serviceCatalogItem.findFirst({
       where: { id: parsed.serviceCatalogItemId, isActive: true, provisionedTriageDepartmentId: null, queue: { isActive: true, department: { isActive: true } } },
       include: serviceInclude,
@@ -177,6 +187,7 @@ export async function createTicket(actor: UserContext, input: unknown) {
       where: {
         isActive: true,
         provisionedTriageDepartmentId: null,
+        ...(v1Profile && configuredGlobalTriageServiceId ? { id: { not: configuredGlobalTriageServiceId } } : {}),
         queue: { isActive: true, ...(v1Profile ? {} : { departmentId: targetDepartment?.id }), department: { isActive: true } },
       },
       include: serviceInclude,
