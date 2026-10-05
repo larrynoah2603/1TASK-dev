@@ -15,9 +15,15 @@ concurrency:
 
 jobs:
   validate:
-    name: Validate application
+    name: Validate application (${{ matrix.product_profile }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        product_profile:
+          - full
+          - v1
 
     services:
       postgres:
@@ -35,6 +41,7 @@ jobs:
           --health-retries 10
 
     env:
+      PRODUCT_PROFILE: ${{ matrix.product_profile }}
       DATABASE_URL: postgresql://ticketing:ticketing@localhost:5432/ticketing_test?schema=public
       RUN_DB_TESTS: "1"
       NEXTAUTH_URL: http://localhost:3000
