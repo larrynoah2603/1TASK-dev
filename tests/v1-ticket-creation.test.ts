@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { Priority, TicketType } from "@prisma/client";
 import { describe, expect, it } from "vitest";
 import { matchCatalogService, routeTicketFromCatalog } from "@/lib/routing";
@@ -12,6 +14,15 @@ const services = [
 ];
 
 describe("création V1 à trois champs", () => {
+  it("ne pré-valide pas puis ne revalide pas le payload V1 transformé", () => {
+    const route = readFileSync(resolve(process.cwd(), "app/api/tickets/route.ts"), "utf8");
+    const service = readFileSync(resolve(process.cwd(), "lib/ticket-service.ts"), "utf8");
+    expect(route).toContain("const body = await request.json();");
+    expect(route).not.toContain("createV1TicketSchema");
+    expect(route).not.toContain("createTicketSchema.parse");
+    expect(service).toContain('const parsed = (v1Profile ? createV1TicketSchema : createTicketSchema).parse(input);');
+  });
+
   it("accepte objet et description avec un service facultatif et applique les défauts serveur", () => {
     expect(createV1TicketSchema.parse(base)).toMatchObject({ confidential: false, impact: "MEDIUM", urgency: "MEDIUM" });
     expect(createV1TicketSchema.parse({ ...base, serviceCatalogItemId: id }).serviceCatalogItemId).toBe(id);

@@ -124,7 +124,7 @@ function requireAdministrativeReason(actor: UserContext, reason: string | undefi
   }
 }
 
-export async function createTicket(actor: UserContext, input: CreateTicketInput) {
+export async function createTicket(actor: UserContext, input: unknown) {
   actor = await requireCurrentActor(actor);
   if (!hasPermission(actor, "ticket:create")) {
     throw new AuthorizationError("La permission de créer un ticket n’est pas accordée.");
