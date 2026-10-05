@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Combobox } from "@/components/combobox";
 import { useToast } from "@/components/toast-provider";
 
-type Service = { id: string; name: string; category: string };
+type Service = { id: string; name: string; category: string; queue: { name: string; department: { name: string } } };
 const token = () => `web-${crypto.randomUUID().replace(/[^A-Za-z0-9_-]/g, "")}`;
 
 export function V1TicketForm({ onCancel }: { onCancel?: () => void }) {
@@ -80,7 +80,7 @@ export function V1TicketForm({ onCancel }: { onCancel?: () => void }) {
     {error ? <div role="alert" aria-live="assertive" className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
     <label className="field-label">Objet<input required minLength={5} maxLength={180} value={title} onChange={(event) => setTitle(event.target.value)} className="field-control" /></label>
     <label className="field-label">Description<textarea required minLength={15} maxLength={20_000} value={description} onChange={(event) => setDescription(event.target.value)} className="field-control min-h-40" /></label>
-    <label className="field-label">Service <span className="font-normal text-slate-400">(facultatif)</span><Combobox value={serviceCatalogItemId} onChange={setServiceCatalogItemId} options={[{ value: "", label: "Détection automatique" }, ...services.map((service) => ({ value: service.id, label: `${service.name} · ${service.category}` }))]} /></label>
+    <label className="field-label">Service <span className="font-normal text-slate-400">(facultatif)</span><Combobox value={serviceCatalogItemId} onChange={setServiceCatalogItemId} options={[{ value: "", label: "Détection automatique" }, ...services.map((service) => ({ value: service.id, label: `${service.queue.department.name} — ${service.name} · ${service.queue.name}` }))]} /></label>
     <div className="form-actions flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end"><button type="button" disabled={submitting} onClick={() => onCancel ? onCancel() : router.back()} className="button-secondary">Annuler</button><button type="submit" disabled={submitting || title.trim().length < 5 || description.trim().length < 15} className="button-primary">{submitting ? "Création du ticket…" : "Créer le ticket"}</button></div>
   </form>;
 }

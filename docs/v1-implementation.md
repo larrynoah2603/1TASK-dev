@@ -110,6 +110,36 @@ n’est pas valide, le routage V1 échoue explicitement au lieu de choisir un d�
 convention. Le retour arrière applicatif conserve les colonnes et ressources ajoutées ; il
 ne supprime ni tickets, ni affectations, ni identifiants historiques.
 
+### Règle opérationnelle — département, file, équipe et catalogue
+
+La V1 considère la **file** comme frontière opérationnelle principale. Un service métier du
+catalogue route vers une file active ; les équipes et leurs agents sont rattachés à cette file.
+Lorsqu'un périmètre doit être isolé d'un autre, il doit utiliser une file dédiée plutôt que deux
+équipes partageant la même file. Exemple recommandé :
+
+```text
+Département Informatique
+├── File Support réseau
+│   ├── Équipe Admin & Réseau
+│   └── Services Wi-Fi / Internet / VPN
+├── File Support applicatif
+│   ├── Équipe Applications
+│   └── Services accès / logiciel
+└── TRIAGE Informatique (ressources internes provisionnées)
+```
+
+Le demandeur conserve l'accès à son propre ticket. Les agents travaillent dans les files atteintes
+par leurs équipes actives ; un responsable de file explicitement borné peut superviser, claim et
+affecter dans sa file. Le rôle REQUESTER conserve `ticket:create:cross-department` : un salarié
+peut donc sélectionner un service d'un autre département ou d'une autre file du même département,
+sans acquérir pour autant de droit de lecture ou de traitement sur la destination.
+
+Le service configuré comme **triage global** est une destination technique de secours. En V1 il
+n'est ni affiché dans le catalogue du demandeur ni accepté comme sélection explicite par l'API.
+Il reste utilisable par le serveur lorsque le demandeur laisse le service en détection automatique
+et qu'aucune correspondance métier fiable n'est trouvée. Les ressources TRIAGE départementales
+provisionnées restent également internes et ne figurent pas dans le catalogue demandeur.
+
 ### P04 — création et qualification
 
 Le profil V1 accepte uniquement l’objet, la description, un service facultatif et le jeton

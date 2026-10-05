@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireSessionUserContext } from "@/lib/server-auth";
 import { errorResponse } from "@/lib/http";
+import { readServerEnvironment } from "@/lib/env";
+import { V1_CONFIGURATION_ID } from "@/lib/triage-configuration";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +11,13 @@ export async function GET() {
   try {
     await requireSessionUserContext();
     const now = new Date();
+    const v1Profile = readServerEnvironment().PRODUCT_PROFILE === "v1";
+    const globalTriageServiceId = v1Profile
+      ? (await prisma.v1Configuration.findUnique({
+          where: { id: V1_CONFIGURATION_ID },
+          select: { globalTriageServiceId: true },
+        }))?.globalTriageServiceId ?? null
+      : null;
     const services = await prisma.serviceCatalogItem.findMany({
       where: { isActive: true, provisionedTriageDepartmentId: null, queue: { isActive: true, department: { isActive: true } } },
       select: {
@@ -59,7 +68,7 @@ export async function GET() {
     });
     return NextResponse.json(
       services
-        .filter((service) => service.sla?.isActive && service.sla.calendar.isActive)
+        .filter((service) => service.sla?.isActive && service.sla.calendar.isActive && service.id !== globalTriageServiceId)
         .map((service) => {
           const activeDelegation = service.confidentialDelegations[0];
           const effective = activeDelegation?.substitute ?? service.confidentialPrimaryRecipient;

@@ -14,6 +14,18 @@ const services = [
 ];
 
 describe("création V1 à trois champs", () => {
+  it("réserve le service global au fallback et affiche les services métier avec leur destination", () => {
+    const catalogRoute = readFileSync(resolve(process.cwd(), "app/api/catalog/route.ts"), "utf8");
+    const form = readFileSync(resolve(process.cwd(), "components/v1-ticket-form.tsx"), "utf8");
+    const ticketService = readFileSync(resolve(process.cwd(), "lib/ticket-service.ts"), "utf8");
+
+    expect(catalogRoute).toContain("service.id !== globalTriageServiceId");
+    expect(form).toContain("service.queue.department.name");
+    expect(form).toContain("service.queue.name");
+    expect(ticketService).toContain("Le service de triage global est réservé au routage automatique.");
+    expect(ticketService).toContain("id: { not: configuredGlobalTriageServiceId }");
+  });
+
   it("ne pré-valide pas puis ne revalide pas le payload V1 transformé", () => {
     const route = readFileSync(resolve(process.cwd(), "app/api/tickets/route.ts"), "utf8");
     const service = readFileSync(resolve(process.cwd(), "lib/ticket-service.ts"), "utf8");

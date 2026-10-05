@@ -9,12 +9,12 @@ cette revue sont consignées dans le compte-rendu de PR.
 |---:|---|---|---|
 | 1 | Entra mappé crée un REQUESTER actif, de façon idempotente | `tests/entra-provisioning.integration.test.ts` | Automatisé PostgreSQL ; staging Entra requis |
 | 2 | Création V1 limitée à objet, description et service facultatif | `tests/v1-ticket-creation.test.ts`, `tests/validation.test.ts` | Automatisé |
-| 3 | Service éligible route vers sa file ; sinon triage global déterministe | `tests/routing.test.ts`, `tests/triage-configuration.test.ts` | Automatisé |
+| 3 | Service métier éligible route vers sa file ; le triage global reste caché/réservé au fallback automatique | `tests/routing.test.ts`, `tests/triage-configuration.test.ts`, `tests/v1-ticket-creation.test.ts` | Automatisé ; catalogue navigateur staging requis |
 | 4 | Claim concurrent, traitement, résolution et confirmation demandeur | `tests/claim.test.ts`, `tests/ticket-business-journeys.test.ts` | Automatisé par services ; parcours UI staging requis |
 | 5 | Département Entra inconnu reste en attente sans droit élevé | `tests/entra-provisioning.integration.test.ts`, `tests/identity.test.ts` | Automatisé PostgreSQL |
 | 6 | Ajout explicite du mapping active au prochain sync valide | `tests/entra-provisioning.integration.test.ts` | Automatisé PostgreSQL ; Entra réel requis |
 | 7 | Qualification transverse vers un service éligible | `tests/routing.test.ts`, `tests/ticket-department-routing-contract.test.ts` | Automatisé |
-| 8 | Personnel origine/destination non autorisé ne peut pas lire | `tests/visibility.test.ts`, `tests/access-control.test.ts` | Automatisé |
+| 8 | Personnel hors file/équipe autorisée ne peut pas lire ; le demandeur garde son propre ticket | `tests/visibility.test.ts`, `tests/access-control.test.ts` | Automatisé ; cloisonnement multi-files staging requis |
 | 9 | Responsable de file sans rôle AGENT claim et traite seulement sa portée | `tests/claim.test.ts`, `tests/ticket-action-options.test.ts` | Automatisé |
 | 10 | Annulation précoce exige un motif et résiste aux états périmés | `tests/ticket-cancellation.test.ts` | Automatisé |
 | 11 | CANCELLED est exclu du travail actif et des métriques SLA | `tests/ticket-cancellation.test.ts`, `tests/reporting-service.test.ts` | Automatisé |
