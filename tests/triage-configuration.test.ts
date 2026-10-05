@@ -3,6 +3,7 @@ import {
   assertOperationalGlobalTriage,
   provisionDepartmentTriage,
   TriageConfigurationError,
+  TRIAGE_TRANSACTION_OPTIONS,
   triageResourceCodes,
 } from "@/lib/triage-configuration";
 
@@ -28,6 +29,10 @@ function transactionMock() {
 }
 
 describe("infrastructure TRIAGE V1", () => {
+  it("utilise une fenêtre de transaction compatible avec PostgreSQL distant", () => {
+    expect(TRIAGE_TRANSACTION_OPTIONS).toEqual({ maxWait: 10_000, timeout: 15_000 });
+  });
+
   it("crée une file et un service internes avec des codes stables indépendants du renommage", async () => {
     const tx = transactionMock();
     await provisionDepartmentTriage(tx as never, department);
