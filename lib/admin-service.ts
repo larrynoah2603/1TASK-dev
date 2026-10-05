@@ -10,7 +10,7 @@ import { deleteCacheKey } from "@/lib/distributed-cache";
 import { getDeletionImpact, type DeletionEntityType } from "@/lib/services/deletion-impact.service";
 import { createInAppNotification } from "@/lib/notifications";
 import { normalizePageSize, toCursorPage, type CursorPageOptions } from "@/lib/cursor-pagination";
-import { provisionDepartmentTriage, V1_CONFIGURATION_ID } from "@/lib/triage-configuration";
+import { provisionDepartmentTriage, TRIAGE_TRANSACTION_OPTIONS, V1_CONFIGURATION_ID } from "@/lib/triage-configuration";
 import { assertProductCapability, resolveProductCapabilities, resolveQueueAutoAssignmentSetting } from "@/lib/product-policy";
 import { readServerEnvironment } from "@/lib/env";
 import {
@@ -350,7 +350,7 @@ export async function saveDepartment(actor: UserContext, id: string | undefined,
       reason: parsed.reason,
     });
     return department;
-  });
+  }, TRIAGE_TRANSACTION_OPTIONS);
   await deleteCacheKey("catalog:active:v1");
   return result;
 }
@@ -408,7 +408,7 @@ export async function saveV1TriageConfiguration(actor: UserContext, input: V1Tri
       reason: parsed.reason,
     });
     return configuration;
-  });
+  }, TRIAGE_TRANSACTION_OPTIONS);
 }
 
 async function validateManager(managerId: string | null | undefined) {

@@ -1,5 +1,5 @@
 import { prisma } from "../lib/db";
-import { provisionDepartmentTriage, triageResourceCodes } from "../lib/triage-configuration";
+import { provisionDepartmentTriage, TRIAGE_TRANSACTION_OPTIONS, triageResourceCodes } from "../lib/triage-configuration";
 
 const apply = process.argv.includes("--apply");
 
@@ -46,7 +46,7 @@ async function main() {
           reason: "Réparation idempotente des ressources TRIAGE V1.",
         },
       });
-    });
+    }, TRIAGE_TRANSACTION_OPTIONS);
     results.push({ departmentId: department.id, action: linkedQueue && linkedService ? "UPDATED" : "CREATED" });
   }
   process.stdout.write(`${JSON.stringify({ mode: apply ? "apply" : "dry-run", results }, null, 2)}\n`);

@@ -31,7 +31,7 @@ npm run backfill:auto-closure
 
 Depuis l’administration minimale, créer organisation, calendrier, SLA, départements, mappings
 Entra et destination globale. Le dry-run TRIAGE doit énumérer les ressources à créer sans écrire.
-Appliquer ensuite `npm run repair:v1-triage -- --apply`, refaire le dry-run (zéro modification),
+Appliquer ensuite `npm run repair:v1-triage:apply`, refaire le dry-run (zéro modification),
 puis configurer `V1Configuration.globalTriageServiceId`. Ne pas utiliser le seed de démonstration.
 
 ## 3. Validation d’upgrade (fixture B)
