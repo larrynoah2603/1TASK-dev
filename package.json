@@ -24,6 +24,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "repair:v1-triage": "tsx scripts/repair-v1-triage.ts",
+    "repair:v1-triage:apply": "tsx scripts/repair-v1-triage.ts --apply",
     "pretypecheck": "npm run clean:next",
     "typecheck": "prisma generate && tsc --noEmit",
     "validate": "npm run db:generate && npm test && npm run lint && npm run typecheck && npx prisma validate && npm run build",
