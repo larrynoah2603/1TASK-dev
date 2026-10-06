@@ -67,3 +67,29 @@ mots de passe PostgreSQL ou `node_modules` dans une archive ou un dépôt.
 | Microsoft Graph 403 | Permission Graph insuffisante | Vérifier `User.Read` et les consentements du tenant |
 | AccessDenied | Domaine non autorisé, compte désactivé ou profil incomplet | Vérifier le domaine et le profil Entra |
 | Configuration | Client ID ou secret absent | Vérifier les variables d’environnement puis redémarrer Next.js |
+
+
+## Revue des routes API — 6 octobre 2026
+
+Les routes ticket critiques délèguent leurs mutations aux services métier, qui
+revalident l’acteur courant avant tout accès ou écriture. Les handlers ne
+réimplémentent pas eux-mêmes les permissions ou les rôles.
+
+Les routes qui accèdent directement à Prisma doivent conserver un garde serveur
+explicite. Ce contrat est vérifié automatiquement pour empêcher l’ajout futur
+d’un handler direct à la base sans authentification.
+
+Les jobs planifiés `/api/jobs/sla-monitor` et `/api/jobs/outbox` utilisent
+un garde partagé basé exclusivement sur le header `Authorization: Bearer ...`.
+Le secret est comparé sans être journalisé et une comparaison à temps constant
+est utilisée lorsque les longueurs correspondent.
+
+Le contrat attendu est :
+
+- `503` si `CRON_SECRET` n’est pas configuré côté serveur ;
+- `401` si le header `Authorization` est absent ;
+- `403` si le schéma ou le bearer est invalide ;
+- exécution du job uniquement après validation du bearer exact.
+
+Les routes publiques `/api/v1` restent soumises à `withPublicApiV1` et sont
+désactivées dans le profil V1 actuel.
