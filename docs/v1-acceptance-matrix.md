@@ -16,7 +16,7 @@ cette revue sont consignées dans le compte-rendu de PR.
 | 7 | Qualification transverse vers un service éligible | `tests/routing.test.ts`, `tests/ticket-department-routing-contract.test.ts` | Automatisé |
 | 8 | Personnel hors file/équipe autorisée ne peut pas lire ; le demandeur garde son propre ticket | `tests/visibility.test.ts`, `tests/access-control.test.ts` | Automatisé ; cloisonnement multi-files staging requis |
 | 9 | Responsable de file sans rôle AGENT claim et traite seulement sa portée | `tests/claim.test.ts`, `tests/ticket-action-options.test.ts` | Automatisé |
-| 10 | Annulation précoce exige un motif, reste terminale et dispose d’une action contextuelle V1 | `tests/ticket-cancellation.test.ts`, `tests/v1-workflow-simplification.test.ts` | Automatisé ; contrôle navigateur staging requis |
+| 10 | En V1, seul le demandeur peut annuler sa demande avant traitement avec motif ; l’annulation reste terminale | `tests/ticket-cancellation.test.ts`, `tests/domain.test.ts`, `tests/v1-workflow-simplification.test.ts` | Automatisé ; contrôle navigateur staging requis |
 | 11 | CANCELLED est exclu du travail actif et des métriques SLA | `tests/ticket-cancellation.test.ts`, `tests/reporting-service.test.ts` | Automatisé |
 | 12 | Résolution calcule une échéance en jours ouvrés | `tests/automatic-closure.test.ts`, `tests/sla.test.ts` | Automatisé |
 | 13 | Réouverture invalide l’ancienne échéance | `tests/automatic-closure.test.ts` | Automatisé |
