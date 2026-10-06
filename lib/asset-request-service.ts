@@ -218,19 +218,30 @@ async function assignAvailableAsset(
     },
   });
 
-  await notify(tx, {
+  return { updated, asset };
+}
+
+async function notifyRequesterAssetSuccess(
+  tx: Prisma.TransactionClient,
+  input: {
+    requesterId: string;
+    requestId: string;
+    title: string;
+    message: string;
+    deduplicationKey: string;
+  },
+) {
+  return notify(tx, {
     recipientId: input.requesterId,
     type: NotificationType.ASSET_APPROVED,
     severity: "SUCCESS",
-    title: "Actif attribué",
-    message: `${asset.name} (${asset.assetTag}) vous a été attribué et apparaît maintenant dans Mes actifs.`,
+    title: input.title,
+    message: input.message,
     entityType: "ASSET_REQUEST",
     entityId: input.requestId,
     actionUrl: "/my-assets",
-    deduplicationKey: `ASSET_ASSIGNED:${input.requestId}:${asset.id}`,
+    deduplicationKey: input.deduplicationKey,
   });
-
-  return { updated, asset };
 }
 
 export async function reviewAssetRequest(
@@ -244,6 +255,155 @@ export async function reviewAssetRequest(
   return prisma.$transaction(async (tx) => {
     const request = await tx.assetRequest.findUnique({ where: { id: requestId } });
     if (!request) throw new ResourceNotFoundError("Demande d’actif introuvable.");
+
+    if (parsed.decision === "ASSIGN") {
+      if (request.status !== AssetRequestStatus.APPROVED || request.assetId) {
+        throw new AuthorizationError(
+          "Seule une demande approuvée sans actif peut recevoir une attribution ultérieure.",
+        );
+      }
+
+      const asset = await tx.asset.findUnique({ where: { id: parsed.assetId } });
+      if (
+        !asset ||
+        asset.status !== AssetStatus.ACTIVE ||
+        asset.assignedToId ||
+        asset.type !== request.assetType
+      ) {
+        throw new AuthorizationError(
+          "L’actif sélectionné n’est plus disponible ou ne correspond pas au type demandé.",
+        );
+      }
+
+      const assignedAt = new Date();
+      const assignment = await tx.asset.updateMany({
+        where: {
+          id: asset.id,
+          assignedToId: null,
+          status: AssetStatus.ACTIVE,
+          type: request.assetType,
+        },
+        data: {
+          assignedToId: request.requesterId,
+          assignedAt,
+        },
+      });
+      if (assignment.count !== 1) {
+        throw new AuthorizationError("L’actif vient d’être attribué à un autre utilisateur.");
+      }
+
+      await tx.assetMovement.create({
+        data: {
+          assetId: asset.id,
+          toUserId: request.requesterId,
+          toDepartmentId: asset.departmentId,
+          reason: `Attribution après validation de la demande ${request.id}`,
+          createdById: actor.id,
+        },
+      });
+
+      const updated = await tx.assetRequest.update({
+        where: { id: request.id },
+        data: {
+          status: AssetRequestStatus.APPROVED,
+          assetId: asset.id,
+          approvedById: request.approvedById ?? actor.id,
+          approvedAt: request.approvedAt ?? assignedAt,
+        },
+      });
+
+      await notifyRequesterAssetSuccess(tx, {
+        requesterId: request.requesterId,
+        requestId: request.id,
+        title: "Actif attribué",
+        message: `${asset.name} (${asset.assetTag}) vous a été attribué et apparaît maintenant dans Mes actifs.`,
+        deduplicationKey: `ASSET_ASSIGNED:${request.id}:${asset.id}`,
+      });
+
+      await appendAuditLog(tx, {
+        actorId: actor.id,
+        action: "ASSET_REQUEST_ASSIGNED",
+        objectType: "AssetRequest",
+        objectId: request.id,
+        oldValue: { assetId: null, status: request.status },
+        newValue: { assetId: asset.id, status: AssetRequestStatus.APPROVED },
+        reason: "Attribution depuis l’inventaire après approbation préalable.",
+      });
+      return updated;
+    }
+
+    if (parsed.decision === "APPROVE") {
+      if (request.status !== AssetRequestStatus.PENDING) {
+        throw new AuthorizationError("Cette demande a déjà été validée ou refusée.");
+      }
+
+      const approvedAt = new Date();
+      if (parsed.assetId) {
+        const { updated, asset } = await assignAvailableAsset(tx, {
+          requestId: request.id,
+          requesterId: request.requesterId,
+          assetType: request.assetType,
+          assetId: parsed.assetId,
+          actorId: actor.id,
+          approvedById: actor.id,
+          approvedAt,
+        });
+
+        await notifyRequesterAssetSuccess(tx, {
+          requesterId: request.requesterId,
+          requestId: request.id,
+          title: "Actif attribué",
+          message: `${asset.name} (${asset.assetTag}) vous a été attribué et apparaît maintenant dans Mes actifs.`,
+          deduplicationKey: `ASSET_ASSIGNED:${request.id}:${asset.id}`,
+        });
+
+        await appendAuditLog(tx, {
+          actorId: actor.id,
+          action: "ASSET_REQUEST_APPROVED",
+          objectType: "AssetRequest",
+          objectId: request.id,
+          newValue: {
+            assetId: asset.id,
+            requesterId: request.requesterId,
+            assignment: "IMMEDIATE",
+          },
+          reason: "Validation du besoin et attribution immédiate depuis l’inventaire.",
+        });
+        return updated;
+      }
+
+      const updated = await tx.assetRequest.update({
+        where: { id: request.id },
+        data: {
+          status: AssetRequestStatus.APPROVED,
+          approvedById: actor.id,
+          approvedAt,
+          assetId: null,
+        },
+      });
+
+      await notifyRequesterAssetSuccess(tx, {
+        requesterId: request.requesterId,
+        requestId: request.id,
+        title: "Demande d’actif approuvée",
+        message: "Votre besoin est approuvé. Aucun actif n’est encore attribué ; la demande reste en attente de stock ou d’attribution.",
+        deduplicationKey: `ASSET_APPROVED_WAITING:${request.id}`,
+      });
+
+      await appendAuditLog(tx, {
+        actorId: actor.id,
+        action: "ASSET_REQUEST_APPROVED",
+        objectType: "AssetRequest",
+        objectId: request.id,
+        newValue: {
+          assetId: null,
+          requesterId: request.requesterId,
+          assignment: "WAITING_STOCK",
+        },
+        reason: "Validation du besoin sans actif disponible à attribuer immédiatement.",
+      });
+      return updated;
+    }
 
     if (parsed.decision === "REJECT") {
       if (request.status !== AssetRequestStatus.PENDING) {
@@ -280,97 +440,6 @@ export async function reviewAssetRequest(
       return updated;
     }
 
-    if (parsed.decision === "APPROVE") {
-      if (request.status !== AssetRequestStatus.PENDING) {
-        throw new AuthorizationError("Cette demande a déjà été validée ou refusée.");
-      }
-
-      const approvedAt = new Date();
-      if (parsed.assetId) {
-        const { updated, asset } = await assignAvailableAsset(tx, {
-          requestId: request.id,
-          requesterId: request.requesterId,
-          assetType: request.assetType,
-          assetId: parsed.assetId,
-          actorId: actor.id,
-          approvedById: actor.id,
-          approvedAt,
-        });
-        await appendAuditLog(tx, {
-          actorId: actor.id,
-          action: "ASSET_REQUEST_APPROVED",
-          objectType: "AssetRequest",
-          objectId: request.id,
-          newValue: {
-            assetId: asset.id,
-            requesterId: request.requesterId,
-            assignment: "IMMEDIATE",
-          },
-          reason: "Validation du besoin et attribution immédiate depuis l’inventaire.",
-        });
-        return updated;
-      }
-
-      const updated = await tx.assetRequest.update({
-        where: { id: request.id },
-        data: {
-          status: AssetRequestStatus.APPROVED,
-          approvedById: actor.id,
-          approvedAt,
-          assetId: null,
-        },
-      });
-      await notify(tx, {
-        recipientId: request.requesterId,
-        type: NotificationType.ASSET_APPROVED,
-        severity: "SUCCESS",
-        title: "Demande d’actif approuvée",
-        message: "Votre besoin est approuvé. Aucun actif n’est encore attribué ; la demande reste en attente de stock ou d’attribution.",
-        entityType: "ASSET_REQUEST",
-        entityId: request.id,
-        actionUrl: "/my-assets",
-        deduplicationKey: `ASSET_APPROVED_WAITING:${request.id}`,
-      });
-      await appendAuditLog(tx, {
-        actorId: actor.id,
-        action: "ASSET_REQUEST_APPROVED",
-        objectType: "AssetRequest",
-        objectId: request.id,
-        newValue: {
-          assetId: null,
-          requesterId: request.requesterId,
-          assignment: "WAITING_STOCK",
-        },
-        reason: "Validation du besoin sans actif disponible à attribuer immédiatement.",
-      });
-      return updated;
-    }
-
-    if (request.status !== AssetRequestStatus.APPROVED || request.assetId) {
-      throw new AuthorizationError(
-        "Seule une demande approuvée sans actif peut recevoir une attribution ultérieure.",
-      );
-    }
-
-    const assignedAt = new Date();
-    const { updated, asset } = await assignAvailableAsset(tx, {
-      requestId: request.id,
-      requesterId: request.requesterId,
-      assetType: request.assetType,
-      assetId: parsed.assetId,
-      actorId: actor.id,
-      approvedById: request.approvedById ?? actor.id,
-      approvedAt: request.approvedAt ?? assignedAt,
-    });
-    await appendAuditLog(tx, {
-      actorId: actor.id,
-      action: "ASSET_REQUEST_ASSIGNED",
-      objectType: "AssetRequest",
-      objectId: request.id,
-      oldValue: { assetId: null, status: request.status },
-      newValue: { assetId: asset.id, status: AssetRequestStatus.APPROVED },
-      reason: "Attribution depuis l’inventaire après approbation préalable.",
-    });
-    return updated;
+    throw new AuthorizationError("Décision de demande d’actif non prise en charge.");
   });
 }
