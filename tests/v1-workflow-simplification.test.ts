@@ -26,7 +26,7 @@ describe("workflow V1 simplifié", () => {
   it("ne propose pas les actions de confirmation ou réouverture aux agents V1", () => {
     const service = source("lib/ticket-service.ts");
     const workflow = source("lib/ticket-workflow-service.ts");
-    expect(service).toContain("status !== TicketStatus.CLOSED && status !== TicketStatus.REOPENED");
+    expect(service).toContain("status !== TicketStatus.CANCELLED");
     expect(workflow).toContain("seul le demandeur peut confirmer ou refuser une résolution");
   });
 
@@ -39,12 +39,17 @@ describe("workflow V1 simplifié", () => {
     expect(workflow).toContain("isFunctionalAdministrator(actor) && !v1RequesterView");
   });
 
-  it("expose l’annulation V1 uniquement lorsque CANCELLED est autorisé", () => {
+  it("réserve l’annulation V1 au demandeur avant traitement", () => {
     const actions = source("components/ticket-actions.tsx");
+    const service = source("lib/ticket-service.ts");
+    const workflow = source("lib/ticket-workflow-service.ts");
     expect(actions).toContain("const canCancel = allowedStatuses.includes(TicketStatus.CANCELLED)");
-    expect(actions).toContain("Annuler le ticket");
+    expect(actions).toContain("Annuler ma demande");
     expect(actions).toContain("{ status: TicketStatus.CANCELLED, reason }");
     expect(actions).toContain("cancellationReason.trim().length < 10");
+    expect(service).toContain("status !== TicketStatus.CANCELLED");
+    expect(workflow).toContain("seul le demandeur peut annuler sa demande avant traitement");
+    expect(workflow).toContain("const v1RequesterCancellation");
   });
 
   it("fait démarrer le traitement lors d'un claim V1", () => {

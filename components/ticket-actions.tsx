@@ -260,7 +260,7 @@ export function TicketActions({
                     setConfirmation({
                       title: "Confirmer l’annulation",
                       description: "Le ticket sera annulé définitivement et restera disponible en lecture seule dans l’historique.",
-                      confirmLabel: "Annuler le ticket",
+                      confirmLabel: requesterView ? "Annuler ma demande" : "Annuler le ticket",
                       run: () => {
                         void post(
                           "/api/tickets/" + ticketId + "/transition",
@@ -272,7 +272,7 @@ export function TicketActions({
                   }}
                   className="space-y-3 border-t border-slate-200 pt-4"
                 >
-                  <p className="text-sm font-semibold text-rose-700">Annuler le ticket</p>
+                  <p className="text-sm font-semibold text-rose-700">{requesterView ? "Annuler ma demande" : "Annuler le ticket"}</p>
                   <label className="field-label">Motif de l’annulation
                     <textarea
                       required
@@ -288,7 +288,7 @@ export function TicketActions({
                     disabled={busy || cancellationReason.trim().length < 10}
                     className="button-secondary border-rose-200 text-rose-700"
                   >
-                    Annuler le ticket
+                    {requesterView ? "Annuler ma demande" : "Annuler le ticket"}
                   </button>
                 </form>
               ) : null}

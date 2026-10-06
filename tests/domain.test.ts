@@ -13,7 +13,11 @@ describe("workflow des tickets", () => {
     expect(getV1WorkflowPresentation(TicketStatus.CANCELLED).label).toBe("Annulée");
   });
 
-  it("borne le demandeur V1 à confirmer ou rouvrir une résolution", () => {
+  it("borne le demandeur V1 à annuler avant traitement puis confirmer ou rouvrir une résolution", () => {
+    expect(v1RequesterAllowedNextStatuses(TicketStatus.NEW)).toEqual([TicketStatus.CANCELLED]);
+    expect(v1RequesterAllowedNextStatuses(TicketStatus.TO_QUALIFY)).toEqual([TicketStatus.CANCELLED]);
+    expect(v1RequesterAllowedNextStatuses(TicketStatus.TO_ASSIGN)).toEqual([TicketStatus.CANCELLED]);
+    expect(v1RequesterAllowedNextStatuses(TicketStatus.ASSIGNED)).toEqual([]);
     expect(v1RequesterAllowedNextStatuses(TicketStatus.IN_PROGRESS)).toEqual([]);
     expect(v1RequesterAllowedNextStatuses(TicketStatus.RESOLUTION_PENDING)).toEqual([
       TicketStatus.CLOSED,
