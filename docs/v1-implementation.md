@@ -227,9 +227,11 @@ que le problème persiste.
 
 Pour les agents et responsables, le sélecteur générique de statuts est remplacé par des actions
 contextuelles : **Prendre en charge**, **Démarrer/Reprendre le traitement**, **Mettre en attente**
-et **Résoudre le ticket**. Un claim V1 affecte l'acteur et passe directement le ticket en
-`IN_PROGRESS`, évitant l'étape intermédiaire `ASSIGNED → IN_PROGRESS`. Une affectation
-manuelle par un responsable conserve `ASSIGNED` jusqu'au démarrage explicite par l'agent.
+et **Résoudre le ticket**. Un claim V1 sur un ticket métier affecte l'acteur et passe directement
+le ticket en `IN_PROGRESS`, évitant l'étape intermédiaire `ASSIGNED → IN_PROGRESS`. Un ticket
+encore en `TO_QUALIFY` conserve cet état lors du claim afin que la qualification ne puisse pas
+être contournée. Une affectation manuelle par un responsable conserve `ASSIGNED` jusqu'au
+démarrage explicite par l'agent.
 
 ### P08 — responsables de file opérationnels
 
