@@ -14,9 +14,13 @@ describe("notifications et indicateur de boîte agent", () => {
 
   it("marque la notification avant la navigation normale", () => {
     const center = source("components/notification-center.tsx");
+    const item = source("components/notifications/notification-item.tsx");
     expect(center).toContain("event.preventDefault()");
     expect(center).toContain("await markRead(id)");
     expect(center).toContain("router.push(actionUrl as Route)");
+    expect(item).toContain("event.preventDefault()");
+    expect(item).toContain("await onRead(item.id)");
+    expect(item).toContain("router.push(actionUrl as Route)");
   });
 
   it("affiche Mes tickets et un compteur visuel sur la boîte agent", () => {
