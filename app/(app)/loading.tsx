@@ -1,4 +1,4 @@
-import { PageLoading } from "@/components/ui/loading/page-loading";
+import Image from "next/image";
 
 export default function AppLoading() {
   return (
@@ -13,9 +13,13 @@ export default function AppLoading() {
         <div className="bios-loading-logo-wrapper">
           <div className="bios-loading-glow" />
 
-          <img
-            src="/brand/bios-expertise.png"
+          <Image
+            src="/brand/BIOS-HAUTE-QUALITE%20(1).png"
             alt="BIOS Expertise"
+            width={509}
+            height={218}
+            priority
+            sizes="(max-width: 480px) 78vw, 330px"
             className="bios-loading-logo"
           />
         </div>
