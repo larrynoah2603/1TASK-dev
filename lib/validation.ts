@@ -225,11 +225,18 @@ export const assetRequestSchema = z.object({
 });
 
 export const assetRequestReviewSchema = z.discriminatedUnion("decision", [
-  z.object({ decision: z.literal("APPROVE"), assetId: z.string().cuid() }),
+  z.object({
+    decision: z.literal("APPROVE"),
+    assetId: z.string().cuid().optional(),
+  }).strict(),
+  z.object({
+    decision: z.literal("ASSIGN"),
+    assetId: z.string().cuid(),
+  }).strict(),
   z.object({
     decision: z.literal("REJECT"),
     rejectedReason: z.string().trim().min(10, "Le motif de refus doit contenir au moins 10 caractères.").max(2000),
-  }),
+  }).strict(),
 ]);
 
 export const missionListQuerySchema = productionSearchQuerySchema.extend({
