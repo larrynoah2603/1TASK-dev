@@ -1,8 +1,26 @@
 import { describe, expect, it } from "vitest";
 import { Impact, Priority, RoleCode, TicketStatus, Urgency } from "@prisma/client";
-import { calculatePriorityFromImpactUrgency, canTransitionStatus, isClaimableStatus } from "@/lib/domain";
+import { calculatePriorityFromImpactUrgency, canTransitionStatus, getV1WorkflowPresentation, isClaimableStatus, v1RequesterAllowedNextStatuses } from "@/lib/domain";
 
 describe("workflow des tickets", () => {
+  it("simplifie la présentation V1 en quatre étapes publiques", () => {
+    expect(getV1WorkflowPresentation(TicketStatus.NEW)).toEqual({ step: "RECEIVED", label: "Reçue", position: 0 });
+    expect(getV1WorkflowPresentation(TicketStatus.TO_ASSIGN)).toEqual({ step: "RECEIVED", label: "Reçue", position: 0 });
+    expect(getV1WorkflowPresentation(TicketStatus.ASSIGNED)).toEqual({ step: "IN_PROGRESS", label: "En traitement", position: 1 });
+    expect(getV1WorkflowPresentation(TicketStatus.BLOCKED)).toEqual({ step: "IN_PROGRESS", label: "En attente", position: 1 });
+    expect(getV1WorkflowPresentation(TicketStatus.RESOLUTION_PENDING)).toEqual({ step: "RESOLUTION", label: "Résolution proposée", position: 2 });
+    expect(getV1WorkflowPresentation(TicketStatus.CLOSED)).toEqual({ step: "CLOSED", label: "Fermée", position: 3 });
+    expect(getV1WorkflowPresentation(TicketStatus.CANCELLED).label).toBe("Annulée");
+  });
+
+  it("borne le demandeur V1 à confirmer ou rouvrir une résolution", () => {
+    expect(v1RequesterAllowedNextStatuses(TicketStatus.IN_PROGRESS)).toEqual([]);
+    expect(v1RequesterAllowedNextStatuses(TicketStatus.RESOLUTION_PENDING)).toEqual([
+      TicketStatus.CLOSED,
+      TicketStatus.REOPENED,
+    ]);
+  });
+
   it("autorise le demandeur à confirmer ou refuser une résolution", () => {
     expect(canTransitionStatus(TicketStatus.RESOLUTION_PENDING, TicketStatus.CLOSED, [RoleCode.REQUESTER], true)).toBe(true);
     expect(canTransitionStatus(TicketStatus.RESOLUTION_PENDING, TicketStatus.REOPENED, [RoleCode.REQUESTER], true)).toBe(true);
