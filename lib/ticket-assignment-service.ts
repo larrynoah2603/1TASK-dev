@@ -14,7 +14,7 @@ export function automaticAssignmentOutcome(candidateId: string | null | undefine
 
 export async function tryAcquireTicketClaim(
   tx: Pick<Prisma.TransactionClient, "ticket">,
-  input: { ticketId: string; queueId: string; actorId: string },
+  input: { ticketId: string; queueId: string; actorId: string; targetStatus?: TicketStatus.ASSIGNED | TicketStatus.IN_PROGRESS },
 ): Promise<boolean> {
   const claimed = await tx.ticket.updateMany({
     where: {
@@ -23,7 +23,7 @@ export async function tryAcquireTicketClaim(
       assignedToId: null,
       status: { in: [TicketStatus.NEW, TicketStatus.TO_QUALIFY, TicketStatus.TO_ASSIGN, TicketStatus.REOPENED] },
     },
-    data: { assignedToId: input.actorId, status: TicketStatus.ASSIGNED },
+    data: { assignedToId: input.actorId, status: input.targetStatus ?? TicketStatus.ASSIGNED },
   });
   return claimed.count === 1;
 }
