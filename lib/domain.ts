@@ -73,6 +73,47 @@ const managerRoles = new Set<RoleCode>([
   RoleCode.FUNCTIONAL_ADMIN,
 ]);
 
+export const V1_WORKFLOW_STEPS = ["RECEIVED", "IN_PROGRESS", "RESOLUTION", "CLOSED"] as const;
+export type V1WorkflowStep = (typeof V1_WORKFLOW_STEPS)[number];
+
+export const V1_WORKFLOW_STEP_LABELS: Record<V1WorkflowStep, string> = {
+  RECEIVED: "Reçue",
+  IN_PROGRESS: "En traitement",
+  RESOLUTION: "Résolution proposée",
+  CLOSED: "Fermée",
+};
+
+export function getV1WorkflowPresentation(status: TicketStatus): {
+  step: V1WorkflowStep;
+  label: string;
+  position: number;
+} {
+  switch (status) {
+    case TicketStatus.NEW:
+    case TicketStatus.TO_QUALIFY:
+    case TicketStatus.TO_ASSIGN:
+      return { step: "RECEIVED", label: "Reçue", position: 0 };
+    case TicketStatus.ASSIGNED:
+    case TicketStatus.IN_PROGRESS:
+    case TicketStatus.REOPENED:
+      return { step: "IN_PROGRESS", label: "En traitement", position: 1 };
+    case TicketStatus.BLOCKED:
+      return { step: "IN_PROGRESS", label: "En attente", position: 1 };
+    case TicketStatus.RESOLUTION_PENDING:
+      return { step: "RESOLUTION", label: "Résolution proposée", position: 2 };
+    case TicketStatus.CLOSED:
+      return { step: "CLOSED", label: "Fermée", position: 3 };
+    case TicketStatus.CANCELLED:
+      return { step: "RECEIVED", label: "Annulée", position: 0 };
+  }
+}
+
+export function v1RequesterAllowedNextStatuses(from: TicketStatus): TicketStatus[] {
+  return from === TicketStatus.RESOLUTION_PENDING
+    ? [TicketStatus.CLOSED, TicketStatus.REOPENED]
+    : [];
+}
+
 export const TERMINAL_TICKET_STATUSES: readonly TicketStatus[] = [TicketStatus.CLOSED, TicketStatus.CANCELLED];
 
 export function isTerminalTicketStatus(status: TicketStatus): boolean {
