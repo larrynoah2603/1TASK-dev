@@ -35,6 +35,7 @@ describe("workflow V1 simplifié", () => {
   it("fait démarrer le traitement lors d'un claim V1", () => {
     const service = source("lib/ticket-service.ts");
     expect(service).toContain('readServerEnvironment().PRODUCT_PROFILE === "v1"');
+    expect(service).toContain("freshTicket.status === TicketStatus.TO_QUALIFY");
     expect(service).toContain("targetStatus: claimStatus");
     expect(service).toContain("toStatus: claimStatus");
   });
