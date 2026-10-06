@@ -34,11 +34,16 @@ Entra et destination globale. Le dry-run TRIAGE doit énumérer les ressources �
 Appliquer ensuite `npm run repair:v1-triage:apply`, refaire le dry-run (zéro modification),
 puis configurer `V1Configuration.globalTriageServiceId`. Ne pas utiliser le seed de démonstration.
 
-## 3. Validation d’upgrade (fixture B)
+## 3. Validation d’upgrade (fixture B — conditionnelle)
 
-Restaurer dans une seconde base jetable une copie **synthétique et expurgée** comportant : utilisateurs
-actifs/en attente, départements sans TRIAGE, anciens tickets, grants/délégations confidentiels actifs
-et expirés, résolutions en attente, métadonnées de pièces jointes et outbox externe en attente.
+Cette fixture est requise uniquement lorsqu’une release migre une base 1TASK historique. Le lancement
+V1 actuel part d’une base fraîche dédiée : cette fixture est donc **N/A pour ce lancement**, mais reste
+documentée comme procédure de régression pour une future migration legacy.
+
+Si une ancienne base doit être migrée, restaurer dans une seconde base jetable une copie
+**synthétique et expurgée** comportant : utilisateurs actifs/en attente, départements sans TRIAGE,
+anciens tickets, grants/délégations confidentiels actifs et expirés, résolutions en attente,
+métadonnées de pièces jointes et outbox externe en attente.
 
 1. Sauvegarder et relever les volumes par statut, tickets, audits, pièces jointes, grants,
    délégations et outbox.
@@ -62,6 +67,10 @@ et expirés, résolutions en attente, métadonnées de pièces jointes et outbox
 - Synchroniser les rôles/permissions **additivement** via les migrations : ne retirer aucun rôle
   historique. Vérifier notamment qualification globale, `ticket:cancel`, claim/process des
   responsables bornés et absence de rôle global accidentel.
+- Vérifier le parcours Entra **manuel** : un nouvel utilisateur ordinaire reste
+  `PENDING_ASSIGNMENT`, même si une correspondance Entra existe. L’administrateur fonctionnel
+  choisit ensuite explicitement département, rôle principal, équipe, file autorisée et statut.
+  Seul le bootstrap administrateur configuré par `ADMIN_EMAILS` peut être activé automatiquement.
 - Tester un routage catalogue, un repli global et une qualification transverse avec trois
   départements afin de prouver les refus origine/destination hors portée.
 
@@ -108,7 +117,8 @@ volumes divergent.
 
 ## 8. Fiche de preuve à compléter
 
-Pour chaque fixture : identifiant non sensible, commit, versions Node/PostgreSQL, heures de début/fin,
-sortie des migrations, deux dry-runs avant/après, résultat `npm run validate`, rapprochements de
-volumes et anomalies. Pour Entra/navigateur/scheduler : compte de test, rôle/périmètre, scénario,
+Pour chaque fixture applicable : identifiant non sensible, commit, versions Node/PostgreSQL,
+heures de début/fin, sortie des migrations, deux dry-runs avant/après, résultat
+`npm run validate`, rapprochements de volumes et anomalies. Pour le lancement actuel sur base
+fraîche, consigner explicitement « fixture B legacy : N/A — aucune ancienne base migrée ». Pour Entra/navigateur/scheduler : compte de test, rôle/périmètre, scénario,
 résultat et lien vers artefact expurgé. Une case non exécutée reste « à exécuter », jamais verte.
