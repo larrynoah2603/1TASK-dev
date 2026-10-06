@@ -237,7 +237,11 @@ export async function syncUserFromEntraProfile(input: {
     const user = existingUser
       ? await tx.user.update({ where: { id: existingUser.id }, data })
       : await tx.user.upsert({
-          where: { entraObjectId: profile.id },
+          // New Entra callbacks are deduplicated on the normalized e-mail,
+          // which is the other unique identity key on User. Concurrent first
+          // logins therefore converge on the same row instead of racing two
+          // inserts that can collide on User.email before entraObjectId wins.
+          where: { email },
           update: data,
           create: {
             entraObjectId: profile.id,
