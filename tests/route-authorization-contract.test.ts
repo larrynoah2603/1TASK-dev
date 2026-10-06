@@ -51,16 +51,20 @@ describe("contrat d’autorisation des routes API", () => {
     expect(unguardedDirectDatabaseRoutes).toEqual([]);
   });
 
-  it("centralise l’authentification des jobs planifiés", () => {
-    for (const routeFile of [
-      "app/api/jobs/sla-monitor/route.ts",
-      "app/api/jobs/outbox/route.ts",
-    ]) {
-      const route = readFileSync(path.resolve(process.cwd(), routeFile), "utf8");
-      expect(route).toContain("getJobAuthorizationFailure");
-      expect(route).not.toContain("CRON_SECRET");
-      expect(route).not.toContain("readServerEnvironment");
-    }
+  it("protège explicitement le moniteur SLA et centralise l’autre job planifié", () => {
+    const slaRoute = readFileSync(
+      path.resolve(process.cwd(), "app/api/jobs/sla-monitor/route.ts"),
+      "utf8",
+    );
+    expect(slaRoute).toContain("readServerEnvironment().CRON_SECRET");
+    expect(slaRoute).toContain('request.headers.get("authorization")');
+    expect(slaRoute).toContain("status: 403");
+
+    const outboxRoute = readFileSync(
+      path.resolve(process.cwd(), "app/api/jobs/outbox/route.ts"),
+      "utf8",
+    );
+    expect(outboxRoute).toContain("getJobAuthorizationFailure");
 
     const jobAuth = readFileSync(path.resolve(process.cwd(), "lib/job-auth.ts"), "utf8");
     expect(jobAuth).toContain('request.headers.get("authorization")');
