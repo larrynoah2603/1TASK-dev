@@ -12,8 +12,11 @@ describe("asset request validation", () => {
     expect(assetRequestSchema.safeParse({ assetType: "LICENSE", reason: "Court", priority: "LOW" }).success).toBe(false);
   });
 
-  it("requires an asset for approval and a professional reason for rejection", () => {
-    expect(assetRequestReviewSchema.safeParse({ decision: "APPROVE" }).success).toBe(false);
+  it("allows approval without stock, requires an asset for later assignment and a professional rejection reason", () => {
+    expect(assetRequestReviewSchema.safeParse({ decision: "APPROVE" }).success).toBe(true);
+    expect(assetRequestReviewSchema.safeParse({ decision: "APPROVE", assetId: "ckx1234567890123456789012" }).success).toBe(true);
+    expect(assetRequestReviewSchema.safeParse({ decision: "ASSIGN" }).success).toBe(false);
+    expect(assetRequestReviewSchema.safeParse({ decision: "ASSIGN", assetId: "ckx1234567890123456789012" }).success).toBe(true);
     expect(assetRequestReviewSchema.safeParse({ decision: "REJECT", rejectedReason: "Non" }).success).toBe(false);
   });
 });
