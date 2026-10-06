@@ -70,8 +70,14 @@ et expirés, résolutions en attente, métadonnées de pièces jointes et outbox
 Définir `PRODUCT_PROFILE=v1`, redéployer l’artefact validé et vérifier login Entra, création,
 notification IN_APP et My Assets. Appeler GET et POST `/api/jobs/sla-monitor` avec le secret du
 scheduler, puis sans/mauvais secret (refus attendu). Vérifier de même `/api/jobs/outbox` : authentifié,
-il retourne un lot vide sans changer les lignes ; non authentifié, il est refusé. Programmer le SLA
-toutes les cinq minutes. Ne pas programmer de rejeu outbox.
+il retourne un lot vide sans changer les lignes ; non authentifié, il est refusé.
+
+La V1 utilise **Upstash QStash** comme scheduler externe pour `/api/jobs/sla-monitor`. Configurer
+un schedule POST toutes les cinq minutes (`*/5 * * * *`) vers le domaine Vercel actif. Le header
+QStash `Upstash-Forward | Authorization | Bearer <CRON_SECRET>` doit transmettre le même
+`CRON_SECRET` que celui défini côté Vercel. Aucun secret réel ne doit être versionné. Vérifier
+au moins une exécution `DELIVERED` puis un second déclenchement automatique réussi. Voir
+`docs/v1-qstash-scheduler.md`. Ne pas programmer de rejeu outbox.
 
 Effectuer la revue desktop/mobile : navigation, formulaire trois champs, feedback succès/conflit,
 chargement, liste vide, accès refusé et erreur contrôlée. Archiver captures et journaux expurgés.

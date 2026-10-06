@@ -20,7 +20,7 @@ cette revue sont consignées dans le compte-rendu de PR.
 | 11 | CANCELLED est exclu du travail actif et des métriques SLA | `tests/ticket-cancellation.test.ts`, `tests/reporting-service.test.ts` | Automatisé |
 | 12 | Résolution calcule une échéance en jours ouvrés | `tests/automatic-closure.test.ts`, `tests/sla.test.ts` | Automatisé |
 | 13 | Réouverture invalide l’ancienne échéance | `tests/automatic-closure.test.ts` | Automatisé |
-| 14 | Jobs superposés ne dupliquent audit ni notification | `tests/automatic-closure.test.ts` | Automatisé par transaction ; scheduler staging requis |
+| 14 | Jobs superposés ne dupliquent audit ni notification ; le scheduler QStash appelle le moniteur SLA toutes les cinq minutes | `tests/automatic-closure.test.ts`, `tests/qstash-scheduler-contract.test.ts`, `docs/v1-qstash-scheduler.md` | Automatisé par transaction/contrat ; exécution QStash staging requise |
 | 15 | URLs/modules masqués sont aussi refusés côté serveur | `tests/v1-navigation-policy.test.ts`, `tests/route-authorization-contract.test.ts` | Automatisé |
 | 16 | `/api/v1` et workflows déclaratifs sont refusés en V1 | `tests/v1-dormant-features.test.ts`, `tests/workflow-security.test.ts` | Automatisé |
 | 17 | Intégrations facultatives absentes/partielles n’empêchent pas le cœur V1 | `tests/env.test.ts`, `tests/v1-dormant-features.test.ts` | Automatisé hors login réel |

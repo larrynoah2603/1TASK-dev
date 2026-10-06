@@ -76,7 +76,7 @@ async function run(
   }
 }
 
-/** Vercel Cron invokes routes with GET. POST remains supported for existing
- * operational callers and both methods use the same bearer authentication. */
+/** External schedulers such as QStash use POST; GET remains available for
+ * authenticated operational checks. Both methods require the same bearer secret. */
 export const GET = run;
 export const POST = run;
