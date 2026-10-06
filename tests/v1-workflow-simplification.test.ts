@@ -23,6 +23,13 @@ describe("workflow V1 simplifié", () => {
     expect(actions).toContain("Le problème persiste");
   });
 
+  it("ne propose pas les actions de confirmation ou réouverture aux agents V1", () => {
+    const service = source("lib/ticket-service.ts");
+    const workflow = source("lib/ticket-workflow-service.ts");
+    expect(service).toContain("status !== TicketStatus.CLOSED && status !== TicketStatus.REOPENED");
+    expect(workflow).toContain("seul le demandeur peut confirmer ou refuser une résolution");
+  });
+
   it("traite un administrateur demandeur comme demandeur en V1", () => {
     const service = source("lib/ticket-service.ts");
     const workflow = source("lib/ticket-workflow-service.ts");
