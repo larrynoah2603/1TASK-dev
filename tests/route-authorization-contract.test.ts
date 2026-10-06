@@ -39,6 +39,38 @@ describe("contrat d’autorisation des routes API", () => {
     expect(authorization).toContain('hasPermission(actor, "ticket:create:cross-department")');
   });
 
+
+  it("impose un garde serveur aux routes qui accèdent directement à Prisma", () => {
+    const apiDirectory = path.resolve(process.cwd(), "app/api");
+    const unguardedDirectDatabaseRoutes = findRouteFiles(apiDirectory).filter((routeFile) => {
+      const route = readFileSync(routeFile, "utf8");
+      if (!route.includes('from "@/lib/db"')) return false;
+      return !/\b(requireAuthenticatedUser|requireSessionUserContext|requirePermission(?:ForTicketCreationDepartments)?|requireRole|requireAdminAccess|requireTicketAccess)\s*\(/.test(route);
+    });
+
+    expect(unguardedDirectDatabaseRoutes).toEqual([]);
+  });
+
+  it("protège explicitement le moniteur SLA et centralise l’autre job planifié", () => {
+    const slaRoute = readFileSync(
+      path.resolve(process.cwd(), "app/api/jobs/sla-monitor/route.ts"),
+      "utf8",
+    );
+    expect(slaRoute).toContain("readServerEnvironment().CRON_SECRET");
+    expect(slaRoute).toContain('request.headers.get("authorization")');
+    expect(slaRoute).toContain("status: 403");
+
+    const outboxRoute = readFileSync(
+      path.resolve(process.cwd(), "app/api/jobs/outbox/route.ts"),
+      "utf8",
+    );
+    expect(outboxRoute).toContain("getJobAuthorizationFailure");
+
+    const jobAuth = readFileSync(path.resolve(process.cwd(), "lib/job-auth.ts"), "utf8");
+    expect(jobAuth).toContain('request.headers.get("authorization")');
+    expect(jobAuth).toContain("timingSafeEqual");
+  });
+
   it("interdit les enveloppes d’erreur ad hoc dans les routes", () => {
     const apiDirectory = path.resolve(process.cwd(), "app/api");
     const adHocErrorResponses = findRouteFiles(apiDirectory).filter((routeFile) =>

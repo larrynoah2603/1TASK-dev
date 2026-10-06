@@ -48,7 +48,7 @@ describe("frontières serveur des fonctions dormantes V1", () => {
   it("conserve l’authentification du job outbox avant son no-op V1", async () => {
     vi.stubEnv("CRON_SECRET", "test-job-secret");
     const denied = await runOutboxJob(new Request("http://localhost/api/jobs/outbox"));
-    expect(denied.status).toBe(403);
+    expect(denied.status).toBe(401);
 
     const accepted = await runOutboxJob(new Request("http://localhost/api/jobs/outbox", {
       headers: { authorization: "Bearer test-job-secret" },

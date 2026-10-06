@@ -9,7 +9,8 @@ describe("contrat scheduler QStash V1", () => {
     const route = source("app/api/jobs/sla-monitor/route.ts");
     expect(route).toContain("readServerEnvironment().CRON_SECRET");
     expect(route).toContain('request.headers.get("authorization")');
-    expect(route).toContain("authorization !== `Bearer ${expected}`");
+    expect(route).toContain("authorization !== `Bearer ${cronSecret}`");
+    expect(route).toContain("status: 403");
     expect(route).toContain("export const POST = run");
   });
 
