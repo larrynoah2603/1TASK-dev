@@ -7,12 +7,12 @@ cette revue sont consignées dans le compte-rendu de PR.
 
 | # | Contrôle | Preuve dans le dépôt | Statut P11 |
 |---:|---|---|---|
-| 1 | Entra mappé crée un REQUESTER actif, de façon idempotente | `tests/entra-provisioning.integration.test.ts` | Automatisé PostgreSQL ; staging Entra requis |
+| 1 | Le premier login Entra crée/synchronise un compte en attente sans activer automatiquement son profil métier | `tests/entra-provisioning.integration.test.ts`, `tests/identity.test.ts` | Automatisé PostgreSQL ; staging Entra requis |
 | 2 | Création V1 limitée à objet, description et service facultatif | `tests/v1-ticket-creation.test.ts`, `tests/validation.test.ts` | Automatisé |
 | 3 | Service métier éligible route vers sa file ; le triage global reste caché/réservé au fallback automatique | `tests/routing.test.ts`, `tests/triage-configuration.test.ts`, `tests/v1-ticket-creation.test.ts` | Automatisé ; catalogue navigateur staging requis |
 | 4 | Claim V1 démarre le traitement, actions agent simplifiées, résolution puis confirmation/réouverture demandeur | `tests/claim.test.ts`, `tests/ticket-business-journeys.test.ts`, `tests/v1-workflow-simplification.test.ts` | Automatisé par services/contrat ; parcours UI staging requis |
-| 5 | Département Entra inconnu reste en attente sans droit élevé | `tests/entra-provisioning.integration.test.ts`, `tests/identity.test.ts` | Automatisé PostgreSQL |
-| 6 | Ajout explicite du mapping active au prochain sync valide | `tests/entra-provisioning.integration.test.ts` | Automatisé PostgreSQL ; Entra réel requis |
+| 5 | Tout utilisateur Entra ordinaire reste en attente tant qu’un administrateur fonctionnel n’a pas validé son profil | `tests/entra-provisioning.integration.test.ts`, `tests/identity.test.ts`, `tests/managed-user-profile.test.ts` | Automatisé PostgreSQL ; validation admin staging requise |
+| 6 | Une correspondance Entra ne contourne pas la validation manuelle ; département, rôle, équipe, file et statut sont administrés explicitement | `tests/entra-provisioning.integration.test.ts`, `tests/managed-user-profile.test.ts` | Automatisé PostgreSQL ; parcours admin staging requis |
 | 7 | Qualification transverse vers un service éligible | `tests/routing.test.ts`, `tests/ticket-department-routing-contract.test.ts` | Automatisé |
 | 8 | Personnel hors file/équipe autorisée ne peut pas lire ; le demandeur garde son propre ticket | `tests/visibility.test.ts`, `tests/access-control.test.ts` | Automatisé ; cloisonnement multi-files staging requis |
 | 9 | Responsable de file sans rôle AGENT claim et traite seulement sa portée | `tests/claim.test.ts`, `tests/ticket-action-options.test.ts` | Automatisé |
@@ -31,11 +31,13 @@ cette revue sont consignées dans le compte-rendu de PR.
 | 22 | Pièce jointe interne/historique reste protégée et l’indisponibilité est contrôlée | `tests/ticket-attachment-service-contract.test.ts`, `tests/api-security.test.ts` | Automatisé par contrat ; stockage staging requis |
 | 23 | Navigation desktop/mobile, formulaire trois champs et workflow public V1 en quatre étapes | `tests/shell-industrial-contract.test.ts`, `tests/v1-navigation-policy.test.ts`, `tests/v1-workflow-simplification.test.ts` | Contrat automatisé ; revue visuelle staging requise |
 | 24 | Feedback, chargement, vide, refus et erreur | `tests/action-feedback.test.ts`, `tests/frontend-robustness.test.ts` | Contrat automatisé ; revue navigateur staging requise |
-| 25 | Base fraîche et fixture d’upgrade passent migrations, réparations et parcours | `.github/workflows/ci.yml`, runbook P11 | **Bloquant : à exécuter sur deux bases PostgreSQL isolées** |
+| 25 | Le lancement sur base fraîche passe migrations, réparations et parcours ; la fixture d’upgrade legacy n’est requise que si une migration d’ancienne base est planifiée | `.github/workflows/ci.yml`, runbook P11 | **Bloquant : état des migrations de la base candidate + validation base fraîche ; fixture legacy N/A pour le lancement actuel** |
 
 ## Décision de release
 
 Le dépôt est **prêt pour validation de staging**, pas déclaré prêt pour production. Le GO exige
-le contrôle 25, les contrôles Entra/navigateur signalés ci-dessus, et l’archivage des sorties
-expurgées. Un échec laisse le profil partagé inchangé et conduit à un forward-fix ; il ne faut
-ni réinitialiser la base, ni supprimer un ticket, un grant, une délégation ou une ligne outbox.
+le contrôle 25 adapté au lancement sur base fraîche, les contrôles Entra/navigateur signalés
+ci-dessus, et l’archivage des sorties expurgées. La validation Entra doit confirmer qu’un nouvel
+utilisateur ordinaire reste en attente jusqu’à l’action explicite de l’administrateur fonctionnel.
+Un échec conduit à un forward-fix ; il ne faut ni réinitialiser la base, ni supprimer un ticket,
+un grant, une délégation ou une ligne outbox.
