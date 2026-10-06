@@ -31,8 +31,9 @@ demandes d’actifs. Les tests correspondants sont notamment `identity.test.ts`,
 `sla-monitor-performance.test.ts`, `notification-service.test.ts` et
 `asset-requests.test.ts`.
 
-Les phases P01–P10 ont ajouté le profil V1, le provisioning Entra demandeur, le triage
-déterministe, la création simplifiée, `CANCELLED`, la clôture automatique en jours ouvrés,
+Les phases P01–P10 ont ajouté le profil V1, la synchronisation Entra avec validation
+administrative manuelle, le triage déterministe, la création simplifiée, `CANCELLED`,
+la clôture automatique en jours ouvrés,
 la désactivation de l’auto-affectation, le claim borné des responsables et la navigation
 simplifiée, puis les gardes des fonctionnalités dormantes. Les modules dormants, tables et
 routes historiques sont conservés. P11 ne change pas le modèle métier : il audite la livraison,
@@ -60,7 +61,7 @@ consigne les preuves reproductibles et fixe les conditions de passage en staging
 |---|---|---|
 | P00 | Terminé | Référence, frontières, tests et contraintes d’environnement consignés ici. |
 | P01 | Terminé | Profil `full\|v1`, politique unique, garde stable et navigation V1 ; `full` inchangé. |
-| P02 | Terminé | Synchroniser un Entra reconnu et mappé en demandeur actif sans seed ni nom codé en dur. |
+| P02 | Terminé | Synchroniser l’identité Entra sans activer automatiquement le profil métier ; l’administrateur valide ensuite département, rôle et périmètre. |
 | P03 | Terminé (infrastructure) | Persister une destination globale déterministe et provisionner atomiquement les ressources TRIAGE départementales ; la simplification du formulaire reste bornée à la phase dédiée. |
 | P04 | Terminé | Création V1 objet/description/service facultatif, matching conservateur, repli global et qualification transverse bornée. |
 | P05 | Terminé | Ajouter l’annulation terminale bornée aux demandes précoces, auditée et exclue du travail actif. |
@@ -153,11 +154,13 @@ sur les tickets des files de destination.
 
 ### P05 — annulation terminale
 
-`CANCELLED` est un état terminal distinct de la clôture réussie. Seuls les agents, responsables
-de file et administrateurs fonctionnels disposant de `ticket:cancel` peuvent annuler depuis
-`NEW`, `TO_QUALIFY` ou `TO_ASSIGN`, avec un motif d’au moins dix caractères. La mutation
-conditionne son écriture au statut et à l’affectation relus : une prise en charge concurrente
-et une annulation ne peuvent donc pas réussir ensemble. Les tickets annulés restent dans les
+`CANCELLED` est un état terminal distinct de la clôture réussie. En V1, seul le
+demandeur peut annuler sa propre demande depuis `NEW`, `TO_QUALIFY` ou `TO_ASSIGN`,
+avec un motif d’au moins dix caractères. Dès qu’un traitement opérationnel a commencé,
+l’annulation demandeur n’est plus proposée. Les agents, responsables et administrateurs
+ne disposent pas de cette action sur la demande d’un autre utilisateur. La mutation
+conditionne son écriture au statut relu : une prise en charge concurrente et une
+annulation ne peuvent donc pas réussir ensemble. Les tickets annulés restent dans les
 recherches, historiques et exports, mais sont exclus des files actives, charges agents et
 calculs SLA. Le taux de clôture utilise explicitement `total - cancelled` comme dénominateur
 et expose les annulations séparément. La migration additive
@@ -177,10 +180,10 @@ Le moniteur SLA authentifié exécute également un lot borné de clôtures dues
 conditionnelle sur le statut et l’échéance rend les jobs superposés et la course avec une
 confirmation/réouverture idempotents. L’événement, l’audit système sans faux utilisateur et la
 notification in-app sont créés dans la même transaction ; aucune livraison externe n’est émise.
-`vercel.json` ne programme actuellement aucun cron sur le profil Hobby : l’exploitation doit
-appeler GET ou POST `/api/jobs/sla-monitor` avec `CRON_SECRET` toutes les cinq minutes. Le retard
-maximal attendu est donc la fréquence choisie plus la durée d’un lot ; aucun planning partagé
-n’est activé par cette phase.
+Le déploiement V1 utilise Upstash QStash comme scheduler externe : il appelle POST
+`/api/jobs/sla-monitor` toutes les cinq minutes avec le même `CRON_SECRET` que Vercel.
+Le retard maximal attendu est donc la fréquence choisie plus la durée d’un lot. GitHub
+Actions reste réservé à la CI et Vercel héberge l’application.
 
 Après migration, exécuter `npm run backfill:auto-closure` en dry-run. `--apply` ne renseigne que
 les tickets dont `resolvedAt`, le SLA et le calendrier sont fiables et dont l’échéance calculée
@@ -292,9 +295,11 @@ La matrice de 25 contrôles et le statut exact de leurs preuves se trouvent dans
 l’ordre des migrations, les deux dry-runs, l’activation staging, la surveillance et les
 frontières de rollback, se trouve dans [`v1-release-runbook.md`](./v1-release-runbook.md).
 
-La revue P11 n’autorise pas un déploiement à elle seule. Une exécution PostgreSQL isolée des
-deux fixtures (base fraîche et copie d’upgrade synthétique), une session Entra de test et la
-revue desktop/mobile doivent encore produire leurs artefacts dans l’environnement de staging.
+La revue P11 n’autorise pas un déploiement à elle seule. Pour le lancement actuel sur base
+fraîche, la validation PostgreSQL de la base fraîche/candidate, une session Entra de test et
+la revue desktop/mobile doivent encore produire leurs artefacts dans l’environnement de staging.
+La fixture d’upgrade synthétique n’est requise que pour une future release qui migrerait une
+ancienne base 1TASK.
 Un test unitaire ou contractuel est indiqué comme tel dans la matrice et n’est jamais présenté
 comme une preuve navigateur ou infrastructure. Aucun seed, migration ou script de réparation
 n’a été exécuté sur une base partagée pendant cette phase.

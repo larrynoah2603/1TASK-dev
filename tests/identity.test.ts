@@ -52,21 +52,19 @@ describe("bootstrap administrateur 1TASK", () => {
     })).toBe(UserStatus.PENDING_ASSIGNMENT);
   });
 
-  it("active un demandeur V1 éligible après résolution de son département", () => {
+  it("laisse un utilisateur Entra ordinaire en attente jusqu’à validation administrative", () => {
     expect(statusAfterEntraSynchronization({
       email: "demandeur@example.test",
       administrativelyDisabled: false,
       firstSynchronization: true,
-      v1RequesterProvisioningEligible: true,
-    })).toBe(UserStatus.ACTIVE);
+    })).toBe(UserStatus.PENDING_ASSIGNMENT);
 
     expect(statusAfterEntraSynchronization({
       email: "demandeur@example.test",
       administrativelyDisabled: false,
       firstSynchronization: false,
       existingStatus: UserStatus.PENDING_ASSIGNMENT,
-      v1RequesterProvisioningEligible: true,
-    })).toBe(UserStatus.ACTIVE);
+    })).toBe(UserStatus.PENDING_ASSIGNMENT);
   });
 
   it("ne laisse jamais le provisioning réactiver un compte désactivé", () => {
@@ -75,14 +73,12 @@ describe("bootstrap administrateur 1TASK", () => {
       accountEnabled: false,
       administrativelyDisabled: false,
       firstSynchronization: true,
-      v1RequesterProvisioningEligible: true,
     })).toBe(UserStatus.DISABLED);
     expect(statusAfterEntraSynchronization({
       email: "demandeur@example.test",
       administrativelyDisabled: true,
       firstSynchronization: false,
       existingStatus: UserStatus.PENDING_ASSIGNMENT,
-      v1RequesterProvisioningEligible: true,
     })).toBe(UserStatus.DISABLED);
   });
 
@@ -98,7 +94,6 @@ describe("bootstrap administrateur 1TASK", () => {
       administrativelyDisabled: false,
       firstSynchronization: true,
       existingStatus: UserStatus.DISABLED,
-      v1RequesterProvisioningEligible: true,
     })).toBe(UserStatus.DISABLED);
   });
 

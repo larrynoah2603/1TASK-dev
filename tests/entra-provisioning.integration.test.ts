@@ -39,7 +39,7 @@ describe.skipIf(!runDatabaseTests)("provisioning Entra V1 PostgreSQL", () => {
     vi.stubEnv("ADMIN_EMAILS", "");
   });
 
-  it("active au premier login avec une correspondance normalisée et reste idempotent", async () => {
+  it("garde un nouvel utilisateur en attente même si une correspondance Entra existe", async () => {
     const suffix = unique();
     const department = await prisma.department.create({
       data: { code: `D-${suffix}`, name: `Département ${suffix}`, isActive: true },
@@ -65,15 +65,15 @@ describe.skipIf(!runDatabaseTests)("provisioning Entra V1 PostgreSQL", () => {
       include: { roleAssignments: { include: { role: true } } },
     });
 
-    expect(first).toMatchObject({ status: UserStatus.ACTIVE, departmentId: department.id });
+    expect(first).toMatchObject({ status: UserStatus.PENDING_ASSIGNMENT, departmentId: null });
     expect(concurrent.id).toBe(first.id);
     expect(repeated.id).toBe(first.id);
-    expect(user.primaryRoleCode).toBe(RoleCode.REQUESTER);
+    expect(user.primaryRoleCode).toBeNull();
     expect(user.roleAssignments.filter((assignment) => assignment.role.code === RoleCode.REQUESTER)).toHaveLength(1);
     await expect(prisma.auditLog.count({
       where: { objectId: user.id, action: "ENTRA_REQUESTER_AUTO_PROVISIONED" },
-    })).resolves.toBe(1);
-    await expect(prisma.userProfileChange.count({ where: { userId: user.id } })).resolves.toBe(3);
+    })).resolves.toBe(0);
+    await expect(prisma.userProfileChange.count({ where: { userId: user.id } })).resolves.toBe(0);
   });
 
   it("laisse en attente un département absent, inconnu ou inactif", async () => {
@@ -93,7 +93,7 @@ describe.skipIf(!runDatabaseTests)("provisioning Entra V1 PostgreSQL", () => {
     }
   });
 
-  it("active un profil encore non affecté lorsque la correspondance est ajoutée avant le login suivant", async () => {
+  it("ne laisse pas une nouvelle correspondance Entra contourner la validation manuelle", async () => {
     const suffix = unique();
     const entraProfile = profile(suffix, { department: `Support ${suffix}` });
     const first = await syncUserFromEntraProfile({ profile: entraProfile });
@@ -112,8 +112,8 @@ describe.skipIf(!runDatabaseTests)("provisioning Entra V1 PostgreSQL", () => {
 
     await expect(syncUserFromEntraProfile({ profile: entraProfile })).resolves.toMatchObject({
       id: first.id,
-      status: UserStatus.ACTIVE,
-      departmentId: department.id,
+      status: UserStatus.PENDING_ASSIGNMENT,
+      departmentId: null,
     });
   });
 
