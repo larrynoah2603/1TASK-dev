@@ -547,7 +547,10 @@ export async function getTicketActionContext(
     : allowedNextStatuses(ticket.status, roleCodes(actor), requesterAction);
   if (v1Profile && !requesterAction) {
     allowedStatuses = allowedStatuses.filter(
-      (status) => status !== TicketStatus.CLOSED && status !== TicketStatus.REOPENED,
+      (status) =>
+        status !== TicketStatus.CLOSED &&
+        status !== TicketStatus.REOPENED &&
+        status !== TicketStatus.CANCELLED,
     );
   }
   if (!ticket.assignedToId) {
