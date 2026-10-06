@@ -252,6 +252,40 @@ ne laisse qu’un gagnant entre agents et responsables concurrents. Après claim
 `ticket:process` et `ticket:resolve` permettent le parcours ordinaire vers traitement puis résolution.
 Aucune donnée métier existante n’est modifiée par la migration.
 
+### Workflow V1 — demandes d’actifs et inventaire
+
+La V1 conserve un libre-service simple : **Mes actifs** ne liste que les lignes
+`Asset` dont `assignedToId` correspond à l’utilisateur authentifié. Le demandeur
+ne choisit jamais un numéro d’inventaire précis. Il choisit uniquement une famille
+(ordinateur, téléphone, accessoire ou autre), un motif et une priorité.
+
+Le formulaire expose uniquement le **nombre agrégé d’actifs actifs et non attribués**
+pour chaque famille. Un stock nul ne bloque pas la demande : l’administrateur
+fonctionnel global peut approuver le besoin sans matériel disponible. Dans ce cas,
+la demande reste `APPROVED` sans `assetId` et est présentée comme
+**« Approuvée · attente de stock »**.
+
+Le workflow V1 est :
+
+```text
+Demandeur crée une demande
+→ FUNCTIONAL_ADMIN global valide
+→ soit refus motivé
+→ soit approbation sans stock
+→ soit approbation + attribution immédiate
+→ si approbation sans stock : attribution ultérieure depuis l’inventaire
+→ création d’un AssetMovement
+→ notification du demandeur
+→ apparition du matériel dans Mes actifs
+```
+
+Chaque nouvelle demande notifie également les administrateurs fonctionnels globaux.
+L’attribution revalide dans la transaction que l’actif est `ACTIVE`, libre et du
+même type que la demande. Une concurrence entre deux attributions ne peut donc
+pas attribuer le même actif deux fois. Aucun nouveau statut Prisma n’est nécessaire
+pour la V1 : `APPROVED` + `assetId = null` signifie « besoin approuvé, attribution
+en attente » ; `APPROVED` + `assetId != null` signifie « attribuée ».
+
 ### P09 — navigation, administration et reporting
 
 En V1, la navigation principale est réduite à Tableau de bord, Tickets, Boîte agent, Files,
