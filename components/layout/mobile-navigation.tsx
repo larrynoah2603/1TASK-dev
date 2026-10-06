@@ -5,7 +5,7 @@ import type { Route } from "next";
 import { usePathname } from "next/navigation";
 import { useNotificationState } from "@/components/notification-state";
 
-type MobileLink = { href: string; label: string; icon: React.ReactNode };
+type MobileLink = { href: string; label: string; icon: React.ReactNode; badge?: number };
 
 const SHORT_LABELS: Record<string, string> = { "/dashboard": "Accueil", "/notifications": "Alertes", "/profile": "Profil", "/inbox": "Boîte" };
 
@@ -22,6 +22,7 @@ export function MobileNavigation({ links }: { links: MobileLink[] }) {
           <Link key={link.href} href={link.href as Route} className="kit-bottom-link" aria-current={active ? "page" : undefined}>
             {link.icon}
             {link.href === "/notifications" && unreadCount > 0 ? <span className="kit-bottom-badge">{unreadCount > 9 ? "9+" : unreadCount}</span> : null}
+            {link.href === "/inbox" && (link.badge ?? 0) > 0 ? <span className="kit-bottom-badge">{(link.badge ?? 0) > 99 ? "99+" : link.badge}</span> : null}
             <span>{SHORT_LABELS[link.href] ?? link.label}</span>
           </Link>
         );

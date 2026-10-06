@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { useCallback, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useNotificationState } from "@/components/notification-state";
 import { useDismissable } from "@/components/ui/dropdown";
 import { Icon } from "@/components/ui/icons";
@@ -31,6 +32,7 @@ function isToday(value: string) {
 }
 
 export function NotificationCenter() {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -69,16 +71,24 @@ export function NotificationCenter() {
 
   async function markRead(id: string) {
     const item = items.find((candidate) => candidate.id === id);
-    if (item?.status === "READ") return;
+    if (item?.status === "READ") return true;
     setError("");
     try {
       const response = await fetchWithTimeout(`/api/notifications/${id}/read`, { method: "POST" }, 8_000);
       if (!response.ok) throw new Error("read-failed");
       setItems((current) => current.map((notification) => notification.id === id ? { ...notification, status: "READ" } : notification));
       setUnreadCount((current) => Math.max(0, current - 1));
+      return true;
     } catch {
       setError("La notification n’a pas pu être marquée comme lue.");
+      return false;
     }
+  }
+
+  async function openNotification(id: string, actionUrl: string) {
+    setOpen(false);
+    await markRead(id);
+    router.push(actionUrl as Route);
   }
 
   async function markAllRead() {
@@ -118,7 +128,16 @@ export function NotificationCenter() {
     );
     const actionUrl = item.actionUrl ?? (item.ticketId ? `/tickets/${item.ticketId}` : null);
     return actionUrl
-      ? <Link key={item.id} href={actionUrl as Route} onClick={() => { void markRead(item.id); setOpen(false); }} className={className}>{content}</Link>
+      ? <Link
+          key={item.id}
+          href={actionUrl as Route}
+          onClick={(event) => {
+            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            event.preventDefault();
+            void openNotification(item.id, actionUrl);
+          }}
+          className={className}
+        >{content}</Link>
       : <button key={item.id} type="button" onClick={() => void markRead(item.id)} className={className}>{content}</button>;
   }
 

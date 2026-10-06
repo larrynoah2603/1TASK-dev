@@ -632,6 +632,18 @@ export async function getRequesterTicketSummary(actor: UserContext) {
   ) as Record<TicketStatus, number>;
 }
 
+export async function countOperationalTickets(actor: UserContext) {
+  const { where } = await buildTicketListWhere(actor, { workQueue: true });
+  return prisma.ticket.count({
+    where: {
+      AND: [
+        where,
+        { status: { notIn: [TicketStatus.CLOSED, TicketStatus.CANCELLED] } },
+      ],
+    },
+  });
+}
+
 export async function getOperationalTicketSummary(actor: UserContext) {
   const { actor: current, where } = await buildTicketListWhere(actor, { workQueue: true });
   const activeWhere: Prisma.TicketWhereInput = { AND: [where, { status: { notIn: [TicketStatus.CLOSED, TicketStatus.CANCELLED] } }] };
