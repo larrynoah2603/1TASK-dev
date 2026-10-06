@@ -269,6 +269,9 @@ export async function transitionTicket(
   ) {
     throw new AuthorizationError("En V1, seul le demandeur peut confirmer ou refuser une résolution.");
   }
+  if (v1Profile && !requesterAction && parsed.status === TicketStatus.CANCELLED) {
+    throw new AuthorizationError("En V1, seul le demandeur peut annuler sa demande avant traitement.");
+  }
   const transitionAllowed = v1RequesterView
     ? v1RequesterAllowedNextStatuses(ticket.status).includes(parsed.status)
     : canTransitionStatus(ticket.status, parsed.status, roleCodes(actor), requesterAction);
@@ -278,7 +281,14 @@ export async function transitionTicket(
   const actorRoles = roleCodes(actor);
   const transitionTarget = accessTarget(ticket);
   const isFunctionalAdminActor = actorRoles.includes(RoleCode.FUNCTIONAL_ADMIN);
-  if (parsed.status === TicketStatus.CANCELLED && !hasPermission(actor, "ticket:cancel", transitionTarget) && !isFunctionalAdminActor) {
+  const v1RequesterCancellation =
+    v1RequesterView && parsed.status === TicketStatus.CANCELLED;
+  if (
+    parsed.status === TicketStatus.CANCELLED &&
+    !v1RequesterCancellation &&
+    !hasPermission(actor, "ticket:cancel", transitionTarget) &&
+    !isFunctionalAdminActor
+  ) {
     throw new AuthorizationError("La permission d’annuler ce ticket n’est pas accordée.");
   }
   if (parsed.status === TicketStatus.CLOSED) {
