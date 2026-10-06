@@ -109,6 +109,13 @@ export function getV1WorkflowPresentation(status: TicketStatus): {
 }
 
 export function v1RequesterAllowedNextStatuses(from: TicketStatus): TicketStatus[] {
+  if (
+    from === TicketStatus.NEW ||
+    from === TicketStatus.TO_QUALIFY ||
+    from === TicketStatus.TO_ASSIGN
+  ) {
+    return [TicketStatus.CANCELLED];
+  }
   return from === TicketStatus.RESOLUTION_PENDING
     ? [TicketStatus.CLOSED, TicketStatus.REOPENED]
     : [];
