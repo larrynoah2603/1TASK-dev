@@ -3,7 +3,7 @@ import type { TicketSlaState } from "@/lib/sla";
 import { PriorityBadge, StatusBadge } from "@/components/status-badge";
 import { SlaIndicator } from "@/components/sla-indicator";
 import { Icon } from "@/components/ui/icons";
-import { STATUS_LABELS } from "@/lib/domain";
+import { getV1WorkflowPresentation, STATUS_LABELS, V1_WORKFLOW_STEPS, V1_WORKFLOW_STEP_LABELS } from "@/lib/domain";
 
 const STATUS_ORDER = [
   "NEW",
@@ -34,6 +34,7 @@ export function TicketStatusStrip({
   pausedMinutes = 0,
   canClaim,
   canResolve,
+  simplifiedV1 = false,
 }: {
   reference: string;
   status: TicketStatus;
@@ -44,15 +45,20 @@ export function TicketStatusStrip({
   pausedMinutes?: number;
   canClaim: boolean;
   canResolve: boolean;
+  simplifiedV1?: boolean;
 }) {
-  const currentPosition = statusPosition(status);
-  const currentLabel = STATUS_LABELS[status] ?? status.replaceAll("_", " ");
-  const actionLabel = canClaim ? "Prendre en charge" : canResolve ? "Soumettre la résolution" : "Consulter le ticket";
+  const presentation = simplifiedV1 ? getV1WorkflowPresentation(status) : null;
+  const currentPosition = simplifiedV1 ? presentation!.position : statusPosition(status);
+  const currentLabel = simplifiedV1 ? presentation!.label : STATUS_LABELS[status] ?? status.replaceAll("_", " ");
+  const actionLabel = canClaim ? "Prendre en charge" : canResolve ? "Résoudre le ticket" : "Suivre le traitement";
+  const steps = simplifiedV1 ? V1_WORKFLOW_STEPS : STATUS_ORDER;
 
   return (
     <section className="kit-strip" aria-label={`État du ticket ${reference}`}>
       <div className="kit-ticket-badges">
-        <StatusBadge status={status} />
+        {simplifiedV1
+          ? <span className="kit-badge kit-badge-info"><span aria-hidden="true" className="kit-badge-dot" />{currentLabel}</span>
+          : <StatusBadge status={status} />}
         <PriorityBadge priority={priority} />
         <SlaIndicator state={slaState} dueAt={slaDueAt} startedAt={createdAt} pausedMinutes={pausedMinutes} compact />
       </div>
@@ -60,13 +66,16 @@ export function TicketStatusStrip({
         <SlaIndicator state={slaState} dueAt={slaDueAt} startedAt={createdAt} pausedMinutes={pausedMinutes} />
       </div>
       <ol className="kit-stepper" aria-label="Progression du workflow">
-        {STATUS_ORDER.map((step, index) => {
+        {steps.map((step, index) => {
           const complete = index < currentPosition;
           const active = index === currentPosition;
+          const label = simplifiedV1
+            ? V1_WORKFLOW_STEP_LABELS[step as (typeof V1_WORKFLOW_STEPS)[number]]
+            : STATUS_LABELS[step as TicketStatus];
           return (
             <li key={step} className={`kit-step${complete ? " kit-step-done" : ""}${active ? " kit-step-active" : ""}`} aria-current={active ? "step" : undefined}>
               <span className="kit-step-dot" aria-hidden="true">{complete ? <Icon name="check" /> : index + 1}</span>
-              <span>{STATUS_LABELS[step]}</span>
+              <span>{label}</span>
             </li>
           );
         })}
