@@ -540,8 +540,8 @@ export async function getTicketActionContext(
     !terminal && (hasPermission(actor, "ticket:comment:public", target) ||
     hasPermission(actor, "ticket:update", target));
   const requesterAction = actor.id === ticket.requesterId;
+  const v1RequesterView = readServerEnvironment().PRODUCT_PROFILE === "v1" && requesterAction;
   const v1Profile = readServerEnvironment().PRODUCT_PROFILE === "v1";
-  const v1RequesterView = v1Profile && requesterAction;
   let allowedStatuses = v1RequesterView
     ? v1RequesterAllowedNextStatuses(ticket.status)
     : allowedNextStatuses(ticket.status, roleCodes(actor), requesterAction);
