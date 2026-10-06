@@ -7,9 +7,12 @@ const source = (path: string) => readFileSync(resolve(process.cwd(), path), "utf
 describe("contrat scheduler QStash V1", () => {
   it("expose un endpoint POST protégé par CRON_SECRET", () => {
     const route = source("app/api/jobs/sla-monitor/route.ts");
-    expect(route).toContain("readServerEnvironment().CRON_SECRET");
-    expect(route).toContain('request.headers.get("authorization")');
-    expect(route).toContain("authorization !== `Bearer ${expected}`");
+    const auth = source("lib/job-auth.ts");
+    expect(route).toContain("getJobAuthorizationFailure");
+    expect(auth).toContain("readServerEnvironment().CRON_SECRET");
+    expect(auth).toContain('request.headers.get("authorization")');
+    expect(auth).toContain('const prefix = "Bearer "');
+    expect(auth).toContain("timingSafeEqual");
     expect(route).toContain("export const POST = run");
   });
 
