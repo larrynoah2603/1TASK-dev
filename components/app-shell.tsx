@@ -21,6 +21,7 @@ import { Icon, type IconName } from "@/components/ui/icons";
 import { permissionCodes, roleCodes, toAccessSubject, type UserContext } from "@/lib/server-auth";
 import { getProductCapabilities } from "@/lib/product-policy.server";
 import type { ProductCapability } from "@/lib/product-policy";
+import { countOperationalTickets } from "@/lib/ticket-query-service";
 
 /**
  * group "main"    : navigation principale
@@ -31,7 +32,7 @@ type AppLink = { href: string; label: string; icon: IconName; group: "main" | "a
 
 const links: AppLink[] = [
   { href: "/dashboard", label: "Tableau de bord", icon: "dashboard", group: "main" },
-  { href: "/tickets", label: "Tickets", icon: "ticket", group: "main" },
+  { href: "/tickets", label: "Mes tickets", icon: "ticket", group: "main" },
   { href: "/inbox", label: "Boîte agent", icon: "inbox", group: "main", roles: [RoleCode.AGENT, RoleCode.QUEUE_MANAGER, RoleCode.FUNCTIONAL_ADMIN] },
   { href: "/missions", label: "Missions", icon: "briefcase", group: "main", permission: "portfolio:read", capability: "productionPortfolio" },
   { href: "/queues", label: "Files", icon: "layers", group: "main", roles: [RoleCode.QUEUE_MANAGER, RoleCode.FUNCTIONAL_ADMIN] },
@@ -64,6 +65,9 @@ export async function AppShell({ user, children }: { user: UserContext; children
   const subject = toAccessSubject(user);
   const isAdmin = hasGlobalRole(subject, RoleCode.FUNCTIONAL_ADMIN) || hasGlobalRole(subject, RoleCode.TECHNICAL_ADMIN);
   const canCreate = permissions.includes("ticket:create");
+  const canUseInbox = [RoleCode.AGENT, RoleCode.QUEUE_MANAGER, RoleCode.FUNCTIONAL_ADMIN]
+    .some((role) => codes.includes(role));
+  const inboxTicketCount = canUseInbox ? await countOperationalTickets(user) : 0;
   // Règles d'affichage inchangées : permission, rôle, administrateur, administrateur fonctionnel des actifs.
   const visibleLinks = links.filter((link) => {
     const permissionAllowed = !link.permission || permissions.includes(link.permission);
@@ -89,7 +93,19 @@ export async function AppShell({ user, children }: { user: UserContext; children
         return (
           <section key={section.id} className="kit-nav-section" aria-labelledby={`sidebar-group-${section.id}`}>
             <p id={`sidebar-group-${section.id}`} className="kit-nav-label">{section.label}</p>
-            {sectionLinks.map((link) => <ShellNavLink key={link.href} href={link.href} title={link.label} icon={<Icon name={link.icon} />}>{link.label}</ShellNavLink>)}
+            {sectionLinks.map((link) => (
+              <ShellNavLink key={link.href} href={link.href} title={link.label} icon={<Icon name={link.icon} />}>
+                {link.label}
+                {link.href === "/inbox" && inboxTicketCount > 0 ? (
+                  <span
+                    className="kit-nav-count"
+                    aria-label={`${inboxTicketCount} ticket${inboxTicketCount > 1 ? "s" : ""} à traiter ou à consulter`}
+                  >
+                    {inboxTicketCount > 99 ? "99+" : inboxTicketCount}
+                  </span>
+                ) : null}
+              </ShellNavLink>
+            ))}
           </section>
         );
       })}
@@ -97,6 +113,11 @@ export async function AppShell({ user, children }: { user: UserContext; children
     user={<Link href="/profile" className="kit-user-card sidebar-user-block-industrial" title={user.name}><Avatar name={user.name} image={user.image} status /><span className="kit-user-card-text"><p className="kit-user-card-name">{user.name}</p><p className="kit-user-card-sub">{department}</p></span></Link>}
   />;
   const topbar = <TopHeader context={<TopbarContext />} search={<span className="topbar-layout-industrial"><GlobalSearch /></span>} actions={<>{canCreate ? <NewTicketLauncher simplified={!capabilities.confidentialTicketCreation && !capabilities.productionPortfolio} /> : null}<NotificationCenter /><span className="kit-hide-mobile"><HelpMenu /></span><span className="kit-hide-mobile"><ThemeToggle /></span><span className="kit-topbar-divider" aria-hidden="true" /><ProfileMenu name={user.name} email={user.email} image={user.image} department={user.department?.name ?? "Département non renseigné"} roles={roleLabel} admin={isAdmin} /></>} />;
-  const mobileNavigation = <MobileNavigation links={visibleLinks.map((link) => ({ href: link.href, label: link.label, icon: <Icon name={link.icon} /> }))} />;
+  const mobileNavigation = <MobileNavigation links={visibleLinks.map((link) => ({
+    href: link.href,
+    label: link.label,
+    icon: <Icon name={link.icon} />,
+    badge: link.href === "/inbox" ? inboxTicketCount : undefined,
+  }))} />;
   return <NotificationProvider><CollapsibleShell variant="app" sidebar={sidebar} topbar={topbar} mobileNavigation={mobileNavigation}>{children}</CollapsibleShell></NotificationProvider>;
 }
