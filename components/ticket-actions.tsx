@@ -42,6 +42,7 @@ export function TicketActions({
   const [solution, setSolution] = useState("");
   const [reopenedReason, setReopenedReason] = useState("");
   const [transitionReason, setTransitionReason] = useState("");
+  const [cancellationReason, setCancellationReason] = useState("");
   const [agents, setAgents] = useState<AgentOption[]>([]);
   const [agentsLoaded, setAgentsLoaded] = useState(false);
   const [agentsLoading, setAgentsLoading] = useState(false);
@@ -162,7 +163,8 @@ export function TicketActions({
   const canSubmitResolution = allowedStatuses.includes(TicketStatus.RESOLUTION_PENDING);
   const canConfirmResolution = allowedStatuses.includes(TicketStatus.CLOSED);
   const canReopenResolution = allowedStatuses.includes(TicketStatus.REOPENED);
-  const hasSimplifiedActions = canStartOrResume || canPause || canSubmitResolution || canConfirmResolution || canReopenResolution;
+  const canCancel = allowedStatuses.includes(TicketStatus.CANCELLED);
+  const hasSimplifiedActions = canStartOrResume || canPause || canSubmitResolution || canConfirmResolution || canReopenResolution || canCancel;
 
   return (
     <div className="space-y-3">
@@ -246,6 +248,48 @@ export function TicketActions({
                     <textarea required minLength={1} value={reopenedReason} onChange={(event) => setReopenedReason(event.target.value)} placeholder="Expliquez ce qui ne fonctionne toujours pas." className="field-control min-h-20 font-normal" />
                   </label>
                   <button disabled={busy || !reopenedReason.trim()} className="button-secondary">Le problème persiste</button>
+                </form>
+              ) : null}
+
+              {canCancel ? (
+                <form
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    const reason = cancellationReason.trim();
+                    if (reason.length < 10) return;
+                    setConfirmation({
+                      title: "Confirmer l’annulation",
+                      description: "Le ticket sera annulé définitivement et restera disponible en lecture seule dans l’historique.",
+                      confirmLabel: "Annuler le ticket",
+                      run: () => {
+                        void post(
+                          "/api/tickets/" + ticketId + "/transition",
+                          { status: TicketStatus.CANCELLED, reason },
+                          "Ticket annulé.",
+                        );
+                      },
+                    });
+                  }}
+                  className="space-y-3 border-t border-slate-200 pt-4"
+                >
+                  <p className="text-sm font-semibold text-rose-700">Annuler le ticket</p>
+                  <label className="field-label">Motif de l’annulation
+                    <textarea
+                      required
+                      minLength={10}
+                      maxLength={2000}
+                      value={cancellationReason}
+                      onChange={(event) => setCancellationReason(event.target.value)}
+                      placeholder="Expliquez pourquoi cette demande doit être annulée."
+                      className="field-control min-h-20 font-normal"
+                    />
+                  </label>
+                  <button
+                    disabled={busy || cancellationReason.trim().length < 10}
+                    className="button-secondary border-rose-200 text-rose-700"
+                  >
+                    Annuler le ticket
+                  </button>
                 </form>
               ) : null}
             </div>

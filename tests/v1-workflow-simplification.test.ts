@@ -39,6 +39,14 @@ describe("workflow V1 simplifié", () => {
     expect(workflow).toContain("isFunctionalAdministrator(actor) && !v1RequesterView");
   });
 
+  it("expose l’annulation V1 uniquement lorsque CANCELLED est autorisé", () => {
+    const actions = source("components/ticket-actions.tsx");
+    expect(actions).toContain("const canCancel = allowedStatuses.includes(TicketStatus.CANCELLED)");
+    expect(actions).toContain("Annuler le ticket");
+    expect(actions).toContain("{ status: TicketStatus.CANCELLED, reason }");
+    expect(actions).toContain("cancellationReason.trim().length < 10");
+  });
+
   it("fait démarrer le traitement lors d'un claim V1", () => {
     const service = source("lib/ticket-service.ts");
     expect(service).toContain('readServerEnvironment().PRODUCT_PROFILE === "v1"');
