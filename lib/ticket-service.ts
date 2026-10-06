@@ -835,11 +835,13 @@ export async function claimTicket(
       throw new AuthorizationError("Votre identité, votre périmètre ou votre accès au ticket n’est plus valide.");
     }
     const claimStatus = readServerEnvironment().PRODUCT_PROFILE === "v1"
-      ? TicketStatus.IN_PROGRESS
+      ? freshTicket.status === TicketStatus.TO_QUALIFY
+        ? TicketStatus.TO_QUALIFY
+        : TicketStatus.IN_PROGRESS
       : TicketStatus.ASSIGNED;
     const claimed = await tryAcquireTicketClaim(tx, {
       ticketId,
-      queueId: ticket.queueId,
+      queueId: freshTicket.queueId,
       actorId: actor.id,
       targetStatus: claimStatus,
     });
@@ -862,12 +864,12 @@ export async function claimTicket(
 
     await recordAssignment(tx, {
       ticketId,
-      queueId: ticket.queueId,
+      queueId: freshTicket.queueId,
       previousAssigneeId: null,
       newAssigneeId: actor.id,
       assignedById: actor.id,
       reason: parsed.reason,
-      fromStatus: ticket.status,
+      fromStatus: freshTicket.status,
       toStatus: claimStatus,
       assignmentMode: "CLAIM",
     });
@@ -877,7 +879,9 @@ export async function claimTicket(
       type: NotificationType.TICKET_ASSIGNED,
       title: "Ticket pris en charge",
       body: readServerEnvironment().PRODUCT_PROFILE === "v1"
-        ? `${updated.reference} est maintenant en traitement par vos soins.`
+        ? claimStatus === TicketStatus.TO_QUALIFY
+          ? `${updated.reference} vous est attribué pour qualification.`
+          : `${updated.reference} est maintenant en traitement par vos soins.`
         : `${updated.reference} vous est maintenant affecté.`,
     });
     if (ticket.queue.managerId && ticket.queue.managerId !== actor.id) {
