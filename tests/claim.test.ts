@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { RoleCode, ScopeType, TicketStatus } from "@prisma/client";
 import { canClaimTicket } from "@/lib/access-control";
 import { canActorClaimTicket } from "@/lib/ticket-service";
@@ -74,6 +74,20 @@ describe("contrat Claim", () => {
       tryAcquireTicketClaim(tx, { ticketId: "ticket", queueId: "queue-network", actorId: "manager" }),
     ]);
     expect([agentWon, managerWon].filter(Boolean)).toHaveLength(1);
+  });
+
+  it("permet au profil V1 de passer directement en traitement lors du claim", async () => {
+    const updateMany = vi.fn().mockResolvedValue({ count: 1 });
+    const tx = { ticket: { updateMany } } as never;
+    await expect(tryAcquireTicketClaim(tx, {
+      ticketId: "ticket",
+      queueId: "queue-network",
+      actorId: "agent",
+      targetStatus: TicketStatus.IN_PROGRESS,
+    })).resolves.toBe(true);
+    expect(updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: { assignedToId: "agent", status: TicketStatus.IN_PROGRESS },
+    }));
   });
 
   it("conserve exactement les quatre statuts pris en charge", () => {
