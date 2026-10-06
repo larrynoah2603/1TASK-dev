@@ -541,9 +541,15 @@ export async function getTicketActionContext(
     hasPermission(actor, "ticket:update", target));
   const requesterAction = actor.id === ticket.requesterId;
   const v1RequesterView = readServerEnvironment().PRODUCT_PROFILE === "v1" && requesterAction;
+  const v1Profile = readServerEnvironment().PRODUCT_PROFILE === "v1";
   let allowedStatuses = v1RequesterView
     ? v1RequesterAllowedNextStatuses(ticket.status)
     : allowedNextStatuses(ticket.status, roleCodes(actor), requesterAction);
+  if (v1Profile && !requesterAction) {
+    allowedStatuses = allowedStatuses.filter(
+      (status) => status !== TicketStatus.CLOSED && status !== TicketStatus.REOPENED,
+    );
+  }
   if (!ticket.assignedToId) {
     allowedStatuses = allowedStatuses.filter(
       (status) =>

@@ -257,9 +257,17 @@ export async function transitionTicket(
   }
 
   const requesterAction = actor.id === ticket.requesterId;
-  const v1RequesterView = readServerEnvironment().PRODUCT_PROFILE === "v1" && requesterAction;
+  const v1Profile = readServerEnvironment().PRODUCT_PROFILE === "v1";
+  const v1RequesterView = v1Profile && requesterAction;
   if (!hasPermission(actor, "ticket:update")) {
     throw new AuthorizationError("La permission de faire évoluer ce ticket n’est pas accordée.");
+  }
+  if (
+    v1Profile &&
+    !requesterAction &&
+    (parsed.status === TicketStatus.CLOSED || parsed.status === TicketStatus.REOPENED)
+  ) {
+    throw new AuthorizationError("En V1, seul le demandeur peut confirmer ou refuser une résolution.");
   }
   const transitionAllowed = v1RequesterView
     ? v1RequesterAllowedNextStatuses(ticket.status).includes(parsed.status)
