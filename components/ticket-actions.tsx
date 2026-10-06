@@ -19,6 +19,8 @@ export function TicketActions({
   canTransfer,
   requiresAdministrativeReason,
   allowedStatuses,
+  simplifiedV1 = false,
+  requesterView = false,
 }: {
   ticketId: string;
   status: TicketStatus;
@@ -27,6 +29,8 @@ export function TicketActions({
   canTransfer: boolean;
   requiresAdministrativeReason: boolean;
   allowedStatuses: TicketStatus[];
+  simplifiedV1?: boolean;
+  requesterView?: boolean;
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -113,19 +117,32 @@ export function TicketActions({
     }
   }
 
+  function transitionPayload(targetStatus: TicketStatus) {
+    return {
+      status: targetStatus,
+      reason: transitionReason || undefined,
+      blockReason: targetStatus === TicketStatus.BLOCKED ? blockReason : undefined,
+      blockDetails: targetStatus === TicketStatus.BLOCKED ? blockDetails : undefined,
+      resolutionCause: targetStatus === TicketStatus.RESOLUTION_PENDING ? cause : undefined,
+      resolutionAction: targetStatus === TicketStatus.RESOLUTION_PENDING ? action : undefined,
+      resolutionSolution: targetStatus === TicketStatus.RESOLUTION_PENDING ? solution : undefined,
+      reopenedReason: targetStatus === TicketStatus.REOPENED ? reopenedReason : undefined,
+    };
+  }
+
+  function confirmTransition(targetStatus: TicketStatus, confirmLabel = "Confirmer la transition", successMessage = "Transition enregistrée.") {
+    const payload = transitionPayload(targetStatus);
+    setConfirmation({
+      title: "Confirmer l’évolution du ticket",
+      description: `Le ticket sera déplacé vers « ${STATUS_LABELS[targetStatus]} ». Cette action sera enregistrée dans l’historique.`,
+      confirmLabel,
+      run: () => { void post("/api/tickets/" + ticketId + "/transition", payload, successMessage); },
+    });
+  }
+
   async function transition(event: FormEvent) {
     event.preventDefault();
-    const payload = {
-      status: nextStatus,
-      reason: transitionReason || undefined,
-      blockReason: nextStatus === TicketStatus.BLOCKED ? blockReason : undefined,
-      blockDetails: nextStatus === TicketStatus.BLOCKED ? blockDetails : undefined,
-      resolutionCause: nextStatus === TicketStatus.RESOLUTION_PENDING ? cause : undefined,
-      resolutionAction: nextStatus === TicketStatus.RESOLUTION_PENDING ? action : undefined,
-      resolutionSolution: nextStatus === TicketStatus.RESOLUTION_PENDING ? solution : undefined,
-      reopenedReason: nextStatus === TicketStatus.REOPENED ? reopenedReason : undefined,
-    };
-    setConfirmation({ title: "Confirmer l’évolution du ticket", description: `Le ticket sera déplacé vers « ${STATUS_LABELS[nextStatus]} ». Cette action sera enregistrée dans l’historique.`, confirmLabel: "Confirmer la transition", run: () => { void post("/api/tickets/" + ticketId + "/transition", payload, "Transition enregistrée."); } });
+    confirmTransition(nextStatus);
   }
 
   async function assign(event: FormEvent) {
@@ -139,6 +156,13 @@ export function TicketActions({
     if (!destinationQueueId || transferReason.trim().length < 10) return;
     setConfirmation({ title: "Confirmer la réorientation", description: "Le ticket sera transféré vers la file sélectionnée et l’opération sera enregistrée dans l’historique.", confirmLabel: "Confirmer le transfert", run: () => { void post("/api/tickets/" + ticketId + "/queue", { queueId: destinationQueueId, reason: transferReason }, "Réorientation enregistrée."); } });
   }
+
+  const canStartOrResume = allowedStatuses.includes(TicketStatus.IN_PROGRESS);
+  const canPause = allowedStatuses.includes(TicketStatus.BLOCKED);
+  const canSubmitResolution = allowedStatuses.includes(TicketStatus.RESOLUTION_PENDING);
+  const canConfirmResolution = allowedStatuses.includes(TicketStatus.CLOSED);
+  const canReopenResolution = allowedStatuses.includes(TicketStatus.REOPENED);
+  const hasSimplifiedActions = canStartOrResume || canPause || canSubmitResolution || canConfirmResolution || canReopenResolution;
 
   return (
     <div className="space-y-3">
@@ -156,7 +180,78 @@ export function TicketActions({
         </TicketSidePanel>
       ) : null}
 
-      {allowedStatuses.length ? (
+      {simplifiedV1 ? (
+        hasSimplifiedActions ? (
+          <TicketSidePanel
+            title={requesterView ? "Résolution" : "Traitement"}
+            subtitle={requesterView ? "Confirmer ou signaler que le problème persiste" : "Actions utiles pour ce ticket"}
+            defaultOpen
+          >
+            <div className="action-card space-y-4">
+              {canStartOrResume ? (
+                <form onSubmit={(event) => { event.preventDefault(); confirmTransition(TicketStatus.IN_PROGRESS, status === TicketStatus.BLOCKED || status === TicketStatus.REOPENED ? "Reprendre le traitement" : "Démarrer le traitement", "Traitement démarré."); }} className="space-y-3">
+                  {requiresAdministrativeReason ? (
+                    <label className="field-label text-amber-800">Motif de l’action administrative
+                      <textarea required minLength={10} value={transitionReason} onChange={(event) => setTransitionReason(event.target.value)} placeholder="Motif obligatoire, 10 caractères minimum." className="field-control min-h-20 border-amber-200 bg-amber-50/40 font-normal" />
+                    </label>
+                  ) : null}
+                  <button disabled={busy || (requiresAdministrativeReason && transitionReason.trim().length < 10)} className="button-primary">
+                    {status === TicketStatus.BLOCKED || status === TicketStatus.REOPENED ? "Reprendre le traitement" : "Démarrer le traitement"}
+                  </button>
+                </form>
+              ) : null}
+
+              {canPause ? (
+                <form onSubmit={(event) => { event.preventDefault(); confirmTransition(TicketStatus.BLOCKED, "Mettre en attente", "Ticket mis en attente."); }} className="space-y-3">
+                  <p className="text-sm font-semibold text-slate-900">Mettre en attente</p>
+                  <label className="field-label">Motif du blocage
+                    <select required value={blockReason} onChange={(event) => setBlockReason(event.target.value as BlockReason)} className="field-control" aria-label="Motif du blocage">{Object.values(BlockReason).map((item) => <option key={item} value={item}>{BLOCK_REASON_LABELS[item]}</option>)}</select>
+                  </label>
+                  <label className="field-label">Détail
+                    <textarea required minLength={1} value={blockDetails} onChange={(event) => setBlockDetails(event.target.value)} placeholder="Expliquez ce qui est attendu et par qui." className="field-control min-h-20 font-normal" />
+                  </label>
+                  {requiresAdministrativeReason ? (
+                    <label className="field-label text-amber-800">Motif de l’action administrative
+                      <textarea required minLength={10} value={transitionReason} onChange={(event) => setTransitionReason(event.target.value)} placeholder="Motif obligatoire, 10 caractères minimum." className="field-control min-h-20 border-amber-200 bg-amber-50/40 font-normal" />
+                    </label>
+                  ) : null}
+                  <button disabled={busy || !blockDetails.trim() || (requiresAdministrativeReason && transitionReason.trim().length < 10)} className="button-secondary">Mettre en attente</button>
+                </form>
+              ) : null}
+
+              {canSubmitResolution ? (
+                <form onSubmit={(event) => { event.preventDefault(); confirmTransition(TicketStatus.RESOLUTION_PENDING, "Proposer la résolution", "Résolution proposée au demandeur."); }} className="space-y-3">
+                  <p className="text-sm font-semibold text-slate-900">Résoudre le ticket</p>
+                  <label className="field-label">Cause<input required value={cause} onChange={(event) => setCause(event.target.value)} placeholder="Cause identifiée" className="field-control font-normal" /></label>
+                  <label className="field-label">Action réalisée<input required value={action} onChange={(event) => setAction(event.target.value)} placeholder="Action effectuée" className="field-control font-normal" /></label>
+                  <label className="field-label">Solution apportée<textarea required minLength={1} value={solution} onChange={(event) => setSolution(event.target.value)} placeholder="Décrivez la solution et le résultat." className="field-control min-h-20 font-normal" /></label>
+                  {requiresAdministrativeReason ? (
+                    <label className="field-label text-amber-800">Motif de l’action administrative
+                      <textarea required minLength={10} value={transitionReason} onChange={(event) => setTransitionReason(event.target.value)} placeholder="Motif obligatoire, 10 caractères minimum." className="field-control min-h-20 border-amber-200 bg-amber-50/40 font-normal" />
+                    </label>
+                  ) : null}
+                  <button disabled={busy || !cause.trim() || !action.trim() || !solution.trim() || (requiresAdministrativeReason && transitionReason.trim().length < 10)} className="button-primary">Résoudre le ticket</button>
+                </form>
+              ) : null}
+
+              {canConfirmResolution ? (
+                <button type="button" disabled={busy} onClick={() => confirmTransition(TicketStatus.CLOSED, "Confirmer la résolution", "Résolution confirmée.")} className="button-primary">
+                  Confirmer la résolution
+                </button>
+              ) : null}
+
+              {canReopenResolution ? (
+                <form onSubmit={(event) => { event.preventDefault(); confirmTransition(TicketStatus.REOPENED, "Le problème persiste", "Ticket rouvert."); }} className="space-y-3">
+                  <label className="field-label">Le problème persiste
+                    <textarea required minLength={1} value={reopenedReason} onChange={(event) => setReopenedReason(event.target.value)} placeholder="Expliquez ce qui ne fonctionne toujours pas." className="field-control min-h-20 font-normal" />
+                  </label>
+                  <button disabled={busy || !reopenedReason.trim()} className="button-secondary">Le problème persiste</button>
+                </form>
+              ) : null}
+            </div>
+          </TicketSidePanel>
+        ) : null
+      ) : allowedStatuses.length ? (
         <TicketSidePanel title="Workflow" subtitle="Changer l’étape du ticket" defaultOpen={!canClaim}>
           <form onSubmit={transition} className="action-card space-y-4">
           <div>

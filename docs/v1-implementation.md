@@ -206,6 +206,33 @@ ou introduire une rotation concurrente explicitement testée. Aucun nouvel algor
 n’est ajouté dans cette phase.
 
 
+### Workflow V1 simplifié — présentation et actions
+
+La V1 conserve les statuts internes historiques pour la compatibilité, l'audit, les SLA et les
+jobs, mais n'expose plus leur granularité complète au demandeur. La progression publique est :
+
+```text
+Reçue → En traitement → Résolution proposée → Fermée
+```
+
+`BLOCKED` est présenté comme **En attente** et `CANCELLED` comme **Annulée**. Les statuts
+`NEW`, `TO_QUALIFY` et `TO_ASSIGN` sont regroupés sous **Reçue** ; `ASSIGNED`,
+`IN_PROGRESS` et `REOPENED` sous **En traitement**.
+
+En V1, un acteur qui est aussi le demandeur du ticket est traité comme demandeur sur sa propre
+fiche, même s'il possède par ailleurs un rôle d'administration ou de traitement. Il ne voit donc
+pas les actions opérationnelles de qualification, affectation, transfert ou workflow sur son
+propre ticket. Lorsqu'une résolution est soumise, il peut uniquement la confirmer ou signaler
+que le problème persiste.
+
+Pour les agents et responsables, le sélecteur générique de statuts est remplacé par des actions
+contextuelles : **Prendre en charge**, **Démarrer/Reprendre le traitement**, **Mettre en attente**
+et **Résoudre le ticket**. Un claim V1 sur un ticket métier affecte l'acteur et passe directement
+le ticket en `IN_PROGRESS`, évitant l'étape intermédiaire `ASSIGNED → IN_PROGRESS`. Un ticket
+encore en `TO_QUALIFY` conserve cet état lors du claim afin que la qualification ne puisse pas
+être contournée. Une affectation manuelle par un responsable conserve `ASSIGNED` jusqu'au
+démarrage explicite par l'agent.
+
 ### P08 — responsables de file opérationnels
 
 Les rôles `QUEUE_MANAGER` reçoivent `ticket:claim` et `ticket:process` dans le catalogue runtime

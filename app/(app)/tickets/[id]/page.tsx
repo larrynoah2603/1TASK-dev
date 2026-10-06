@@ -86,8 +86,11 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
   if (!ticket) notFound();
 
   const actionContext = await getTicketActionContext(user, ticket);
+  const v1Profile = !capabilities.workflowDefinitions;
+  const requesterView = user.id === ticket.requesterId;
+  const v1RequesterView = v1Profile && requesterView;
   const operationalRoles: RoleCode[] = [RoleCode.AGENT, RoleCode.QUEUE_MANAGER, RoleCode.FUNCTIONAL_ADMIN];
-  const operational = roleCodes(user).some((role) => operationalRoles.includes(role));
+  const operational = !v1RequesterView && roleCodes(user).some((role) => operationalRoles.includes(role));
   const sla = getTicketSlaState(ticket);
   const timeline = [
     ...ticket.events.map((event) => ({ kind: "event" as const, at: event.createdAt, event })),
@@ -154,6 +157,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
           pausedMinutes={ticket.totalPausedMinutes}
           canClaim={actionContext.canClaim}
           canResolve={canResolve}
+          simplifiedV1={v1Profile}
         />
       </TicketHeader>
 
@@ -198,7 +202,13 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
 
         <aside className="kit-ticket-col kit-ticket-side" aria-label="Informations et actions du ticket">
           <TicketSidebarActions>
-            <TicketActions ticketId={ticket.id} status={ticket.status} {...actionContext} />
+            <TicketActions
+              ticketId={ticket.id}
+              status={ticket.status}
+              simplifiedV1={v1Profile}
+              requesterView={requesterView}
+              {...actionContext}
+            />
           </TicketSidebarActions>
 
           <TicketPanel title="Demandeur">

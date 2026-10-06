@@ -10,7 +10,7 @@ cette revue sont consignées dans le compte-rendu de PR.
 | 1 | Entra mappé crée un REQUESTER actif, de façon idempotente | `tests/entra-provisioning.integration.test.ts` | Automatisé PostgreSQL ; staging Entra requis |
 | 2 | Création V1 limitée à objet, description et service facultatif | `tests/v1-ticket-creation.test.ts`, `tests/validation.test.ts` | Automatisé |
 | 3 | Service métier éligible route vers sa file ; le triage global reste caché/réservé au fallback automatique | `tests/routing.test.ts`, `tests/triage-configuration.test.ts`, `tests/v1-ticket-creation.test.ts` | Automatisé ; catalogue navigateur staging requis |
-| 4 | Claim concurrent, traitement, résolution et confirmation demandeur | `tests/claim.test.ts`, `tests/ticket-business-journeys.test.ts` | Automatisé par services ; parcours UI staging requis |
+| 4 | Claim V1 démarre le traitement, actions agent simplifiées, résolution puis confirmation/réouverture demandeur | `tests/claim.test.ts`, `tests/ticket-business-journeys.test.ts`, `tests/v1-workflow-simplification.test.ts` | Automatisé par services/contrat ; parcours UI staging requis |
 | 5 | Département Entra inconnu reste en attente sans droit élevé | `tests/entra-provisioning.integration.test.ts`, `tests/identity.test.ts` | Automatisé PostgreSQL |
 | 6 | Ajout explicite du mapping active au prochain sync valide | `tests/entra-provisioning.integration.test.ts` | Automatisé PostgreSQL ; Entra réel requis |
 | 7 | Qualification transverse vers un service éligible | `tests/routing.test.ts`, `tests/ticket-department-routing-contract.test.ts` | Automatisé |
@@ -29,7 +29,7 @@ cette revue sont consignées dans le compte-rendu de PR.
 | 20 | Approbation/refus d’actif renvoie le demandeur vers `/my-assets` | `tests/asset-requests.test.ts`, `tests/assets-refonte-lot6-contract.test.ts` | Automatisé |
 | 21 | Lecture confidentielle historique respecte grants et délégations expirées | `tests/confidential-ticket-feature.test.ts` | Automatisé |
 | 22 | Pièce jointe interne/historique reste protégée et l’indisponibilité est contrôlée | `tests/ticket-attachment-service-contract.test.ts`, `tests/api-security.test.ts` | Automatisé par contrat ; stockage staging requis |
-| 23 | Navigation desktop/mobile et formulaire trois champs | `tests/shell-industrial-contract.test.ts`, `tests/v1-navigation-policy.test.ts` | Contrat automatisé ; revue visuelle staging requise |
+| 23 | Navigation desktop/mobile, formulaire trois champs et workflow public V1 en quatre étapes | `tests/shell-industrial-contract.test.ts`, `tests/v1-navigation-policy.test.ts`, `tests/v1-workflow-simplification.test.ts` | Contrat automatisé ; revue visuelle staging requise |
 | 24 | Feedback, chargement, vide, refus et erreur | `tests/action-feedback.test.ts`, `tests/frontend-robustness.test.ts` | Contrat automatisé ; revue navigateur staging requise |
 | 25 | Base fraîche et fixture d’upgrade passent migrations, réparations et parcours | `.github/workflows/ci.yml`, runbook P11 | **Bloquant : à exécuter sur deux bases PostgreSQL isolées** |
 

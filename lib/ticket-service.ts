@@ -26,6 +26,7 @@ import {
   isClaimableStatus,
   isStaffRole,
   makeTicketReference,
+  v1RequesterAllowedNextStatuses,
 } from "@/lib/domain";
 import { calculateSlaDeadlines } from "@/lib/sla";
 import { createInAppNotification } from "@/lib/notifications";
@@ -539,7 +540,10 @@ export async function getTicketActionContext(
     !terminal && (hasPermission(actor, "ticket:comment:public", target) ||
     hasPermission(actor, "ticket:update", target));
   const requesterAction = actor.id === ticket.requesterId;
-  let allowedStatuses = allowedNextStatuses(ticket.status, roleCodes(actor), requesterAction);
+  const v1RequesterView = readServerEnvironment().PRODUCT_PROFILE === "v1" && requesterAction;
+  let allowedStatuses = v1RequesterView
+    ? v1RequesterAllowedNextStatuses(ticket.status)
+    : allowedNextStatuses(ticket.status, roleCodes(actor), requesterAction);
   if (!ticket.assignedToId) {
     allowedStatuses = allowedStatuses.filter(
       (status) =>
@@ -550,12 +554,13 @@ export async function getTicketActionContext(
   }
 
   return {
-    canClaim: canActorClaimTicket(actor, { ...authorizationTicket, status: ticket.status }),
-    canAssign,
-    canTransfer,
-    requiresAdministrativeReason: isFunctionalAdministrator(actor),
+    canClaim: v1RequesterView ? false : canActorClaimTicket(actor, { ...authorizationTicket, status: ticket.status }),
+    canAssign: v1RequesterView ? false : canAssign,
+    canTransfer: v1RequesterView ? false : canTransfer,
+    requiresAdministrativeReason: !v1RequesterView && isFunctionalAdministrator(actor),
     canPostPublic,
     canPostInternal:
+      !v1RequesterView &&
       !terminal && canPostInternalMessage(roleCodes(actor)) &&
       hasPermission(actor, "ticket:internal-comment", target),
     allowedStatuses,
@@ -829,7 +834,17 @@ export async function claimTicket(
     if (!freshActor || !freshTicket || !canActorClaimTicket(freshActor, freshTicket)) {
       throw new AuthorizationError("Votre identité, votre périmètre ou votre accès au ticket n’est plus valide.");
     }
-    const claimed = await tryAcquireTicketClaim(tx, { ticketId, queueId: ticket.queueId, actorId: actor.id });
+    const claimStatus = readServerEnvironment().PRODUCT_PROFILE === "v1"
+      ? freshTicket.status === TicketStatus.TO_QUALIFY
+        ? TicketStatus.TO_QUALIFY
+        : TicketStatus.IN_PROGRESS
+      : TicketStatus.ASSIGNED;
+    const claimed = await tryAcquireTicketClaim(tx, {
+      ticketId,
+      queueId: freshTicket.queueId,
+      actorId: actor.id,
+      targetStatus: claimStatus,
+    });
     if (!claimed) {
       const current = await tx.ticket.findUnique({
         where: { id: ticketId },
@@ -849,13 +864,13 @@ export async function claimTicket(
 
     await recordAssignment(tx, {
       ticketId,
-      queueId: ticket.queueId,
+      queueId: freshTicket.queueId,
       previousAssigneeId: null,
       newAssigneeId: actor.id,
       assignedById: actor.id,
       reason: parsed.reason,
-      fromStatus: ticket.status,
-      toStatus: TicketStatus.ASSIGNED,
+      fromStatus: freshTicket.status,
+      toStatus: claimStatus,
       assignmentMode: "CLAIM",
     });
     await createInAppNotification(tx, {
@@ -863,7 +878,11 @@ export async function claimTicket(
       ticketId,
       type: NotificationType.TICKET_ASSIGNED,
       title: "Ticket pris en charge",
-      body: `${updated.reference} vous est maintenant affecté.`,
+      body: readServerEnvironment().PRODUCT_PROFILE === "v1"
+        ? claimStatus === TicketStatus.TO_QUALIFY
+          ? `${updated.reference} vous est attribué pour qualification.`
+          : `${updated.reference} est maintenant en traitement par vos soins.`
+        : `${updated.reference} vous est maintenant affecté.`,
     });
     if (ticket.queue.managerId && ticket.queue.managerId !== actor.id) {
       await createInAppNotification(tx, {

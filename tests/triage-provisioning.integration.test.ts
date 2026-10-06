@@ -44,7 +44,19 @@ describe.skipIf(!runDatabaseTests)("provisionnement TRIAGE V1 PostgreSQL", () =>
     await expect(prisma.serviceCatalogItem.count({ where: { provisionedTriageDepartmentId: created.department.id } })).resolves.toBe(1);
 
     await prisma.v1Configuration.update({ where: { id: V1_CONFIGURATION_ID }, data: { globalTriageServiceId: renamed.service.id } });
-    await expect(prisma.serviceCatalogItem.delete({ where: { id: renamed.service.id } })).rejects.toThrow();
+    await expect(prisma.v1Configuration.findUnique({
+      where: { id: V1_CONFIGURATION_ID },
+      select: { globalTriageServiceId: true },
+    })).resolves.toEqual({ globalTriageServiceId: renamed.service.id });
+
+    await prisma.$transaction(async (tx) => {
+      await tx.v1Configuration.update({
+        where: { id: V1_CONFIGURATION_ID },
+        data: { globalTriageServiceId: null },
+      });
+      await tx.serviceCatalogItem.delete({ where: { id: renamed.service.id } });
+    });
+    await expect(prisma.serviceCatalogItem.findUnique({ where: { id: renamed.service.id } })).resolves.toBeNull();
     expect(slaId).toBeTruthy();
   });
 

@@ -9,6 +9,7 @@ import {
   canReopenResolution,
   canTransitionStatus,
   isStaffRole,
+  v1RequesterAllowedNextStatuses,
 } from "@/lib/domain";
 import { DomainError } from "@/lib/domain-error";
 import { AuthorizationError, hasPermission, requireCurrentActor, roleCodes, toAccessSubject, type UserContext } from "@/lib/server-auth";
@@ -256,10 +257,14 @@ export async function transitionTicket(
   }
 
   const requesterAction = actor.id === ticket.requesterId;
+  const v1RequesterView = readServerEnvironment().PRODUCT_PROFILE === "v1" && requesterAction;
   if (!hasPermission(actor, "ticket:update")) {
     throw new AuthorizationError("La permission de faire évoluer ce ticket n’est pas accordée.");
   }
-  if (!canTransitionStatus(ticket.status, parsed.status, roleCodes(actor), requesterAction)) {
+  const transitionAllowed = v1RequesterView
+    ? v1RequesterAllowedNextStatuses(ticket.status).includes(parsed.status)
+    : canTransitionStatus(ticket.status, parsed.status, roleCodes(actor), requesterAction);
+  if (!transitionAllowed) {
     throw new AuthorizationError("Cette transition n’est pas autorisée pour votre rôle ou ce ticket.");
   }
   const actorRoles = roleCodes(actor);
@@ -305,8 +310,8 @@ export async function transitionTicket(
   ) {
     throw new AuthorizationError("Un agent ne peut traiter que le ticket qui lui est affecté.");
   }
-  const administrativeOverride = isFunctionalAdministrator(actor);
-  requireAdministrativeReason(actor, parsed.reason);
+  const administrativeOverride = isFunctionalAdministrator(actor) && !v1RequesterView;
+  if (administrativeOverride) requireAdministrativeReason(actor, parsed.reason);
   if (
     !requesterAction &&
     (parsed.status === TicketStatus.IN_PROGRESS || parsed.status === TicketStatus.BLOCKED || parsed.status === TicketStatus.RESOLUTION_PENDING) &&
