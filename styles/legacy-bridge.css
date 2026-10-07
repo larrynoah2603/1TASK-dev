@@ -211,6 +211,78 @@ html[data-theme] .combobox-option-highlighted:not(.combobox-option-selected) {
   color: var(--kit-text) !important;
 }
 
+/* ---------- Compatibilité des écrans encore très Tailwind/legacy ---------- */
+html[data-theme] .agent-card-count {
+  background: var(--kit-selected) !important;
+  color: var(--kit-selected-text) !important;
+}
+
+html[data-theme] .dashboard-kpi-value-brand { color: var(--kit-primary-text) !important; }
+html[data-theme] .dashboard-kpi-value-info,
+html[data-theme] .dashboard-kpi-value-violet { color: var(--kit-info-text) !important; }
+html[data-theme] .dashboard-kpi-value-success { color: var(--kit-success-text) !important; }
+html[data-theme] .dashboard-kpi-value-warning { color: var(--kit-warning-text) !important; }
+html[data-theme] .dashboard-kpi-value-danger { color: var(--kit-danger-text) !important; }
+
+html[data-theme] .notification-dot { background: var(--kit-primary) !important; }
+html[data-theme] .notification-dot-read { background: var(--kit-border-strong) !important; }
+html[data-theme] .preview-panel {
+  border-color: var(--kit-border) !important;
+  background: var(--kit-surface-muted) !important;
+  color: var(--kit-text) !important;
+}
+
+html[data-theme] .view-toggle {
+  border-color: var(--kit-border-strong) !important;
+  background: var(--kit-surface-muted) !important;
+}
+html[data-theme] .view-toggle button { color: var(--kit-text-2) !important; }
+html[data-theme] .view-toggle button:hover { color: var(--kit-primary-text) !important; }
+html[data-theme] .view-toggle-active {
+  background: var(--kit-selected) !important;
+  color: var(--kit-selected-text) !important;
+}
+
+/* Écrans autonomes : connexion et attente administrative suivent aussi le thème explicite. */
+html[data-theme] .signin-shell,
+html[data-theme] .pending-assignment-page {
+  background: var(--kit-bg) !important;
+  color: var(--kit-text) !important;
+}
+html[data-theme] .signin-shell .text-white { color: var(--kit-text) !important; }
+html[data-theme] .signin-shell .text-slate-300,
+html[data-theme] .signin-shell .text-slate-400,
+html[data-theme] .signin-shell .text-slate-500,
+html[data-theme] .signin-shell .text-slate-600,
+html[data-theme] .pending-assignment-page .text-slate-500,
+html[data-theme] .pending-assignment-page .text-slate-600 { color: var(--kit-secondary) !important; }
+
+html[data-theme] .signin-card,
+html[data-theme] .pending-assignment-page > section {
+  border: 1px solid var(--kit-border) !important;
+  background: var(--kit-surface) !important;
+  color: var(--kit-text) !important;
+}
+html[data-theme] .signin-card h1,
+html[data-theme] .signin-card p,
+html[data-theme] .signin-card .text-slate-600,
+html[data-theme] .pending-assignment-page .text-slate-900,
+html[data-theme] .pending-assignment-page .text-slate-950 { color: var(--kit-text) !important; }
+html[data-theme] .signin-card p,
+html[data-theme] .pending-assignment-page p { color: var(--kit-text-2) !important; }
+html[data-theme] .signin-card .eyebrow { color: var(--kit-primary-text) !important; }
+html[data-theme] .signin-card [class*="bg-slate-50"],
+html[data-theme] .pending-assignment-page .bg-slate-50 { background: var(--kit-surface-muted) !important; }
+html[data-theme] .signin-card button {
+  background: var(--kit-primary) !important;
+  color: var(--kit-on-primary) !important;
+}
+html[data-theme] .signin-card button:hover { background: var(--kit-primary-hover) !important; }
+html[data-theme] .signin-card button .bg-white {
+  background: var(--kit-surface) !important;
+  color: var(--kit-primary-text) !important;
+}
+
 /* ---------- Base globale ---------- */
 html { background: var(--kit-bg); }
 body {
