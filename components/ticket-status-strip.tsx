@@ -54,7 +54,7 @@ export function TicketStatusStrip({
   const steps = simplifiedV1 ? V1_WORKFLOW_STEPS : STATUS_ORDER;
 
   return (
-    <section className="kit-strip" aria-label={`État du ticket ${reference}`}>
+    <section className={`kit-strip${simplifiedV1 ? " kit-strip-v1" : ""}`} aria-label={`État du ticket ${reference}`}>
       <div className="kit-ticket-badges">
         {simplifiedV1
           ? <span className="kit-badge kit-badge-info"><span aria-hidden="true" className="kit-badge-dot" />{currentLabel}</span>
@@ -62,10 +62,12 @@ export function TicketStatusStrip({
         <PriorityBadge priority={priority} />
         <SlaIndicator state={slaState} dueAt={slaDueAt} startedAt={createdAt} pausedMinutes={pausedMinutes} compact />
       </div>
-      <div className="kit-strip-sla">
-        <SlaIndicator state={slaState} dueAt={slaDueAt} startedAt={createdAt} pausedMinutes={pausedMinutes} />
-      </div>
-      <ol className="kit-stepper" aria-label="Progression du workflow">
+      {!simplifiedV1 ? (
+        <div className="kit-strip-sla">
+          <SlaIndicator state={slaState} dueAt={slaDueAt} startedAt={createdAt} pausedMinutes={pausedMinutes} />
+        </div>
+      ) : null}
+      <ol className={`kit-stepper${simplifiedV1 ? " kit-stepper-v1" : ""}`} aria-label="Progression du workflow">
         {steps.map((step, index) => {
           const complete = index < currentPosition;
           const active = index === currentPosition;
