@@ -39,7 +39,7 @@ export default async function AdminTicketsPage({
     <div className="space-y-6">
       <AdminPageHeader eyebrow="Supervision opérationnelle" title="Tickets autorisés" description="Supervisez les tickets non confidentiels couverts par votre périmètre. Les actions de réaffectation et de réorientation restent celles du workflow sécurisé et exigent une justification." actions={<Link href="/inbox" className="button-secondary">Ouvrir la boîte opérationnelle</Link>} />
       <AdminNotice tone="warning">Les tickets confidentiels qui ne vous sont pas explicitement autorisés ne sont ni comptés ni affichés. Connaître une référence ou un identifiant ne suffit jamais à obtenir l’accès.</AdminNotice>
-      <TicketFilters queues={queues} values={params} resetHref="/admin/tickets" scopeOptions={[]} />
+      <TicketFilters compact queues={queues} values={params} resetHref="/admin/tickets" scopeOptions={[]} />
       <TicketTable tickets={ticketPage.tickets} showActions={false} empty="Aucun ticket autorisé ne correspond à ces critères." />
       <Pagination basePath="/admin/tickets" query={{ q: params.q, status: params.status, priority: params.priority, sla: params.sla, departmentId: params.departmentId, queueId: params.queueId, sort: params.sort, pageSize: String(params.pageSize) }} page={ticketPage.page} totalPages={ticketPage.totalPages} total={ticketPage.total} pageSize={ticketPage.pageSize} />
     </div>
