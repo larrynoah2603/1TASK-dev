@@ -62,17 +62,17 @@ function SignInContent() {
   }
 
   return (
-    <main className="signin-shell relative min-h-screen overflow-hidden px-4 py-6 text-white sm:px-8 lg:py-10">
+    <main className="signin-shell relative min-h-screen overflow-hidden px-4 py-6 text-[var(--kit-text)] sm:px-8 lg:py-10">
       <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-48 left-0 h-[28rem] w-[28rem] rounded-full bg-white/10 blur-3xl" />
       <div className="relative mx-auto grid min-h-[calc(100vh-3rem)] max-w-6xl items-center gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
         <section className="hidden lg:block">
           <BrandMark inverse />
-          <p className="mt-14 max-w-xl text-sm font-bold uppercase tracking-[0.24em] text-indigo-200">Le support interne, en un seul geste</p>
-          <h1 className="mt-5 max-w-2xl text-5xl font-black leading-[1.05] tracking-[-0.04em] text-white xl:text-6xl">
+          <p className="mt-14 max-w-xl text-sm font-bold uppercase tracking-[0.24em] text-[var(--kit-primary-text)]">Le support interne, en un seul geste</p>
+          <h1 className="mt-5 max-w-2xl text-5xl font-black leading-[1.05] tracking-[-0.04em] text-[var(--kit-text)] xl:text-6xl">
             Chaque demande mérite une réponse claire.
           </h1>
-          <p className="mt-6 max-w-xl text-base leading-7 text-slate-300">
+          <p className="mt-6 max-w-xl text-base leading-7 text-[var(--kit-text-2)]">
             1TASK centralise vos incidents, demandes de service, délais SLA et échanges avec les équipes habilitées.
           </p>
           <div className="mt-10 grid max-w-xl gap-3 sm:grid-cols-3">
@@ -81,10 +81,10 @@ function SignInContent() {
               ["02", "Suivre", "Chaque étape et échéance"],
               ["03", "Résoudre", "Avec une traçabilité complète"],
             ].map(([number, title, text]) => (
-              <div key={number} className="rounded-xl border border-white/10 bg-white/[0.06] p-4">
-                <span className="text-xs font-black text-indigo-200">{number}</span>
-                <p className="mt-6 text-sm font-bold text-white">{title}</p>
-                <p className="mt-1 text-xs leading-5 text-slate-400">{text}</p>
+              <div key={number} className="rounded-xl border border-[var(--kit-border)] bg-[var(--kit-surface)] p-4">
+                <span className="text-xs font-black text-[var(--kit-primary-text)]">{number}</span>
+                <p className="mt-6 text-sm font-bold text-[var(--kit-text)]">{title}</p>
+                <p className="mt-1 text-xs leading-5 text-[var(--kit-secondary)]">{text}</p>
               </div>
             ))}
           </div>
@@ -106,7 +106,7 @@ function SignInContent() {
             type="button"
             disabled={loading !== null}
             onClick={() => void handleSignIn("microsoft-entra-id")}
-            className="mt-8 flex min-h-12 w-full items-center justify-center gap-3 rounded-lg bg-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-700/15 transition hover:bg-indigo-700 disabled:cursor-wait disabled:opacity-60"
+            className="mt-8 flex min-h-12 w-full items-center justify-center gap-3 rounded-lg bg-[var(--kit-primary)] px-4 py-3 text-sm font-bold text-[var(--kit-on-primary)] shadow-lg transition hover:bg-[var(--kit-primary-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--kit-primary)] disabled:cursor-wait disabled:opacity-60"
           >
             <span className="grid h-7 w-7 place-items-center rounded-md bg-white text-sm font-black operational-link">M</span>
             {loading === "microsoft-entra-id" ? "Connexion en cours…" : "Continuer avec Microsoft Entra ID"}
@@ -125,7 +125,7 @@ function SignInContent() {
 
 function SignInFallback() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-950 text-sm font-semibold text-white">
+    <main className="flex min-h-screen items-center justify-center bg-[var(--kit-bg)] text-sm font-semibold text-[var(--kit-text)]">
       Chargement de 1TASK…
     </main>
   );
