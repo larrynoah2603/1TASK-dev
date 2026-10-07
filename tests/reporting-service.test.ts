@@ -30,7 +30,8 @@ describe("reporting métier", () => {
       .mockResolvedValueOnce(1)
       .mockResolvedValueOnce(2)
       .mockResolvedValueOnce(0)
-      .mockResolvedValueOnce(0);
+      .mockResolvedValueOnce(0)
+      .mockResolvedValueOnce(5);
     mocks.groupBy
       .mockResolvedValueOnce([
         { status: TicketStatus.CLOSED, priority: Priority.MEDIUM, _count: { _all: 3 } },
@@ -62,7 +63,8 @@ describe("reporting métier", () => {
       firstResponseBreached: 1,
       resolutionBreached: 2,
       closureRate: 40,
-      slaComplianceRate: 80,
+      slaTracked: 5,
+      slaComplianceRate: 60,
       resolvedCount: 2,
       averageResolutionMinutes: 90,
       criticalCount: 1,
@@ -80,6 +82,10 @@ describe("reporting métier", () => {
     expect(JSON.stringify(overdueWhere)).toContain(TicketStatus.BLOCKED);
     expect(JSON.stringify(overdueWhere)).toContain("firstResponseDueAt");
     expect(JSON.stringify(overdueWhere)).toContain("resolutionDueAt");
+
+    const trackedWhere = mocks.count.mock.calls[5][0].where;
+    expect(JSON.stringify(trackedWhere)).toContain("firstResponseDueAt");
+    expect(JSON.stringify(trackedWhere)).toContain("resolutionDueAt");
 
     expect(mocks.groupBy).toHaveBeenNthCalledWith(1, expect.objectContaining({
       by: ["status", "priority"],
