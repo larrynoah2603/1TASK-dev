@@ -187,7 +187,7 @@ export async function syncUserFromEntraProfile(input: {
       // immutable Entra object id, then re-read under PostgreSQL READ COMMITTED.
       // The second callback will see the row created by the first and update it
       // instead of racing an email upsert against User_entraObjectId_key.
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${profile.id})::bigint)`;
+      await tx.$queryRaw`SELECT 1::int AS "locked" FROM (SELECT pg_advisory_xact_lock(hashtext(${profile.id})::bigint)) AS advisory_lock`;
       existingUser = (await findIdentityMatches())[0] ?? null;
     }
 
