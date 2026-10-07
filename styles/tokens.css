@@ -66,6 +66,7 @@
   --kit-selected: #FFF0E4;
   --kit-selected-text: #B5480A;
   --kit-on-primary: #FFFFFF;
+  --kit-on-brand: #171717;
 
   /* Statuts : couleurs sémantiques distinctes de la marque. */
   --kit-info: #315D8C;
@@ -105,6 +106,7 @@ html[data-theme="dark"] {
   --kit-selected: #38271D;
   --kit-selected-text: #F47F2A;
   --kit-on-primary: #171717;
+  --kit-on-brand: #171717;
 
   --kit-info: #8DB5E2;
   --kit-success: #74C98A;
