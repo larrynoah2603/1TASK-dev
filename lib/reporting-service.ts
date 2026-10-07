@@ -9,7 +9,7 @@ function reportingScopeFingerprint(current: UserContext) {
   const payload = {
     departmentId: current.departmentId ?? null,
     authorizedQueueId: current.authorizedQueueId ?? null,
-    roles: current.roleAssignments.map((assignment) => ({
+    roles: (current.roleAssignments ?? []).map((assignment) => ({
       code: assignment.role.code,
       scope: assignment.scope ? {
         type: assignment.scope.type,
@@ -20,11 +20,11 @@ function reportingScopeFingerprint(current: UserContext) {
         members: assignment.scope.members.map((member) => member.userId).sort(),
       } : null,
     })).sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right))),
-    teams: current.teamMemberships
+    teams: (current.teamMemberships ?? [])
       .filter((membership) => membership.isActive && membership.team.isActive)
       .map((membership) => ({ id: membership.team.id, queueId: membership.team.queueId }))
       .sort((left, right) => left.id.localeCompare(right.id)),
-    managedQueueIds: current.managedQueues.map((queue) => queue.id).sort(),
+    managedQueueIds: (current.managedQueues ?? []).map((queue) => queue.id).sort(),
   };
   return createHash("sha256").update(JSON.stringify(payload)).digest("hex").slice(0, 24);
 }
