@@ -191,7 +191,7 @@ html[data-theme] .operational-link:hover { color: var(--kit-selected-text) !impo
 
 html[data-theme] .brand-mark {
   background: linear-gradient(145deg, var(--kit-brand), var(--kit-primary)) !important;
-  color: #171717 !important;
+  color: var(--kit-on-brand) !important;
 }
 
 html[data-theme] .view-switcher-link-active,
