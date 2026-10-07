@@ -11,6 +11,13 @@ const TICKET_FILTER_KEYS = [
   "missionId",
 ] as const;
 
+function ticketFilterHref(pathname: string, params: URLSearchParams) {
+  params.delete("page");
+  params.delete("cursor");
+  const query = params.toString();
+  return query ? `${pathname}?${query}` : pathname;
+}
+
 export function buildTicketFilterHref(
   pathname: string,
   currentSearch: string,
@@ -24,10 +31,27 @@ export function buildTicketFilterHref(
     else next.delete(key);
   }
 
-  // A filter change invalidates both offset and cursor positions.
-  next.delete("page");
-  next.delete("cursor");
+  return ticketFilterHref(pathname, next);
+}
 
-  const query = next.toString();
-  return query ? `${pathname}?${query}` : pathname;
+export function buildTicketViewHref(
+  pathname: string,
+  currentSearch: string,
+  updates: { scope?: string | null; sla?: string | null },
+) {
+  const next = new URLSearchParams(currentSearch);
+
+  if ("scope" in updates) {
+    const scope = updates.scope?.trim() ?? "";
+    if (scope && scope !== "all") next.set("scope", scope);
+    else next.delete("scope");
+  }
+
+  if ("sla" in updates) {
+    const sla = updates.sla?.trim() ?? "";
+    if (sla) next.set("sla", sla);
+    else next.delete("sla");
+  }
+
+  return ticketFilterHref(pathname, next);
 }
