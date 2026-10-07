@@ -18,4 +18,17 @@ describe("activity icon mapping", () => {
   it("exposes the persisted notification type through the API", () => {
     expect(readFileSync("app/api/notifications/route.ts", "utf8")).toContain("item.type");
   });
+  it("keeps shared activity timelines inset from their card borders", () => {
+    const css = readFileSync("styles/design-system.css", "utf8");
+    expect(css).toContain("padding: var(--kit-space-2) var(--kit-space-3); list-style: none;");
+
+    for (const path of [
+      "components/dashboard/activity-timeline.tsx",
+      "components/inbox/agent-activity.tsx",
+      "app/(app)/tickets/[id]/page.tsx",
+    ]) {
+      expect(readFileSync(path, "utf8"), path).toContain("<Timeline");
+    }
+  });
+
 });
