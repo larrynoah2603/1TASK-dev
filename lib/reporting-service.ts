@@ -1,8 +1,35 @@
+import { createHash } from "node:crypto";
 import { Prisma, Priority, TicketStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { AuthorizationError, hasPermission, requireCurrentActor, type UserContext } from "@/lib/server-auth";
 import { visibleTicketWhere } from "@/lib/ticket-query-service";
 import { cacheAside } from "@/lib/distributed-cache";
+
+function reportingScopeFingerprint(current: UserContext) {
+  const payload = {
+    departmentId: current.departmentId ?? null,
+    authorizedQueueId: current.authorizedQueueId ?? null,
+    roles: (current.roleAssignments ?? []).map((assignment) => ({
+      code: assignment.role.code,
+      scope: assignment.scope ? {
+        type: assignment.scope.type,
+        departmentId: assignment.scope.departmentId ?? null,
+        queueId: assignment.scope.queueId ?? null,
+        teamId: assignment.scope.teamId ?? null,
+        portfolioKey: assignment.scope.portfolioKey ?? null,
+        members: assignment.scope.members.map((member) => member.userId).sort(),
+      } : null,
+    })).sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right))),
+    teams: (current.teamMemberships ?? [])
+      .filter((membership) => membership.isActive && membership.team.isActive)
+      .map((membership) => ({ id: membership.team.id, queueId: membership.team.queueId }))
+      .sort((left, right) => left.id.localeCompare(right.id)),
+    managedQueueIds: (current.managedQueues ?? []).map((queue) => queue.id).sort(),
+  };
+  const hash = createHash("sha256");
+  hash.write(JSON.stringify(payload));
+  return hash.digest("hex").slice(0, 24);
+}
 
 export async function getReportingSummary(actor: UserContext) {
   const current = await requireCurrentActor(actor);
@@ -10,7 +37,8 @@ export async function getReportingSummary(actor: UserContext) {
     throw new AuthorizationError("Vous n’êtes pas habilité à consulter ces rapports.");
   }
 
-  return cacheAside(`reporting:v1:${current.id}`, 45, () => getReportingSummaryUncached(current));
+  const scopeFingerprint = reportingScopeFingerprint(current);
+  return cacheAside(`reporting:v2:${current.id}:${scopeFingerprint}`, 45, () => getReportingSummaryUncached(current));
 }
 
 export type ReportingSummary = Awaited<ReturnType<typeof getReportingSummaryUncached>>;
@@ -21,6 +49,13 @@ async function getReportingSummaryUncached(current: UserContext) {
   const activeSlaWhere: Prisma.TicketWhereInput = {
     status: { notIn: [TicketStatus.CLOSED, TicketStatus.CANCELLED, TicketStatus.BLOCKED, TicketStatus.RESOLUTION_PENDING] },
     slaPausedAt: null,
+  };
+  const trackedActiveSlaWhere: Prisma.TicketWhereInput = {
+    ...activeSlaWhere,
+    OR: [
+      { firstResponseDueAt: { not: null }, firstRespondedAt: null },
+      { resolutionDueAt: { not: null }, resolvedAt: null },
+    ],
   };
   const firstResponseBreachedWhere: Prisma.TicketWhereInput = {
     firstResponseDueAt: { not: null, lt: now },
@@ -37,6 +72,7 @@ async function getReportingSummaryUncached(current: UserContext) {
     resolutionBreached,
     pendingConfirmationDue,
     pendingConfirmationOverdue,
+    slaTracked,
     grouped,
     resolutionSamples,
   ] = await Promise.all([
@@ -70,6 +106,7 @@ async function getReportingSummaryUncached(current: UserContext) {
         ],
       },
     }),
+    prisma.ticket.count({ where: { AND: [where, trackedActiveSlaWhere] } }),
     // A single grouped read feeds both status and priority distributions.
     prisma.ticket.groupBy({
       by: ["status", "priority"],
@@ -122,12 +159,12 @@ async function getReportingSummaryUncached(current: UserContext) {
     ? Math.round(resolutionMetrics.totalDurationMs / resolutionMetrics.count / 60_000)
     : null;
 
-  const slaComplianceRate = completionDenominator
+  const slaComplianceRate = slaTracked
     ? Math.max(
         0,
         Math.min(
           100,
-          Math.round(((completionDenominator - overdue) / completionDenominator) * 100),
+          Math.round(((slaTracked - overdue) / slaTracked) * 100),
         ),
       )
     : 0;
@@ -142,6 +179,7 @@ async function getReportingSummaryUncached(current: UserContext) {
     resolutionBreached,
     pendingConfirmationDue,
     pendingConfirmationOverdue,
+    slaTracked,
     closureRate: completionDenominator ? Math.round((closed / completionDenominator) * 100) : 0,
     slaComplianceRate,
     resolvedCount: resolutionMetrics.count,

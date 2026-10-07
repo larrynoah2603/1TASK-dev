@@ -63,7 +63,7 @@ export async function exportReportingSummary(actor: UserContext) {
     ["Résolutions dépassées", summary.resolutionBreached],
     ["Confirmations proches de l’échéance", summary.pendingConfirmationDue],
     ["Confirmations arrivées à échéance", summary.pendingConfirmationOverdue],
-    ["Respect SLA", `${summary.slaComplianceRate}%`],
+    ["SLA actifs dans les délais", `${summary.slaComplianceRate}%`],
     ["Temps moyen de résolution", summary.averageResolutionMinutes === null ? "" : `${summary.averageResolutionMinutes} min`],
     ["Résolutions mesurées", summary.resolvedCount],
     ["Tickets critiques", summary.criticalCount],

@@ -1005,7 +1005,7 @@ html[data-theme] .kit-ticket .ticket-side-panel-open .ticket-side-panel-chevron 
 
   .ticket-treatment-sticky {
     position: sticky;
-    top: calc(var(--kit-topbar-height, 64px) + var(--kit-space-4));
+    top: calc(var(--kit-topbar-h) + var(--kit-space-4));
     z-index: 5;
   }
 }

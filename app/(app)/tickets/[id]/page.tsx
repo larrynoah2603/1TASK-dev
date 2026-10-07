@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { notFound } from "next/navigation";
-import { RoleCode } from "@prisma/client";
+import { RoleCode, TicketEventType } from "@prisma/client";
 import { TicketActions } from "@/components/ticket-actions";
 import { TicketAdvancedPanels } from "@/components/ticket-advanced-panels";
 import { TicketCommentThread } from "@/components/ticket-comment-thread";
@@ -104,11 +104,21 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
   // L'onglet Historique reste centré sur les événements structurants.
   // Les messages restent dans Échanges pour éviter de les lire deux fois.
   const timeline = [
-    ...ticket.events.map((event) => ({ kind: "event" as const, at: event.createdAt, event })),
+    ...ticket.events
+      .filter((event) =>
+        event.eventType !== TicketEventType.ASSIGNED &&
+        event.eventType !== TicketEventType.MESSAGE_ADDED,
+      )
+      .map((event) => ({ kind: "event" as const, at: event.createdAt, event })),
     ...ticket.assignments.map((assignment) => ({ kind: "assignment" as const, at: assignment.assignedAt, assignment })),
   ].sort((left, right) => left.at.getTime() - right.at.getTime());
 
   const canResolve = actionContext.allowedStatuses.some((status) => String(status) === "RESOLUTION_PENDING");
+  const hasTreatmentActions =
+    actionContext.canClaim ||
+    actionContext.canAssign ||
+    actionContext.canTransfer ||
+    actionContext.allowedStatuses.length > 0;
 
   const timelineItems: TimelineItem[] = timeline.map((item) => {
     if (item.kind === "event") {
@@ -216,19 +226,25 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
             <section className="ticket-treatment-section">
               <div className="ticket-treatment-heading">
                 <p className="eyebrow">Traitement</p>
-                <h2>{requesterView ? "Suivi de votre demande" : "Prochaine action"}</h2>
-                <p>{requesterView ? "Confirmez la résolution ou poursuivez l’échange avec le support." : "Les actions disponibles dépendent de votre rôle et de l’état actuel."}</p>
+                <h2>{hasTreatmentActions ? (requesterView ? "Suivi de votre demande" : "Prochaine action") : "Ticket en lecture seule"}</h2>
+                <p>
+                  {hasTreatmentActions
+                    ? (requesterView ? "Confirmez la résolution ou poursuivez l’échange avec le support." : "Les actions disponibles dépendent de votre rôle et de l’état actuel.")
+                    : "Aucune action de workflow n’est disponible dans l’état actuel."}
+                </p>
               </div>
-              <TicketSidebarActions>
-                <TicketActions
-                  ticketId={ticket.id}
-                  status={ticket.status}
-                  simplifiedV1={v1Profile}
-                  requesterView={requesterView}
-                  workspaceMode
-                  {...actionContext}
-                />
-              </TicketSidebarActions>
+              {hasTreatmentActions ? (
+                <TicketSidebarActions>
+                  <TicketActions
+                    ticketId={ticket.id}
+                    status={ticket.status}
+                    simplifiedV1={v1Profile}
+                    requesterView={requesterView}
+                    workspaceMode
+                    {...actionContext}
+                  />
+                </TicketSidebarActions>
+              ) : null}
             </section>
 
             <TicketPanel title="Informations" subtitle="Contexte opérationnel">
@@ -271,15 +287,17 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
             </TicketPanel>
           </div>
 
-          {operational ? (
-            <section className="ticket-advanced-tools" aria-label="Outils avancés">
-              <div className="ticket-advanced-tools-heading">
-                <p className="eyebrow">Outils avancés</p>
-                <p>Qualification, SLA et relations restent disponibles sans encombrer l’action principale.</p>
-              </div>
-              <TicketAdvancedPanels only="management" compact {...advancedPanelProps} />
-            </section>
-          ) : null}
+          <section className="ticket-advanced-tools" aria-label={operational ? "Outils avancés" : "Relations du ticket"}>
+            <div className="ticket-advanced-tools-heading">
+              <p className="eyebrow">{operational ? "Outils avancés" : "Relations"}</p>
+              <p>
+                {operational
+                  ? "Qualification, SLA et relations restent disponibles sans encombrer l’action principale."
+                  : "Consultez les tickets liés qui restent dans votre périmètre de visibilité."}
+              </p>
+            </div>
+            <TicketAdvancedPanels only="management" compact {...advancedPanelProps} />
+          </section>
         </aside>
 
         <main className="ticket-detail-main">
