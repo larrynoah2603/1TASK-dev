@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildTicketFilterHref, buildTicketFilterPatchHref } from "@/lib/ticket-filter-navigation";
+import { buildTicketFilterHref, buildTicketViewHref } from "@/lib/ticket-filter-navigation";
 
 describe("ticket filter navigation", () => {
   it("preserves unrelated URL parameters and resets pagination", () => {
@@ -39,20 +39,36 @@ describe("ticket filter navigation", () => {
     expect(url.searchParams.get("view")).toBe("compact");
   });
 
-  it("patches a quick view while preserving the other active filters", () => {
-    const href = buildTicketFilterPatchHref(
+  it("changes quick views without dropping active filters", () => {
+    const href = buildTicketViewHref(
       "/inbox",
-      "q=vpn&status=IN_PROGRESS&priority=HIGH&scope=mine&sla=attention&cursor=abc&tab=operations",
-      { scope: "team", sla: "" },
+      "q=vpn&status=NEW&priority=HIGH&departmentId=dep-1&queueId=q-1&page=3&cursor=abc",
+      { scope: "mine", sla: null },
     );
 
     const url = new URL(href, "https://example.test");
     expect(url.searchParams.get("q")).toBe("vpn");
-    expect(url.searchParams.get("status")).toBe("IN_PROGRESS");
+    expect(url.searchParams.get("status")).toBe("NEW");
     expect(url.searchParams.get("priority")).toBe("HIGH");
-    expect(url.searchParams.get("scope")).toBe("team");
+    expect(url.searchParams.get("departmentId")).toBe("dep-1");
+    expect(url.searchParams.get("queueId")).toBe("q-1");
+    expect(url.searchParams.get("scope")).toBe("mine");
     expect(url.searchParams.has("sla")).toBe(false);
-    expect(url.searchParams.get("tab")).toBe("operations");
+    expect(url.searchParams.has("page")).toBe(false);
     expect(url.searchParams.has("cursor")).toBe(false);
+  });
+
+  it("treats SLA shortcuts as a separate dimension from ownership scope", () => {
+    const href = buildTicketViewHref(
+      "/inbox",
+      "scope=team&q=routeur&status=IN_PROGRESS",
+      { sla: "attention" },
+    );
+
+    const url = new URL(href, "https://example.test");
+    expect(url.searchParams.get("scope")).toBe("team");
+    expect(url.searchParams.get("sla")).toBe("attention");
+    expect(url.searchParams.get("q")).toBe("routeur");
+    expect(url.searchParams.get("status")).toBe("IN_PROGRESS");
   });
 });
