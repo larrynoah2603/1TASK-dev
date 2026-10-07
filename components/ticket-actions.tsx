@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, type ReactNode } from "react";
 import { BlockReason, TicketStatus } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { BLOCK_REASON_LABELS, STATUS_LABELS } from "@/lib/domain";
@@ -21,6 +21,7 @@ export function TicketActions({
   allowedStatuses,
   simplifiedV1 = false,
   requesterView = false,
+  workspaceMode = false,
 }: {
   ticketId: string;
   status: TicketStatus;
@@ -31,6 +32,7 @@ export function TicketActions({
   allowedStatuses: TicketStatus[];
   simplifiedV1?: boolean;
   requesterView?: boolean;
+  workspaceMode?: boolean;
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -166,6 +168,16 @@ export function TicketActions({
   const canCancel = allowedStatuses.includes(TicketStatus.CANCELLED);
   const hasSimplifiedActions = canStartOrResume || canPause || canSubmitResolution || canConfirmResolution || canReopenResolution || canCancel;
 
+  function workspaceAction(label: string, content: ReactNode) {
+    if (!workspaceMode) return content;
+    return (
+      <details className="ticket-action-disclosure">
+        <summary className="ticket-action-disclosure-trigger">{label}</summary>
+        <div className="ticket-action-disclosure-body">{content}</div>
+      </details>
+    );
+  }
+
   return (
     <div className="space-y-3">
       {error ? <div role="alert" aria-live="polite" className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
@@ -203,7 +215,7 @@ export function TicketActions({
                 </form>
               ) : null}
 
-              {canPause ? (
+              {canPause ? workspaceAction("Mettre en attente", (
                 <form onSubmit={(event) => { event.preventDefault(); confirmTransition(TicketStatus.BLOCKED, "Mettre en attente", "Ticket mis en attente."); }} className="space-y-3">
                   <p className="text-sm font-semibold text-slate-900">Mettre en attente</p>
                   <label className="field-label">Motif du blocage
@@ -219,9 +231,9 @@ export function TicketActions({
                   ) : null}
                   <button disabled={busy || !blockDetails.trim() || (requiresAdministrativeReason && transitionReason.trim().length < 10)} className="button-secondary">Mettre en attente</button>
                 </form>
-              ) : null}
+              )) : null}
 
-              {canSubmitResolution ? (
+              {canSubmitResolution ? workspaceAction("Résoudre le ticket", (
                 <form onSubmit={(event) => { event.preventDefault(); confirmTransition(TicketStatus.RESOLUTION_PENDING, "Proposer la résolution", "Résolution proposée au demandeur."); }} className="space-y-3">
                   <p className="text-sm font-semibold text-slate-900">Résoudre le ticket</p>
                   <label className="field-label">Cause<input required value={cause} onChange={(event) => setCause(event.target.value)} placeholder="Cause identifiée" className="field-control font-normal" /></label>
@@ -234,7 +246,7 @@ export function TicketActions({
                   ) : null}
                   <button disabled={busy || !cause.trim() || !action.trim() || !solution.trim() || (requiresAdministrativeReason && transitionReason.trim().length < 10)} className="button-primary">Résoudre le ticket</button>
                 </form>
-              ) : null}
+              )) : null}
 
               {canConfirmResolution ? (
                 <button type="button" disabled={busy} onClick={() => confirmTransition(TicketStatus.CLOSED, "Confirmer la résolution", "Résolution confirmée.")} className="button-primary">
@@ -242,16 +254,16 @@ export function TicketActions({
                 </button>
               ) : null}
 
-              {canReopenResolution ? (
+              {canReopenResolution ? workspaceAction("Le problème persiste", (
                 <form onSubmit={(event) => { event.preventDefault(); confirmTransition(TicketStatus.REOPENED, "Le problème persiste", "Ticket rouvert."); }} className="space-y-3">
                   <label className="field-label">Le problème persiste
                     <textarea required minLength={1} value={reopenedReason} onChange={(event) => setReopenedReason(event.target.value)} placeholder="Expliquez ce qui ne fonctionne toujours pas." className="field-control min-h-20 font-normal" />
                   </label>
                   <button disabled={busy || !reopenedReason.trim()} className="button-secondary">Le problème persiste</button>
                 </form>
-              ) : null}
+              )) : null}
 
-              {canCancel ? (
+              {canCancel ? workspaceAction(requesterView ? "Annuler ma demande" : "Annuler le ticket", (
                 <form
                   onSubmit={(event) => {
                     event.preventDefault();
@@ -291,7 +303,7 @@ export function TicketActions({
                     {requesterView ? "Annuler ma demande" : "Annuler le ticket"}
                   </button>
                 </form>
-              ) : null}
+              )) : null}
             </div>
           </TicketSidePanel>
         ) : null
