@@ -24,7 +24,7 @@ export default async function TicketsPage({ searchParams }: { searchParams: Prom
   const operational = roleCodes(user).some((role) => operationalRoles.includes(role));
 
   return <>
-    {operational ? <TicketViewSwitcher basePath="/inbox" scope="requested" includeRequested /> : null}
+    {operational ? <TicketViewSwitcher compactLabels basePath="/inbox" scope={params.scope} sla={params.sla} includeRequested query={rawParams} /> : null}
     <TicketList queues={queues} values={params} tickets={tickets.tickets} currentCursor={params.cursor ?? undefined} nextCursor={tickets.nextCursor} pageSize={tickets.pageSize} />
   </>;
 }

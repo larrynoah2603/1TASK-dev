@@ -24,7 +24,7 @@ export default async function QueuesPage() {
         <Link href="/inbox" className="button-secondary page-header-actions">Voir la boîte agent</Link>
       </header>
 
-      <TicketViewSwitcher />
+      <TicketViewSwitcher compactLabels />
 
       <div className="queues-grid grid gap-3 md:grid-cols-2">
         {queues.map((queue) => (
