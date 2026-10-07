@@ -1,6 +1,6 @@
 import { AuthorizationError, hasPermission, requireCurrentActor, type UserContext } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
-import { STATUS_LABELS } from "@/lib/domain";
+import { PRIORITY_LABELS, STATUS_LABELS } from "@/lib/domain";
 import { getReportingSummary } from "@/lib/reporting-service";
 import { listVisibleTickets, type TicketListOptions } from "@/lib/ticket-query-service";
 
@@ -63,8 +63,13 @@ export async function exportReportingSummary(actor: UserContext) {
     ["Résolutions dépassées", summary.resolutionBreached],
     ["Confirmations proches de l’échéance", summary.pendingConfirmationDue],
     ["Confirmations arrivées à échéance", summary.pendingConfirmationOverdue],
+    ["Respect SLA", `${summary.slaComplianceRate}%`],
+    ["Temps moyen de résolution", summary.averageResolutionMinutes === null ? "" : `${summary.averageResolutionMinutes} min`],
+    ["Résolutions mesurées", summary.resolvedCount],
+    ["Tickets critiques", summary.criticalCount],
     ["Taux clôturé", `${summary.closureRate}%`],
     ...summary.byStatus.map((row) => [`Statut ${STATUS_LABELS[row.status]}`, row.count]),
+    ...summary.byPriority.map((row) => [`Priorité ${PRIORITY_LABELS[row.priority]}`, row.count]),
   ];
   await prisma.auditLog.create({
     data: {

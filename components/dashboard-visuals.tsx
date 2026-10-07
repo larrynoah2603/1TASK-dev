@@ -40,6 +40,8 @@ type ReportingSummary = {
   total: number;
   closed: number;
   overdue: number;
+  completionDenominator: number;
+  slaComplianceRate: number;
   closureRate: number;
   byStatus: { status: TicketStatus; count: number }[];
 };
@@ -238,7 +240,7 @@ export function OperationsWatchPanel({ tickets }: { tickets: DashboardTicket[] }
 }
 
 export function SlaPerformanceWidget({ summary }: { summary: ReportingSummary }) {
-  const healthyRate = summary.total ? Math.max(0, Math.round(((summary.total - summary.overdue) / summary.total) * 100)) : 0;
+  const healthyRate = summary.slaComplianceRate;
   const active = Math.max(0, summary.total - summary.closed);
   const states = [
     { label: "Objectif SLA", value: 90, tone: "dashboard-sla-target" },
@@ -301,7 +303,7 @@ function PortfolioMissionWidget({ missions, summary }: { missions: PortfolioMiss
 }
 
 export function ResponsibleDashboard({ queues, summary, tickets, missionSummary, missions = [] }: { queues: QueueSummary[]; summary: ReportingSummary; tickets: DashboardTicket[]; missionSummary?: PortfolioSummary; missions?: PortfolioMission[] }) {
-  const healthyRate = summary.total ? Math.max(0, Math.round(((summary.total - summary.overdue) / summary.total) * 100)) : 0;
+  const healthyRate = summary.slaComplianceRate;
   const active = tickets.filter((ticket) => ticket.status !== TicketStatus.CLOSED && ticket.status !== TicketStatus.CANCELLED).length;
   return (
     <div className="dashboard-responsible-layout">

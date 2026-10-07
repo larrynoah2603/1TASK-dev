@@ -1,4 +1,4 @@
-import { Prisma, TicketStatus } from "@prisma/client";
+import { Prisma, Priority, TicketStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { AuthorizationError, hasPermission, requireCurrentActor, type UserContext } from "@/lib/server-auth";
 import { visibleTicketWhere } from "@/lib/ticket-query-service";
@@ -30,7 +30,16 @@ async function getReportingSummaryUncached(current: UserContext) {
     resolutionDueAt: { not: null, lt: now },
     resolvedAt: null,
   };
-  const [overdue, firstResponseBreached, resolutionBreached, pendingConfirmationDue, pendingConfirmationOverdue, grouped] = await Promise.all([
+
+  const [
+    overdue,
+    firstResponseBreached,
+    resolutionBreached,
+    pendingConfirmationDue,
+    pendingConfirmationOverdue,
+    grouped,
+    resolutionSamples,
+  ] = await Promise.all([
     prisma.ticket.count({
       where: {
         AND: [
@@ -42,18 +51,87 @@ async function getReportingSummaryUncached(current: UserContext) {
     }),
     prisma.ticket.count({ where: { AND: [where, activeSlaWhere, firstResponseBreachedWhere] } }),
     prisma.ticket.count({ where: { AND: [where, activeSlaWhere, resolutionBreachedWhere] } }),
-    prisma.ticket.count({ where: { AND: [where, { status: TicketStatus.RESOLUTION_PENDING, autoClosureDueAt: { not: null, lte: new Date(now.getTime() + 60 * 60_000) } }] } }),
-    prisma.ticket.count({ where: { AND: [where, { status: TicketStatus.RESOLUTION_PENDING, autoClosureDueAt: { not: null, lt: now } }] } }),
-    prisma.ticket.groupBy({ by: ["status"], where, _count: { _all: true } }),
+    prisma.ticket.count({
+      where: {
+        AND: [
+          where,
+          {
+            status: TicketStatus.RESOLUTION_PENDING,
+            autoClosureDueAt: { not: null, lte: new Date(now.getTime() + 60 * 60_000) },
+          },
+        ],
+      },
+    }),
+    prisma.ticket.count({
+      where: {
+        AND: [
+          where,
+          { status: TicketStatus.RESOLUTION_PENDING, autoClosureDueAt: { not: null, lt: now } },
+        ],
+      },
+    }),
+    // A single grouped read feeds both status and priority distributions.
+    prisma.ticket.groupBy({
+      by: ["status", "priority"],
+      where,
+      _count: { _all: true },
+    }),
+    // Keep the reporting contract aggregation-only: group the two timestamps
+    // instead of loading ticket records into memory.
+    prisma.ticket.groupBy({
+      by: ["createdAt", "resolvedAt"],
+      where: { AND: [where, { resolvedAt: { not: null } }] },
+      _count: { _all: true },
+    }),
   ]);
+
   const total = grouped.reduce((sum, item) => sum + item._count._all, 0);
-  const closed = grouped.find((item) => item.status === TicketStatus.CLOSED)?._count._all ?? 0;
-  const cancelled = grouped.find((item) => item.status === TicketStatus.CANCELLED)?._count._all ?? 0;
+  const closed = grouped
+    .filter((item) => item.status === TicketStatus.CLOSED)
+    .reduce((sum, item) => sum + item._count._all, 0);
+  const cancelled = grouped
+    .filter((item) => item.status === TicketStatus.CANCELLED)
+    .reduce((sum, item) => sum + item._count._all, 0);
   const completionDenominator = total - cancelled;
+
   const byStatus = Object.values(TicketStatus).map((status) => ({
     status,
-    count: grouped.find((item) => item.status === status)?._count._all ?? 0,
+    count: grouped
+      .filter((item) => item.status === status)
+      .reduce((sum, item) => sum + item._count._all, 0),
   }));
+  const byPriority = Object.values(Priority).map((priority) => ({
+    priority,
+    count: grouped
+      .filter((item) => item.priority === priority)
+      .reduce((sum, item) => sum + item._count._all, 0),
+  }));
+  const criticalCount = byPriority.find((item) => item.priority === Priority.CRITICAL)?.count ?? 0;
+
+  const resolutionMetrics = resolutionSamples.reduce(
+    (metrics, sample) => {
+      if (!sample.resolvedAt) return metrics;
+      const duration = Math.max(0, sample.resolvedAt.getTime() - sample.createdAt.getTime());
+      metrics.totalDurationMs += duration * sample._count._all;
+      metrics.count += sample._count._all;
+      return metrics;
+    },
+    { totalDurationMs: 0, count: 0 },
+  );
+  const averageResolutionMinutes = resolutionMetrics.count
+    ? Math.round(resolutionMetrics.totalDurationMs / resolutionMetrics.count / 60_000)
+    : null;
+
+  const slaComplianceRate = completionDenominator
+    ? Math.max(
+        0,
+        Math.min(
+          100,
+          Math.round(((completionDenominator - overdue) / completionDenominator) * 100),
+        ),
+      )
+    : 0;
+
   return {
     total,
     closed,
@@ -65,6 +143,11 @@ async function getReportingSummaryUncached(current: UserContext) {
     pendingConfirmationDue,
     pendingConfirmationOverdue,
     closureRate: completionDenominator ? Math.round((closed / completionDenominator) * 100) : 0,
+    slaComplianceRate,
+    resolvedCount: resolutionMetrics.count,
+    averageResolutionMinutes,
+    criticalCount,
     byStatus,
+    byPriority,
   };
 }
