@@ -14,6 +14,8 @@ describe("ticket detail treatment workspace", () => {
     expect(page).toContain('title="Demande"');
     expect(page).toContain('title="Informations"');
     expect(page).toContain("ticket-treatment-heading");
+    expect(page).toContain("workspaceMode");
+    expect(source("components/ticket-actions.tsx")).toContain("ticket-action-disclosure");
   });
 
   it("keeps comments in exchanges instead of duplicating them in history", () => {
