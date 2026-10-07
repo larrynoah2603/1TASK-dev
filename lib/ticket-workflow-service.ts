@@ -286,7 +286,6 @@ export async function transitionTicket(
   if (!transitionAllowed) {
     throw new AuthorizationError("Cette transition n’est pas autorisée pour votre rôle ou ce ticket.");
   }
-  const actorRoles = roleCodes(actor);
   const isFunctionalAdminActor = scopedTransitionRoles.includes(RoleCode.FUNCTIONAL_ADMIN);
   const v1RequesterCancellation =
     v1RequesterView && parsed.status === TicketStatus.CANCELLED;
@@ -299,7 +298,7 @@ export async function transitionTicket(
     throw new AuthorizationError("La permission d’annuler ce ticket n’est pas accordée.");
   }
   if (parsed.status === TicketStatus.CLOSED) {
-    if (!canConfirmResolution(actorRoles, requesterAction)) {
+    if (!canConfirmResolution(scopedTransitionRoles, requesterAction)) {
       throw new AuthorizationError("Seul le demandeur peut confirmer la résolution.");
     }
     if (requesterAction && !hasPermission(actor, "ticket:confirm-resolution", transitionTarget) && !isFunctionalAdminActor) {
@@ -307,7 +306,7 @@ export async function transitionTicket(
     }
   }
   if (parsed.status === TicketStatus.REOPENED) {
-    if (!canReopenResolution(actorRoles, requesterAction)) {
+    if (!canReopenResolution(scopedTransitionRoles, requesterAction)) {
       throw new AuthorizationError("Seul le demandeur ou un administrateur fonctionnel peut rouvrir ce ticket.");
     }
     if (requesterAction && !hasPermission(actor, "ticket:reopen", transitionTarget) && !isFunctionalAdminActor) {
