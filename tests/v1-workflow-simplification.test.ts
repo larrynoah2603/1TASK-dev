@@ -36,7 +36,8 @@ describe("workflow V1 simplifié", () => {
     expect(service).toContain('const v1RequesterView = readServerEnvironment().PRODUCT_PROFILE === "v1" && requesterAction');
     expect(service).toContain("v1RequesterAllowedNextStatuses(ticket.status)");
     expect(workflow).toContain("v1RequesterAllowedNextStatuses(ticket.status).includes(parsed.status)");
-    expect(workflow).toContain("isFunctionalAdministrator(actor) && !v1RequesterView");
+    expect(workflow).toContain("const administrativeOverride = isFunctionalAdminActor && !v1RequesterView");
+    expect(workflow).toContain("const isFunctionalAdminActor = scopedTransitionRoles.includes(RoleCode.FUNCTIONAL_ADMIN)");
   });
 
   it("réserve l’annulation V1 au demandeur avant traitement", () => {
