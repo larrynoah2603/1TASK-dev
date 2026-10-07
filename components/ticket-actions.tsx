@@ -21,7 +21,6 @@ export function TicketActions({
   allowedStatuses,
   simplifiedV1 = false,
   requesterView = false,
-  workspaceMode = false,
 }: {
   ticketId: string;
   status: TicketStatus;
@@ -32,7 +31,6 @@ export function TicketActions({
   allowedStatuses: TicketStatus[];
   simplifiedV1?: boolean;
   requesterView?: boolean;
-  workspaceMode?: boolean;
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -173,7 +171,7 @@ export function TicketActions({
       {error ? <div role="alert" aria-live="polite" className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
 
       {canClaim ? (
-        <TicketSidePanel title={workspaceMode ? "Prochaine action" : "Prise en charge"} subtitle="Devenir responsable du traitement" defaultOpen>
+        <TicketSidePanel title="Prise en charge" subtitle="Devenir responsable du traitement" defaultOpen>
           <section className="action-card kit-callout">
           <p className="text-sm font-semibold text-slate-900">Ticket non affecté</p>
           <p className="mt-1 text-xs text-slate-600">Vous êtes un agent actif habilité dans l’équipe de cette file.</p>
@@ -187,8 +185,8 @@ export function TicketActions({
       {simplifiedV1 ? (
         hasSimplifiedActions ? (
           <TicketSidePanel
-            title={workspaceMode ? "Prochaine action" : requesterView ? "Résolution" : "Traitement"}
-            subtitle={requesterView ? "Confirmer ou signaler que le problème persiste" : workspaceMode ? "Agir sans quitter le contexte du ticket" : "Actions utiles pour ce ticket"}
+            title={requesterView ? "Résolution" : "Traitement"}
+            subtitle={requesterView ? "Confirmer ou signaler que le problème persiste" : "Actions utiles pour ce ticket"}
             defaultOpen
           >
             <div className="action-card space-y-4">
