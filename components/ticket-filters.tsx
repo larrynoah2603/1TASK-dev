@@ -7,7 +7,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { PRIORITY_LABELS, STATUS_LABELS } from "@/lib/domain";
 import type { TicketListScope, TicketListSlaFilter, TicketListSort } from "@/lib/ticket-service";
 import { Combobox } from "@/components/combobox";
-import { buildTicketFilterHref } from "@/lib/ticket-filter-navigation";
+import { buildTicketFilterHref, buildTicketFilterPatchHref } from "@/lib/ticket-filter-navigation";
 
 type QueueOption = {
   id: string;
@@ -62,16 +62,25 @@ export function TicketFilters({
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    const filterNames = compact
+      ? ["q", "status", "priority", "sort", "departmentId", "queueId", "dossierId", "missionId"]
+      : ["q", "scope", "status", "priority", "sla", "sort", "departmentId", "queueId", "dossierId", "missionId"];
     const nextValues = Object.fromEntries(
-      ["q", "scope", "status", "priority", "sla", "sort", "departmentId", "queueId", "dossierId", "missionId"]
-        .map((name) => [name, String(formData.get(name) ?? "")]),
+      filterNames.map((name) => [name, String(formData.get(name) ?? "")]),
     );
-    const href = buildTicketFilterHref(pathname, searchParams.toString(), nextValues);
+    const href = compact
+      ? buildTicketFilterPatchHref(pathname, searchParams.toString(), nextValues)
+      : buildTicketFilterHref(pathname, searchParams.toString(), nextValues);
     startTransition(() => router.replace(href as Route, { scroll: false }));
   }
 
   function handleReset() {
     startTransition(() => router.replace(resetHref as Route, { scroll: false }));
+  }
+
+  function patchFilters(nextValues: Record<string, string | undefined>) {
+    const href = buildTicketFilterPatchHref(pathname, searchParams.toString(), nextValues);
+    startTransition(() => router.replace(href as Route, { scroll: false }));
   }
 
   const departments = [...new Map(queues.map((queue) => [queue.department.id, queue.department])).values()]

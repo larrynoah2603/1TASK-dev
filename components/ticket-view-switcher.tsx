@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import type { Route } from "next";
 import type { TicketListSlaFilter, TicketListScope } from "@/lib/ticket-service";
 import { buildTicketViewHref } from "@/lib/ticket-filter-navigation";
@@ -69,6 +72,19 @@ export function TicketViewSwitcher({
       href: buildTicketViewHref(basePath, search, { scope: "team", sla: null }),
       active: scope === "team" && !sla,
     },
+  ];
+
+  if (includeRequested) {
+    scopeLinks.splice(1, 0, {
+      label: "Mes demandes",
+      title: scopeLabels.requested,
+      path: "/tickets",
+      patch: { scope: "requested", sla: "" },
+      active: scope === "requested",
+    });
+  }
+
+  const slaLinks = [
     {
       label: compactLabels ? "À surveiller" : "SLA à surveiller",
       href: buildTicketViewHref(basePath, search, { sla: "attention" }),
