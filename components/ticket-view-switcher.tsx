@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import type { Route } from "next";
 import type { TicketListSlaFilter, TicketListScope } from "@/lib/ticket-service";
 import { buildTicketViewHref } from "@/lib/ticket-filter-navigation";
@@ -19,7 +18,7 @@ const compactScopeLabels: Record<TicketListScope, string> = {
   unassigned: "Non affectés",
   mine: "Mes tickets",
   team: "Mon équipe",
-  requested: "Mes tickets",
+  requested: "Mes demandes",
 };
 
 type PreservedQuery = Record<string, string | string[] | undefined>;
@@ -54,36 +53,36 @@ export function TicketViewSwitcher({
   const links: { label: string; href: string; active: boolean; alert?: boolean }[] = [
     {
       label: labels.all,
-      href: buildTicketViewHref(basePath, search, { scope: null, sla: null }),
-      active: effectiveScope === "all" && !sla,
+      href: buildTicketViewHref(basePath, search, { scope: null }),
+      active: effectiveScope === "all",
     },
     {
       label: labels.unassigned,
-      href: buildTicketViewHref(basePath, search, { scope: "unassigned", sla: null }),
-      active: scope === "unassigned" && !sla,
+      href: buildTicketViewHref(basePath, search, { scope: "unassigned" }),
+      active: scope === "unassigned",
     },
     {
       label: labels.mine,
-      href: buildTicketViewHref(basePath, search, { scope: "mine", sla: null }),
-      active: scope === "mine" && !sla,
+      href: buildTicketViewHref(basePath, search, { scope: "mine" }),
+      active: scope === "mine",
     },
     {
       label: labels.team,
-      href: buildTicketViewHref(basePath, search, { scope: "team", sla: null }),
-      active: scope === "team" && !sla,
+      href: buildTicketViewHref(basePath, search, { scope: "team" }),
+      active: scope === "team",
     },
   ];
 
   const slaLinks = [
     {
       label: compactLabels ? "À surveiller" : "SLA à surveiller",
-      href: buildTicketViewHref(basePath, search, { sla: "attention" }),
+      href: buildTicketViewHref(basePath, search, { sla: sla === "attention" ? null : "attention" }),
       active: sla === "attention",
       alert: true,
     },
     {
       label: "SLA dépassé",
-      href: buildTicketViewHref(basePath, search, { sla: "breached" }),
+      href: buildTicketViewHref(basePath, search, { sla: sla === "breached" ? null : "breached" }),
       active: sla === "breached",
       alert: true,
     },
