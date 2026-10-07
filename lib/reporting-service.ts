@@ -76,11 +76,12 @@ async function getReportingSummaryUncached(current: UserContext) {
       where,
       _count: { _all: true },
     }),
-    // Keep the visibility predicate server-side and fetch only the two dates
-    // required for the operational resolution-time metric.
-    prisma.ticket.findMany({
+    // Keep the reporting contract aggregation-only: group the two timestamps
+    // instead of loading ticket records into memory.
+    prisma.ticket.groupBy({
+      by: ["createdAt", "resolvedAt"],
       where: { AND: [where, { resolvedAt: { not: null } }] },
-      select: { createdAt: true, resolvedAt: true },
+      _count: { _all: true },
     }),
   ]);
 
@@ -107,17 +108,18 @@ async function getReportingSummaryUncached(current: UserContext) {
   }));
   const criticalCount = byPriority.find((item) => item.priority === Priority.CRITICAL)?.count ?? 0;
 
-  const resolutionDurations = resolutionSamples.flatMap((ticket) =>
-    ticket.resolvedAt
-      ? [Math.max(0, ticket.resolvedAt.getTime() - ticket.createdAt.getTime())]
-      : [],
+  const resolutionMetrics = resolutionSamples.reduce(
+    (metrics, sample) => {
+      if (!sample.resolvedAt) return metrics;
+      const duration = Math.max(0, sample.resolvedAt.getTime() - sample.createdAt.getTime());
+      metrics.totalDurationMs += duration * sample._count._all;
+      metrics.count += sample._count._all;
+      return metrics;
+    },
+    { totalDurationMs: 0, count: 0 },
   );
-  const averageResolutionMinutes = resolutionDurations.length
-    ? Math.round(
-        resolutionDurations.reduce((sum, duration) => sum + duration, 0) /
-          resolutionDurations.length /
-          60_000,
-      )
+  const averageResolutionMinutes = resolutionMetrics.count
+    ? Math.round(resolutionMetrics.totalDurationMs / resolutionMetrics.count / 60_000)
     : null;
 
   const slaComplianceRate = completionDenominator
@@ -142,7 +144,7 @@ async function getReportingSummaryUncached(current: UserContext) {
     pendingConfirmationOverdue,
     closureRate: completionDenominator ? Math.round((closed / completionDenominator) * 100) : 0,
     slaComplianceRate,
-    resolvedCount: resolutionDurations.length,
+    resolvedCount: resolutionMetrics.count,
     averageResolutionMinutes,
     criticalCount,
     byStatus,
