@@ -1,13 +1,17 @@
+"use client";
+
 import Link from "next/link";
 import type { Route } from "next";
+import { usePathname, useSearchParams } from "next/navigation";
 import type { TicketListSlaFilter, TicketListScope } from "@/lib/ticket-service";
+import { buildTicketQuickViewHref } from "@/lib/ticket-filter-navigation";
 
 const scopeLabels: Record<TicketListScope, string> = {
-  all: "Tous les tickets visibles",
-  unassigned: "Tickets non affectés",
-  mine: "Mes tickets affectés",
-  team: "Tickets de mon équipe",
-  requested: "Mes tickets",
+  all: "Tous",
+  unassigned: "Non affectés",
+  mine: "Mes tickets",
+  team: "Mon équipe",
+  requested: "Demandés par moi",
 };
 
 export function TicketViewSwitcher({
@@ -21,58 +25,49 @@ export function TicketViewSwitcher({
   sla?: TicketListSlaFilter;
   includeRequested?: boolean;
 }) {
-  const links: { label: string; href: string; active: boolean }[] = [
-    {
-      label: scopeLabels.all,
-      href: basePath,
-      active: (!scope || scope === "all") && !sla,
-    },
-    {
-      label: scopeLabels.unassigned,
-      href: basePath + "?scope=unassigned",
-      active: scope === "unassigned" && !sla,
-    },
-    {
-      label: scopeLabels.mine,
-      href: basePath + "?scope=mine",
-      active: scope === "mine" && !sla,
-    },
-    {
-      label: scopeLabels.team,
-      href: basePath + "?scope=team",
-      active: scope === "team" && !sla,
-    },
-    {
-      label: "SLA à surveiller",
-      href: basePath + "?sla=attention",
-      active: sla === "attention",
-    },
-    {
-      label: "SLA dépassé",
-      href: basePath + "?sla=breached",
-      active: sla === "breached",
-    },
-  ];
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentSearch = searchParams.toString();
+  const path = pathname || basePath;
+  const scopeValue = scope ?? "all";
 
-  if (includeRequested) {
-    links.splice(1, 0, {
-      label: scopeLabels.requested,
-      href: "/tickets",
-      active: scope === "requested",
-    });
-  }
+  const scopes: TicketListScope[] = includeRequested
+    ? ["all", "requested", "unassigned", "mine", "team"]
+    : ["all", "unassigned", "mine", "team"];
+
+  const scopeHref = (nextScope: TicketListScope) =>
+    buildTicketQuickViewHref(path, currentSearch, { scope: nextScope });
+
+  const slaHref = (nextSla?: TicketListSlaFilter) =>
+    buildTicketQuickViewHref(path, currentSearch, { sla: nextSla });
 
   return (
-    <nav aria-label="Vues du ticketing" className="view-switcher">
-      {links.map((link) => (
+    <nav aria-label="Vues du ticketing" className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-1 py-2">
+      <div className="flex min-w-0 flex-wrap items-center gap-1" aria-label="Périmètre de travail">
+        {scopes.map((item) => (
+          <Link
+            key={item}
+            href={scopeHref(item) as Route}
+            className={`rounded-md px-2.5 py-1.5 text-xs font-semibold transition ${scopeValue === item ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"}`}
+          >
+            {scopeLabels[item]}
+          </Link>
+        ))}
+      </div>
+      <div className="flex items-center gap-1" aria-label="Alertes SLA">
         <Link
-          key={link.label}
-          href={link.href as Route}
-          className={`view-switcher-link ${link.active ? "view-switcher-link-active" : ""}`}
+          href={slaHref(sla === "attention" ? undefined : "attention") as Route}
+          className={`rounded-md px-2.5 py-1.5 text-xs font-semibold transition ${sla === "attention" ? "bg-amber-100 text-amber-900" : "text-slate-600 hover:bg-amber-50 hover:text-amber-900"}`}
         >
-          {link.label}
+          SLA à surveiller
         </Link>
-      ))}
+        <Link
+          href={slaHref(sla === "breached" ? undefined : "breached") as Route}
+          className={`rounded-md px-2.5 py-1.5 text-xs font-semibold transition ${sla === "breached" ? "bg-rose-100 text-rose-900" : "text-slate-600 hover:bg-rose-50 hover:text-rose-900"}`}
+        >
+          SLA dépassé
+        </Link>
+      </div>
     </nav>
   );
 }
