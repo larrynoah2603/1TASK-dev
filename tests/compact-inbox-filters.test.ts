@@ -4,13 +4,24 @@ import { describe, expect, it } from "vitest";
 
 const source = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
-describe("compact agent inbox filters", () => {
-  it("uses the compact filter layout only in the agent inbox", () => {
+describe("compact ticket filters", () => {
+  it("uses the compact filter layout on every shared ticket list surface", () => {
     const inbox = source("app/(app)/inbox/page.tsx");
+    const ticketList = source("components/tickets/ticket-list.tsx");
+    const ticketsToolbar = source("components/tickets/tickets-toolbar.tsx");
+    const adminTickets = source("app/admin/tickets/page.tsx");
+    const ticketsPage = source("app/(app)/tickets/page.tsx");
+    const queuesPage = source("app/(app)/queues/page.tsx");
+
     expect(inbox).toContain("<TicketViewSwitcher compactLabels");
     expect(inbox).toContain("query={rawParams}");
     expect(inbox).toContain("<TicketFilters compact");
-    expect(inbox).toContain("scopeOptions={[]}");
+    expect(ticketList).toContain("<TicketFilter compact");
+    expect(ticketsToolbar).toContain("<TicketFilter compact");
+    expect(adminTickets).toContain("<TicketFilters compact");
+    expect(ticketsPage).toContain("<TicketViewSwitcher compactLabels");
+    expect(ticketsPage).toContain("query={rawParams}");
+    expect(queuesPage).toContain("<TicketViewSwitcher compactLabels");
   });
 
   it("keeps scope and SLA in quick views instead of duplicating them in the compact toolbar", () => {
@@ -28,6 +39,9 @@ describe("compact agent inbox filters", () => {
     expect(switcher).toContain('label: compactLabels ? "À surveiller" : "SLA à surveiller"');
     expect(switcher).toContain("link.alert && index > 0");
     expect(switcher).toContain("links.push(...slaLinks)");
+    expect(switcher).toContain('requested: "Mes demandes"');
+    expect(switcher).toContain('sla === "attention" ? null : "attention"');
     expect(switcher).not.toContain("scopeLinks.splice");
+    expect(switcher).not.toContain("useSearchParams");
   });
 });
