@@ -155,26 +155,41 @@ export async function syncUserFromEntraProfile(input: {
     ? normalizeEntraDepartmentValue(entraDepartmentValue)
     : null;
   return prisma.$transaction(async (tx) => {
-    const identityMatches = userId ? [] : await tx.user.findMany({
-      where: {
-        OR: [
-          { entraObjectId: profile.id },
-          { email: { equals: email, mode: "insensitive" } },
-        ],
-      },
-      select: existingUserSelect,
-      orderBy: { id: "asc" },
-      take: 2,
-    });
-    if (identityMatches.length > 1) {
-      throw new Error("L’identité Microsoft correspond à plusieurs comptes 1TASK et doit être corrigée par un administrateur.");
-    }
-    const existingUser = userId
+    const findIdentityMatches = async () => {
+      const matches = await tx.user.findMany({
+        where: {
+          OR: [
+            { entraObjectId: profile.id },
+            { email: { equals: email, mode: "insensitive" } },
+          ],
+        },
+        select: existingUserSelect,
+        orderBy: { id: "asc" },
+        take: 2,
+      });
+      if (matches.length > 1) {
+        throw new Error("L’identité Microsoft correspond à plusieurs comptes 1TASK et doit être corrigée par un administrateur.");
+      }
+      return matches;
+    };
+
+    const identityMatches = userId ? [] : await findIdentityMatches();
+    let existingUser: ExistingEntraUser | null = userId
       ? await tx.user.findUnique({
           where: { id: userId },
           select: existingUserSelect,
         })
       : identityMatches[0] ?? null;
+
+    if (!userId && !existingUser) {
+      // Two first-login callbacks can both observe an empty result before
+      // either transaction commits. Serialize only that creation path by the
+      // immutable Entra object id, then re-read under PostgreSQL READ COMMITTED.
+      // The second callback will see the row created by the first and update it
+      // instead of racing an email upsert against User_entraObjectId_key.
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${profile.id})::bigint)`;
+      existingUser = (await findIdentityMatches())[0] ?? null;
+    }
 
     const firstSynchronization = isFirstEntraSynchronization(existingUser);
     const isBootstrapAdmin = isBootstrapFunctionalAdminEmail(email);
