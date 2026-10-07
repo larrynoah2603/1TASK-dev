@@ -26,7 +26,9 @@ function reportingScopeFingerprint(current: UserContext) {
       .sort((left, right) => left.id.localeCompare(right.id)),
     managedQueueIds: (current.managedQueues ?? []).map((queue) => queue.id).sort(),
   };
-  return createHash("sha256").update(JSON.stringify(payload)).digest("hex").slice(0, 24);
+  const hash = createHash("sha256");
+  hash.write(JSON.stringify(payload));
+  return hash.digest("hex").slice(0, 24);
 }
 
 export async function getReportingSummary(actor: UserContext) {
