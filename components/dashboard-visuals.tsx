@@ -41,6 +41,7 @@ type ReportingSummary = {
   closed: number;
   overdue: number;
   completionDenominator: number;
+  slaTracked: number;
   slaComplianceRate: number;
   closureRate: number;
   byStatus: { status: TicketStatus; count: number }[];
@@ -311,7 +312,7 @@ export function ResponsibleDashboard({ queues, summary, tickets, missionSummary,
         <div><p className="eyebrow">Espace responsable</p><h1>Pilotage du support</h1><p className="page-header-description">Vue d’ensemble de la qualité de service et de la charge des équipes.</p></div>
         <Link href="/reporting" className="button-secondary">Ouvrir le reporting</Link>
       </header>
-      <DashboardKpiGrid items={[{ label: "Tickets ouverts", value: summary.total - summary.closed, note: "dans le périmètre autorisé", tone: "dashboard-kpi-value-brand" }, { label: "SLA respectés", value: `${healthyRate}%`, note: `${summary.overdue} dépassement(s) à traiter`, tone: "dashboard-kpi-value-success" }, { label: "Taux clôturé", value: `${summary.closureRate}%`, note: `${summary.closed} ticket(s) clôturé(s)`, tone: "dashboard-kpi-value-info" }, { label: "Charge active", value: active, note: "tickets opérationnels visibles", tone: "dashboard-kpi-value-warning" }]} />
+      <DashboardKpiGrid items={[{ label: "Tickets ouverts", value: summary.total - summary.closed, note: "dans le périmètre autorisé", tone: "dashboard-kpi-value-brand" }, { label: "SLA actifs dans les délais", value: `${healthyRate}%`, note: `${summary.overdue} dépassement(s) sur ${summary.slaTracked} suivi(s)`, tone: "dashboard-kpi-value-success" }, { label: "Taux clôturé", value: `${summary.closureRate}%`, note: `${summary.closed} ticket(s) clôturé(s)`, tone: "dashboard-kpi-value-info" }, { label: "Charge active", value: active, note: "tickets opérationnels visibles", tone: "dashboard-kpi-value-warning" }]} />
       <div className="dashboard-responsible-grid"><SlaPerformanceWidget summary={summary} /><TeamLoadPanel queues={queues} /></div>
       <PortfolioMissionWidget missions={missions} summary={missionSummary} />
       <ResponsibleEscalations tickets={tickets} />
