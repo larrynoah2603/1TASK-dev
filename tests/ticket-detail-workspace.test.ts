@@ -22,7 +22,9 @@ describe("ticket detail treatment workspace", () => {
     const page = source("app/(app)/tickets/[id]/page.tsx");
 
     expect(page).toContain("Les messages restent dans Échanges");
-    expect(page).toContain("...ticket.events.map");
+    expect(page).toContain("...ticket.events");
+    expect(page).toContain("event.eventType !== TicketEventType.ASSIGNED");
+    expect(page).toContain("event.eventType !== TicketEventType.MESSAGE_ADDED");
     expect(page).toContain("...ticket.assignments.map");
     expect(page).not.toContain('...ticket.messages.map((message) => ({ kind: "message"');
   });
