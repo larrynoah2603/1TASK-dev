@@ -224,6 +224,45 @@ html[data-theme] .dashboard-kpi-value-success { color: var(--kit-success-text) !
 html[data-theme] .dashboard-kpi-value-warning { color: var(--kit-warning-text) !important; }
 html[data-theme] .dashboard-kpi-value-danger { color: var(--kit-danger-text) !important; }
 
+/* Dashboard requester: neutralize late legacy hard-coded text colors.
+   The rendered KpiGrid uses dashboard-kpi-{tone} on the card itself, not
+   dashboard-kpi-value-* on the numeric <strong>. */
+html[data-theme] .dashboard-reference-header h1 {
+  color: var(--kit-text) !important;
+}
+html[data-theme] .dashboard-reference-header .page-header-description,
+html[data-theme] .dashboard-kpi-heading,
+html[data-theme] .dashboard-kpi-card small {
+  color: var(--kit-text-2) !important;
+}
+html[data-theme] .dashboard-kpi-card strong {
+  color: var(--kit-text) !important;
+}
+html[data-theme] .dashboard-kpi-info strong {
+  color: var(--kit-info-text) !important;
+}
+html[data-theme] .dashboard-kpi-warning strong {
+  color: var(--kit-warning-text) !important;
+}
+html[data-theme] .dashboard-kpi-success strong {
+  color: var(--kit-success-text) !important;
+}
+html[data-theme] .dashboard-kpi-danger strong {
+  color: var(--kit-danger-text) !important;
+}
+html[data-theme] .dashboard-kpi-info .dashboard-kpi-heading svg {
+  color: var(--kit-info-text) !important;
+}
+html[data-theme] .dashboard-kpi-warning .dashboard-kpi-heading svg {
+  color: var(--kit-warning-text) !important;
+}
+html[data-theme] .dashboard-kpi-success .dashboard-kpi-heading svg {
+  color: var(--kit-success-text) !important;
+}
+html[data-theme] .dashboard-kpi-danger .dashboard-kpi-heading svg {
+  color: var(--kit-danger-text) !important;
+}
+
 html[data-theme] .notification-dot { background: var(--kit-primary) !important; }
 html[data-theme] .notification-dot-read { background: var(--kit-border-strong) !important; }
 html[data-theme] .preview-panel {
