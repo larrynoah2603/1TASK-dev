@@ -13,7 +13,7 @@ describe("ticket detail treatment workspace", () => {
     expect(page).toContain("<TicketWorkspaceTabs");
     expect(page).toContain('title="Demande"');
     expect(page).toContain('title="Informations"');
-    expect(page).toContain("workspaceMode");
+    expect(page).toContain("ticket-treatment-heading");
   });
 
   it("keeps comments in exchanges instead of duplicating them in history", () => {
