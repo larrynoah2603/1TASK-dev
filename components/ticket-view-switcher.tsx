@@ -74,16 +74,6 @@ export function TicketViewSwitcher({
     },
   ];
 
-  if (includeRequested) {
-    scopeLinks.splice(1, 0, {
-      label: "Mes demandes",
-      title: scopeLabels.requested,
-      path: "/tickets",
-      patch: { scope: "requested", sla: "" },
-      active: scope === "requested",
-    });
-  }
-
   const slaLinks = [
     {
       label: compactLabels ? "À surveiller" : "SLA à surveiller",
@@ -112,6 +102,8 @@ export function TicketViewSwitcher({
       active: scope === "requested",
     });
   }
+
+  links.push(...slaLinks);
 
   return (
     <nav aria-label="Vues du ticketing" className="view-switcher">

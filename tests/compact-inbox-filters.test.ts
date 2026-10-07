@@ -27,5 +27,7 @@ describe("compact agent inbox filters", () => {
     expect(switcher).toContain("compactScopeLabels");
     expect(switcher).toContain('label: compactLabels ? "À surveiller" : "SLA à surveiller"');
     expect(switcher).toContain("link.alert && index > 0");
+    expect(switcher).toContain("links.push(...slaLinks)");
+    expect(switcher).not.toContain("scopeLinks.splice");
   });
 });
