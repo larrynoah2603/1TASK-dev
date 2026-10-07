@@ -221,7 +221,7 @@ textarea.kit-input { min-height: 88px; padding: var(--kit-space-2) var(--kit-spa
 }
 .kit-brand-mark {
   display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: 10px;
-  background: var(--kit-brand); color: #171717; font-size: 13px; font-weight: 800; letter-spacing: -0.04em;
+  background: var(--kit-brand); color: var(--kit-on-brand); font-size: 13px; font-weight: 800; letter-spacing: -0.04em;
 }
 .kit-brand-name { color: var(--kit-text); font-size: var(--kit-text-lg); font-weight: 700; letter-spacing: 0.02em; }
 .kit-brand-chip { margin-left: auto; padding: 2px 8px; border-radius: var(--kit-radius-pill); background: var(--kit-selected); color: var(--kit-selected-text); font-size: 11px; font-weight: 600; }
