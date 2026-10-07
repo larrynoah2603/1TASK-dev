@@ -68,6 +68,7 @@ describe.skipIf(!runDatabaseTests)("provisioning Entra V1 PostgreSQL", () => {
     expect(first).toMatchObject({ status: UserStatus.PENDING_ASSIGNMENT, departmentId: null });
     expect(concurrent.id).toBe(first.id);
     expect(repeated.id).toBe(first.id);
+    await expect(prisma.user.count({ where: { entraObjectId: entraProfile.id } })).resolves.toBe(1);
     expect(user.primaryRoleCode).toBeNull();
     expect(user.roleAssignments.filter((assignment) => assignment.role.code === RoleCode.REQUESTER)).toHaveLength(1);
     await expect(prisma.auditLog.count({

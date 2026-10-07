@@ -65,13 +65,13 @@ html[data-theme="dark"] {
   --ledger-primary-strong: var(--kit-primary-hover);
   --ledger-primary-deep: var(--kit-primary-hover);
   --ledger-primary-soft: var(--kit-primary-soft);
-  --ledger-information: var(--kit-primary);
+  --ledger-information: var(--kit-info);
   --ledger-operational: var(--kit-primary);
   --ds-brand: var(--kit-primary);
   --ds-brand-soft: var(--kit-primary-soft);
   --ds-brand-border: var(--kit-primary-line);
-  --reference-blue: var(--kit-primary);
-  --reference-blue-soft: var(--kit-primary-soft);
+  --reference-blue: var(--kit-info);
+  --reference-blue-soft: var(--kit-info-soft);
   --reference-navy-soft: var(--kit-surface-muted);
   --industrial-gold: var(--kit-primary);
   --industrial-red: var(--kit-primary);
@@ -137,18 +137,24 @@ html[data-theme="dark"] {
   --color-rose-50: var(--kit-danger-soft);
   --color-rose-100: var(--kit-danger-soft);
   --color-rose-200: var(--kit-danger-line);
+  --color-rose-500: var(--kit-danger);
   --color-rose-600: var(--kit-danger-text);
   --color-rose-700: var(--kit-danger-text);
+  --color-rose-800: var(--kit-danger-text);
   --color-emerald-50: var(--kit-success-soft);
   --color-emerald-100: var(--kit-success-soft);
   --color-emerald-200: var(--kit-success-line);
+  --color-emerald-500: var(--kit-success);
   --color-emerald-600: var(--kit-success-text);
   --color-emerald-700: var(--kit-success-text);
+  --color-emerald-800: var(--kit-success-text);
   --color-amber-50: var(--kit-warning-soft);
   --color-amber-100: var(--kit-warning-soft);
   --color-amber-200: var(--kit-warning-line);
+  --color-amber-500: var(--kit-warning);
   --color-amber-600: var(--kit-warning-text);
   --color-amber-700: var(--kit-warning-text);
+  --color-amber-800: var(--kit-warning-text);
 }
 
 /* Le legacy fixe des couleurs de texte / fond en dur (avec !important) sur ces utilitaires, à l'intérieur de l'application.
@@ -162,6 +168,8 @@ html[data-theme] .kit-app .text-slate-500,
 html[data-theme] .kit-app .text-slate-400 { color: var(--kit-secondary) !important; }
 html[data-theme] .kit-app .bg-slate-50,
 html[data-theme] .kit-app .bg-slate-100 { background-color: var(--kit-surface-muted) !important; }
+html[data-theme] .kit-app .bg-white { background-color: var(--kit-surface) !important; }
+html[data-theme] .kit-app .ring-white { --tw-ring-color: var(--kit-surface) !important; }
 html[data-theme] .kit-app .border-slate-100,
 html[data-theme] .kit-app .border-slate-200 { border-color: var(--kit-border) !important; }
 html[data-theme] .kit-app .text-rose-700,
@@ -176,6 +184,104 @@ html[data-theme] .kit-app .text-amber-700,
 html[data-theme] .kit-app .text-amber-600 { color: var(--kit-warning-text) !important; }
 html[data-theme] .kit-app .bg-amber-50 { background-color: var(--kit-warning-soft) !important; }
 html[data-theme] .kit-app .border-amber-200 { border-color: var(--kit-warning-line) !important; }
+
+/* ---------- Rôles visuels BIOS ---------- */
+html[data-theme] .operational-link { color: var(--kit-primary-text) !important; }
+html[data-theme] .operational-link:hover { color: var(--kit-selected-text) !important; }
+
+html[data-theme] .brand-mark {
+  background: linear-gradient(145deg, var(--kit-brand), var(--kit-primary)) !important;
+  color: var(--kit-on-brand) !important;
+}
+
+html[data-theme] .view-switcher-link-active,
+html[data-theme] .combobox-option-selected,
+html[data-theme] [aria-selected="true"].combobox-option {
+  background: var(--kit-selected) !important;
+  color: var(--kit-selected-text) !important;
+}
+
+html[data-theme] .view-switcher-link:focus-visible,
+html[data-theme] .combobox-option:focus-visible {
+  outline-color: var(--kit-primary) !important;
+}
+
+html[data-theme] .combobox-option-highlighted:not(.combobox-option-selected) {
+  background: var(--kit-hover) !important;
+  color: var(--kit-text) !important;
+}
+
+/* ---------- Compatibilité des écrans encore très Tailwind/legacy ---------- */
+html[data-theme] .agent-card-count {
+  background: var(--kit-selected) !important;
+  color: var(--kit-selected-text) !important;
+}
+
+html[data-theme] .dashboard-kpi-value-brand { color: var(--kit-primary-text) !important; }
+html[data-theme] .dashboard-kpi-value-info,
+html[data-theme] .dashboard-kpi-value-violet { color: var(--kit-info-text) !important; }
+html[data-theme] .dashboard-kpi-value-success { color: var(--kit-success-text) !important; }
+html[data-theme] .dashboard-kpi-value-warning { color: var(--kit-warning-text) !important; }
+html[data-theme] .dashboard-kpi-value-danger { color: var(--kit-danger-text) !important; }
+
+html[data-theme] .notification-dot { background: var(--kit-primary) !important; }
+html[data-theme] .notification-dot-read { background: var(--kit-border-strong) !important; }
+html[data-theme] .preview-panel {
+  border-color: var(--kit-border) !important;
+  background: var(--kit-surface-muted) !important;
+  color: var(--kit-text) !important;
+}
+
+html[data-theme] .view-toggle {
+  border-color: var(--kit-border-strong) !important;
+  background: var(--kit-surface-muted) !important;
+}
+html[data-theme] .view-toggle button { color: var(--kit-text-2) !important; }
+html[data-theme] .view-toggle button:hover { color: var(--kit-primary-text) !important; }
+html[data-theme] .view-toggle-active {
+  background: var(--kit-selected) !important;
+  color: var(--kit-selected-text) !important;
+}
+
+/* Écrans autonomes : connexion et attente administrative suivent aussi le thème explicite. */
+html[data-theme] .signin-shell,
+html[data-theme] .pending-assignment-page {
+  background: var(--kit-bg) !important;
+  color: var(--kit-text) !important;
+}
+html[data-theme] .signin-shell .text-white { color: var(--kit-text) !important; }
+html[data-theme] .signin-shell .text-slate-300,
+html[data-theme] .signin-shell .text-slate-400,
+html[data-theme] .signin-shell .text-slate-500,
+html[data-theme] .signin-shell .text-slate-600,
+html[data-theme] .pending-assignment-page .text-slate-500,
+html[data-theme] .pending-assignment-page .text-slate-600 { color: var(--kit-secondary) !important; }
+
+html[data-theme] .signin-card,
+html[data-theme] .pending-assignment-page > section {
+  border: 1px solid var(--kit-border) !important;
+  background: var(--kit-surface) !important;
+  color: var(--kit-text) !important;
+}
+html[data-theme] .signin-card h1,
+html[data-theme] .signin-card p,
+html[data-theme] .signin-card .text-slate-600,
+html[data-theme] .pending-assignment-page .text-slate-900,
+html[data-theme] .pending-assignment-page .text-slate-950 { color: var(--kit-text) !important; }
+html[data-theme] .signin-card p,
+html[data-theme] .pending-assignment-page p { color: var(--kit-text-2) !important; }
+html[data-theme] .signin-card .eyebrow { color: var(--kit-primary-text) !important; }
+html[data-theme] .signin-card [class*="bg-slate-50"],
+html[data-theme] .pending-assignment-page .bg-slate-50 { background: var(--kit-surface-muted) !important; }
+html[data-theme] .signin-card button {
+  background: var(--kit-primary) !important;
+  color: var(--kit-on-primary) !important;
+}
+html[data-theme] .signin-card button:hover { background: var(--kit-primary-hover) !important; }
+html[data-theme] .signin-card button .bg-white {
+  background: var(--kit-surface) !important;
+  color: var(--kit-primary-text) !important;
+}
 
 /* ---------- Base globale ---------- */
 html { background: var(--kit-bg); }

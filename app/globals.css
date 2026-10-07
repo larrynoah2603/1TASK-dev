@@ -158,10 +158,10 @@ html[data-theme="light"] .shell-industrial {
   background:
     radial-gradient(
       circle at 50% 42%,
-      rgba(240, 125, 32, 0.08),
+      color-mix(in srgb, var(--kit-brand) 12%, transparent),
       transparent 32%
     ),
-    #ffffff;
+    var(--kit-bg);
 }
 
 .bios-loading-content {
@@ -213,7 +213,7 @@ html[data-theme="light"] .shell-industrial {
 
   border-radius: 999px;
 
-  background: rgba(240, 125, 32, 0.16);
+  background: color-mix(in srgb, var(--kit-brand) 22%, transparent);
 
   filter: blur(45px);
 
@@ -235,7 +235,7 @@ html[data-theme="light"] .shell-industrial {
 
   border-radius: 999px;
 
-  background: rgba(100, 100, 100, 0.12);
+  background: var(--kit-border);
 }
 
 .bios-loading-progress-bar {
@@ -246,7 +246,7 @@ html[data-theme="light"] .shell-industrial {
 
   border-radius: inherit;
 
-  background: #f07d20;
+  background: var(--kit-brand);
 
   animation: biosProgress 1.5s ease-in-out infinite;
 }
@@ -261,7 +261,7 @@ html[data-theme="light"] .shell-industrial {
 
   margin-top: 16px;
 
-  color: #64748b;
+  color: var(--kit-secondary);
 
   font-size: 12px;
   font-weight: 500;
@@ -277,7 +277,7 @@ html[data-theme="light"] .shell-industrial {
 
   border-radius: 50%;
 
-  background: #f07d20;
+  background: var(--kit-brand);
 
   animation: biosStatusPulse 1.3s ease-in-out infinite;
 }
@@ -405,24 +405,8 @@ html[data-theme="light"] .shell-industrial {
 }
 
 
-/* DARK MODE */
-
-@media (prefers-color-scheme: dark) {
-  .bios-loading-page {
-    background:
-      radial-gradient(
-        circle at 50% 42%,
-        rgba(240, 125, 32, 0.1),
-        transparent 32%
-      ),
-      #0b0f14;
-  }
-
-  .bios-loading-status {
-    color: #94a3b8;
-  }
-
-  .bios-loading-progress {
-    background: rgba(255, 255, 255, 0.1);
-  }
+/* Le loader suit le même thème explicite que l’application ; aucune palette parallèle. */
+html[data-theme="dark"] .bios-loading-page,
+html[data-theme="light"] .bios-loading-page {
+  color: var(--kit-text);
 }

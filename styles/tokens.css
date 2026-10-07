@@ -47,28 +47,37 @@
   /* =====================  MODE CLAIR (par défaut)  ===================== */
   color-scheme: light;
 
-  --kit-bg: #F8FAFC;
+  /* Palette BIOS — rôle avant couleur */
+  --kit-bg: #F8F9FB;
   --kit-surface: #FFFFFF;
   --kit-card: #FFFFFF;
-  --kit-primary: #4F46E5;
-  --kit-secondary: #64748B;
-  --kit-success: #16A34A;
-  --kit-warning: #F59E0B;
-  --kit-danger: #DC2626;
-  --kit-text: #0F172A;
-  --kit-text-2: #475569;
+  --kit-surface-muted: #F2F3F5;
+  --kit-border: #E2E5E9;
+  --kit-border-strong: #C8CDD3;
+
+  --kit-text: #202124;
+  --kit-text-2: #646567;
+  --kit-secondary: #646567;
+
+  /* Marque et action : l'orange du logo reste distinct de l'orange d'action contrasté. */
+  --kit-brand: #EA7C29;
+  --kit-primary: #C4510D;
+  --kit-primary-text: #C4510D;
+  --kit-selected: #FFF0E4;
+  --kit-selected-text: #B5480A;
   --kit-on-primary: #FFFFFF;
+  --kit-on-brand: #171717;
 
-  /* Neutres dérivés (même famille slate que la palette) */
-  --kit-border: #E2E8F0;
-  --kit-border-strong: #CBD5E1;
-  --kit-surface-muted: #F1F5F9;
-
-  /* Textes sémantiques lisibles sur fond teinté (contraste ≥ 4.5:1) */
-  --kit-primary-text: var(--kit-primary);
-  --kit-success-text: color-mix(in srgb, var(--kit-success) 75%, black);
-  --kit-warning-text: color-mix(in srgb, var(--kit-warning) 55%, black);
-  --kit-danger-text: color-mix(in srgb, var(--kit-danger) 85%, black);
+  /* Statuts : couleurs sémantiques distinctes de la marque. */
+  --kit-info: #315D8C;
+  --kit-success: #2E7D32;
+  --kit-warning: #8A5A00;
+  --kit-danger: #B42318;
+  --kit-info-text: #315D8C;
+  --kit-success-text: #2E7D32;
+  --kit-warning-text: #8A5A00;
+  --kit-danger-text: #B42318;
+  --kit-on-success: #FFFFFF;
 
   /* Ombres douces */
   --kit-shadow-xs: 0 1px 2px rgb(15 23 42 / 0.04);
@@ -80,25 +89,34 @@
 html[data-theme="dark"] {
   color-scheme: dark;
 
-  --kit-bg: #020617;
-  --kit-surface: #0F172A;
-  --kit-card: #111827;
-  --kit-primary: #818CF8;
-  --kit-secondary: #94A3B8;
-  --kit-success: #22C55E;
-  --kit-warning: #FBBF24;
-  --kit-danger: #F87171;
-  --kit-text: #F8FAFC;
-  --kit-text-2: #CBD5E1;
-  --kit-on-primary: #0F172A;
+  --kit-bg: #141517;
+  --kit-surface: #1E2023;
+  --kit-card: #1E2023;
+  --kit-surface-muted: #292C30;
+  --kit-border: #3B3E43;
+  --kit-border-strong: #555960;
 
-  --kit-border: #1E293B;
-  --kit-border-strong: #334155;
-  --kit-surface-muted: #1E293B;
+  --kit-text: #F5F6F7;
+  --kit-text-2: #B0B4BB;
+  --kit-secondary: #B0B4BB;
 
-  --kit-success-text: var(--kit-success);
-  --kit-warning-text: var(--kit-warning);
-  --kit-danger-text: var(--kit-danger);
+  --kit-brand: #EA7C29;
+  --kit-primary: #F47F2A;
+  --kit-primary-text: #F47F2A;
+  --kit-selected: #38271D;
+  --kit-selected-text: #F47F2A;
+  --kit-on-primary: #171717;
+  --kit-on-brand: #171717;
+
+  --kit-info: #8DB5E2;
+  --kit-success: #74C98A;
+  --kit-warning: #E7B64A;
+  --kit-danger: #FF8178;
+  --kit-info-text: #8DB5E2;
+  --kit-success-text: #74C98A;
+  --kit-warning-text: #E7B64A;
+  --kit-danger-text: #FF8178;
+  --kit-on-success: #171717;
 
   --kit-shadow-xs: 0 1px 2px rgb(0 0 0 / 0.3);
   --kit-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3), 0 2px 8px rgb(0 0 0 / 0.2);
@@ -109,16 +127,36 @@ html[data-theme="dark"] {
 /* Teintes calculées à partir des tokens : elles suivent automatiquement le thème. */
 :root,
 html[data-theme="dark"] {
-  --kit-hover: color-mix(in srgb, var(--kit-text) 5%, transparent);
-  --kit-active: color-mix(in srgb, var(--kit-text) 8%, transparent);
+  --kit-hover: color-mix(in srgb, var(--kit-text) 6%, transparent);
+  --kit-active: color-mix(in srgb, var(--kit-text) 10%, transparent);
   --kit-primary-hover: color-mix(in srgb, var(--kit-primary) 88%, var(--kit-text));
-  --kit-primary-soft: color-mix(in srgb, var(--kit-primary) 12%, var(--kit-card));
-  --kit-primary-line: color-mix(in srgb, var(--kit-primary) 32%, var(--kit-card));
-  --kit-success-soft: color-mix(in srgb, var(--kit-success) 13%, var(--kit-card));
-  --kit-warning-soft: color-mix(in srgb, var(--kit-warning) 15%, var(--kit-card));
-  --kit-danger-soft: color-mix(in srgb, var(--kit-danger) 12%, var(--kit-card));
-  --kit-neutral-soft: color-mix(in srgb, var(--kit-secondary) 13%, var(--kit-card));
-  --kit-ring: color-mix(in srgb, var(--kit-primary) 45%, transparent);
-  --kit-overlay: color-mix(in srgb, var(--kit-bg) 60%, transparent);
-  --kit-glass: color-mix(in srgb, var(--kit-surface) 82%, transparent);
+  --kit-primary-soft: var(--kit-selected);
+  --kit-primary-line: color-mix(in srgb, var(--kit-primary) 36%, var(--kit-card));
+  --kit-info-soft: color-mix(in srgb, var(--kit-info) 14%, var(--kit-card));
+  --kit-info-line: color-mix(in srgb, var(--kit-info) 34%, var(--kit-card));
+  --kit-success-soft: color-mix(in srgb, var(--kit-success) 14%, var(--kit-card));
+  --kit-warning-soft: color-mix(in srgb, var(--kit-warning) 16%, var(--kit-card));
+  --kit-danger-soft: color-mix(in srgb, var(--kit-danger) 14%, var(--kit-card));
+  --kit-neutral-soft: color-mix(in srgb, var(--kit-secondary) 14%, var(--kit-card));
+  --kit-ring: color-mix(in srgb, var(--kit-primary) 44%, transparent);
+  --kit-overlay: color-mix(in srgb, var(--kit-bg) 72%, transparent);
+  --kit-glass: color-mix(in srgb, var(--kit-surface) 90%, transparent);
+
+  /* Alias Tailwind historiques audités : les anciens accents indigo/teal/cyan deviennent la marque BIOS. */
+  --color-indigo-50: var(--kit-selected);
+  --color-indigo-100: var(--kit-selected);
+  --color-indigo-200: var(--kit-primary-line);
+  --color-indigo-500: var(--kit-primary);
+  --color-indigo-600: var(--kit-primary);
+  --color-indigo-700: var(--kit-primary-text);
+  --color-indigo-800: var(--kit-selected-text);
+  --color-teal-50: var(--kit-selected);
+  --color-teal-100: var(--kit-selected);
+  --color-teal-200: var(--kit-primary-line);
+  --color-teal-500: var(--kit-primary);
+  --color-teal-600: var(--kit-primary);
+  --color-teal-700: var(--kit-primary-text);
+  --color-teal-800: var(--kit-selected-text);
+  --color-teal-900: var(--kit-selected-text);
+  --color-cyan-100: color-mix(in srgb, var(--kit-brand) 18%, var(--kit-card));
 }
