@@ -16,6 +16,7 @@ import { TicketHeader } from "@/components/tickets/detail/ticket-header";
 import { TicketConversation } from "@/components/tickets/detail/ticket-conversation";
 import { TicketPanel } from "@/components/tickets/detail/ticket-panel";
 import { TicketSidebarActions } from "@/components/tickets/detail/ticket-sidebar-actions";
+import { TicketWorkspaceTabs } from "@/components/tickets/detail/ticket-workspace-tabs";
 import { Avatar } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icons";
 import { formatRelativeActivityDate } from "@/components/activity-icon";
@@ -45,12 +46,19 @@ type Tone = NonNullable<TimelineItem["tone"]>;
 
 /** Présentation uniquement : icône et couleur de chaque type d'événement. */
 const eventTone: Record<string, Tone> = {
-  RESOLUTION_SUBMITTED: "success", CLOSED: "success", CANCELLED: "warning", REOPENED: "warning", SLA_ALERT: "warning", SLA_BREACH: "danger",
-  CONFIDENTIAL_ACCESS_GRANTED: "warning", MESSAGE_ADDED: "neutral",
+  RESOLUTION_SUBMITTED: "success",
+  CLOSED: "success",
+  CANCELLED: "warning",
+  REOPENED: "warning",
+  SLA_ALERT: "warning",
+  SLA_BREACH: "danger",
+  CONFIDENTIAL_ACCESS_GRANTED: "warning",
 };
 
 function formatDate(value: Date | null | undefined) {
-  return value ? new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" }).format(value) : "Non configurée";
+  return value
+    ? new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" }).format(value)
+    : "Non configurée";
 }
 
 function formatMinutes(minutes: number) {
@@ -92,11 +100,14 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
   const operationalRoles: RoleCode[] = [RoleCode.AGENT, RoleCode.QUEUE_MANAGER, RoleCode.FUNCTIONAL_ADMIN];
   const operational = !v1RequesterView && roleCodes(user).some((role) => operationalRoles.includes(role));
   const sla = getTicketSlaState(ticket);
+
+  // L'onglet Historique reste centré sur les événements structurants.
+  // Les messages restent dans Échanges pour éviter de les lire deux fois.
   const timeline = [
     ...ticket.events.map((event) => ({ kind: "event" as const, at: event.createdAt, event })),
     ...ticket.assignments.map((assignment) => ({ kind: "assignment" as const, at: assignment.assignedAt, assignment })),
-    ...ticket.messages.map((message) => ({ kind: "message" as const, at: message.createdAt, message })),
   ].sort((left, right) => left.at.getTime() - right.at.getTime());
+
   const canResolve = actionContext.allowedStatuses.some((status) => String(status) === "RESOLUTION_PENDING");
 
   const timelineItems: TimelineItem[] = timeline.map((item) => {
@@ -111,28 +122,32 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
         tone: eventTone[item.event.eventType] ?? "info",
       };
     }
-    if (item.kind === "assignment") {
-      return {
-        title: `Affectation : ${item.assignment.previousAssignee?.name ?? "Non affecté"} → ${item.assignment.newAssignee?.name ?? "Non affecté"}`,
-        actor: item.assignment.assignedBy?.name ?? "Système",
-        meta: formatRelativeActivityDate(item.assignment.assignedAt),
-        type: "ASSIGNED",
-        tone: "info" as Tone,
-      };
-    }
-    const internal = item.message.visibility === "INTERNAL";
     return {
-      title: `${item.message.author.name} · ${internal ? "commentaire interne" : "commentaire public"}`,
-      actor: item.message.author.name,
-      meta: formatRelativeActivityDate(item.message.createdAt),
-      description: item.message.body,
-      type: "MESSAGE_ADDED",
-      tone: (internal ? "warning" : "info") as Tone,
+      title: `Affectation : ${item.assignment.previousAssignee?.name ?? "Non affecté"} → ${item.assignment.newAssignee?.name ?? "Non affecté"}`,
+      actor: item.assignment.assignedBy?.name ?? "Système",
+      meta: formatRelativeActivityDate(item.assignment.assignedAt),
+      type: "ASSIGNED",
+      tone: "info" as Tone,
     };
   });
 
+  const advancedPanelProps = {
+    ticketId: ticket.id,
+    targetDepartmentId: ticket.queue.department.id,
+    impact: ticket.impact,
+    urgency: ticket.urgency,
+    priority: ticket.priority,
+    legalDueAt: ticket.legalDueAt?.toISOString() ?? null,
+    firstResponseDueAt: ticket.firstResponseDueAt?.toISOString() ?? null,
+    resolutionDueAt: ticket.resolutionDueAt?.toISOString() ?? null,
+    canQualify: operational && ticket.status !== "CLOSED" && ticket.status !== "CANCELLED",
+    canManageSla: actionContext.canTransfer && ticket.status !== "CLOSED" && ticket.status !== "CANCELLED",
+    canUpload: capabilities.attachmentUploads && actionContext.canPostPublic,
+    canLink: operational && ticket.status !== "CLOSED" && ticket.status !== "CANCELLED",
+  };
+
   return (
-    <div className="kit-ticket ticket-detail-industrial">
+    <div className="kit-ticket ticket-detail-industrial ticket-detail-workspace-page">
       <Link href={operational ? "/inbox" : "/tickets"} className="kit-back">
         <Icon name="arrowLeft" />
         {operational ? "Retour à la boîte agent" : "Retour à mes tickets"}
@@ -145,7 +160,8 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
         </div>
         <h1 className="kit-ticket-title">{ticket.title}</h1>
         <p className="kit-ticket-route">
-          {ticket.sourceDepartment?.name ?? "Département source non renseigné"} → {ticket.queue.department.name} · {ticket.queue.name} · {ticket.serviceCatalogItem.name}
+          {ticket.serviceCatalogItem.name} · {ticket.queue.department.name} / {ticket.queue.name}
+          {ticket.assignedTo ? ` · ${ticket.assignedTo.name}` : " · Non affecté"}
         </p>
         <TicketStatusStrip
           reference={ticket.reference}
@@ -161,123 +177,152 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
         />
       </TicketHeader>
 
-      <div className="kit-ticket-grid">
-        <div className="kit-ticket-col">
-          <TicketPanel title="Description" subtitle="Demande initiale">
-            {ticket.requestedService ? <div className="kit-need"><p className="kit-need-label">Besoin saisi par le demandeur</p><p className="kit-need-value">{ticket.requestedService}</p></div> : null}
-            <p className="kit-prose">{ticket.description}</p>
-            {ticket.status === "CANCELLED" ? <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4"><p className="text-sm font-semibold text-slate-900">Demande annulée</p><p className="mt-1 text-sm text-slate-600">{ticket.cancellationReason}</p></div> : null}
-            {ticket.status === "RESOLUTION_PENDING" && ticket.autoClosureDueAt ? <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4"><p className="text-sm font-semibold text-emerald-900">Résolution en attente de confirmation</p><p className="mt-1 text-sm text-emerald-800">Sans confirmation ou réouverture, ce ticket sera clôturé automatiquement le {formatDate(ticket.autoClosureDueAt)}.</p></div> : null}
-          </TicketPanel>
+      {ticket.status === "BLOCKED" ? (
+        <section className="ticket-attention-banner ticket-attention-warning" role="status">
+          <div>
+            <strong>Traitement en attente</strong>
+            <p>
+              {ticket.blockReason ? BLOCK_REASON_LABELS[ticket.blockReason] : "Le traitement est temporairement bloqué."}
+              {ticket.blockDetails ? ` · ${ticket.blockDetails}` : ""}
+            </p>
+          </div>
+        </section>
+      ) : null}
 
-          <TicketConversation>
-            <TicketCommentThread
-              ticketId={ticket.id}
-              messages={ticket.messages}
-              canPostPublic={actionContext.canPostPublic}
-              canPostInternal={actionContext.canPostInternal}
-            />
-          </TicketConversation>
+      {ticket.status === "RESOLUTION_PENDING" ? (
+        <section className="ticket-attention-banner ticket-attention-success" role="status">
+          <div>
+            <strong>Résolution proposée</strong>
+            <p>
+              Le demandeur peut confirmer la résolution ou signaler que le problème persiste.
+              {ticket.autoClosureDueAt ? ` Clôture automatique prévue le ${formatDate(ticket.autoClosureDueAt)}.` : ""}
+            </p>
+          </div>
+        </section>
+      ) : null}
 
-          <TicketPanel title="Chronologie" subtitle="Historique complet du ticket" count={timeline.length}>
-            {timelineItems.length ? <Timeline items={timelineItems} /> : <p className="kit-empty">Aucun événement enregistré.</p>}
-          </TicketPanel>
+      {ticket.status === "CANCELLED" ? (
+        <section className="ticket-attention-banner ticket-attention-neutral" role="status">
+          <div>
+            <strong>Demande annulée</strong>
+            <p>{ticket.cancellationReason ?? "Le ticket est conservé en lecture seule dans l’historique."}</p>
+          </div>
+        </section>
+      ) : null}
 
-          <TicketAdvancedPanels
-            only="attachments"
-            ticketId={ticket.id}
-            targetDepartmentId={ticket.queue.department.id}
-            impact={ticket.impact}
-            urgency={ticket.urgency}
-            priority={ticket.priority}
-            legalDueAt={ticket.legalDueAt?.toISOString() ?? null}
-            firstResponseDueAt={ticket.firstResponseDueAt?.toISOString() ?? null}
-            resolutionDueAt={ticket.resolutionDueAt?.toISOString() ?? null}
-            canQualify={operational && ticket.status !== "CLOSED" && ticket.status !== "CANCELLED"}
-            canManageSla={actionContext.canTransfer && ticket.status !== "CLOSED" && ticket.status !== "CANCELLED"}
-            canUpload={capabilities.attachmentUploads && actionContext.canPostPublic}
-            canLink={operational && ticket.status !== "CLOSED" && ticket.status !== "CANCELLED"}
-          />
-        </div>
-
-        <aside className="kit-ticket-col kit-ticket-side" aria-label="Informations et actions du ticket">
-          <TicketSidebarActions>
-            <TicketActions
-              ticketId={ticket.id}
-              status={ticket.status}
-              simplifiedV1={v1Profile}
-              requesterView={requesterView}
-              {...actionContext}
-            />
-          </TicketSidebarActions>
-
-          <TicketPanel title="Demandeur">
-            <div className="kit-person">
-              <Avatar name={ticket.requester.name} size="lg" />
-              <div>
-                <p className="kit-person-name">{ticket.requester.name}</p>
-                <p className="kit-person-role">{ticket.sourceDepartment?.name ?? "Département non renseigné"}</p>
+      <div className="ticket-detail-workspace">
+        <aside className="ticket-treatment-rail" aria-label="Traitement et informations du ticket">
+          <div className="ticket-treatment-sticky">
+            <section className="ticket-treatment-section">
+              <div className="ticket-treatment-heading">
+                <p className="eyebrow">Traitement</p>
+                <h2>{requesterView ? "Suivi de votre demande" : "Prochaine action"}</h2>
+                <p>{requesterView ? "Confirmez la résolution ou poursuivez l’échange avec le support." : "Les actions disponibles dépendent de votre rôle et de l’état actuel."}</p>
               </div>
-            </div>
-          </TicketPanel>
+              <TicketSidebarActions>
+                <TicketActions
+                  ticketId={ticket.id}
+                  status={ticket.status}
+                  simplifiedV1={v1Profile}
+                  requesterView={requesterView}
+                  workspaceMode
+                  {...actionContext}
+                />
+              </TicketSidebarActions>
+            </section>
 
-          <TicketPanel title="Équipe en charge">
-            {ticket.assignedTo ? (
-              <div className="kit-person">
-                <Avatar name={ticket.assignedTo.name} size="lg" />
-                <div>
-                  <p className="kit-person-name">{ticket.assignedTo.name}</p>
-                  <p className="kit-person-role">Agent assigné</p>
+            <TicketPanel title="Informations" subtitle="Contexte opérationnel">
+              <div className="ticket-operational-summary">
+                <div className="ticket-operational-person">
+                  <Avatar name={ticket.requester.name} size="md" />
+                  <div>
+                    <span>Demandeur</span>
+                    <strong>{ticket.requester.name}</strong>
+                    <small>{ticket.sourceDepartment?.name ?? "Département non renseigné"}</small>
+                  </div>
                 </div>
+
+                <dl className="kit-dl ticket-operational-dl">
+                  <div><dt>Agent</dt><dd>{ticket.assignedTo?.name ?? "Non affecté"}</dd></div>
+                  <div><dt>Département</dt><dd>{ticket.queue.department.name}</dd></div>
+                  <div><dt>File</dt><dd>{ticket.queue.name}</dd></div>
+                  <div><dt>Service</dt><dd>{ticket.serviceCatalogItem.name}</dd></div>
+                  <div><dt>Responsable</dt><dd>{ticket.queue.manager?.name ?? "Non désigné"}</dd></div>
+                  <div><dt>Créé le</dt><dd>{formatDate(ticket.createdAt)}</dd></div>
+                  <div><dt>Première réponse</dt><dd>{formatDate(ticket.firstResponseDueAt)}</dd></div>
+                  <div><dt>Résolution</dt><dd>{formatDate(ticket.resolutionDueAt)}</dd></div>
+                  <div><dt>Temps bloqué</dt><dd>{ticket.totalPausedMinutes} min</dd></div>
+                </dl>
+
+                {ticket.dossier || ticket.mission ? (
+                  <div className="ticket-production-summary">
+                    <p className="ticket-summary-label">Contexte de production</p>
+                    <dl className="kit-dl">
+                      <div><dt>Client</dt><dd>{ticket.dossier?.client.name ?? "Non renseigné"}</dd></div>
+                      <div><dt>Dossier</dt><dd>{ticket.dossier ? <Link href={`/dossiers/${ticket.dossier.id}` as Route}>{ticket.dossier.code}</Link> : "Non rattaché"}</dd></div>
+                      <div><dt>Mission</dt><dd>{ticket.mission ? <Link href={`/missions/${ticket.mission.id}` as Route}>{ticket.mission.code}</Link> : "Non rattachée"}</dd></div>
+                      <div><dt>Budget mission</dt><dd>{ticket.mission?.budgetMinutes ? formatMinutes(ticket.mission.budgetMinutes) : "Non défini"}</dd></div>
+                      <div><dt>Temps mission</dt><dd>{formatMinutes(ticket.missionWorklogMinutes)}</dd></div>
+                      <div><dt>Temps ticket</dt><dd>{formatMinutes(ticket.worklogSummary.minutes)} · {ticket.worklogSummary.entries} saisie(s)</dd></div>
+                    </dl>
+                  </div>
+                ) : null}
               </div>
-            ) : <p className="kit-empty" style={{ padding: 0, textAlign: "left" }}>Aucun agent assigné pour le moment.</p>}
-            <dl className="kit-dl" style={{ marginTop: "var(--kit-space-4)" }}>
-              <div><dt>Département</dt><dd>{ticket.queue.department.name}</dd></div>
-              <div><dt>File</dt><dd>{ticket.queue.name}</dd></div>
-              <div><dt>Responsable de file</dt><dd>{ticket.queue.manager?.name ?? "Non désigné"}</dd></div>
-            </dl>
-          </TicketPanel>
-
-          <TicketPanel title="Détails" subtitle="Dates et échéances">
-            <dl className="kit-dl">
-              <div><dt>Nature</dt><dd>{TYPE_LABELS[ticket.type]}</dd></div>
-              <div><dt>Créé le</dt><dd>{formatDate(ticket.createdAt)}</dd></div>
-              <div><dt>Première réponse avant</dt><dd>{formatDate(ticket.firstResponseDueAt)}</dd></div>
-              <div><dt>Résolution avant</dt><dd>{formatDate(ticket.resolutionDueAt)}</dd></div>
-              <div><dt>Temps bloqué</dt><dd>{ticket.totalPausedMinutes} min</dd></div>
-              {ticket.blockReason ? <div><dt>Blocage</dt><dd>{BLOCK_REASON_LABELS[ticket.blockReason]}</dd></div> : null}
-            </dl>
-          </TicketPanel>
-
-          {ticket.dossier || ticket.mission ? (
-            <TicketPanel title="Contexte de production" subtitle="Dossier, mission et temps">
-              <dl className="kit-dl">
-                <div><dt>Client</dt><dd>{ticket.dossier?.client.name ?? "Non renseigné"}</dd></div>
-                <div><dt>Dossier</dt><dd>{ticket.dossier ? <Link href={`/dossiers/${ticket.dossier.id}` as Route}>{ticket.dossier.code}</Link> : "Non rattaché"}</dd></div>
-                <div><dt>Mission</dt><dd>{ticket.mission ? <Link href={`/missions/${ticket.mission.id}` as Route}>{ticket.mission.code}</Link> : "Non rattachée"}</dd></div>
-                <div><dt>Budget mission</dt><dd>{ticket.mission?.budgetMinutes ? formatMinutes(ticket.mission.budgetMinutes) : "Non défini"}</dd></div>
-                <div><dt>Temps mission</dt><dd>{formatMinutes(ticket.missionWorklogMinutes)}</dd></div>
-                <div><dt>Temps sur ticket</dt><dd>{formatMinutes(ticket.worklogSummary.minutes)} · {ticket.worklogSummary.entries} saisie(s)</dd></div>
-              </dl>
             </TicketPanel>
-          ) : null}
+          </div>
 
-          <TicketAdvancedPanels
-            only="management"
-            ticketId={ticket.id}
-            targetDepartmentId={ticket.queue.department.id}
-            impact={ticket.impact}
-            urgency={ticket.urgency}
-            priority={ticket.priority}
-            legalDueAt={ticket.legalDueAt?.toISOString() ?? null}
-            firstResponseDueAt={ticket.firstResponseDueAt?.toISOString() ?? null}
-            resolutionDueAt={ticket.resolutionDueAt?.toISOString() ?? null}
-            canQualify={operational && ticket.status !== "CLOSED" && ticket.status !== "CANCELLED"}
-            canManageSla={actionContext.canTransfer && ticket.status !== "CLOSED" && ticket.status !== "CANCELLED"}
-            canUpload={capabilities.attachmentUploads && actionContext.canPostPublic}
-            canLink={operational && ticket.status !== "CLOSED" && ticket.status !== "CANCELLED"}
-          />
+          {operational ? (
+            <section className="ticket-advanced-tools" aria-label="Outils avancés">
+              <div className="ticket-advanced-tools-heading">
+                <p className="eyebrow">Outils avancés</p>
+                <p>Qualification, SLA et relations restent disponibles sans encombrer l’action principale.</p>
+              </div>
+              <TicketAdvancedPanels only="management" compact {...advancedPanelProps} />
+            </section>
+          ) : null}
         </aside>
+
+        <main className="ticket-detail-main">
+          <TicketPanel title="Demande" subtitle="Besoin et description initiale">
+            {ticket.requestedService ? (
+              <div className="kit-need">
+                <p className="kit-need-label">Besoin saisi par le demandeur</p>
+                <p className="kit-need-value">{ticket.requestedService}</p>
+              </div>
+            ) : null}
+            <p className="kit-prose">{ticket.description}</p>
+          </TicketPanel>
+
+          <TicketWorkspaceTabs
+            messageCount={ticket.messages.length}
+            historyCount={timeline.length}
+            conversation={
+              <TicketConversation>
+                <TicketCommentThread
+                  ticketId={ticket.id}
+                  messages={ticket.messages}
+                  canPostPublic={actionContext.canPostPublic}
+                  canPostInternal={actionContext.canPostInternal}
+                />
+              </TicketConversation>
+            }
+            history={
+              <section className="ticket-history-pane" aria-label="Historique du ticket">
+                <div className="ticket-section-heading">
+                  <div>
+                    <h2>Historique</h2>
+                    <p>Événements de workflow et affectations. Les messages restent dans l’onglet Échanges.</p>
+                  </div>
+                  <span className="ticket-section-count">{timeline.length}</span>
+                </div>
+                <div className="ticket-history-body">
+                  {timelineItems.length ? <Timeline items={timelineItems} /> : <p className="kit-empty">Aucun événement enregistré.</p>}
+                </div>
+              </section>
+            }
+            attachments={<TicketAdvancedPanels only="attachments" embedded {...advancedPanelProps} />}
+          />
+        </main>
       </div>
     </div>
   );

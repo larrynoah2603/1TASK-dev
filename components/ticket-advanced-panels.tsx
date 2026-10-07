@@ -69,6 +69,10 @@ type Props = {
   canLink: boolean;
   /** Affichage : "attachments" = uniquement les fichiers, "management" = qualification, SLA et relations. Par défaut : tout. */
   only?: "attachments" | "management";
+  /** Intègre directement le contenu dans un autre conteneur (ex. onglet Fichiers). */
+  embedded?: boolean;
+  /** Réduit l'ouverture automatique des panneaux de gestion dans la fiche opérationnelle. */
+  compact?: boolean;
 };
 
 function formatBytes(value: number) {
@@ -113,7 +117,7 @@ export function TicketAdvancedPanels(props: Props) {
   const [confirmAction, setConfirmAction] = useState<{ title: string; description: string; run: () => void } | null>(null);
 
   const [linksLoading, setLinksLoading] = useState(false);
-  const [attachmentsLoading, setAttachmentsLoading] = useState(false);
+  const [attachmentsLoading, setAttachmentsLoading] = useState(Boolean(props.embedded && showAttachments));
 
   useEffect(() => {
     if (!props.canQualify) return;
@@ -154,6 +158,32 @@ export function TicketAdvancedPanels(props: Props) {
       setAttachmentsLoading(false);
     }
   }, [attachmentsLoaded, attachmentsLoading, props.ticketId]);
+
+  useEffect(() => {
+    if (!props.embedded || !showAttachments || attachmentsLoaded) return;
+    let cancelled = false;
+
+    fetch(`/api/tickets/${props.ticketId}/attachments`, { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("attachments-load-failed");
+        return response.json() as Promise<Attachment[]>;
+      })
+      .then((items) => {
+        if (cancelled) return;
+        setAttachments(items ?? []);
+        setAttachmentsLoaded(true);
+      })
+      .catch(() => {
+        if (!cancelled) setError("Les pièces jointes n’ont pas pu être chargées.");
+      })
+      .finally(() => {
+        if (!cancelled) setAttachmentsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [attachmentsLoaded, props.embedded, props.ticketId, showAttachments]);
 
   async function searchTickets(value: string) {
     setLinkQuery(value);
@@ -297,7 +327,7 @@ export function TicketAdvancedPanels(props: Props) {
       {error ? <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">{error}</div> : null}
 
       {showManagement && props.canQualify ? (
-        <TicketSidePanel title="Qualification" subtitle="Impact, urgence et priorité" defaultOpen>
+        <TicketSidePanel title="Qualification" subtitle="Impact, urgence et priorité" defaultOpen={!props.compact}>
           <section className="panel p-5">
           <p className="eyebrow">Qualification</p>
           <h2 className="mt-1 text-base font-semibold text-slate-900">Impact, urgence et priorité</h2>
@@ -347,14 +377,32 @@ export function TicketAdvancedPanels(props: Props) {
         </section>
       </TicketSidePanel> : null}
 
-      {showAttachments ? <TicketSidePanel title="Pièces jointes" subtitle="Fichiers du ticket" onOpen={() => void loadAttachments()}>
-        <section className="panel p-5">
-        <p className="eyebrow">Fichiers</p>
-        <h2 className="mt-1 text-base font-semibold text-slate-900">Pièces jointes</h2>
-        {props.canUpload ? <label className="mt-4 flex cursor-pointer items-center justify-center rounded-lg border border-dashed kit-dropzone px-3 py-4 text-xs font-semibold">{busy === "attachment" ? "Envoi…" : "Ajouter un fichier · 10 Mo maximum"}<input type="file" onChange={(event) => void uploadAttachment(event)} disabled={busy === "attachment"} className="sr-only" /></label> : null}
-          <div className="mt-4 space-y-2">{attachmentsLoading ? <p className="text-xs text-slate-500">Chargement des pièces jointes…</p> : null}{attachments.map((attachment) => <a key={attachment.id} href={`/api/tickets/${props.ticketId}/attachments/${attachment.id}`} className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 text-xs hover:bg-slate-100"><span className="min-w-0 truncate font-semibold text-slate-800">{attachment.fileName}<span className="ml-2 font-normal text-slate-400">{formatBytes(attachment.sizeBytes)}</span></span><span className="shrink-0 text-slate-500">{attachment.uploadedBy.name}</span></a>)}{!attachments.length ? <p className="text-xs text-slate-500">Aucune pièce jointe visible.</p> : null}</div>
-        </section>
-      </TicketSidePanel> : null}
+      {showAttachments ? (
+        props.embedded ? (
+          <section className="ticket-attachments-embedded">
+            <div className="ticket-section-heading">
+              <div>
+                <h2>Pièces jointes</h2>
+                <p>Fichiers associés à ce ticket.</p>
+              </div>
+              <span className="ticket-section-count">{attachments.length}</span>
+            </div>
+            <div className="ticket-attachments-body">
+              {props.canUpload ? <label className="flex cursor-pointer items-center justify-center rounded-lg border border-dashed kit-dropzone px-3 py-4 text-xs font-semibold">{busy === "attachment" ? "Envoi…" : "Ajouter un fichier · 10 Mo maximum"}<input type="file" onChange={(event) => void uploadAttachment(event)} disabled={busy === "attachment"} className="sr-only" /></label> : null}
+              <div className="space-y-2">{attachmentsLoading ? <p className="text-xs text-slate-500">Chargement des pièces jointes…</p> : null}{attachments.map((attachment) => <a key={attachment.id} href={`/api/tickets/${props.ticketId}/attachments/${attachment.id}`} className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 text-xs hover:bg-slate-100"><span className="min-w-0 truncate font-semibold text-slate-800">{attachment.fileName}<span className="ml-2 font-normal text-slate-400">{formatBytes(attachment.sizeBytes)}</span></span><span className="shrink-0 text-slate-500">{attachment.uploadedBy.name}</span></a>)}{!attachmentsLoading && !attachments.length ? <p className="text-xs text-slate-500">Aucune pièce jointe visible.</p> : null}</div>
+            </div>
+          </section>
+        ) : (
+          <TicketSidePanel title="Pièces jointes" subtitle="Fichiers du ticket" onOpen={() => void loadAttachments()}>
+            <section className="panel p-5">
+            <p className="eyebrow">Fichiers</p>
+            <h2 className="mt-1 text-base font-semibold text-slate-900">Pièces jointes</h2>
+            {props.canUpload ? <label className="mt-4 flex cursor-pointer items-center justify-center rounded-lg border border-dashed kit-dropzone px-3 py-4 text-xs font-semibold">{busy === "attachment" ? "Envoi…" : "Ajouter un fichier · 10 Mo maximum"}<input type="file" onChange={(event) => void uploadAttachment(event)} disabled={busy === "attachment"} className="sr-only" /></label> : null}
+              <div className="mt-4 space-y-2">{attachmentsLoading ? <p className="text-xs text-slate-500">Chargement des pièces jointes…</p> : null}{attachments.map((attachment) => <a key={attachment.id} href={`/api/tickets/${props.ticketId}/attachments/${attachment.id}`} className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 text-xs hover:bg-slate-100"><span className="min-w-0 truncate font-semibold text-slate-800">{attachment.fileName}<span className="ml-2 font-normal text-slate-400">{formatBytes(attachment.sizeBytes)}</span></span><span className="shrink-0 text-slate-500">{attachment.uploadedBy.name}</span></a>)}{!attachments.length ? <p className="text-xs text-slate-500">Aucune pièce jointe visible.</p> : null}</div>
+            </section>
+          </TicketSidePanel>
+        )
+      ) : null}
 
       <ConfirmDialog open={Boolean(confirmAction)} title={confirmAction?.title ?? "Confirmer"} description={confirmAction?.description ?? ""} confirmLabel="Confirmer" busy={Boolean(busy)} onCancel={() => setConfirmAction(null)} onConfirm={() => { const action = confirmAction; setConfirmAction(null); action?.run(); }} />
     </div>
