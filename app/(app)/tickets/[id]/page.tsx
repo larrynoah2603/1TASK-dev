@@ -216,7 +216,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
             <section className="ticket-treatment-section">
               <div className="ticket-treatment-heading">
                 <p className="eyebrow">Traitement</p>
-                <h2>{requesterView ? "Suivi de votre demande" : "Agir sur le ticket"}</h2>
+                <h2>{requesterView ? "Suivi de votre demande" : "Prochaine action"}</h2>
                 <p>{requesterView ? "Confirmez la résolution ou poursuivez l’échange avec le support." : "Les actions disponibles dépendent de votre rôle et de l’état actuel."}</p>
               </div>
               <TicketSidebarActions>
