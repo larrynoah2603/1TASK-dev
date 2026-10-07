@@ -4,11 +4,19 @@ import type { TicketListSlaFilter, TicketListScope } from "@/lib/ticket-service"
 import { buildTicketViewHref } from "@/lib/ticket-filter-navigation";
 
 const scopeLabels: Record<TicketListScope, string> = {
+  all: "Tous les tickets visibles",
+  unassigned: "Tickets non affectés",
+  mine: "Mes tickets affectés",
+  team: "Tickets de mon équipe",
+  requested: "Mes tickets",
+};
+
+const compactScopeLabels: Record<TicketListScope, string> = {
   all: "Tous",
   unassigned: "Non affectés",
   mine: "Mes tickets",
   team: "Mon équipe",
-  requested: "Mes demandes",
+  requested: "Mes tickets",
 };
 
 type PreservedQuery = Record<string, string | string[] | undefined>;
@@ -28,38 +36,41 @@ export function TicketViewSwitcher({
   sla,
   includeRequested = false,
   query = {},
+  compactLabels = false,
 }: {
   basePath?: string;
   scope?: TicketListScope;
   sla?: TicketListSlaFilter;
   includeRequested?: boolean;
   query?: PreservedQuery;
+  compactLabels?: boolean;
 }) {
+  const labels = compactLabels ? compactScopeLabels : scopeLabels;
   const search = currentSearch(query);
   const effectiveScope = scope ?? "all";
   const links: { label: string; href: string; active: boolean; alert?: boolean }[] = [
     {
-      label: scopeLabels.all,
+      label: labels.all,
       href: buildTicketViewHref(basePath, search, { scope: null, sla: null }),
       active: effectiveScope === "all" && !sla,
     },
     {
-      label: scopeLabels.unassigned,
+      label: labels.unassigned,
       href: buildTicketViewHref(basePath, search, { scope: "unassigned", sla: null }),
       active: scope === "unassigned" && !sla,
     },
     {
-      label: scopeLabels.mine,
+      label: labels.mine,
       href: buildTicketViewHref(basePath, search, { scope: "mine", sla: null }),
       active: scope === "mine" && !sla,
     },
     {
-      label: scopeLabels.team,
+      label: labels.team,
       href: buildTicketViewHref(basePath, search, { scope: "team", sla: null }),
       active: scope === "team" && !sla,
     },
     {
-      label: "À surveiller",
+      label: compactLabels ? "À surveiller" : "SLA à surveiller",
       href: buildTicketViewHref(basePath, search, { sla: "attention" }),
       active: sla === "attention",
       alert: true,
@@ -80,7 +91,7 @@ export function TicketViewSwitcher({
     requestedSearch.delete("cursor");
     const suffix = requestedSearch.toString();
     links.splice(1, 0, {
-      label: scopeLabels.requested,
+      label: labels.requested,
       href: suffix ? `/tickets?${suffix}` : "/tickets",
       active: scope === "requested",
     });
