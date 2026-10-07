@@ -31,3 +31,22 @@ export function buildTicketFilterHref(
   const query = next.toString();
   return query ? `${pathname}?${query}` : pathname;
 }
+
+export function buildTicketQuickViewHref(
+  pathname: string,
+  currentSearch: string,
+  values: { scope?: string; sla?: string },
+) {
+  const next = new URLSearchParams(currentSearch);
+
+  for (const [key, value] of Object.entries(values)) {
+    if (value) next.set(key, value);
+    else next.delete(key);
+  }
+
+  next.delete("page");
+  next.delete("cursor");
+
+  const query = next.toString();
+  return query ? `${pathname}?${query}` : pathname;
+}
