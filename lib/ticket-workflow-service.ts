@@ -1,6 +1,6 @@
 import { after } from "next/server";
 import { NotificationType, Prisma, RoleCode, TicketEventType, TicketStatus } from "@prisma/client";
-import { canViewTicket } from "@/lib/access-control";
+import { canViewTicket, hasScopedRole } from "@/lib/access-control";
 import { appendAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import {
@@ -259,7 +259,15 @@ export async function transitionTicket(
   const requesterAction = actor.id === ticket.requesterId;
   const v1Profile = readServerEnvironment().PRODUCT_PROFILE === "v1";
   const v1RequesterView = v1Profile && requesterAction;
-  if (!hasPermission(actor, "ticket:update")) {
+  const transitionTarget = accessTarget(ticket);
+  const subject = toAccessSubject(actor);
+  const scopedTransitionRoles = roleCodes(actor).filter((role) =>
+    hasScopedRole(subject, [role], transitionTarget),
+  );
+  if (
+    !hasPermission(actor, "ticket:update") ||
+    (!requesterAction && !hasPermission(actor, "ticket:update", transitionTarget))
+  ) {
     throw new AuthorizationError("La permission de faire évoluer ce ticket n’est pas accordée.");
   }
   if (
@@ -274,13 +282,12 @@ export async function transitionTicket(
   }
   const transitionAllowed = v1RequesterView
     ? v1RequesterAllowedNextStatuses(ticket.status).includes(parsed.status)
-    : canTransitionStatus(ticket.status, parsed.status, roleCodes(actor), requesterAction);
+    : canTransitionStatus(ticket.status, parsed.status, scopedTransitionRoles, requesterAction);
   if (!transitionAllowed) {
     throw new AuthorizationError("Cette transition n’est pas autorisée pour votre rôle ou ce ticket.");
   }
   const actorRoles = roleCodes(actor);
-  const transitionTarget = accessTarget(ticket);
-  const isFunctionalAdminActor = actorRoles.includes(RoleCode.FUNCTIONAL_ADMIN);
+  const isFunctionalAdminActor = scopedTransitionRoles.includes(RoleCode.FUNCTIONAL_ADMIN);
   const v1RequesterCancellation =
     v1RequesterView && parsed.status === TicketStatus.CANCELLED;
   if (
@@ -316,9 +323,9 @@ export async function transitionTicket(
   if (parsed.status === TicketStatus.RESOLUTION_PENDING && !hasPermission(actor, "ticket:resolve", transitionTarget) && !isFunctionalAdminActor) {
     throw new AuthorizationError("La permission de soumettre une résolution n’est pas accordée.");
   }
-  const isAgentOnly = actorRoles.includes(RoleCode.AGENT) &&
-    !actorRoles.includes(RoleCode.QUEUE_MANAGER) &&
-    !actorRoles.includes(RoleCode.FUNCTIONAL_ADMIN);
+  const isAgentOnly = scopedTransitionRoles.includes(RoleCode.AGENT) &&
+    !scopedTransitionRoles.includes(RoleCode.QUEUE_MANAGER) &&
+    !scopedTransitionRoles.includes(RoleCode.FUNCTIONAL_ADMIN);
   if (
     isAgentOnly &&
     parsed.status !== TicketStatus.TO_QUALIFY &&
@@ -328,7 +335,7 @@ export async function transitionTicket(
   ) {
     throw new AuthorizationError("Un agent ne peut traiter que le ticket qui lui est affecté.");
   }
-  const administrativeOverride = isFunctionalAdministrator(actor) && !v1RequesterView;
+  const administrativeOverride = isFunctionalAdminActor && !v1RequesterView;
   if (administrativeOverride) requireAdministrativeReason(actor, parsed.reason);
   if (
     !requesterAction &&
