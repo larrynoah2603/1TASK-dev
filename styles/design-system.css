@@ -152,7 +152,7 @@ textarea.kit-input { min-height: 88px; padding: var(--kit-space-2) var(--kit-spa
 .kit-modal-foot { display: flex; justify-content: flex-end; gap: var(--kit-space-2); padding: var(--kit-space-4) var(--kit-space-5); border-top: 1px solid var(--kit-border); }
 
 /* Timeline moderne */
-.kit-timeline { position: relative; display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.kit-timeline { position: relative; display: grid; gap: 0; margin: 0; padding: var(--kit-space-2) var(--kit-space-3); list-style: none; }
 .kit-timeline-item { position: relative; display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: var(--kit-space-3); padding-bottom: var(--kit-space-5); }
 .kit-timeline-item:last-child { padding-bottom: 0; }
 .kit-timeline-item::before { content: ""; position: absolute; left: 13px; top: 28px; bottom: 0; width: 2px; background: var(--kit-border); }
