@@ -112,6 +112,7 @@ export function TicketFilters({
 
           <label className="sr-only" htmlFor="ticket-status-compact">Statut</label>
           <Combobox
+            id="ticket-status-compact"
             name="status"
             defaultValue={values.status ?? ""}
             placeholder="Tous les statuts"
@@ -120,6 +121,7 @@ export function TicketFilters({
 
           <label className="sr-only" htmlFor="ticket-priority-compact">Priorité</label>
           <Combobox
+            id="ticket-priority-compact"
             name="priority"
             defaultValue={values.priority ?? ""}
             placeholder="Toutes les priorités"
@@ -156,6 +158,7 @@ export function TicketFilters({
 
           <label className="sr-only" htmlFor="ticket-sort-compact">Trier par</label>
           <Combobox
+            id="ticket-sort-compact"
             name="sort"
             defaultValue={values.sort ?? "updated_desc"}
             options={[
