@@ -1062,3 +1062,49 @@ html[data-theme] .kit-ticket .ticket-side-panel-open .ticket-side-panel-chevron 
     padding: var(--kit-space-3) var(--kit-space-4) var(--kit-space-4);
   }
 }
+
+
+.ticket-action-disclosure {
+  overflow: hidden;
+  border: 1px solid var(--kit-border);
+  border-radius: var(--kit-radius-md);
+  background: var(--kit-surface);
+}
+
+.ticket-action-disclosure-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--kit-space-3);
+  min-height: 40px;
+  padding: var(--kit-space-2) var(--kit-space-3);
+  color: var(--kit-text);
+  font-size: var(--kit-text-sm);
+  font-weight: 650;
+  cursor: pointer;
+  list-style: none;
+}
+
+.ticket-action-disclosure-trigger::-webkit-details-marker {
+  display: none;
+}
+
+.ticket-action-disclosure-trigger::after {
+  content: "+";
+  color: var(--kit-secondary);
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.ticket-action-disclosure[open] .ticket-action-disclosure-trigger {
+  border-bottom: 1px solid var(--kit-border);
+  background: var(--kit-surface-muted);
+}
+
+.ticket-action-disclosure[open] .ticket-action-disclosure-trigger::after {
+  content: "−";
+}
+
+.ticket-action-disclosure-body {
+  padding: var(--kit-space-3);
+}
