@@ -117,7 +117,7 @@ export function TicketAdvancedPanels(props: Props) {
   const [confirmAction, setConfirmAction] = useState<{ title: string; description: string; run: () => void } | null>(null);
 
   const [linksLoading, setLinksLoading] = useState(false);
-  const [attachmentsLoading, setAttachmentsLoading] = useState(false);
+  const [attachmentsLoading, setAttachmentsLoading] = useState(Boolean(props.embedded && showAttachments));
 
   useEffect(() => {
     if (!props.canQualify) return;
@@ -160,9 +160,30 @@ export function TicketAdvancedPanels(props: Props) {
   }, [attachmentsLoaded, attachmentsLoading, props.ticketId]);
 
   useEffect(() => {
-    if (!props.embedded || !showAttachments) return;
-    void loadAttachments();
-  }, [loadAttachments, props.embedded, showAttachments]);
+    if (!props.embedded || !showAttachments || attachmentsLoaded) return;
+    let cancelled = false;
+
+    fetch(`/api/tickets/${props.ticketId}/attachments`, { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("attachments-load-failed");
+        return response.json() as Promise<Attachment[]>;
+      })
+      .then((items) => {
+        if (cancelled) return;
+        setAttachments(items ?? []);
+        setAttachmentsLoaded(true);
+      })
+      .catch(() => {
+        if (!cancelled) setError("Les pièces jointes n’ont pas pu être chargées.");
+      })
+      .finally(() => {
+        if (!cancelled) setAttachmentsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [attachmentsLoaded, props.embedded, props.ticketId, showAttachments]);
 
   async function searchTickets(value: string) {
     setLinkQuery(value);
