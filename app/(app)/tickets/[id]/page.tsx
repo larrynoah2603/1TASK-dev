@@ -225,6 +225,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
                   status={ticket.status}
                   simplifiedV1={v1Profile}
                   requesterView={requesterView}
+                  workspaceMode
                   {...actionContext}
                 />
               </TicketSidebarActions>
