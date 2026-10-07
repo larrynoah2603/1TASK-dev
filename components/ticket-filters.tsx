@@ -108,7 +108,7 @@ export function TicketFilters({
       label: "Mission",
       value: missions.find((mission) => mission.id === values.missionId)?.code ?? "Sélectionnée",
     } : null,
-  ].filter((filter): filter is { key: string; label: string; value: string } => Boolean(filter));
+  ].filter(Boolean) as Array<{ key: string; label: string; value: string }>;
 
   if (compact) {
     return (
