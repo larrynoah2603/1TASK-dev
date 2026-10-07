@@ -4,13 +4,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   count: vi.fn(),
   groupBy: vi.fn(),
-  findMany: vi.fn(),
   hasPermission: vi.fn(),
   visibleTicketWhere: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({
-  prisma: { ticket: { count: mocks.count, groupBy: mocks.groupBy, findMany: mocks.findMany } },
+  prisma: { ticket: { count: mocks.count, groupBy: mocks.groupBy } },
 }));
 vi.mock("@/lib/server-auth", () => ({
   AuthorizationError: class AuthorizationError extends Error { statusCode = 403; },
@@ -32,22 +31,25 @@ describe("reporting métier", () => {
       .mockResolvedValueOnce(2)
       .mockResolvedValueOnce(0)
       .mockResolvedValueOnce(0);
-    mocks.groupBy.mockResolvedValue([
-      { status: TicketStatus.CLOSED, priority: Priority.MEDIUM, _count: { _all: 3 } },
-      { status: TicketStatus.CLOSED, priority: Priority.CRITICAL, _count: { _all: 1 } },
-      { status: TicketStatus.NEW, priority: Priority.MEDIUM, _count: { _all: 4 } },
-      { status: TicketStatus.NEW, priority: Priority.HIGH, _count: { _all: 2 } },
-    ]);
-    mocks.findMany.mockResolvedValue([
-      {
-        createdAt: new Date("2026-10-07T08:00:00.000Z"),
-        resolvedAt: new Date("2026-10-07T09:00:00.000Z"),
-      },
-      {
-        createdAt: new Date("2026-10-07T08:00:00.000Z"),
-        resolvedAt: new Date("2026-10-07T10:00:00.000Z"),
-      },
-    ]);
+    mocks.groupBy
+      .mockResolvedValueOnce([
+        { status: TicketStatus.CLOSED, priority: Priority.MEDIUM, _count: { _all: 3 } },
+        { status: TicketStatus.CLOSED, priority: Priority.CRITICAL, _count: { _all: 1 } },
+        { status: TicketStatus.NEW, priority: Priority.MEDIUM, _count: { _all: 4 } },
+        { status: TicketStatus.NEW, priority: Priority.HIGH, _count: { _all: 2 } },
+      ])
+      .mockResolvedValueOnce([
+        {
+          createdAt: new Date("2026-10-07T08:00:00.000Z"),
+          resolvedAt: new Date("2026-10-07T09:00:00.000Z"),
+          _count: { _all: 1 },
+        },
+        {
+          createdAt: new Date("2026-10-07T08:00:00.000Z"),
+          resolvedAt: new Date("2026-10-07T10:00:00.000Z"),
+          _count: { _all: 1 },
+        },
+      ]);
   });
 
   it("calcule les indicateurs réels sans sortir du périmètre autorisé", async () => {
@@ -79,13 +81,14 @@ describe("reporting métier", () => {
     expect(JSON.stringify(overdueWhere)).toContain("firstResponseDueAt");
     expect(JSON.stringify(overdueWhere)).toContain("resolutionDueAt");
 
-    expect(mocks.groupBy).toHaveBeenCalledWith(expect.objectContaining({
+    expect(mocks.groupBy).toHaveBeenNthCalledWith(1, expect.objectContaining({
       by: ["status", "priority"],
       where: { confidential: false },
     }));
-    expect(mocks.findMany).toHaveBeenCalledWith({
+    expect(mocks.groupBy).toHaveBeenNthCalledWith(2, {
+      by: ["createdAt", "resolvedAt"],
       where: { AND: [{ confidential: false }, { resolvedAt: { not: null } }] },
-      select: { createdAt: true, resolvedAt: true },
+      _count: { _all: true },
     });
   });
 
