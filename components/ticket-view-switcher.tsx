@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import type { Route } from "next";
 import type { TicketListSlaFilter, TicketListScope } from "@/lib/ticket-service";
+import { buildTicketFilterPatchHref } from "@/lib/ticket-filter-navigation";
 
 const scopeLabels: Record<TicketListScope, string> = {
   all: "Tous les tickets visibles",
@@ -12,8 +13,6 @@ const scopeLabels: Record<TicketListScope, string> = {
   team: "Tickets de mon équipe",
   requested: "Mes tickets",
 };
-
-import { buildTicketFilterPatchHref } from "@/lib/ticket-filter-navigation";
 
 export function TicketViewSwitcher({
   basePath = "/inbox",
