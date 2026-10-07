@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import type { Route } from "next";
 import type { TicketListSlaFilter, TicketListScope } from "@/lib/ticket-service";
 
@@ -9,6 +12,8 @@ const scopeLabels: Record<TicketListScope, string> = {
   team: "Tickets de mon équipe",
   requested: "Mes tickets",
 };
+
+import { buildTicketFilterPatchHref } from "@/lib/ticket-filter-navigation";
 
 export function TicketViewSwitcher({
   basePath = "/inbox",
@@ -21,54 +26,90 @@ export function TicketViewSwitcher({
   sla?: TicketListSlaFilter;
   includeRequested?: boolean;
 }) {
-  const links: { label: string; href: string; active: boolean }[] = [
+  const searchParams = useSearchParams();
+  const currentSearch = searchParams.toString();
+
+  const scopeLinks: Array<{
+    label: string;
+    title: string;
+    path: string;
+    patch: Record<string, string>;
+    active: boolean;
+  }> = [
     {
-      label: scopeLabels.all,
-      href: basePath,
-      active: (!scope || scope === "all") && !sla,
+      label: "Tous",
+      title: scopeLabels.all,
+      path: basePath,
+      patch: { scope: "", sla: "" },
+      active: !scope || scope === "all",
     },
     {
-      label: scopeLabels.unassigned,
-      href: basePath + "?scope=unassigned",
-      active: scope === "unassigned" && !sla,
+      label: "Non affectés",
+      title: scopeLabels.unassigned,
+      path: basePath,
+      patch: { scope: "unassigned", sla: "" },
+      active: scope === "unassigned",
     },
     {
-      label: scopeLabels.mine,
-      href: basePath + "?scope=mine",
-      active: scope === "mine" && !sla,
+      label: "Mes tickets",
+      title: scopeLabels.mine,
+      path: basePath,
+      patch: { scope: "mine", sla: "" },
+      active: scope === "mine",
     },
     {
-      label: scopeLabels.team,
-      href: basePath + "?scope=team",
-      active: scope === "team" && !sla,
-    },
-    {
-      label: "SLA à surveiller",
-      href: basePath + "?sla=attention",
-      active: sla === "attention",
-    },
-    {
-      label: "SLA dépassé",
-      href: basePath + "?sla=breached",
-      active: sla === "breached",
+      label: "Mon équipe",
+      title: scopeLabels.team,
+      path: basePath,
+      patch: { scope: "team", sla: "" },
+      active: scope === "team",
     },
   ];
 
   if (includeRequested) {
-    links.splice(1, 0, {
-      label: scopeLabels.requested,
-      href: "/tickets",
+    scopeLinks.splice(1, 0, {
+      label: "Mes demandes",
+      title: scopeLabels.requested,
+      path: "/tickets",
+      patch: { scope: "requested", sla: "" },
       active: scope === "requested",
     });
   }
 
+  const slaLinks = [
+    {
+      label: "À surveiller",
+      title: "SLA à surveiller",
+      patch: { sla: "attention" },
+      active: sla === "attention",
+    },
+    {
+      label: "Dépassé",
+      title: "SLA dépassé",
+      patch: { sla: "breached" },
+      active: sla === "breached",
+    },
+  ];
+
   return (
     <nav aria-label="Vues du ticketing" className="view-switcher">
-      {links.map((link) => (
+      {scopeLinks.map((link) => (
         <Link
-          key={link.label}
-          href={link.href as Route}
-          className={`view-switcher-link ${link.active ? "view-switcher-link-active" : ""}`}
+          key={link.title}
+          href={buildTicketFilterPatchHref(link.path, currentSearch, link.patch) as Route}
+          title={link.title}
+          className={"view-switcher-link " + (link.active ? "view-switcher-link-active" : "")}
+        >
+          {link.label}
+        </Link>
+      ))}
+      <span className="mx-1 h-5 w-px shrink-0 bg-slate-200" aria-hidden="true" />
+      {slaLinks.map((link) => (
+        <Link
+          key={link.title}
+          href={buildTicketFilterPatchHref(basePath, currentSearch, link.patch) as Route}
+          title={link.title}
+          className={"view-switcher-link " + (link.active ? "view-switcher-link-active" : "")}
         >
           {link.label}
         </Link>
