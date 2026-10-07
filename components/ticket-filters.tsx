@@ -95,7 +95,7 @@ export function TicketFilters({
 
   if (compact) {
     return (
-      <form key={filterStateKey} aria-label="Filtres de tickets" className="border-y border-slate-200 bg-white/80 px-3 py-2" onSubmit={handleSubmit}>
+      <form key={filterStateKey} aria-label="Filtres de tickets" className="border-y border-[var(--kit-border)] bg-[var(--kit-glass)] px-3 py-2" onSubmit={handleSubmit}>
         <input type="hidden" name="scope" value={values.scope ?? "all"} />
         <input type="hidden" name="sla" value={values.sla ?? ""} />
 
