@@ -691,7 +691,9 @@ export async function listTicketLinksForViewer(actor: UserContext, ticketId: str
   actor = await requireCurrentActor(actor);
   const ticket = await prisma.ticket.findUnique({ where: { id: ticketId }, include: ticketAccessInclude });
   if (!ticket) throw new DomainError("Ticket introuvable.", 404);
-  if (!canViewTicket(toAccessSubject(actor), accessTarget(ticket))) throw new AuthorizationError("Vous n’avez pas accès à ce ticket.");
+  const subject = toAccessSubject(actor);
+  if (!canViewTicket(subject, accessTarget(ticket))) throw new AuthorizationError("Vous n’avez pas accès à ce ticket.");
+
   const links = await prisma.ticketLink.findMany({
     where: { OR: [{ fromTicketId: ticketId }, { toTicketId: ticketId }] },
     include: {
@@ -700,7 +702,24 @@ export async function listTicketLinksForViewer(actor: UserContext, ticketId: str
     },
     orderBy: { createdAt: "desc" },
   });
-  return links;
+  if (!links.length) return links;
+
+  const counterpartIds = [...new Set(links.map((link) =>
+    link.fromTicket.id === ticketId ? link.toTicket.id : link.fromTicket.id,
+  ))];
+  const counterpartAccess = await prisma.ticket.findMany({
+    where: { id: { in: counterpartIds } },
+    include: ticketAccessInclude,
+  });
+  const visibleCounterpartIds = new Set(
+    counterpartAccess
+      .filter((candidate) => canViewTicket(subject, accessTarget(candidate)))
+      .map((candidate) => candidate.id),
+  );
+
+  return links.filter((link) =>
+    visibleCounterpartIds.has(link.fromTicket.id === ticketId ? link.toTicket.id : link.fromTicket.id),
+  );
 }
 
 export async function assignTicket(
