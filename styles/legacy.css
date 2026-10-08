@@ -1174,11 +1174,30 @@ html[data-theme="dark"] .ticket-composer .form-actions { background: color-mix(i
 .notification-modal-footer { border-top: 1px solid var(--line); padding: 0.85rem 1.25rem; text-align: center; color: var(--brand-dark); font-size: 0.75rem; font-weight: 750; }
 .notification-modal-footer:hover { background: var(--brand-soft); }
 
-.ticket-launcher-modal { width: min(100%, 54rem); display: flex; flex-direction: column; }
-.ticket-launcher-modal-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--line); padding: 1.1rem 1.25rem; }
-.ticket-launcher-modal-body { min-height: 0; overflow-y: auto; padding: 0.75rem 1rem 1rem; scrollbar-width: none; }
-.ticket-launcher-modal .ticket-composer { max-width: none; border: 0; border-radius: 0; background: transparent; padding: 0.5rem 0.25rem 0; box-shadow: none; }
+.ticket-launcher-modal { width: min(100%, 46rem); display: flex; flex-direction: column; }
+.ticket-launcher-modal-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--line); padding: 1.2rem 1.5rem; }
+.ticket-launcher-heading { min-width: 0; }
+.ticket-launcher-heading p { margin-top: 0.35rem; color: var(--text-subtle); font-size: 0.75rem; line-height: 1.5; }
+.ticket-launcher-modal-body { min-height: 0; overflow-y: auto; padding: 0; scrollbar-width: none; }
+.ticket-launcher-modal .ticket-composer { max-width: none; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .ticket-launcher-modal .ticket-composer .form-actions { position: sticky; bottom: 0; }
+
+.v1-ticket-form { display: flex; flex-direction: column; }
+.v1-ticket-form-content { display: grid; gap: 1.15rem; padding: 1.35rem 1.5rem 1.5rem; }
+.v1-ticket-section-heading h2 { color: var(--text-strong); font-size: 0.95rem; font-weight: 750; letter-spacing: -0.015em; }
+.v1-ticket-field { gap: 0.45rem; }
+.v1-ticket-label { display: inline-flex; align-items: baseline; gap: 0.3rem; color: var(--text-body); font-weight: 700; }
+.v1-ticket-required { color: var(--kit-primary); font-weight: 800; }
+.v1-ticket-optional { color: var(--text-subtle); font-size: 0.68rem; font-weight: 600; }
+.v1-ticket-form .field-control { min-height: 2.75rem; padding-inline: 0.85rem; }
+.v1-ticket-description { min-height: 7rem !important; resize: vertical; line-height: 1.55; }
+.v1-ticket-service { display: grid; gap: 0.45rem; border-top: 1px solid var(--line); padding-top: 1.15rem; }
+.v1-ticket-service-help { max-width: 62ch; color: var(--text-subtle); font-size: 0.7rem; line-height: 1.55; }
+.v1-ticket-error { border: 1px solid var(--kit-danger); border-radius: 0.55rem; background: var(--kit-danger-soft); padding: 0.75rem 0.9rem; color: var(--kit-danger-text); font-size: 0.75rem; line-height: 1.5; }
+.v1-ticket-actions { flex: 0 0 auto; margin: 0 !important; border-top: 1px solid var(--line); padding: 0.9rem 1.5rem !important; background: color-mix(in srgb, var(--surface) 96%, transparent) !important; backdrop-filter: blur(12px); }
+.v1-ticket-actions .button-primary,
+.v1-ticket-actions .button-secondary { min-height: 2.75rem; }
+.v1-ticket-actions .button-primary { min-width: 9.75rem; }
 
 @media (max-width: 1023px) {
   .sidebar-collapse-rail { display: none !important; }
@@ -1199,8 +1218,12 @@ html[data-theme="dark"] .ticket-composer .form-actions { background: color-mix(i
   .ticket-launcher-modal-header { padding: 0.9rem 1rem; }
   .notification-modal-toolbar { padding-inline: 1rem; }
   .notification-modal-footer { padding-inline: 1rem; }
-  .ticket-launcher-modal-body { padding: 0.5rem 0.65rem 0.75rem; }
+  .ticket-launcher-modal-body { padding: 0; }
   .ticket-launcher-modal .ticket-composer { padding-inline: 0; }
+  .v1-ticket-form-content { gap: 1rem; padding: 1.1rem 1rem 1.2rem; }
+  .v1-ticket-actions { padding: 0.8rem 1rem !important; }
+  .v1-ticket-actions .button-primary,
+  .v1-ticket-actions .button-secondary { width: 100%; }
 }
 
 html[data-theme="dark"] .sidebar-collapse-rail { border-color: #4b5164; background: #2b3040; color: #e1e3ff; }
