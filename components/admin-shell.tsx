@@ -103,7 +103,7 @@ export async function AdminShell({ user, children }: { user: UserContext; childr
           <span className="kit-hide-mobile"><ThemeToggle /></span>
           <Link href="/dashboard" className="kit-btn kit-btn-secondary kit-btn-sm kit-hide-mobile">Espace normal</Link>
           <span className="kit-topbar-divider" aria-hidden="true" />
-          <ProfileMenu name={user.name} email={user.email} department="Console d’administration" roles={roleLabel} admin />
+          <ProfileMenu name={user.name} email={user.email} image={user.image} department="Console d’administration" roles={roleLabel} admin />
         </>
       }
     />
