@@ -456,3 +456,263 @@ html[data-theme] .semantic-badge {
 /* ---------- Garde-fous responsive ---------- */
 .kit-main img, .kit-main svg, .kit-main video, .kit-main canvas { max-width: 100%; }
 .kit-main > * { min-width: 0; }
+
+
+/* ==========================================================================
+   V1 ticket creation — compact, task-oriented form
+   ========================================================================== */
+
+html[data-theme] .ticket-launcher-modal-v1 {
+  width: min(100%, 46rem);
+}
+
+html[data-theme] .ticket-launcher-modal-header-v1 {
+  padding: var(--kit-space-5) var(--kit-space-6);
+}
+
+html[data-theme] .ticket-launcher-modal-header-v1 h2 {
+  margin: 0;
+  color: var(--kit-text);
+  font-size: var(--kit-text-xl);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+html[data-theme] .ticket-launcher-modal-description {
+  margin: 4px 0 0;
+  max-width: 64ch;
+  color: var(--kit-text-2);
+  font-size: var(--kit-text-sm);
+  line-height: 1.5;
+}
+
+html[data-theme] .ticket-launcher-modal-v1 .ticket-launcher-modal-body {
+  padding: 0;
+}
+
+html[data-theme] .v1-ticket-form {
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--kit-border);
+  border-radius: var(--kit-radius-lg);
+  background: var(--kit-surface);
+  box-shadow: var(--kit-shadow-xs);
+}
+
+html[data-theme] .ticket-launcher-modal-v1 .v1-ticket-form {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+html[data-theme] .ticket-launcher-modal-v1 .ticket-composer.v1-ticket-form {
+  padding: 0;
+  background: var(--kit-surface);
+}
+
+html[data-theme] .v1-ticket-form-section {
+  padding: var(--kit-space-6);
+}
+
+html[data-theme] .v1-ticket-form-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--kit-space-4);
+  margin-bottom: var(--kit-space-5);
+}
+
+html[data-theme] .v1-ticket-form-section-heading h2 {
+  margin: 0;
+  color: var(--kit-text);
+  font-size: var(--kit-text-lg);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+html[data-theme] .v1-ticket-form-section-heading p {
+  margin: 4px 0 0;
+  max-width: 60ch;
+  color: var(--kit-text-2);
+  font-size: var(--kit-text-sm);
+  line-height: 1.5;
+}
+
+html[data-theme] .v1-ticket-required-note {
+  flex: none;
+  color: var(--kit-secondary);
+  font-size: var(--kit-text-xs);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+html[data-theme] .v1-ticket-required,
+html[data-theme] .v1-ticket-required-note > span {
+  color: var(--kit-danger-text);
+}
+
+html[data-theme] .v1-ticket-form-alert {
+  margin-bottom: var(--kit-space-4);
+  padding: var(--kit-space-3) var(--kit-space-4);
+  border: 1px solid var(--kit-danger-line);
+  border-radius: var(--kit-radius-md);
+  background: var(--kit-danger-soft);
+  color: var(--kit-danger-text);
+  font-size: var(--kit-text-sm);
+  line-height: 1.45;
+}
+
+html[data-theme] .v1-ticket-fields {
+  display: grid;
+  gap: var(--kit-space-5);
+}
+
+html[data-theme] .v1-ticket-field {
+  display: grid;
+  gap: 7px;
+}
+
+html[data-theme] .v1-ticket-field-label {
+  color: var(--kit-text);
+  font-size: var(--kit-text-sm);
+  font-weight: 650;
+}
+
+html[data-theme] .v1-ticket-field-help,
+html[data-theme] .v1-ticket-service-help {
+  color: var(--kit-secondary);
+  font-size: var(--kit-text-xs);
+  line-height: 1.5;
+}
+
+html[data-theme] .v1-ticket-input {
+  min-height: 44px;
+  padding-inline: var(--kit-space-3);
+  font-size: var(--kit-text-md);
+}
+
+html[data-theme] .v1-ticket-textarea {
+  min-height: 112px;
+  padding: var(--kit-space-3);
+  resize: vertical;
+  font-size: var(--kit-text-md);
+  line-height: 1.5;
+}
+
+html[data-theme] .v1-ticket-service-block {
+  display: grid;
+  gap: var(--kit-space-3);
+  padding: var(--kit-space-4);
+  border: 1px solid var(--kit-border);
+  border-radius: var(--kit-radius-md);
+  background: var(--kit-surface-muted);
+}
+
+html[data-theme] .v1-ticket-service-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--kit-space-3);
+}
+
+html[data-theme] .v1-ticket-service-heading > div {
+  display: flex;
+  align-items: baseline;
+  gap: var(--kit-space-2);
+}
+
+html[data-theme] .v1-ticket-optional {
+  color: var(--kit-secondary);
+  font-size: var(--kit-text-xs);
+  font-weight: 500;
+}
+
+html[data-theme] .v1-ticket-auto-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 var(--kit-space-2);
+  border: 1px solid color-mix(in srgb, var(--kit-primary) 28%, var(--kit-border));
+  border-radius: var(--kit-radius-pill);
+  background: color-mix(in srgb, var(--kit-primary) 10%, var(--kit-surface));
+  color: var(--kit-primary-text);
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+html[data-theme] .v1-ticket-service-block .combobox-trigger {
+  min-height: 44px;
+  background: var(--kit-surface) !important;
+}
+
+html[data-theme] .v1-ticket-service-help {
+  margin: 0;
+}
+
+html[data-theme] .v1-ticket-form-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--kit-space-3);
+  padding: var(--kit-space-4) var(--kit-space-6);
+  border-top: 1px solid var(--kit-border);
+  background: color-mix(in srgb, var(--kit-surface) 96%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+html[data-theme] .v1-ticket-form-actions .button-primary,
+html[data-theme] .v1-ticket-form-actions .button-secondary {
+  min-height: 44px;
+}
+
+html[data-theme] .v1-ticket-submit {
+  min-width: 148px;
+}
+
+@media (max-width: 640px) {
+  html[data-theme] .ticket-launcher-modal-header-v1 {
+    padding: var(--kit-space-4);
+  }
+
+  html[data-theme] .v1-ticket-form-section {
+    padding: var(--kit-space-4);
+  }
+
+  html[data-theme] .v1-ticket-form-section-heading {
+    display: grid;
+    gap: var(--kit-space-2);
+    margin-bottom: var(--kit-space-4);
+  }
+
+  html[data-theme] .v1-ticket-required-note {
+    white-space: normal;
+  }
+
+  html[data-theme] .v1-ticket-fields {
+    gap: var(--kit-space-4);
+  }
+
+  html[data-theme] .v1-ticket-service-heading {
+    align-items: flex-start;
+  }
+
+  html[data-theme] .v1-ticket-auto-badge {
+    white-space: normal;
+    text-align: center;
+  }
+
+  html[data-theme] .v1-ticket-form-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: var(--kit-space-3) var(--kit-space-4);
+  }
+
+  html[data-theme] .v1-ticket-form-actions .button-primary,
+  html[data-theme] .v1-ticket-form-actions .button-secondary {
+    width: 100%;
+  }
+}
