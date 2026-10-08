@@ -23,7 +23,7 @@ export default async function ProfilePage() {
           <div><dt className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">Manager applicatif</dt><dd className="mt-1.5 text-sm font-medium text-slate-700">{user.manager?.name ?? "Non affecté"}</dd></div>
           <div><dt className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">Équipe principale</dt><dd className="mt-1.5 text-sm font-medium text-slate-700">{user.primaryTeam?.name ?? "Non affectée"}</dd></div>
           <div><dt className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">File autorisée</dt><dd className="mt-1.5 text-sm font-medium text-slate-700">{user.authorizedQueue?.name ?? "Non affectée"}</dd></div>
-          <div className="sm:col-span-2"><dt className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">Rôles</dt><dd className="mt-2 flex flex-wrap gap-2">{roles.map((role) => <span key={role} className="rounded-md bg-[var(--kit-primary-soft)] px-2.5 py-1.5 text-xs font-semibold operational-link">{ROLE_LABELS[role]}</span>)}</dd></div>
+          <div className="sm:col-span-2"><dt className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">Rôles</dt><dd className="mt-2 flex flex-wrap gap-2">{roles.map((role) => <span key={role} className="rounded-md bg-[var(--kit-primary-soft)] px-2.5 py-1.5 text-xs font-semibold operational-link">{ROLE_LABELS[role]}</span>)}</dd><p className="mt-3 text-xs leading-5 text-slate-500">Périmètre actif : {user.department?.name ?? "aucun département"} · équipe {user.primaryTeam?.name ?? "non affectée"} · file {user.authorizedQueue?.name ?? "non affectée"}.</p></div>
         </dl>
       </section>
     </div>
