@@ -170,8 +170,8 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
         </div>
         <h1 className="kit-ticket-title">{ticket.title}</h1>
         <p className="kit-ticket-route">
-          {ticket.serviceCatalogItem.name} · {ticket.queue.department.name} / {ticket.queue.name}
-          {ticket.assignedTo ? ` · ${ticket.assignedTo.name}` : " · Non affecté"}
+          Service : {ticket.serviceCatalogItem.name} · Département : {ticket.queue.department.name} · File : {ticket.queue.name}
+          {ticket.assignedTo ? ` · Agent : ${ticket.assignedTo.name}` : " · Agent : Non affecté"}
         </p>
         <TicketStatusStrip
           reference={ticket.reference}
