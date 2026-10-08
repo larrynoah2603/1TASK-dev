@@ -744,6 +744,118 @@ export async function assignAdminRole(actor: UserContext, userId: string, input:
   });
 }
 
+export async function removeAdminRoleAssignment(
+  actor: UserContext,
+  userId: string,
+  assignmentId: string,
+  input: unknown,
+) {
+  const current = await requireFunctionalAdminFor(actor, "role:manage");
+  const parsed = deleteAdminSchema.parse(input);
+
+  return prisma.$transaction(async (tx) => {
+    const assignment = await tx.userRole.findFirst({
+      where: { id: assignmentId, userId },
+      select: {
+        id: true,
+        scopeId: true,
+        role: { select: { code: true, name: true } },
+        scope: { select: { id: true, name: true, type: true } },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            status: true,
+            primaryRoleCode: true,
+          },
+        },
+      },
+    });
+    if (!assignment) throw new AdminServiceError("Attribution de rôle introuvable.", 404);
+
+    if (assignment.role.code === RoleCode.REQUESTER) {
+      throw new AdminServiceError("Le rôle Demandeur est le rôle de base et ne peut pas être retiré.", 422);
+    }
+
+    const isPrimaryGlobalAssignment =
+      assignment.scopeId === null &&
+      assignment.user.primaryRoleCode === assignment.role.code;
+    if (isPrimaryGlobalAssignment) {
+      throw new AdminServiceError(
+        "Ce rôle est le rôle principal. Choisissez d’abord un autre rôle principal avant de le retirer.",
+        422,
+      );
+    }
+
+    if (
+      assignment.role.code === RoleCode.FUNCTIONAL_ADMIN &&
+      assignment.scopeId === null
+    ) {
+      if (assignment.user.id === current.id) {
+        throw new AdminServiceError(
+          "Vous ne pouvez pas retirer votre propre accès administrateur fonctionnel global.",
+          422,
+        );
+      }
+      const activeGlobalAdmins = await tx.user.count({
+        where: {
+          status: UserStatus.ACTIVE,
+          administrativelyDisabled: false,
+          roleAssignments: {
+            some: {
+              role: { code: RoleCode.FUNCTIONAL_ADMIN },
+              scopeId: null,
+            },
+          },
+        },
+      });
+      if (activeGlobalAdmins <= 1) {
+        throw new AdminServiceError(
+          "Le dernier administrateur fonctionnel global ne peut pas être retiré.",
+          422,
+        );
+      }
+    }
+
+    await tx.userRole.delete({ where: { id: assignment.id } });
+    await appendAuditLog(tx, {
+      actorId: current.id,
+      action: "USER_ROLE_REMOVED",
+      objectType: "UserRole",
+      objectId: assignment.id,
+      oldValue: {
+        userId: assignment.user.id,
+        roleCode: assignment.role.code,
+        scopeId: assignment.scopeId,
+        scopeName: assignment.scope?.name ?? null,
+        scopeType: assignment.scope?.type ?? null,
+      },
+      newValue: null,
+      reason: parsed.reason,
+    });
+
+    if (assignment.user.id !== current.id) {
+      await createInAppNotification(tx, {
+        recipientId: assignment.user.id,
+        type: "ADMINISTRATIVE_ACTION",
+        title: "Une attribution de rôle a été retirée",
+        body: `Le rôle ${assignment.role.name} a été retiré de votre profil 1TASK. Motif : ${parsed.reason}`,
+      });
+    }
+
+    return {
+      removed: true,
+      assignmentId: assignment.id,
+      roleCode: assignment.role.code,
+    };
+  }, {
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+    maxWait: 10_000,
+    timeout: 15_000,
+  });
+}
+
 /** Compatibility wrapper for callers that only have a status mutation. */
 export async function setUserStatusLegacy(
   actor: UserContext,

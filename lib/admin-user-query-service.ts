@@ -13,7 +13,7 @@ const adminUserSelect = {
   primaryRoleCode: true,
   primaryTeam: { select: { id: true, name: true, queue: { select: { id: true, name: true, departmentId: true } } } },
   authorizedQueue: { select: { id: true, name: true, departmentId: true } },
-  roleAssignments: { select: { role: { select: { code: true, name: true } }, scopeId: true } },
+  roleAssignments: { select: { id: true, role: { select: { code: true, name: true } }, scopeId: true, scope: { select: { id: true, name: true, type: true, department: { select: { name: true } }, queue: { select: { name: true } }, team: { select: { name: true } } } } }, orderBy: [{ role: { code: "asc" } }, { createdAt: "asc" }] },
   teamMemberships: { select: { isActive: true, team: { select: { id: true, name: true, queue: { select: { name: true } } } } } },
 } satisfies Prisma.UserSelect;
 
