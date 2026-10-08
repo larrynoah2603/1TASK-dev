@@ -102,7 +102,7 @@ textarea.kit-input { min-height: 88px; padding: var(--kit-space-2) var(--kit-spa
   background: color-mix(in srgb, var(--kit-primary) 16%, var(--kit-card)); color: var(--kit-primary-text);
   font-size: var(--kit-text-xs); font-weight: 700; letter-spacing: 0.02em; user-select: none;
 }
-.kit-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.kit-avatar img { display: block; width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
 .kit-avatar-sm { width: 24px; height: 24px; font-size: 10px; }
 .kit-avatar-lg { width: 40px; height: 40px; font-size: var(--kit-text-sm); }
 .kit-avatar-status::after {
@@ -1107,4 +1107,104 @@ html[data-theme] .kit-ticket .ticket-side-panel-open .ticket-side-panel-chevron 
 
 .ticket-action-disclosure-body {
   padding: var(--kit-space-3);
+}
+
+
+/* ==========================================================================
+   Ticket detail — avatar consistency and theme-safe industrial overrides
+   ========================================================================== */
+
+.ticket-requester-avatar {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--kit-border-strong);
+  border-radius: var(--kit-radius-pill);
+  box-shadow: 0 0 0 3px var(--kit-surface-muted);
+}
+
+html[data-theme] .shell-industrial .ticket-detail-industrial .field-control {
+  border-color: var(--kit-border-strong);
+  border-radius: var(--kit-radius-md);
+  background: var(--kit-surface);
+  color: var(--kit-text);
+  box-shadow: none;
+}
+
+html[data-theme] .shell-industrial .ticket-detail-industrial .field-control::placeholder {
+  color: var(--kit-secondary);
+}
+
+html[data-theme] .shell-industrial .ticket-detail-industrial .field-control:focus {
+  border-color: var(--kit-primary);
+  box-shadow: 0 0 0 3px var(--kit-ring);
+}
+
+html[data-theme] .shell-industrial .ticket-detail-industrial .ticket-side-panel-trigger:hover {
+  background: var(--kit-hover);
+}
+
+html[data-theme] .shell-industrial .ticket-detail-industrial .ticket-side-panel-chevron {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--kit-border);
+  border-radius: var(--kit-radius-sm);
+  background: var(--kit-surface-muted);
+  color: var(--kit-primary-text);
+}
+
+html[data-theme] .shell-industrial .ticket-detail-industrial .ticket-side-panel-trigger:hover .ticket-side-panel-chevron {
+  border-color: var(--kit-border-strong);
+  background: var(--kit-selected);
+  color: var(--kit-selected-text);
+}
+
+html[data-theme] .shell-industrial .ticket-detail-industrial .ticket-side-panel-count,
+html[data-theme] .shell-industrial .ticket-detail-industrial .ticket-section-count {
+  border-radius: var(--kit-radius-pill);
+  background: var(--kit-surface-muted);
+  color: var(--kit-text-2);
+}
+
+html[data-theme] .shell-industrial .ticket-detail-industrial .combobox-listbox {
+  border-color: var(--kit-border);
+  border-radius: var(--kit-radius-md);
+  background: var(--kit-surface);
+  box-shadow: var(--kit-shadow-md);
+}
+
+html[data-theme] .shell-industrial .ticket-detail-industrial .combobox-option {
+  border-radius: var(--kit-radius-sm);
+  color: var(--kit-text);
+}
+
+html[data-theme] .shell-industrial .ticket-detail-industrial .combobox-option-highlighted,
+html[data-theme] .shell-industrial .ticket-detail-industrial .combobox-option-selected {
+  background: var(--kit-selected);
+  color: var(--kit-selected-text);
+}
+
+html[data-theme] .shell-industrial .ticket-detail-industrial .button-secondary:hover {
+  border-color: var(--kit-primary);
+  background: var(--kit-hover);
+  color: var(--kit-primary-text);
+}
+
+html[data-theme="light"] .shell-industrial .ticket-detail-industrial .ticket-status-step-dot {
+  background: var(--kit-surface);
+  color: var(--kit-text-2);
+}
+
+html[data-theme="light"] .shell-industrial .ticket-detail-industrial .ticket-status-step-complete .ticket-status-step-dot,
+html[data-theme="light"] .shell-industrial .ticket-detail-industrial .ticket-status-step-active .ticket-status-step-dot {
+  background: var(--kit-selected);
+  color: var(--kit-selected-text);
+}
+
+html[data-theme="light"] .shell-industrial .ticket-detail-industrial .ticket-timeline-assignment,
+html[data-theme="light"] .shell-industrial .ticket-detail-industrial .ticket-timeline-message {
+  background: var(--kit-surface-muted);
+}
+
+html[data-theme="light"] .shell-industrial .ticket-detail-industrial .ticket-timeline-message-internal {
+  background: var(--kit-warning-soft);
 }
