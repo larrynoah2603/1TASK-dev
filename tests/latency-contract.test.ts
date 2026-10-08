@@ -55,5 +55,7 @@ describe("contrats de stabilisation des chargements serveur", () => {
     expect(adminLoading).toContain('<PageLoading label="Chargement de la console d’administration" />');
     expect(appLoading).not.toContain("bios-loading");
     expect(appLoading).not.toContain("next/image");
+    expect(source("app/globals.css")).not.toContain("bios-loading");
+    expect(source("app/globals.css")).not.toContain("biosLoading");
   });
 });
