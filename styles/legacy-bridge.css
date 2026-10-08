@@ -492,7 +492,7 @@ html[data-theme] .ticket-launcher-modal-v1 .ticket-launcher-modal-body {
 
 html[data-theme] .v1-ticket-form {
   width: 100%;
-  overflow: hidden;
+  overflow: clip;
   border: 1px solid var(--kit-border);
   border-radius: var(--kit-radius-lg);
   background: var(--kit-surface);
