@@ -716,3 +716,291 @@ html[data-theme] .v1-ticket-submit {
     width: 100%;
   }
 }
+
+
+/* ==========================================================================
+   Agent inbox — list / consultation Kanban
+   ========================================================================== */
+
+html[data-theme] .agent-ticket-layout {
+  min-width: 0;
+}
+
+html[data-theme] .agent-ticket-layout-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--kit-space-3);
+  padding: var(--kit-space-3) var(--kit-space-4);
+  border-top: 1px solid var(--kit-border);
+  border-bottom: 1px solid var(--kit-border);
+  background: var(--kit-surface-muted);
+}
+
+html[data-theme] .agent-ticket-layout-toolbar > div:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+html[data-theme] .agent-ticket-layout-toolbar strong {
+  color: var(--kit-text);
+  font-size: var(--kit-text-sm);
+  font-weight: 650;
+}
+
+html[data-theme] .agent-ticket-layout-toolbar span {
+  color: var(--kit-secondary);
+  font-size: var(--kit-text-xs);
+}
+
+html[data-theme] .agent-ticket-layout-switcher {
+  display: inline-flex;
+  flex: none;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--kit-border);
+  border-radius: var(--kit-radius-md);
+  background: var(--kit-surface);
+}
+
+html[data-theme] .agent-ticket-layout-switcher button {
+  min-height: 32px;
+  padding: 0 var(--kit-space-3);
+  border: 0;
+  border-radius: calc(var(--kit-radius-md) - 3px);
+  background: transparent;
+  color: var(--kit-text-2);
+  font-size: var(--kit-text-xs);
+  font-weight: 650;
+  cursor: pointer;
+}
+
+html[data-theme] .agent-ticket-layout-switcher button:hover {
+  background: var(--kit-hover);
+  color: var(--kit-text);
+}
+
+html[data-theme] .agent-ticket-layout-switcher button.is-active {
+  background: var(--kit-primary-soft);
+  color: var(--kit-primary-text);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--kit-primary) 22%, transparent);
+}
+
+html[data-theme] .agent-ticket-layout-switcher button:focus-visible {
+  outline: 2px solid var(--kit-primary);
+  outline-offset: 2px;
+}
+
+html[data-theme] .agent-kanban {
+  min-width: 0;
+  overflow-x: auto;
+  padding: var(--kit-space-4);
+  scrollbar-width: thin;
+}
+
+html[data-theme] .agent-kanban-board {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(15rem, 1fr));
+  gap: var(--kit-space-3);
+  min-width: 78rem;
+  align-items: start;
+}
+
+html[data-theme] .agent-kanban-column {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--kit-border);
+  border-radius: var(--kit-radius-lg);
+  background: var(--kit-surface-muted);
+}
+
+html[data-theme] .agent-kanban-column-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--kit-space-3);
+  padding: var(--kit-space-3);
+  border-bottom: 1px solid var(--kit-border);
+  background: color-mix(in srgb, var(--kit-surface) 74%, var(--kit-surface-muted));
+}
+
+html[data-theme] .agent-kanban-column-header h3 {
+  margin: 0;
+  color: var(--kit-text);
+  font-size: var(--kit-text-sm);
+  font-weight: 700;
+}
+
+html[data-theme] .agent-kanban-column-header p {
+  margin: 3px 0 0;
+  color: var(--kit-secondary);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+html[data-theme] .agent-kanban-column-header > span {
+  display: grid;
+  min-width: 25px;
+  height: 25px;
+  place-items: center;
+  border-radius: var(--kit-radius-pill);
+  background: var(--kit-surface);
+  color: var(--kit-text-2);
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px var(--kit-border);
+}
+
+html[data-theme] .agent-kanban-dropzone {
+  min-height: 7rem;
+  padding: var(--kit-space-3);
+}
+
+html[data-theme] .agent-kanban-list {
+  display: grid;
+  gap: var(--kit-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+html[data-theme] .agent-kanban-card {
+  min-width: 0;
+  border: 1px solid var(--kit-border);
+  border-radius: var(--kit-radius-md);
+  background: var(--kit-surface);
+  box-shadow: var(--kit-shadow-xs);
+  transition: border-color var(--kit-fast) var(--kit-ease), box-shadow var(--kit-fast) var(--kit-ease), transform var(--kit-fast) var(--kit-ease);
+}
+
+html[data-theme] .agent-kanban-card:hover {
+  border-color: var(--kit-border-strong);
+  box-shadow: var(--kit-shadow-sm);
+  transform: translateY(-1px);
+}
+
+html[data-theme] .agent-kanban-card-link {
+  display: grid;
+  gap: var(--kit-space-3);
+  padding: var(--kit-space-3);
+  color: inherit;
+  text-decoration: none;
+}
+
+html[data-theme] .agent-kanban-card-link:focus-visible {
+  outline: 2px solid var(--kit-primary);
+  outline-offset: -2px;
+  border-radius: var(--kit-radius-md);
+}
+
+html[data-theme] .agent-kanban-card-topline,
+html[data-theme] .agent-kanban-card-badges {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--kit-space-2);
+  min-width: 0;
+}
+
+html[data-theme] .agent-kanban-card-topline strong {
+  overflow: hidden;
+  color: var(--kit-primary-text);
+  font-size: var(--kit-text-xs);
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-theme] .agent-kanban-card h3 {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: var(--kit-text);
+  font-size: var(--kit-text-sm);
+  font-weight: 650;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+html[data-theme] .agent-kanban-card-badges {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+html[data-theme] .agent-kanban-card-meta {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+html[data-theme] .agent-kanban-card-meta > div {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  gap: var(--kit-space-2);
+  min-width: 0;
+}
+
+html[data-theme] .agent-kanban-card-meta dt {
+  color: var(--kit-secondary);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+html[data-theme] .agent-kanban-card-meta dd {
+  overflow: hidden;
+  margin: 0;
+  color: var(--kit-text-2);
+  font-size: var(--kit-text-xs);
+  font-weight: 550;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-theme] .agent-kanban-column-empty,
+html[data-theme] .agent-kanban-empty {
+  margin: 0;
+  color: var(--kit-secondary);
+  font-size: var(--kit-text-xs);
+  text-align: center;
+}
+
+html[data-theme] .agent-kanban-column-empty {
+  padding: var(--kit-space-4) var(--kit-space-2);
+}
+
+html[data-theme] .agent-kanban-empty {
+  padding: var(--kit-space-8) var(--kit-space-4);
+}
+
+@media (max-width: 640px) {
+  html[data-theme] .agent-ticket-layout-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  html[data-theme] .agent-ticket-layout-switcher {
+    width: 100%;
+  }
+
+  html[data-theme] .agent-ticket-layout-switcher button {
+    flex: 1;
+  }
+
+  html[data-theme] .agent-kanban {
+    scroll-snap-type: x proximity;
+  }
+
+  html[data-theme] .agent-kanban-board {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(16rem, 86vw);
+    min-width: max-content;
+  }
+
+  html[data-theme] .agent-kanban-column {
+    scroll-snap-align: start;
+  }
+}
