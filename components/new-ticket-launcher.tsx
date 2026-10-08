@@ -37,7 +37,7 @@ export function NewTicketLauncher({ simplified = false }: { simplified?: boolean
           </div>
           <button type="button" className="modal-close-button" onClick={() => setOpen(false)} aria-label="Fermer la fenêtre">×</button>
         </header>
-        <div className="ticket-launcher-modal-body"><NewTicketForm simplified={simplified} onCancel={() => setOpen(false)} /></div>
+        <div className="ticket-launcher-modal-body"><NewTicketForm simplified={simplified} onCancel={() => setOpen(false)} onCreated={() => setOpen(false)} /></div>
       </section>
     </div>,
     document.body,
