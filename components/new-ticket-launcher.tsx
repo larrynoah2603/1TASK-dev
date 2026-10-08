@@ -31,7 +31,7 @@ export function NewTicketLauncher({ simplified = false }: { simplified?: boolean
             <h2 id="new-ticket-modal-title">Nouveau ticket</h2>
             <p className="ticket-launcher-modal-description">
               {simplified
-                ? "Décrivez votre besoin, nous nous chargeons du routage."
+                ? "Décrivez votre besoin, 1TASK se charge du routage. Après création, vous serez redirigé vers le ticket pour suivre son traitement."
                 : "Décrivez votre besoin ; le catalogue le route directement lorsqu’une correspondance fiable existe."}
             </p>
           </div>

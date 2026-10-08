@@ -41,7 +41,7 @@ describe("V1 ticket form redesign", () => {
   it("removes the duplicate V1 introduction from the modal", () => {
     const launcher = source("components/new-ticket-launcher.tsx");
 
-    expect(launcher).toContain("Décrivez votre besoin, nous nous chargeons du routage.");
+    expect(launcher).toContain("Décrivez votre besoin, 1TASK se charge du routage. Après création, vous serez redirigé vers le ticket pour suivre son traitement.");
     expect(launcher).toContain("ticket-launcher-modal-v1");
     expect(launcher).toContain("ticket-launcher-modal-header-v1");
   });
