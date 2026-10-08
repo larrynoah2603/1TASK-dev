@@ -126,7 +126,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
       return {
         title: eventLabels[item.event.eventType] ?? item.event.eventType.replaceAll("_", " "),
         actor: item.event.actor?.name ?? "Système",
-        meta: formatRelativeActivityDate(item.event.createdAt),
+        meta: `${formatRelativeActivityDate(item.event.createdAt)} · ${formatDate(item.event.createdAt)}`,
         description: mode ? `Mode d’affectation : ${mode}` : undefined,
         type: item.event.eventType,
         tone: eventTone[item.event.eventType] ?? "info",
@@ -135,7 +135,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
     return {
       title: `Affectation : ${item.assignment.previousAssignee?.name ?? "Non affecté"} → ${item.assignment.newAssignee?.name ?? "Non affecté"}`,
       actor: item.assignment.assignedBy?.name ?? "Système",
-      meta: formatRelativeActivityDate(item.assignment.assignedAt),
+      meta: `${formatRelativeActivityDate(item.assignment.assignedAt)} · ${formatDate(item.assignment.assignedAt)}`,
       type: "ASSIGNED",
       tone: "info" as Tone,
     };
@@ -329,7 +329,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
                 <div className="ticket-section-heading">
                   <div>
                     <h2>Historique</h2>
-                    <p>Événements de workflow et affectations. Les messages restent dans l’onglet Échanges.</p>
+                    <p>Événements de workflow et affectations, avec date relative et horodatage exact. Les messages restent dans l’onglet Échanges.</p>
                   </div>
                   <span className="ticket-section-count">{timeline.length}</span>
                 </div>
