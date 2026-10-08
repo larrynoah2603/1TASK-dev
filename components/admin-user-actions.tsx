@@ -9,6 +9,7 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 import { AdminManagerSearch } from "@/components/admin-manager-search";
 import { Combobox } from "@/components/combobox";
 import { useToast } from "@/components/toast-provider";
+import { DeleteIconButton } from "@/components/ui/delete-icon-button";
 
 type Status = "ACTIVE" | "DISABLED" | "PENDING_ASSIGNMENT" | "PENDING_VALIDATION";
 
@@ -274,7 +275,7 @@ export function AdminUserActions({
           className="button-secondary min-h-9 px-3 py-2 text-xs"
         >
           {open ? "Fermer la fiche" : "Compléter / modifier"}
-        </button><button type="button" disabled={busy} onClick={() => void requestUserDeletion()} className="button-danger min-h-9 px-3 py-2 text-xs">Supprimer</button></div>
+        </button><DeleteIconButton disabled={busy} onClick={() => void requestUserDeletion()} label={`Supprimer l’utilisateur ${displayName}`} /></div>
       </div>
 
       {open ? (
