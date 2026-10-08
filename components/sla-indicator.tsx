@@ -60,7 +60,7 @@ export function SlaIndicator({
       <span className="sla-indicator-head">
         <span className="sla-indicator-mark" aria-hidden="true"><span /></span>
         <span className="sla-indicator-label">{labels[state]}</span>
-        {!compact && dueAt ? <strong className="sla-indicator-countdown">{remaining}</strong> : null}
+        {dueAt ? <strong className="sla-indicator-countdown">{remaining}</strong> : null}
       </span>
       {progress !== null ? (
         <span className="sla-indicator-track" aria-hidden="true"><span className="sla-indicator-bar" style={{ width: `${Math.max(3, Math.round(progress))}%` }} /></span>
