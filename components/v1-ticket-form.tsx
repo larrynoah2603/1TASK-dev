@@ -75,12 +75,62 @@ export function V1TicketForm({ onCancel }: { onCancel?: () => void }) {
     }
   }
 
-  return <form onSubmit={submit} aria-busy={submitting} className="ticket-composer ticket-composer-industrial panel max-w-4xl space-y-6 p-5 sm:p-7 md:p-8">
-    <div className="form-step-header border-b border-slate-100 pb-5"><h2 className="text-base font-semibold text-slate-950">Décrivez votre demande</h2><p className="mt-1 text-xs leading-5 text-slate-500">Le service est facultatif. Sans correspondance fiable, la demande sera transmise au triage.</p></div>
-    {error ? <div role="alert" aria-live="assertive" className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
-    <label className="field-label">Objet<input required minLength={5} maxLength={180} value={title} onChange={(event) => setTitle(event.target.value)} className="field-control" /></label>
-    <label className="field-label">Description<textarea required minLength={15} maxLength={20_000} value={description} onChange={(event) => setDescription(event.target.value)} className="field-control min-h-40" /></label>
-    <label className="field-label">Service <span className="font-normal text-slate-400">(facultatif)</span><Combobox value={serviceCatalogItemId} onChange={setServiceCatalogItemId} options={[{ value: "", label: "Détection automatique" }, ...services.map((service) => ({ value: service.id, label: `${service.queue.department.name} — ${service.name} · ${service.queue.name}` }))]} /></label>
-    <div className="form-actions flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end"><button type="button" disabled={submitting} onClick={() => onCancel ? onCancel() : router.back()} className="button-secondary">Annuler</button><button type="submit" disabled={submitting || title.trim().length < 5 || description.trim().length < 15} className="button-primary">{submitting ? "Création du ticket…" : "Créer le ticket"}</button></div>
-  </form>;
+  return (
+    <form onSubmit={submit} aria-busy={submitting} className="ticket-composer ticket-composer-industrial v1-ticket-form panel max-w-4xl overflow-hidden p-0">
+      <div className="v1-ticket-form-content">
+        <div className="v1-ticket-section-heading">
+          <h2>Votre demande</h2>
+        </div>
+
+        {error ? <div role="alert" aria-live="assertive" className="v1-ticket-error">{error}</div> : null}
+
+        <label className="field-label v1-ticket-field">
+          <span className="v1-ticket-label">Objet <span className="v1-ticket-required" aria-hidden="true">*</span></span>
+          <input
+            required
+            minLength={5}
+            maxLength={180}
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            className="field-control"
+            placeholder="Ex. Impossible d’accéder au VPN"
+          />
+        </label>
+
+        <label className="field-label v1-ticket-field">
+          <span className="v1-ticket-label">Description <span className="v1-ticket-required" aria-hidden="true">*</span></span>
+          <textarea
+            required
+            minLength={15}
+            maxLength={20_000}
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            className="field-control v1-ticket-description"
+            placeholder="Décrivez ce qui se passe, depuis quand et ce que cela vous empêche de faire."
+          />
+        </label>
+
+        <div className="v1-ticket-service">
+          <label className="field-label v1-ticket-field">
+            <span className="v1-ticket-label">Service <span className="v1-ticket-optional">Facultatif</span></span>
+            <Combobox
+              ariaLabel="Service de destination"
+              value={serviceCatalogItemId}
+              onChange={setServiceCatalogItemId}
+              options={[
+                { value: "", label: "✦ Détection automatique — recommandée" },
+                ...services.map((service) => ({ value: service.id, label: `${service.queue.department.name} — ${service.name} · ${service.queue.name}` })),
+              ]}
+            />
+          </label>
+          <p className="v1-ticket-service-help">1TASK essaiera d’identifier automatiquement le service adapté à votre demande.</p>
+        </div>
+      </div>
+
+      <div className="form-actions v1-ticket-actions">
+        <button type="button" disabled={submitting} onClick={() => onCancel ? onCancel() : router.back()} className="button-secondary">Annuler</button>
+        <button type="submit" disabled={submitting || title.trim().length < 5 || description.trim().length < 15} className="button-primary">{submitting ? "Création du ticket…" : "Créer le ticket"}</button>
+      </div>
+    </form>
+  );
 }
