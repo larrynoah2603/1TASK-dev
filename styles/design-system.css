@@ -1250,3 +1250,88 @@ html[data-theme="light"] .shell-industrial .ticket-detail-industrial .ticket-tim
 html[data-theme="light"] .shell-industrial .ticket-detail-industrial .ticket-timeline-message-internal {
   background: var(--kit-warning-soft);
 }
+
+
+/* Reporting SLA — restore comfortable spacing after compact dashboard overrides. */
+.reporting-sla-oversight {
+  display: grid;
+  gap: var(--kit-space-5);
+  padding: var(--kit-space-5);
+}
+
+.reporting-sla-oversight > .dashboard-role-hero {
+  margin-bottom: 0;
+  padding: 0 0 var(--kit-space-4);
+}
+
+.reporting-sla-oversight .dashboard-responsible-grid {
+  gap: var(--kit-space-4);
+}
+
+.reporting-sla-oversight .dashboard-responsible-grid .dashboard-widget,
+.reporting-sla-oversight .dashboard-escalations-widget {
+  padding: var(--kit-space-5);
+}
+
+.reporting-sla-oversight .dashboard-sla-bars {
+  gap: var(--kit-space-4);
+  margin-top: var(--kit-space-5);
+}
+
+.reporting-sla-oversight .dashboard-sla-row {
+  min-height: 2rem;
+  gap: var(--kit-space-3);
+}
+
+.reporting-sla-oversight .dashboard-sla-note {
+  margin-top: var(--kit-space-4);
+  padding-top: var(--kit-space-4);
+}
+
+.reporting-sla-oversight .dashboard-team-list {
+  gap: var(--kit-space-3);
+  margin-top: var(--kit-space-5);
+}
+
+.reporting-sla-oversight .dashboard-team-row {
+  min-height: 2rem;
+  padding-block: var(--kit-space-2);
+}
+
+.reporting-sla-oversight .dashboard-team-load .dashboard-widget-link {
+  margin-top: var(--kit-space-4);
+}
+
+.reporting-sla-oversight .dashboard-escalation-table-wrap {
+  margin-top: var(--kit-space-4);
+  margin-inline: calc(var(--kit-space-5) * -1);
+  margin-bottom: calc(var(--kit-space-5) * -1);
+}
+
+.reporting-sla-oversight .dashboard-escalation-table th,
+.reporting-sla-oversight .dashboard-escalation-table td {
+  padding-block: var(--kit-space-3);
+  padding-inline: var(--kit-space-5);
+}
+
+@media (max-width: 767px) {
+  .reporting-sla-oversight {
+    gap: var(--kit-space-4);
+    padding: var(--kit-space-4);
+  }
+
+  .reporting-sla-oversight .dashboard-responsible-grid .dashboard-widget,
+  .reporting-sla-oversight .dashboard-escalations-widget {
+    padding: var(--kit-space-4);
+  }
+
+  .reporting-sla-oversight .dashboard-escalation-table-wrap {
+    margin-inline: calc(var(--kit-space-4) * -1);
+    margin-bottom: calc(var(--kit-space-4) * -1);
+  }
+
+  .reporting-sla-oversight .dashboard-escalation-table th,
+  .reporting-sla-oversight .dashboard-escalation-table td {
+    padding-inline: var(--kit-space-4);
+  }
+}
