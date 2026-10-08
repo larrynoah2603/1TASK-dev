@@ -5,6 +5,8 @@ import { PriorityBadge, StatusBadge } from "@/components/status-badge";
 import { SlaBadge } from "@/components/sla-badge";
 import { TICKET_KANBAN_COLUMNS, getTicketKanbanColumnId } from "@/lib/ticket-kanban";
 
+const formatActivity = (value: Date) => new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(value);
+
 function TicketKanbanCard({
   ticket,
   columnId,
@@ -46,6 +48,10 @@ function TicketKanbanCard({
           <div>
             <dt>Demandeur</dt>
             <dd>{ticket.requester.name}</dd>
+          </div>
+          <div>
+            <dt>Activité</dt>
+            <dd>{formatActivity(ticket.updatedAt)}</dd>
           </div>
         </dl>
       </Link>
