@@ -198,7 +198,7 @@ export function AdminConfigurationPanel({ configuration, sections, autoAssignmen
 
     {enabled("queues") ? <section className="panel admin-config-section p-6">
       <AdminSectionTitle icon="queue">Files et responsables</AdminSectionTitle>
-      <p className="mt-1 text-xs text-slate-500">Une file appartient à un département ; son responsable est distinct du manager hiérarchique Entra ID.</p>
+      <p className="mt-1 text-xs text-slate-500">Hiérarchie : Département → File → Responsable de file. Le responsable de file reste distinct du manager hiérarchique Entra ID.</p>
       <form onSubmit={(event) => void submit(event, "/api/admin/queues", { code: value(event.currentTarget, "code"), name: value(event.currentTarget, "name"), departmentId: value(event.currentTarget, "departmentId"), managerId: value(event.currentTarget, "managerId") || null, autoAssignment: (event.currentTarget.elements.namedItem("autoAssignment") as HTMLInputElement).checked, isActive: true, reason: value(event.currentTarget, "reason") })} className="mt-4 grid gap-3 md:grid-cols-3">
         <Field label="Code"><input name="code" required className={inputClass} placeholder="DSI-RESEAU" /></Field>
         <Field label="Nom"><input name="name" required className={inputClass} placeholder="Support réseau" /></Field>
@@ -213,7 +213,7 @@ export function AdminConfigurationPanel({ configuration, sections, autoAssignmen
 
     {enabled("teams") ? <section className="panel admin-config-section p-6">
       <AdminSectionTitle icon="team">Équipes et agents</AdminSectionTitle>
-      <p className="mt-1 text-xs text-slate-500">Seuls les utilisateurs actifs du département de la file peuvent rejoindre une équipe.</p>
+      <p className="mt-1 text-xs text-slate-500">Hiérarchie : Département → File → Équipe → Agents. Seuls les utilisateurs actifs du département de la file peuvent rejoindre une équipe.</p>
       <form onSubmit={(event) => void submit(event, "/api/admin/teams", { name: value(event.currentTarget, "name"), queueId: value(event.currentTarget, "queueId"), leadId: value(event.currentTarget, "leadId") || null, isActive: true, reason: value(event.currentTarget, "reason") })} className="mt-4 grid gap-3 md:grid-cols-4">
         <Field label="Nom"><input name="name" required className={inputClass} placeholder="Équipe réseau" /></Field>
         <Field label="File"><Combobox name="queueId" required options={[{ value: "", label: "Sélectionner" }, ...configuration.queues.filter((queue) => queue.isActive).map((queue) => ({ value: queue.id, label: `${queue.department.name} — ${queue.name}` }))]} /></Field>
