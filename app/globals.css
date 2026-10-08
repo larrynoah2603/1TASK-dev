@@ -140,3 +140,12 @@ html[data-theme="light"] .shell-industrial {
   background: var(--industrial-panel, Canvas);
 }
 }
+
+/* Shared page loading theme bridge.
+   PageLoading is used by both the normal space and admin; keep its shell tied
+   to the canonical BIOS design tokens instead of a loader-specific palette. */
+.ui-page-loading {
+  --ui-page-loading-accent: var(--kit-brand);
+  background: var(--kit-bg);
+}
+
