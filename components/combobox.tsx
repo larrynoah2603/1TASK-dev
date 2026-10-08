@@ -123,6 +123,7 @@ export function Combobox({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={listboxId}
+        aria-activedescendant={open && options[highlightedIndex] ? `${listboxId}-option-${highlightedIndex}` : undefined}
         aria-label={ariaLabel}
         disabled={disabled}
         onClick={() => open ? setOpen(false) : openAndHighlight()}
@@ -136,6 +137,7 @@ export function Combobox({
           {options.map((option, index) => (
             <button
               key={option.value || `empty-${index}`}
+              id={`${listboxId}-option-${index}`}
               type="button"
               role="option"
               aria-selected={option.value === selectedValue}
