@@ -62,7 +62,7 @@ export interface TicketDomain {
 }
 
 export interface TicketDetailDomain extends TicketDomain {
-  requester: { id: string; name: string };
+  requester: { id: string; name: string; image: string | null };
   sourceDepartment: { id: string; name: string; code: string } | null;
   assignedTo: { id: string; name: string } | null;
   queue: {

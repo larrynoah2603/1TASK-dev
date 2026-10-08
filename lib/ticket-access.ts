@@ -1,5 +1,5 @@
 ﻿export const ticketSecurityInclude = {
-  requester: { select: { id: true, name: true } },
+  requester: { select: { id: true, name: true, image: true } },
   sourceDepartment: { select: { id: true, name: true, code: true } },
   assignedTo: { select: { id: true, name: true } },
   queue: {
