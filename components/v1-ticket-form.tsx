@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Combobox } from "@/components/combobox";
 import { useToast } from "@/components/toast-provider";
@@ -11,6 +11,7 @@ const token = () => `web-${crypto.randomUUID().replace(/[^A-Za-z0-9_-]/g, "")}`;
 export function V1TicketForm({ onCancel }: { onCancel?: () => void }) {
   const router = useRouter();
   const { toast } = useToast();
+  const requestSectionTitleId = useId();
   const [services, setServices] = useState<Service[]>([]);
   const [serviceCatalogItemId, setServiceCatalogItemId] = useState("");
   const [title, setTitle] = useState("");
@@ -80,10 +81,10 @@ export function V1TicketForm({ onCancel }: { onCancel?: () => void }) {
 
   return (
     <form onSubmit={submit} aria-busy={submitting} className="ticket-composer v1-ticket-form">
-      <section className="v1-ticket-form-section" aria-labelledby="v1-ticket-request-title">
+      <section className="v1-ticket-form-section" aria-labelledby={requestSectionTitleId}>
         <div className="v1-ticket-form-section-heading">
           <div>
-            <h2 id="v1-ticket-request-title">Votre demande</h2>
+            <h2 id={requestSectionTitleId}>Votre demande</h2>
             <p>Expliquez simplement ce dont vous avez besoin. 1TASK se charge du routage.</p>
           </div>
           <span className="v1-ticket-required-note"><span aria-hidden="true">*</span> Champs obligatoires</span>
@@ -134,6 +135,7 @@ export function V1TicketForm({ onCancel }: { onCancel?: () => void }) {
               <span className="v1-ticket-auto-badge">Automatique recommandé</span>
             </div>
             <Combobox
+              ariaLabel="Service"
               value={serviceCatalogItemId}
               onChange={setServiceCatalogItemId}
               options={[
