@@ -32,7 +32,19 @@ type AdminUser = {
   primaryTeam: { id: string; name: string; queue: { id: string; name: string; departmentId: string } } | null;
   authorizedQueue: { id: string; name: string; departmentId: string } | null;
   jobTitle: string | null;
-  roleAssignments: { role: { code: string; name: string }; scopeId: string | null }[];
+  roleAssignments: {
+    id: string;
+    role: { code: string; name: string };
+    scopeId: string | null;
+    scope: {
+      id: string;
+      name: string;
+      type: string;
+      department: { name: string } | null;
+      queue: { name: string } | null;
+      team: { name: string } | null;
+    } | null;
+  }[];
 };
 
 type Options = {
@@ -83,6 +95,9 @@ export function AdminUserActions({
   const [deletionImpact, setDeletionImpact] = useState<{ canDelete: boolean; totalBlockers: number; entityType: string; entityId: string; blockers: { type: string; label: string; count: number; adminPath: string; protectedHistory: boolean }[] } | null>(null);
   const [impactBusy, setImpactBusy] = useState(false);
   const [pendingForm, setPendingForm] = useState<FormData | null>(null);
+  const [roleToRemove, setRoleToRemove] = useState<AdminUser["roleAssignments"][number] | null>(null);
+  const [roleRemovalReason, setRoleRemovalReason] = useState("");
+  const [roleRemovalBusy, setRoleRemovalBusy] = useState(false);
   const [departmentId, setDepartmentId] = useState(user.department?.id ?? "");
   const [managerId, setManagerId] = useState(user.manager?.id ?? "");
   const [primaryTeamId, setPrimaryTeamId] = useState(user.primaryTeam?.id ?? "");
@@ -144,6 +159,45 @@ export function AdminUserActions({
       toast("La suppression n’a pas pu être envoyée.", "error");
     } finally {
       setBusy(false);
+    }
+  }
+
+  function roleScopeLabel(assignment: AdminUser["roleAssignments"][number]) {
+    if (!assignment.scopeId) return "Global";
+    if (assignment.scope?.queue?.name) return `File · ${assignment.scope.queue.name}`;
+    if (assignment.scope?.team?.name) return `Équipe · ${assignment.scope.team.name}`;
+    if (assignment.scope?.department?.name) return `Département · ${assignment.scope.department.name}`;
+    return assignment.scope?.name ?? "Périmètre spécifique";
+  }
+
+  async function removeRoleAssignment() {
+    if (!roleToRemove || roleRemovalBusy || roleRemovalReason.trim().length < 10) return;
+    setRoleRemovalBusy(true);
+    setMessage("");
+    try {
+      const response = await fetch(
+        `/api/admin/users/${user.id}/roles/${roleToRemove.id}`,
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reason: roleRemovalReason }),
+        },
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        setMessage(data.error ?? "Retrait du rôle refusé.");
+        toast(data.error ?? "Retrait du rôle refusé.", "error");
+        return;
+      }
+      toast(`Rôle « ${roleToRemove.role.name} » retiré.`);
+      setRoleToRemove(null);
+      setRoleRemovalReason("");
+      router.refresh();
+    } catch {
+      setMessage("Le rôle n’a pas pu être retiré.");
+      toast("Le rôle n’a pas pu être retiré.", "error");
+    } finally {
+      setRoleRemovalBusy(false);
     }
   }
 
@@ -251,10 +305,48 @@ export function AdminUserActions({
                 currentManager={user.manager}
               />
             </label>
-            <label className="grid gap-1 text-xs font-semibold text-slate-600">
-              Rôle principal
-              <Combobox name="primaryRoleCode" defaultValue={user.primaryRoleCode ?? ""} options={[{ value: "", label: "Non défini" }, ...options.roles.map((item) => ({ value: item.code, label: item.name }))]} />
-            </label>
+            <div className="grid gap-2 text-xs font-semibold text-slate-600 xl:col-span-2">
+              <label className="grid gap-1">
+                Rôle principal
+                <Combobox name="primaryRoleCode" defaultValue={user.primaryRoleCode ?? ""} options={[{ value: "", label: "Non défini" }, ...options.roles.map((item) => ({ value: item.code, label: item.name }))]} />
+              </label>
+              <div className="rounded-lg border border-slate-200 bg-white p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-bold text-slate-800">Rôles actuellement attribués</p>
+                  <span className="text-[11px] font-normal text-slate-500">{user.roleAssignments.length} attribution{user.roleAssignments.length > 1 ? "s" : ""}</span>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {user.roleAssignments.map((assignment) => {
+                    const isBaseRequester = assignment.role.code === "REQUESTER";
+                    const isPrimary = assignment.scopeId === null && assignment.role.code === user.primaryRoleCode;
+                    const removable = !isBaseRequester && !isPrimary;
+                    return (
+                      <span key={assignment.id} className="inline-flex min-h-8 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-semibold text-slate-700">
+                        <span>{assignment.role.name}</span>
+                        <span className="font-normal text-slate-500">· {roleScopeLabel(assignment)}</span>
+                        {isPrimary ? <span className="rounded bg-orange-50 px-1.5 py-0.5 text-[10px] font-bold text-orange-700">PRINCIPAL</span> : null}
+                        {isBaseRequester ? <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">BASE</span> : null}
+                        {removable ? (
+                          <button
+                            type="button"
+                            onClick={() => { setRoleToRemove(assignment); setRoleRemovalReason(""); }}
+                            className="inline-grid h-5 w-5 place-items-center rounded text-sm leading-none text-slate-500 hover:bg-rose-50 hover:text-rose-700"
+                            aria-label={`Retirer le rôle ${assignment.role.name} (${roleScopeLabel(assignment)})`}
+                            title="Retirer cette attribution"
+                          >
+                            ×
+                          </button>
+                        ) : null}
+                      </span>
+                    );
+                  })}
+                  {!user.roleAssignments.length ? <span className="text-[11px] font-normal text-slate-500">Aucun rôle attribué.</span> : null}
+                </div>
+                <p className="mt-2 text-[11px] font-normal leading-5 text-slate-500">
+                  Le rôle Demandeur de base et le rôle principal ne sont pas supprimables ici. Pour retirer le rôle principal, choisissez d’abord un autre rôle principal puis enregistrez la fiche.
+                </p>
+              </div>
+            </div>
             <label className="grid gap-1 text-xs font-semibold text-slate-600">
               Équipe principale
               <Combobox name="primaryTeamId" value={primaryTeamId} onChange={setPrimaryTeamId} disabled={!departmentId} options={[{ value: "", label: departmentId ? "Non affectée" : "Sélectionnez d’abord un département" }, ...filteredTeams.map((item) => ({ value: item.id, label: `${item.name} — ${item.queue.name}` }))]} />
@@ -296,6 +388,32 @@ export function AdminUserActions({
         </div>
       ) : null}
       <ConfirmDialog open={deleteOpen} title="Supprimer l’utilisateur ?" description={`Vous êtes sur le point de supprimer définitivement ${displayName} (${user.email}). La suppression sera refusée si un historique métier existe.`} confirmLabel="Supprimer définitivement" busyLabel="Suppression…" danger busy={busy} confirmDisabled={impactBusy || !deletionImpact?.canDelete || deleteReason.trim().length < 10} onCancel={() => { if (!busy) { setDeleteOpen(false); setDeleteReason(""); } }} onConfirm={() => void deleteUser()}>{impactBusy ? <p className="mt-4 text-sm">Analyse des dépendances…</p> : deletionImpact && !deletionImpact.canDelete ? <div className="mt-4 space-y-2"><p className="font-semibold text-rose-700">{deletionImpact.totalBlockers} dépendance(s) empêchent la suppression.</p>{deletionImpact.blockers.map((item) => <div key={item.type} className="flex items-center justify-between rounded-lg border p-3 text-sm"><span>{item.protectedHistory ? "Historique protégé · " : ""}{item.label} ({item.count})</span><Link href={item.adminPath as Route} className="button-secondary px-2 py-1 text-xs">Voir</Link></div>)}<Link href={`/admin/dependencies/user/${user.id}` as Route} className="button-secondary inline-flex">Voir toutes les dépendances</Link></div> : <label className="field-label mt-4">Motif de suppression<textarea autoFocus required minLength={10} maxLength={2000} value={deleteReason} onChange={(event) => setDeleteReason(event.target.value)} className="field-control min-h-24" /></label>}</ConfirmDialog>
+      <ConfirmDialog
+        open={Boolean(roleToRemove)}
+        title={roleToRemove ? `Retirer « ${roleToRemove.role.name} » ?` : "Retirer ce rôle ?"}
+        description={roleToRemove ? `Cette action retire uniquement l’attribution « ${roleToRemove.role.name} » dans le périmètre « ${roleScopeLabel(roleToRemove)} ». Les autres rôles de l’utilisateur sont conservés.` : ""}
+        confirmLabel="Retirer le rôle"
+        busyLabel="Retrait…"
+        danger
+        busy={roleRemovalBusy}
+        confirmDisabled={roleRemovalReason.trim().length < 10}
+        onCancel={() => { if (!roleRemovalBusy) { setRoleToRemove(null); setRoleRemovalReason(""); } }}
+        onConfirm={() => void removeRoleAssignment()}
+      >
+        <label className="field-label mt-4">
+          Motif obligatoire
+          <textarea
+            autoFocus
+            required
+            minLength={10}
+            maxLength={2000}
+            value={roleRemovalReason}
+            onChange={(event) => setRoleRemovalReason(event.target.value)}
+            placeholder="Ex. Fin de responsabilité sur cette attribution…"
+            className="field-control min-h-24"
+          />
+        </label>
+      </ConfirmDialog>
       <ConfirmDialog open={confirmOpen} title="Confirmer la fiche utilisateur" description="Les rôles, le périmètre et le statut applicatif seront enregistrés, historisés et audités." confirmLabel="Enregistrer la fiche" busy={busy} onCancel={() => { setConfirmOpen(false); setPendingForm(null); }} onConfirm={() => { const form = pendingForm; setConfirmOpen(false); setPendingForm(null); if (form) void saveProfile(form); }} />
     </article>
   );
