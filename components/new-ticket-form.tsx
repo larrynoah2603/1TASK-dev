@@ -173,9 +173,10 @@ function FullTicketForm({ onCancel, onCreated }: { onCancel?: () => void; onCrea
         body: JSON.stringify(payload),
       });
       const data = await response.json() as CreatedTicketResponse & { error?: string };
-      if (!response.ok) {
-        setError(data.error ?? "La création a échoué.");
-        toast(data.error ?? "La création a échoué.", "error");
+      if (!response.ok || !data.id) {
+        const message = data.error ?? "La création a échoué.";
+        setError(message);
+        toast(message, "error");
         return;
       }
       const destination = data.queue?.name?.trim();
