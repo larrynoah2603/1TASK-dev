@@ -24,9 +24,17 @@ export function NewTicketLauncher({ simplified = false }: { simplified?: boolean
 
   const modal = open && typeof document !== "undefined" ? createPortal(
     <div className="modal-backdrop ticket-launcher-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>
-      <section className="modal-panel ticket-launcher-modal" role="dialog" aria-modal="true" aria-labelledby="new-ticket-modal-title" onMouseDown={(event) => event.stopPropagation()} onWheel={(event) => event.stopPropagation()}>
-        <header className="ticket-launcher-modal-header">
-          <div><p className="eyebrow">Création rapide</p><h2 id="new-ticket-modal-title">Nouveau ticket</h2><p className="mt-1 text-xs text-slate-500">Décrivez votre besoin ; le catalogue le route directement lorsqu’une correspondance fiable existe.</p></div>
+      <section className={`modal-panel ticket-launcher-modal${simplified ? " ticket-launcher-modal-v1" : ""}`} role="dialog" aria-modal="true" aria-labelledby="new-ticket-modal-title" onMouseDown={(event) => event.stopPropagation()} onWheel={(event) => event.stopPropagation()}>
+        <header className={`ticket-launcher-modal-header${simplified ? " ticket-launcher-modal-header-v1" : ""}`}>
+          <div>
+            {!simplified ? <p className="eyebrow">Création rapide</p> : null}
+            <h2 id="new-ticket-modal-title">Nouveau ticket</h2>
+            <p className="ticket-launcher-modal-description">
+              {simplified
+                ? "Décrivez votre besoin, nous nous chargeons du routage."
+                : "Décrivez votre besoin ; le catalogue le route directement lorsqu’une correspondance fiable existe."}
+            </p>
+          </div>
           <button type="button" className="modal-close-button" onClick={() => setOpen(false)} aria-label="Fermer la fenêtre">×</button>
         </header>
         <div className="ticket-launcher-modal-body"><NewTicketForm simplified={simplified} onCancel={() => setOpen(false)} /></div>
