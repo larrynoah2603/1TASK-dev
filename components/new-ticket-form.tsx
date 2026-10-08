@@ -178,7 +178,7 @@ function FullTicketForm({ onCancel, onCreated }: { onCancel?: () => void; onCrea
         toast(data.error ?? "La création a échoué.", "error");
         return;
       }
-      if (!data.id) {
+      if (!response.ok || !data.id) {
         const message = data.error ?? "La création a échoué.";
         setError(message);
         toast(message, "error");
