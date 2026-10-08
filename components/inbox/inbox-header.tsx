@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Search, Sparkles } from "lucide-react";
+import { Search, Sparkles } from "lucide-react";
 
 export function InboxHeader({ ticketCount }: { ticketCount: number }) {
   return (
@@ -11,7 +11,6 @@ export function InboxHeader({ ticketCount }: { ticketCount: number }) {
       <div className="flex flex-wrap items-center gap-2">
         <span className="mr-auto rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600 sm:mr-2">{ticketCount} ticket{ticketCount === 1 ? "" : "s"}</span>
         <Link href="/tickets" className="button-secondary"><Search className="size-4" /> Rechercher</Link>
-        <Link href="/tickets/new" className="button-primary"><Plus className="size-4" /> Créer un ticket</Link>
       </div>
     </header>
   );
