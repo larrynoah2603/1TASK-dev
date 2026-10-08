@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { RoleCode } from "@prisma/client";
@@ -59,7 +58,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
   return (
     <AgentWorkspace className="inbox-operations-industrial">
       <DashboardViewTabs active="operations" canOperate canReport={canReport} />
-      <AgentWorkspaceHeader><div><p className="eyebrow">Poste agent</p><h1>Inbox Agent</h1><p className="page-header-description">Gérez vos tickets et priorités.</p></div><div className="agent-workspace-actions"><Link href="/tickets/new" className="button-primary">Créer un ticket</Link><Link href="/tickets" className="button-secondary">Rechercher un ticket</Link></div></AgentWorkspaceHeader>
+      <AgentWorkspaceHeader><div><p className="eyebrow">Poste agent</p><h1>Inbox Agent</h1><p className="page-header-description">Gérez vos tickets et priorités.</p></div></AgentWorkspaceHeader>
       <Suspense fallback={<InboxKpiSkeleton />}><InboxKpis user={user} /></Suspense>
       <AgentWorkspaceGrid><div className="agent-workspace-main"><PriorityTickets tickets={currentRows} /><section className="agent-card" aria-labelledby="agent-tickets-title"><div className="agent-card-header"><div><p className="eyebrow">Liste de travail agent</p><h2 id="agent-tickets-title">Mes tickets</h2></div><span className="agent-card-count">{currentRows.length}</span></div><TicketViewSwitcher compactLabels scope={params.scope} sla={params.sla} basePath="/inbox" query={rawParams} /><TicketFilters compact queues={queues} dossiers={dossiers} missions={missions} values={params} resetHref="/inbox" scopeOptions={[]} /><AgentTicketTable tickets={currentRows} claimableTicketIds={claimableTicketIds} /><TicketCursorPagination basePath="/inbox" query={{ q: params.q, status: params.status, priority: params.priority, scope: params.scope, sla: params.sla, departmentId: params.departmentId, queueId: params.queueId, dossierId: params.dossierId, missionId: params.missionId, sort: params.sort, pageSize: String(params.pageSize) }} currentCursor={params.cursor} nextCursor={ticketPage.nextCursor} itemCount={currentRows.length} pageSize={ticketPage.pageSize} /></section></div><div className="agent-workspace-rail"><Suspense fallback={<InboxWatchSkeleton />}><InboxSlaWatch user={user} /></Suspense><AgentActivity tickets={currentRows} /></div></AgentWorkspaceGrid>
     </AgentWorkspace>

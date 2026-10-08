@@ -56,6 +56,18 @@ describe("V1 ticket form redesign", () => {
     expect(form).not.toContain('aria-labelledby="v1-ticket-request-title"');
   });
 
+  it("keeps ticket creation as a single global action in the app shell", () => {
+    const appShell = source("components/app-shell.tsx");
+    const inboxPage = source("app/(app)/inbox/page.tsx");
+    const inboxHeader = source("components/inbox/inbox-header.tsx");
+
+    expect(appShell).toContain("<NewTicketLauncher");
+    expect(inboxPage).not.toContain('href="/tickets/new"');
+    expect(inboxPage).not.toContain("Créer un ticket");
+    expect(inboxHeader).not.toContain('href="/tickets/new"');
+    expect(inboxHeader).not.toContain("Créer un ticket");
+  });
+
   it("uses a dedicated responsive footer and theme-aware V1 layout", () => {
     const css = source("styles/legacy-bridge.css");
 
