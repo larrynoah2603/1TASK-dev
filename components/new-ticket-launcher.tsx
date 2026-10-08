@@ -24,7 +24,7 @@ export function NewTicketLauncher({ simplified = false }: { simplified?: boolean
 
   const modal = open && typeof document !== "undefined" ? createPortal(
     <div className="modal-backdrop ticket-launcher-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>
-      <section className="modal-panel ticket-launcher-modal" role="dialog" aria-modal="true" aria-labelledby="new-ticket-modal-title" onMouseDown={(event) => event.stopPropagation()} onWheel={(event) => event.stopPropagation()}>
+      <section className={`modal-panel ticket-launcher-modal${simplified ? " ticket-launcher-modal-v1" : ""}`} role="dialog" aria-modal="true" aria-labelledby="new-ticket-modal-title" onMouseDown={(event) => event.stopPropagation()} onWheel={(event) => event.stopPropagation()}>
         <header className={`ticket-launcher-modal-header${simplified ? " ticket-launcher-modal-header-v1" : ""}`}>
           <div>
             {!simplified ? <p className="eyebrow">Création rapide</p> : null}
