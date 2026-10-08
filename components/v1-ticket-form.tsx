@@ -8,7 +8,7 @@ import { useToast } from "@/components/toast-provider";
 type Service = { id: string; name: string; category: string; queue: { name: string; department: { name: string } } };
 const token = () => `web-${crypto.randomUUID().replace(/[^A-Za-z0-9_-]/g, "")}`;
 
-export function V1TicketForm({ onCancel }: { onCancel?: () => void }) {
+export function V1TicketForm({ onCancel, onCreated }: { onCancel?: () => void; onCreated?: (ticketId: string) => void }) {
   const router = useRouter();
   const { toast } = useToast();
   const requestSectionTitleId = useId();
@@ -51,6 +51,7 @@ export function V1TicketForm({ onCancel }: { onCancel?: () => void }) {
         return;
       }
       toast({ kind: "success", title: "Ticket créé", description: "Votre demande a été transmise.", metadata: data.reference, action: { label: "Voir le ticket", href: `/tickets/${data.id}` } });
+      onCreated?.(data.id);
       router.push(`/tickets/${data.id}`);
     } catch (requestError) {
       if (requestError instanceof DOMException && requestError.name === "AbortError") {
@@ -61,6 +62,7 @@ export function V1TicketForm({ onCancel }: { onCancel?: () => void }) {
           const data = await status.json() as { ticket: { id: string; reference?: string } | null };
           if (data.ticket) {
             toast({ kind: "success", title: "Ticket créé", description: "La création a été confirmée après vérification.", metadata: data.ticket.reference, action: { label: "Voir le ticket", href: `/tickets/${data.ticket.id}` } });
+            onCreated?.(data.ticket.id);
             router.push(`/tickets/${data.ticket.id}`);
             return;
           }
