@@ -24,6 +24,7 @@ export function AgentTicketTable({
   claimableTicketIds: string[];
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const claimableTicketIdSet = new Set(claimableTicketIds);
 
   const toggleTicket = (ticketId: string) => {
     setExpandedId((current) => current === ticketId ? null : ticketId);
@@ -50,7 +51,7 @@ export function AgentTicketTable({
               <tbody>
                 {tickets.length ? tickets.map((ticket) => {
                   const expanded = expandedId === ticket.id;
-                  const claimable = claimableTicketIds.includes(ticket.id);
+                  const claimable = claimableTicketIdSet.has(ticket.id);
 
                   return (
                     <Fragment key={ticket.id}>
