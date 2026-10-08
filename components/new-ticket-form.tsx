@@ -61,7 +61,7 @@ function wait(milliseconds: number) {
   return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 }
 
-function FullTicketForm({ onCancel }: { onCancel?: () => void } = {}) {
+function FullTicketForm({ onCancel, onCreated }: { onCancel?: () => void; onCreated?: (ticketId: string) => void } = {}) {
   const router = useRouter();
   const { toast } = useToast();
   const [departments, setDepartments] = useState<DepartmentOption[]>([]);
@@ -187,6 +187,7 @@ function FullTicketForm({ onCancel }: { onCancel?: () => void } = {}) {
         action: { label: "Voir le ticket", href: `/tickets/${data.id}` },
         duration: 7_000,
       });
+      onCreated?.(data.id);
       router.push(`/tickets/${data.id}`);
     } catch (requestError: unknown) {
       if (requestError instanceof DOMException && requestError.name === "AbortError") {
@@ -210,7 +211,8 @@ function FullTicketForm({ onCancel }: { onCancel?: () => void } = {}) {
                 action: { label: "Voir le ticket", href: `/tickets/${reconciledTicket.id}` },
                 duration: 7_000,
               });
-              router.push(`/tickets/${statusData.ticket.id}`);
+              onCreated?.(reconciledTicket.id);
+              router.push(`/tickets/${reconciledTicket.id}`);
               return;
             }
           } catch {
@@ -276,6 +278,8 @@ function FullTicketForm({ onCancel }: { onCancel?: () => void } = {}) {
   );
 }
 
-export function NewTicketForm({ onCancel, simplified = false }: { onCancel?: () => void; simplified?: boolean } = {}) {
-  return simplified ? <V1TicketForm onCancel={onCancel} /> : <FullTicketForm onCancel={onCancel} />;
+export function NewTicketForm({ onCancel, onCreated, simplified = false }: { onCancel?: () => void; onCreated?: (ticketId: string) => void; simplified?: boolean } = {}) {
+  return simplified
+    ? <V1TicketForm onCancel={onCancel} onCreated={onCreated} />
+    : <FullTicketForm onCancel={onCancel} onCreated={onCreated} />;
 }
