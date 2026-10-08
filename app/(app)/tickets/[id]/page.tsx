@@ -250,7 +250,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
             <TicketPanel title="Informations" subtitle="Contexte opérationnel">
               <div className="ticket-operational-summary">
                 <div className="ticket-operational-person">
-                  <Avatar name={ticket.requester.name} size="md" />
+                  <Avatar name={ticket.requester.name} image={ticket.requester.image} size="lg" className="ticket-requester-avatar" />
                   <div>
                     <span>Demandeur</span>
                     <strong>{ticket.requester.name}</strong>
