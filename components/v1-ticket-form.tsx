@@ -78,6 +78,7 @@ export function V1TicketForm({ onCancel, onCreated }: { onCancel?: () => void; o
     }
   }
 
+  const selectedService = services.find((service) => service.id === serviceCatalogItemId);
   const titleValid = title.trim().length >= 5;
   const descriptionValid = description.trim().length >= 15;
 
@@ -148,6 +149,11 @@ export function V1TicketForm({ onCancel, onCreated }: { onCancel?: () => void; o
                 })),
               ]}
             />
+            {selectedService ? (
+              <p className="v1-ticket-service-help" role="status">
+                <strong>Destination probable :</strong> {selectedService.queue.department.name} · {selectedService.queue.name}
+              </p>
+            ) : null}
             <p className="v1-ticket-service-help">
               Laissez la détection automatique si vous ne savez pas quel service choisir. 1TASK recherchera une correspondance fiable et transmettra la demande au triage en cas de doute.
             </p>
