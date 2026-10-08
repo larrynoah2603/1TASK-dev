@@ -43,9 +43,17 @@ describe("contrats de stabilisation des chargements serveur", () => {
     expect(visuals).toContain("missionSummary");
   });
 
-  it("fournit un état de chargement aux deux espaces dynamiques", () => {
-    expect(source("app/(app)/loading.tsx")).toContain('aria-busy="true"');
-    expect(source("app/admin/loading.tsx")).toContain('aria-busy="true"');
-    expect(source("app/globals.css")).toContain(".loading-grid");
+  it("fournit le même composant de chargement aux espaces normal et admin", () => {
+    const appLoading = source("app/(app)/loading.tsx");
+    const adminLoading = source("app/admin/loading.tsx");
+
+    expect(appLoading).toContain('aria-busy="true"');
+    expect(adminLoading).toContain('aria-busy="true"');
+    expect(appLoading).toContain('import { PageLoading } from "@/components/ui/loading/page-loading"');
+    expect(adminLoading).toContain('import { PageLoading } from "@/components/ui/loading/page-loading"');
+    expect(appLoading).toContain('<PageLoading label="Chargement de votre espace" />');
+    expect(adminLoading).toContain('<PageLoading label="Chargement de la console d’administration" />');
+    expect(appLoading).not.toContain("bios-loading");
+    expect(appLoading).not.toContain("next/image");
   });
 });
