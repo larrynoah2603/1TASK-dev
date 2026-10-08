@@ -58,7 +58,7 @@ describe("admin visible role assignments", () => {
     expect(implementation).toContain("tx.userRole.delete");
     expect(implementation).not.toContain("teamMember.delete");
     expect(implementation).not.toContain("queue.update");
-    expect(implementation).not.toContain("primaryRoleCode:");
+    expect(implementation).not.toContain("tx.user.update");
   });
 
   it("keeps authorization in the service and admin route", () => {
