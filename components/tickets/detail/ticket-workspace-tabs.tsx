@@ -52,7 +52,7 @@ export function TicketWorkspaceTabs({
 
   return (
     <section className="ticket-workspace-tabs" aria-label="Activité du ticket">
-      <div className="ticket-workspace-tablist" role="tablist" aria-label="Vue du ticket">
+      <div className="ticket-workspace-tablist overflow-x-auto" role="tablist" aria-label="Vue du ticket">
         {tabs.map((tab, index) => (
           <button
             key={tab.key}
@@ -63,7 +63,7 @@ export function TicketWorkspaceTabs({
             aria-controls={`ticket-workspace-panel-${tab.key}`}
             id={`ticket-workspace-tab-${tab.key}`}
             tabIndex={active === tab.key ? 0 : -1}
-            className={`ticket-workspace-tab${active === tab.key ? " ticket-workspace-tab-active" : ""}`}
+            className={`ticket-workspace-tab shrink-0${active === tab.key ? " ticket-workspace-tab-active" : ""}`}
             onClick={() => setActive(tab.key)}
             onKeyDown={(event) => activateFromKeyboard(event, index)}
           >
