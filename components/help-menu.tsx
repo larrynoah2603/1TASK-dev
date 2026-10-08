@@ -80,6 +80,8 @@ export function HelpMenu() {
     return [...groups.values()];
   }, [query, routingEntries]);
 
+  const visibleRoutingCount = departments.reduce((total, group) => total + group.entries.length, 0);
+
   return (
     <Dropdown triggerLabel="Aide" triggerContent={<Icon name="help" />} panelClassName="kit-help" role="dialog">
       <div className="kit-help-header">
@@ -135,6 +137,12 @@ export function HelpMenu() {
               autoComplete="off"
             />
           </label>
+
+          {!routingLoading && !routingError ? (
+            <p className="kit-help-state" aria-live="polite">
+              {visibleRoutingCount} service{visibleRoutingCount === 1 ? "" : "s"} dans {departments.length} département{departments.length === 1 ? "" : "s"}.
+            </p>
+          ) : null}
 
           <div className="kit-help-routing-list">
             {routingLoading ? <p className="kit-help-state">Chargement des mots-clés…</p> : null}
