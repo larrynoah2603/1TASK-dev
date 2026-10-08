@@ -42,7 +42,7 @@ export function AgentTicketTable({
                   <th scope="col">Sujet</th>
                   <th scope="col">Priorité</th>
                   <th scope="col">Statut</th>
-                  <th scope="col">Client</th>
+                  <th scope="col">Demandeur</th>
                   <th scope="col">SLA</th>
                   <th scope="col">Dernière activité</th>
                 </tr>
@@ -98,7 +98,7 @@ export function AgentTicketTable({
 
                                   <dl className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                                     <div>
-                                      <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Client</dt>
+                                      <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Demandeur</dt>
                                       <dd className="mt-1 text-xs font-medium text-slate-700">{ticket.requester.name}</dd>
                                     </div>
                                     <div>
