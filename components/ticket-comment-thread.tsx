@@ -81,7 +81,7 @@ export function TicketCommentThread({
           <article key={message.id} className={`ticket-comment${message.visibility === MessageVisibility.INTERNAL ? " ticket-comment-internal" : ""}`}>
             <div className="ticket-comment-meta">
               <strong>{message.author.name}</strong>
-              <span>{message.visibility === MessageVisibility.INTERNAL ? "Interne" : "Public"} · {formatDate(message.createdAt)}</span>
+              <span>{message.visibility === MessageVisibility.INTERNAL ? "Interne · Équipe uniquement" : "Public · Visible par le demandeur"} · {formatDate(message.createdAt)}</span>
             </div>
             <p>{message.body}</p>
           </article>
@@ -91,7 +91,7 @@ export function TicketCommentThread({
       {canPostPublic ? (
         <form onSubmit={submit} className="ticket-comment-composer">
           {error ? <p role="alert" className="ticket-inline-error">{error}</p> : null}
-          <textarea required minLength={1} value={body} onChange={(event) => setBody(event.target.value)} placeholder="Écrivez une information ou une réponse…" className="field-control" />
+          <textarea required minLength={1} value={body} onChange={(event) => setBody(event.target.value)} placeholder={visibility === MessageVisibility.INTERNAL ? "Écrivez une note interne réservée à l’équipe…" : "Écrivez une réponse visible par le demandeur…"} className="field-control" />
           <div className="ticket-comment-composer-actions">
             {canPostInternal ? (
               <Combobox
