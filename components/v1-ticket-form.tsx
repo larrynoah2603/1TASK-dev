@@ -6,7 +6,12 @@ import { Combobox } from "@/components/combobox";
 import { useToast } from "@/components/toast-provider";
 
 type Service = { id: string; name: string; category: string; queue: { name: string; department: { name: string } } };
-const token = () => `web-${crypto.randomUUID().replace(/[^A-Za-z0-9_-]/g, "")}`;
+function createClientIdempotencyToken() {
+  const uuid = typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return `web-${uuid.replace(/[^A-Za-z0-9_-]/g, "")}`;
+}
 
 export function V1TicketForm({ onCancel, onCreated }: { onCancel?: () => void; onCreated?: (ticketId: string) => void }) {
   const router = useRouter();
@@ -18,7 +23,7 @@ export function V1TicketForm({ onCancel, onCreated }: { onCancel?: () => void; o
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const creationIdempotencyToken = useRef(token()).current;
+  const creationIdempotencyToken = useRef(createClientIdempotencyToken()).current;
   const inFlight = useRef(false);
 
   useEffect(() => {
