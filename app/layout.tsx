@@ -1,6 +1,15 @@
 import type { Metadata } from "next";
+import { IBM_Plex_Sans } from "next/font/google";
 import { ToastProvider } from "@/components/toast-provider";
 import "./globals.css";
+
+const ibmPlexSans = IBM_Plex_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  style: ["normal"],
+  display: "swap",
+  variable: "--font-ibm-plex-sans",
+});
 
 export const metadata: Metadata = {
   title: "1TASK — Service desk interne",
@@ -9,7 +18,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="fr" suppressHydrationWarning>
+    <html lang="fr" className={ibmPlexSans.variable} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
