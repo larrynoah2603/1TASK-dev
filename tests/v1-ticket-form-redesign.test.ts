@@ -35,6 +35,7 @@ describe("V1 ticket form redesign", () => {
     expect(form).toContain("Laissez la détection automatique si vous ne savez pas quel service choisir");
     expect(form).toContain("service.queue.department.name");
     expect(form).toContain("service.queue.name");
+    expect(form).toContain('ariaLabel="Service"');
   });
 
   it("removes the duplicate V1 introduction from the modal", () => {
@@ -45,6 +46,16 @@ describe("V1 ticket form redesign", () => {
     expect(launcher).toContain("ticket-launcher-modal-header-v1");
   });
 
+  it("keeps section labelling unique when multiple V1 forms are mounted", () => {
+    const form = source("components/v1-ticket-form.tsx");
+
+    expect(form).toContain("useId");
+    expect(form).toContain("requestSectionTitleId");
+    expect(form).toContain("aria-labelledby={requestSectionTitleId}");
+    expect(form).toContain("id={requestSectionTitleId}");
+    expect(form).not.toContain('aria-labelledby="v1-ticket-request-title"');
+  });
+
   it("uses a dedicated responsive footer and theme-aware V1 layout", () => {
     const css = source("styles/legacy-bridge.css");
 
@@ -52,6 +63,7 @@ describe("V1 ticket form redesign", () => {
     expect(css).toContain("position: sticky");
     expect(css).toContain(".v1-ticket-service-block");
     expect(css).toContain(".v1-ticket-auto-badge");
+    expect(css).toContain("overflow: clip");
     expect(css).toContain("@media (max-width: 640px)");
   });
 });
