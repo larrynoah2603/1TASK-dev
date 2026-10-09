@@ -1,4 +1,4 @@
-import { NotificationStatus } from "@prisma/client";
+import { NotificationChannel, NotificationStatus } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const db = vi.hoisted(() => ({
@@ -36,7 +36,7 @@ describe("service de notifications", () => {
     db.count.mockResolvedValue(3);
     await expect(countUnreadNotifications(actor)).resolves.toBe(3);
     expect(db.count).toHaveBeenCalledWith({
-      where: { recipientId: "user-1", readAt: null },
+      where: { recipientId: "user-1", channel: NotificationChannel.IN_APP, readAt: null },
     });
   });
 
@@ -44,7 +44,7 @@ describe("service de notifications", () => {
     db.updateManyAndReturn.mockResolvedValue([{ id: "notification-1", status: NotificationStatus.READ }]);
     await markNotificationAsRead(actor, "notification-1");
     expect(db.updateManyAndReturn).toHaveBeenCalledWith({
-      where: { id: "notification-1", recipientId: "user-1" },
+      where: { id: "notification-1", recipientId: "user-1", channel: NotificationChannel.IN_APP },
       data: { status: NotificationStatus.READ, readAt: expect.any(Date) },
     });
   });

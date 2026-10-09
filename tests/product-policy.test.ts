@@ -26,7 +26,7 @@ describe("politique de capacités V1", () => {
       manualAssignment: true, claim: true,
       productionPortfolio: false, knowledge: false, confidentialTicketCreation: false,
       attachmentUploads: false, autoAssignment: false, workflowDefinitions: false,
-      publicApiV1: false, pushNotifications: false, redisCache: false,
+      publicApiV1: false, pushNotifications: true, redisCache: false,
       externalOutboxDelivery: false, externalEmailDelivery: false,
     });
   });

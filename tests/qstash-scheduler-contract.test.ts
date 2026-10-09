@@ -14,9 +14,12 @@ describe("contrat scheduler QStash V1", () => {
     expect(route).toContain("export const POST = run");
   });
 
-  it("documente le schedule externe toutes les cinq minutes sans secret réel", () => {
+  it("documente les schedules SLA et Web Push sans secret réel", () => {
     const doc = source("docs/v1-qstash-scheduler.md");
     expect(doc).toContain("*/5 * * * *");
+    expect(doc).toContain("* * * * *");
+    expect(doc).toContain("/api/jobs/outbox");
+    expect(doc).toContain("NOTIFICATION_PUSH_REQUESTED");
     expect(doc).toContain("Upstash-Forward | Authorization | Bearer <CRON_SECRET>");
     expect(doc).toContain("Aucun secret QStash ni `CRON_SECRET` réel");
   });

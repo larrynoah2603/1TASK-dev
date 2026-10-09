@@ -84,11 +84,21 @@ describe("parcours métier ticket de bout en bout", () => {
   });
 
   it("notifie l’agent affecté sans contourner ses préférences", async () => {
+    vi.stubEnv("DATABASE_URL", "postgresql://localhost/test");
+    vi.stubEnv("PRODUCT_PROFILE", "v1");
+    vi.stubEnv("WEB_PUSH_PUBLIC_KEY", "test-value-a");
+    vi.stubEnv("WEB_PUSH_PRIVATE_KEY", "test-value-b");
+    vi.stubEnv("WEB_PUSH_SUBJECT", "mailto:test@example.com");
     const findUnique = vi.fn().mockResolvedValue({ enabled: true });
-    const create = vi.fn().mockResolvedValue({ id: "notification-1" });
+    const findMany = vi.fn().mockResolvedValue([]);
+    const create = vi.fn()
+      .mockResolvedValueOnce({ id: "notification-1", channel: NotificationChannel.IN_APP })
+      .mockResolvedValueOnce({ id: "push-1", channel: NotificationChannel.PUSH });
+    const upsert = vi.fn().mockResolvedValue({ id: "outbox-1" });
     const notification = await createInAppNotification({
-      notificationPreference: { findUnique },
+      notificationPreference: { findUnique, findMany },
       notification: { create },
+      outboxEvent: { upsert },
     } as never, {
       recipientId: "agent-a",
       ticketId: "ticket-1",
@@ -97,7 +107,7 @@ describe("parcours métier ticket de bout en bout", () => {
       body: "Le ticket T-0001 vous a été affecté.",
     });
 
-    expect(notification).toEqual({ id: "notification-1" });
+    expect(notification).toEqual({ id: "notification-1", channel: NotificationChannel.IN_APP });
     expect(findUnique).toHaveBeenCalledWith({
       where: {
         userId_eventType_channel: {
@@ -115,5 +125,27 @@ describe("parcours métier ticket de bout en bout", () => {
         status: NotificationStatus.PENDING,
       }),
     });
+    expect(create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        recipientId: "agent-a",
+        ticketId: "ticket-1",
+        channel: NotificationChannel.PUSH,
+        status: NotificationStatus.PENDING,
+      }),
+    });
+    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({
+        type: "NOTIFICATION_PUSH_REQUESTED",
+        aggregateType: "Notification",
+        aggregateId: "push-1",
+        payload: expect.objectContaining({
+          notificationId: "push-1",
+          channel: NotificationChannel.PUSH,
+          recipientId: "agent-a",
+        }),
+      }),
+      where: { eventKey: "notification:push-1:push" },
+      update: {},
+    }));
   });
 });

@@ -2,50 +2,112 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NotificationType } from "@prisma/client";
 
 const provider = vi.hoisted(() => ({ push: vi.fn(), email: vi.fn() }));
+const outboxDb = vi.hoisted(() => ({
+  $queryRaw: vi.fn().mockResolvedValue([]),
+  outboxEvent: {
+    updateMany: vi.fn(),
+    findMany: vi.fn().mockResolvedValue([]),
+  },
+}));
+const prismaMock = vi.hoisted(() => ({
+  transaction: vi.fn(async (callback: (tx: typeof outboxDb) => unknown) => callback(outboxDb)),
+}));
 vi.mock("@/lib/push-notification-service", () => ({ deliverPushNotification: provider.push }));
 vi.mock("@/lib/email-notification-service", () => ({ deliverEmailNotification: provider.email }));
-vi.mock("@/lib/db", () => ({ prisma: { $transaction: vi.fn() } }));
+vi.mock("@/lib/db", () => ({
+  prisma: {
+    $transaction: prismaMock.transaction,
+  },
+}));
 
 import { notify, queueEmailNotification } from "@/lib/notifications";
 import { processOutboxBatch } from "@/lib/outbox";
 import { withPublicApiV1 } from "@/lib/public-api";
 import { GET as runOutboxJob } from "@/app/api/jobs/outbox/route";
 
-describe("frontières serveur des fonctions dormantes V1", () => {
+describe("frontières serveur des fonctions optionnelles V1", () => {
   beforeEach(() => {
     vi.stubEnv("DATABASE_URL", "postgresql://localhost/test");
     vi.stubEnv("PRODUCT_PROFILE", "v1");
+    vi.stubEnv("WEB_PUSH_PUBLIC_KEY", "public-key");
+    vi.stubEnv("WEB_PUSH_PRIVATE_KEY", "private-key");
+    vi.stubEnv("WEB_PUSH_SUBJECT", "mailto:notifications@example.com");
     vi.clearAllMocks();
+    outboxDb.$queryRaw.mockResolvedValue([]);
   });
 
-  it("crée encore une notification in-app sans backlog externe", async () => {
+  it("active Web Push en V1 sans réactiver la livraison e-mail", async () => {
     const db = {
       notificationRule: { findMany: vi.fn().mockResolvedValue([]) },
       notificationPreference: { findMany: vi.fn().mockResolvedValue([]), findUnique: vi.fn() },
-      notification: { create: vi.fn().mockResolvedValue({ id: "in-app-1", channel: "IN_APP" }) },
-      outboxEvent: { upsert: vi.fn() },
+      notification: {
+        create: vi.fn(async ({ data }: { data: { channel: string } }) => ({
+          id: data.channel === "PUSH" ? "push-1" : "in-app-1",
+          channel: data.channel,
+        })),
+      },
+      outboxEvent: { upsert: vi.fn().mockResolvedValue({ id: "outbox-1" }) },
     };
+
     const created = await notify(db as never, {
-      recipientId: "user-1", type: NotificationType.SECURITY, severity: "CRITICAL",
-      title: "Alerte", message: "Contrôle requis",
+      recipientId: "user-1",
+      type: NotificationType.SECURITY,
+      severity: "CRITICAL",
+      title: "Alerte",
+      message: "Contrôle requis",
     });
-    expect(created).toEqual([{ id: "in-app-1", channel: "IN_APP" }]);
-    expect(db.notification.create).toHaveBeenCalledOnce();
-    expect(db.outboxEvent.upsert).not.toHaveBeenCalled();
+
+    expect(created).toEqual([
+      { id: "in-app-1", channel: "IN_APP" },
+      { id: "push-1", channel: "PUSH" },
+    ]);
+    expect(db.outboxEvent.upsert).toHaveBeenCalledOnce();
+    expect(db.outboxEvent.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({
+        type: "NOTIFICATION_PUSH_REQUESTED",
+        aggregateType: "Notification",
+        aggregateId: "push-1",
+        payload: expect.objectContaining({
+          notificationId: "push-1",
+          channel: "PUSH",
+          recipientId: "user-1",
+        }),
+      }),
+      where: { eventKey: "notification:push-1:push" },
+      update: {},
+    }));
 
     await expect(queueEmailNotification(db as never, {
-      recipientId: "user-1", type: NotificationType.SECURITY, title: "Alerte", body: "Corps",
+      recipientId: "user-1",
+      type: NotificationType.SECURITY,
+      title: "Alerte",
+      body: "Corps",
     })).resolves.toBeNull();
     expect(db.notificationPreference.findUnique).not.toHaveBeenCalled();
   });
 
-  it("laisse intactes les anciennes lignes outbox et n'initialise aucun fournisseur", async () => {
-    await expect(processOutboxBatch()).resolves.toEqual({ claimed: 0, processed: 0, failed: 0, disabled: true });
+  it("active le worker outbox en V1 pour traiter le push", async () => {
+    await expect(processOutboxBatch()).resolves.toEqual({ claimed: 0, processed: 0, failed: 0 });
     expect(provider.email).not.toHaveBeenCalled();
     expect(provider.push).not.toHaveBeenCalled();
   });
 
-  it("conserve l’authentification du job outbox avant son no-op V1", async () => {
+  it("ne touche pas l’outbox V1 tant que VAPID n’est pas configuré", async () => {
+    vi.stubEnv("WEB_PUSH_PUBLIC_KEY", "");
+    vi.stubEnv("WEB_PUSH_PRIVATE_KEY", "");
+    vi.stubEnv("WEB_PUSH_SUBJECT", "");
+    prismaMock.transaction.mockClear();
+
+    await expect(processOutboxBatch()).resolves.toEqual({
+      claimed: 0,
+      processed: 0,
+      failed: 0,
+      disabled: true,
+    });
+    expect(prismaMock.transaction).not.toHaveBeenCalled();
+  });
+
+  it("conserve l’authentification du job outbox en V1", async () => {
     vi.stubEnv("CRON_SECRET", "test-job-secret");
     const denied = await runOutboxJob(new Request("http://localhost/api/jobs/outbox"));
     expect(denied.status).toBe(401);
@@ -56,11 +118,11 @@ describe("frontières serveur des fonctions dormantes V1", () => {
     expect(accepted.status).toBe(200);
     await expect(accepted.json()).resolves.toMatchObject({
       success: true,
-      result: { claimed: 0, processed: 0, failed: 0, disabled: true },
+      result: { claimed: 0, processed: 0, failed: 0 },
     });
   });
 
-  it("désactive aussi le handler racine API v1 via le garde commun", async () => {
+  it("garde les autres fonctionnalités full désactivées", async () => {
     const handler = vi.fn().mockResolvedValue(Response.json({ status: "available" }));
     const response = await withPublicApiV1("/api/v1", handler)(new Request("http://localhost/api/v1"), {});
     expect(response.status).toBe(403);

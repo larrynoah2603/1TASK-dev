@@ -58,7 +58,7 @@ const v1Capabilities: ProductCapabilities = Object.freeze({
   autoAssignment: false,
   workflowDefinitions: false,
   publicApiV1: false,
-  pushNotifications: false,
+  pushNotifications: true,
   redisCache: false,
   externalOutboxDelivery: false,
   externalEmailDelivery: false,

@@ -28,7 +28,8 @@
     "pretypecheck": "npm run clean:next",
     "typecheck": "prisma generate && tsc --noEmit",
     "validate": "npm run db:generate && npm test && npm run lint && npm run typecheck && npx prisma validate && npm run build",
-    "backfill:auto-closure": "tsx scripts/backfill-auto-closure.ts"
+    "backfill:auto-closure": "tsx scripts/backfill-auto-closure.ts",
+    "push:keys": "tsx scripts/generate-web-push-keys.ts"
   },
   "dependencies": {
     "@next-auth/prisma-adapter": "1.0.7",

@@ -81,15 +81,30 @@ describe("configuration serveur", () => {
       .toThrow(/OUTBOX_BATCH_SIZE/);
   });
 
-  it("ignore les configurations partielles des intégrations dormantes en V1", () => {
+  it("ignore les configurations partielles des intégrations encore dormantes en V1", () => {
     expect(() => readServerEnvironment({
       ...databaseEnvironment,
       PRODUCT_PROFILE: "v1",
       REDIS_REST_URL: "https://stale-redis.example",
       PRIVATE_STORAGE_TOKEN: "stale-token",
-      WEB_PUSH_PUBLIC_KEY: "stale-public-key",
       MICROSOFT_MAIL_CLIENT_ID: "stale-mail-client",
       OUTBOX_DELIVERY_TOKEN: "stale-outbox-token",
+    })).not.toThrow();
+  });
+
+  it("valide Web Push comme une intégration active en V1", () => {
+    expect(() => readServerEnvironment({
+      ...databaseEnvironment,
+      PRODUCT_PROFILE: "v1",
+      WEB_PUSH_PUBLIC_KEY: "partial-public-key",
+    })).toThrow(/trois variables Web Push/);
+
+    expect(() => readServerEnvironment({
+      ...databaseEnvironment,
+      PRODUCT_PROFILE: "v1",
+      WEB_PUSH_PUBLIC_KEY: "public-key",
+      WEB_PUSH_PRIVATE_KEY: "private-key",
+      WEB_PUSH_SUBJECT: "mailto:notifications@example.com",
     })).not.toThrow();
   });
 

@@ -1,4 +1,4 @@
-import { NotificationStatus } from "@prisma/client";
+import { NotificationChannel, NotificationStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { normalizePageSize, toCursorPage, type CursorPageOptions } from "@/lib/cursor-pagination";
 import {
@@ -21,6 +21,7 @@ export async function listUserNotifications(
 
     where: {
       recipientId: current.id,
+      channel: NotificationChannel.IN_APP,
     },
 
     include: {
@@ -52,7 +53,7 @@ export async function listUserNotificationsPage(
   const current = await requireCurrentActor(actor);
   const pageSize = normalizePageSize(options.pageSize);
   const rows = await prisma.notification.findMany({
-    where: { recipientId: current.id },
+    where: { recipientId: current.id, channel: NotificationChannel.IN_APP },
     include: { ticket: { select: { id: true, reference: true } } },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     take: pageSize + 1,
@@ -77,6 +78,8 @@ export async function countUnreadNotifications(
 
       recipientId:
         current.id,
+
+      channel: NotificationChannel.IN_APP,
 
       readAt: null,
 
@@ -109,6 +112,8 @@ export async function markNotificationAsRead(
 
         recipientId:
           current.id,
+
+        channel: NotificationChannel.IN_APP,
 
       },
 
@@ -154,6 +159,8 @@ export async function markAllNotificationsAsRead(
 
       recipientId:
         current.id,
+
+      channel: NotificationChannel.IN_APP,
 
       status: {
         not: NotificationStatus.READ,

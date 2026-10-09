@@ -1504,3 +1504,19 @@ html[data-theme="light"] .shell-industrial .ticket-detail-industrial .ticket-tim
     margin-bottom: calc(var(--kit-space-4) * -1);
   }
 }
+
+
+/* Notifications système Web Push — état par appareil. */
+.push-notification-control {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.push-notification-status {
+  margin: 0;
+  max-width: 18rem;
+  color: var(--kit-secondary);
+  font-size: 11px;
+  line-height: 1.35;
+}
