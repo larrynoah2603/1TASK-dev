@@ -51,6 +51,18 @@ describe("Web Push V1", () => {
     expect(worker).toContain("clients.openWindow(targetUrl)");
   });
 
+  it("normalise l’abonnement navigateur avant le POST strict vers l’API", () => {
+    const button = source("components/push-notification-button.tsx");
+    const route = source("app/api/notifications/push-subscriptions/route.ts");
+
+    expect(route).toContain(".strict()");
+    expect(button).toContain("const serialized = subscription.toJSON()");
+    expect(button).toContain("endpoint: subscription.endpoint");
+    expect(button).toContain("p256dh: serialized.keys?.p256dh");
+    expect(button).toContain("auth: serialized.keys?.auth");
+    expect(button).not.toContain("body: JSON.stringify(subscription.toJSON())");
+  });
+
   it("n’enfile aucun push tant que la configuration VAPID n’est pas complète", () => {
     const notifications = source("lib/notifications.ts");
     const environment = source("lib/env.ts");
