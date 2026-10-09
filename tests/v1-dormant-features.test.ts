@@ -9,11 +9,14 @@ const outboxDb = vi.hoisted(() => ({
     findMany: vi.fn().mockResolvedValue([]),
   },
 }));
+const prismaMock = vi.hoisted(() => ({
+  transaction: vi.fn(async (callback: (tx: typeof outboxDb) => unknown) => callback(outboxDb)),
+}));
 vi.mock("@/lib/push-notification-service", () => ({ deliverPushNotification: provider.push }));
 vi.mock("@/lib/email-notification-service", () => ({ deliverEmailNotification: provider.email }));
 vi.mock("@/lib/db", () => ({
   prisma: {
-    $transaction: vi.fn(async (callback: (tx: typeof outboxDb) => unknown) => callback(outboxDb)),
+    $transaction: prismaMock.transaction,
   },
 }));
 
@@ -82,8 +85,7 @@ describe("frontières serveur des fonctions optionnelles V1", () => {
     vi.stubEnv("WEB_PUSH_PUBLIC_KEY", "");
     vi.stubEnv("WEB_PUSH_PRIVATE_KEY", "");
     vi.stubEnv("WEB_PUSH_SUBJECT", "");
-    const transaction = (await import("@/lib/db")).prisma.$transaction as unknown as ReturnType<typeof vi.fn>;
-    transaction.mockClear();
+    prismaMock.transaction.mockClear();
 
     await expect(processOutboxBatch()).resolves.toEqual({
       claimed: 0,
@@ -91,7 +93,7 @@ describe("frontières serveur des fonctions optionnelles V1", () => {
       failed: 0,
       disabled: true,
     });
-    expect(transaction).not.toHaveBeenCalled();
+    expect(prismaMock.transaction).not.toHaveBeenCalled();
   });
 
   it("conserve l’authentification du job outbox en V1", async () => {
