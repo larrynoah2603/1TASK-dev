@@ -78,6 +78,22 @@ describe("frontières serveur des fonctions optionnelles V1", () => {
     expect(provider.push).not.toHaveBeenCalled();
   });
 
+  it("ne touche pas l’outbox V1 tant que VAPID n’est pas configuré", async () => {
+    vi.stubEnv("WEB_PUSH_PUBLIC_KEY", "");
+    vi.stubEnv("WEB_PUSH_PRIVATE_KEY", "");
+    vi.stubEnv("WEB_PUSH_SUBJECT", "");
+    const transaction = (await import("@/lib/db")).prisma.$transaction as unknown as ReturnType<typeof vi.fn>;
+    transaction.mockClear();
+
+    await expect(processOutboxBatch()).resolves.toEqual({
+      claimed: 0,
+      processed: 0,
+      failed: 0,
+      disabled: true,
+    });
+    expect(transaction).not.toHaveBeenCalled();
+  });
+
   it("conserve l’authentification du job outbox en V1", async () => {
     vi.stubEnv("CRON_SECRET", "test-job-secret");
     const denied = await runOutboxJob(new Request("http://localhost/api/jobs/outbox"));
