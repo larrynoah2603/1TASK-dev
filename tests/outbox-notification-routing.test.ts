@@ -28,12 +28,12 @@ describe("routage interne de l'outbox de notifications", () => {
     expect(delivery.email).not.toHaveBeenCalled();
   });
 
-  it("ne charge ni n’appelle aucun fournisseur externe en V1", async () => {
+  it("route uniquement Web Push en V1 et garde l’e-mail désactivé", async () => {
     vi.stubEnv("PRODUCT_PROFILE", "v1");
     await deliverInternalNotificationEvent("NOTIFICATION_EMAIL_REQUESTED", { notificationId: "old-email" });
-    await deliverInternalNotificationEvent("NOTIFICATION_PUSH_REQUESTED", { notificationId: "old-push" });
+    await deliverInternalNotificationEvent("NOTIFICATION_PUSH_REQUESTED", { notificationId: "push-v1" });
     expect(delivery.email).not.toHaveBeenCalled();
-    expect(delivery.push).not.toHaveBeenCalled();
+    expect(delivery.push).toHaveBeenCalledWith("push-v1");
   });
 
   it("conserve la mise en file, les préférences et la déduplication hors des transactions réseau", () => {
