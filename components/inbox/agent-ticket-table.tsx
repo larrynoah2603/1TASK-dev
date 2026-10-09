@@ -16,6 +16,78 @@ const formatActivity = (value: Date) =>
     minute: "2-digit",
   }).format(value);
 
+function ExpandedTicketDetails({
+  ticket,
+  claimable,
+  onReduce,
+}: {
+  ticket: DashboardTicketRow;
+  claimable: boolean;
+  onReduce: () => void;
+}) {
+  return (
+    <section
+      className="border-y border-slate-200 px-4 py-4"
+      aria-label={`Détails rapides de ${ticket.reference}`}
+    >
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="eyebrow">Détails rapides</p>
+            <PriorityBadge priority={ticket.priority} />
+            <StatusBadge status={ticket.status} />
+          </div>
+          <h3 className="mt-1 truncate text-sm font-semibold text-slate-900">
+            {ticket.reference} · {ticket.title}
+          </h3>
+
+          <dl className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <div>
+              <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Demandeur</dt>
+              <dd className="mt-1 text-xs font-medium text-slate-700">{ticket.requester.name}</dd>
+            </div>
+            <div>
+              <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Département</dt>
+              <dd className="mt-1 text-xs font-medium text-slate-700">{ticket.queue.department.name}</dd>
+            </div>
+            <div>
+              <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">File</dt>
+              <dd className="mt-1 text-xs font-medium text-slate-700">{ticket.queue.name}</dd>
+            </div>
+            <div>
+              <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Service</dt>
+              <dd className="mt-1 text-xs font-medium text-slate-700">{ticket.serviceCatalogItem?.name ?? "Non renseigné"}</dd>
+            </div>
+            <div>
+              <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Assigné</dt>
+              <dd className="mt-1 text-xs font-medium text-slate-700">{ticket.assignedTo?.name ?? "Non affecté"}</dd>
+            </div>
+          </dl>
+
+          <div className="mt-3 flex items-center gap-2 text-xs text-slate-600">
+            <span className="font-semibold">SLA</span>
+            <SlaBadge state={ticket.slaState} dueAt={ticket.slaDueAt} />
+          </div>
+        </div>
+
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {claimable ? <ClaimTicketButton ticketId={ticket.id} /> : null}
+          <Link href={`/tickets/${ticket.id}` as Route} className="button-secondary">
+            Ouvrir le ticket
+          </Link>
+          <button
+            type="button"
+            className="button-ghost min-h-10 text-xs"
+            onClick={onReduce}
+          >
+            Réduire
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function AgentTicketTable({
   tickets,
   claimableTicketIds,
@@ -105,66 +177,11 @@ export function AgentTicketTable({
 
                       {expanded ? (
                         <tr className="bg-slate-50/70">
-                          <td colSpan={11} className="p-0">
-                            <section
-                              className="border-y border-slate-200 px-4 py-4"
-                              aria-label={`Détails rapides de ${ticket.reference}`}
-                            >
-                              <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                                <div className="min-w-0 flex-1">
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    <p className="eyebrow">Détails rapides</p>
-                                    <PriorityBadge priority={ticket.priority} />
-                                    <StatusBadge status={ticket.status} />
-                                  </div>
-                                  <h3 className="mt-1 truncate text-sm font-semibold text-slate-900">
-                                    {ticket.reference} · {ticket.title}
-                                  </h3>
-
-                                  <dl className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-                                    <div>
-                                      <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Demandeur</dt>
-                                      <dd className="mt-1 text-xs font-medium text-slate-700">{ticket.requester.name}</dd>
-                                    </div>
-                                    <div>
-                                      <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Département</dt>
-                                      <dd className="mt-1 text-xs font-medium text-slate-700">{ticket.queue.department.name}</dd>
-                                    </div>
-                                    <div>
-                                      <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">File</dt>
-                                      <dd className="mt-1 text-xs font-medium text-slate-700">{ticket.queue.name}</dd>
-                                    </div>
-                                    <div>
-                                      <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Service</dt>
-                                      <dd className="mt-1 text-xs font-medium text-slate-700">{ticket.serviceCatalogItem?.name ?? "Non renseigné"}</dd>
-                                    </div>
-                                    <div>
-                                      <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Assigné</dt>
-                                      <dd className="mt-1 text-xs font-medium text-slate-700">{ticket.assignedTo?.name ?? "Non affecté"}</dd>
-                                    </div>
-                                  </dl>
-
-                                  <div className="mt-3 flex items-center gap-2 text-xs text-slate-600">
-                                    <span className="font-semibold">SLA</span>
-                                    <SlaBadge state={ticket.slaState} dueAt={ticket.slaDueAt} />
-                                  </div>
-                                </div>
-
-                                <div className="flex shrink-0 flex-wrap items-center gap-2">
-                                  {claimable ? <ClaimTicketButton ticketId={ticket.id} /> : null}
-                                  <Link href={`/tickets/${ticket.id}` as Route} className="button-secondary">
-                                    Ouvrir le ticket
-                                  </Link>
-                                  <button
-                                    type="button"
-                                    className="button-ghost min-h-10 text-xs"
-                                    onClick={() => setExpandedId(null)}
-                                  >
-                                    Réduire
-                                  </button>
-                                </div>
-                              </div>
-                            </section>
+                          <td colSpan={7} className="agent-ticket-col-wide p-0">
+                            <ExpandedTicketDetails ticket={ticket} claimable={claimable} onReduce={() => toggleTicket(ticket.id)} />
+                          </td>
+                          <td colSpan={4} className="agent-ticket-col-condensed p-0">
+                            <ExpandedTicketDetails ticket={ticket} claimable={claimable} onReduce={() => toggleTicket(ticket.id)} />
                           </td>
                         </tr>
                       ) : null}
