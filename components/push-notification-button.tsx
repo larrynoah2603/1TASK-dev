@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+
+import { useEffect, useState } from "react";
 
 function decodeKey(value: string) {
   const padding = "=".repeat((4 - value.length % 4) % 4);
@@ -8,23 +9,106 @@ function decodeKey(value: string) {
 }
 
 export function PushNotificationButton() {
+  const [supported, setSupported] = useState<boolean | null>(null);
+  const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-  if (typeof window === "undefined" || !("serviceWorker" in navigator) || !("PushManager" in window)) return null;
+
+  useEffect(() => {
+    const available =
+      typeof window !== "undefined" &&
+      "Notification" in window &&
+      "serviceWorker" in navigator &&
+      "PushManager" in window;
+    setSupported(available);
+    if (!available) return;
+
+    void navigator.serviceWorker.getRegistration().then(async (registration) => {
+      const subscription = await registration?.pushManager.getSubscription();
+      setEnabled(Boolean(subscription));
+      if (Notification.permission === "denied") setMessage("Notifications système bloquées dans le navigateur.");
+    });
+  }, []);
+
   async function enable() {
-    setBusy(true); setMessage("");
+    setBusy(true);
+    setMessage("");
     try {
       const permission = await Notification.requestPermission();
-      if (permission !== "granted") { setMessage("Permission refusée."); return; }
-      const config = await fetch("/api/notifications/push-subscriptions", { cache: "no-store" }).then((response) => response.json()) as { publicKey: string | null };
-      if (!config.publicKey) { setMessage("Push non configuré."); return; }
+      if (permission !== "granted") {
+        setMessage("Autorisation refusée. Activez les notifications dans les réglages du navigateur.");
+        return;
+      }
+
+      const configResponse = await fetch("/api/notifications/push-subscriptions", { cache: "no-store" });
+      if (!configResponse.ok) throw new Error("push-config-failed");
+      const config = await configResponse.json() as { publicKey: string | null };
+      if (!config.publicKey) {
+        setMessage("Notifications système non configurées sur le serveur.");
+        return;
+      }
+
       const registration = await navigator.serviceWorker.register("/push-sw.js");
-      const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: decodeKey(config.publicKey) });
-      const response = await fetch("/api/notifications/push-subscriptions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(subscription.toJSON()) });
+      const existing = await registration.pushManager.getSubscription();
+      const subscription = existing ?? await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: decodeKey(config.publicKey),
+      });
+      const response = await fetch("/api/notifications/push-subscriptions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(subscription.toJSON()),
+      });
       if (!response.ok) throw new Error("subscription-failed");
-      setMessage("Notifications push activées.");
-    } catch { setMessage("Activation push impossible."); }
-    finally { setBusy(false); }
+      setEnabled(true);
+      setMessage("Notifications système activées sur cet appareil.");
+    } catch {
+      setMessage("Activation des notifications système impossible.");
+    } finally {
+      setBusy(false);
+    }
   }
-  return <div><button type="button" disabled={busy} onClick={() => void enable()} className="button-secondary">{busy ? "Activation…" : "Activer les notifications push"}</button>{message ? <p className="mt-1 text-xs text-slate-500">{message}</p> : null}</div>;
+
+  async function disable() {
+    setBusy(true);
+    setMessage("");
+    try {
+      const registration = await navigator.serviceWorker.getRegistration();
+      const subscription = await registration?.pushManager.getSubscription();
+      if (subscription) {
+        const response = await fetch("/api/notifications/push-subscriptions", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ endpoint: subscription.endpoint }),
+        });
+        if (!response.ok) throw new Error("unsubscribe-failed");
+        await subscription.unsubscribe();
+      }
+      setEnabled(false);
+      setMessage("Notifications système désactivées sur cet appareil.");
+    } catch {
+      setMessage("Désactivation des notifications système impossible.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (supported === false) {
+    return <p className="text-xs text-slate-500">Les notifications système ne sont pas prises en charge par ce navigateur.</p>;
+  }
+  if (supported === null) return null;
+
+  return (
+    <div className="push-notification-control">
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => void (enabled ? disable() : enable())}
+        className={enabled ? "button-secondary" : "button-primary"}
+      >
+        {busy ? "Mise à jour…" : enabled ? "Push activé" : "Activer le push"}
+      </button>
+      {message ? <p className="push-notification-status" role="status">{message}</p> : null}
+    </div>
+  );
 }
