@@ -31,10 +31,23 @@ describe("asset creation form layout", () => {
     expect(form).toContain("body: JSON.stringify({ assetTag, type: assetType, name, serialNumber: serialNumber || null, departmentId: departmentId || null, assignedToId: assignedToId || null");
   });
 
+  it("keeps assignment dropdowns usable inside the modal", () => {
+    const form = source("components/asset-list-client.tsx");
+    const combobox = source("components/combobox.tsx");
+    const css = source("styles/design-system.css");
+
+    expect(form).toContain("searchable");
+    expect(form).toContain('searchPlaceholder="Rechercher un utilisateur…"');
+    expect(combobox).toContain("filteredOptions");
+    expect(combobox).toContain('type="search"');
+    expect(css).toContain(".asset-create-modal { width: min(680px, calc(100vw - 2rem)); padding: 0; overflow: visible; }");
+    expect(css).toContain(".asset-create-modal .combobox-listbox { position: static;");
+  });
+
   it("reuses the responsive structured form styles", () => {
     const css = source("styles/design-system.css");
 
-    expect(css).toContain(".asset-request-modal, .asset-create-modal");
+    expect(css).toContain(".asset-create-modal");
     expect(css).toContain(".form-section");
     expect(css).toContain(".form-grid");
     expect(css).toContain(".form-actions");
