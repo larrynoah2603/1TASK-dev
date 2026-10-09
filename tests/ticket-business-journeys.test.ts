@@ -134,7 +134,18 @@ describe("parcours métier ticket de bout en bout", () => {
       }),
     });
     expect(upsert).toHaveBeenCalledWith(expect.objectContaining({
-      type: "NOTIFICATION_PUSH_REQUESTED",
+      create: expect.objectContaining({
+        type: "NOTIFICATION_PUSH_REQUESTED",
+        aggregateType: "Notification",
+        aggregateId: "push-1",
+        payload: expect.objectContaining({
+          notificationId: "push-1",
+          channel: NotificationChannel.PUSH,
+          recipientId: "agent-a",
+        }),
+      }),
+      where: { eventKey: "notification:push-1:push" },
+      update: {},
     }));
   });
 });
