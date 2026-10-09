@@ -30,6 +30,13 @@ export async function deliverPushNotification(notificationId: string) {
     await prisma.notification.updateMany({ where: { id: notificationId, status: "PENDING" }, data: { status: "FAILED" } });
     return { delivered: 0 };
   }
+  if (!notification.recipient.pushSubscriptions.length) {
+    await prisma.notification.updateMany({
+      where: { id: notificationId, status: "PENDING" },
+      data: { status: "FAILED" },
+    });
+    return { delivered: 0, reason: "NO_ACTIVE_SUBSCRIPTION" as const };
+  }
   let delivered = 0;
   for (const subscription of notification.recipient.pushSubscriptions) {
     try {
@@ -42,6 +49,11 @@ export async function deliverPushNotification(notificationId: string) {
       else throw error;
     }
   }
-  await prisma.notification.update({ where: { id: notificationId }, data: { status: "SENT", sentAt: new Date() } });
-  return { delivered };
+  await prisma.notification.update({
+    where: { id: notificationId },
+    data: delivered > 0
+      ? { status: "SENT", sentAt: new Date() }
+      : { status: "FAILED", sentAt: null },
+  });
+  return { delivered, ...(delivered > 0 ? {} : { reason: "NO_ACTIVE_SUBSCRIPTION" as const }) };
 }
