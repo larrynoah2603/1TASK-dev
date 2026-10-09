@@ -388,6 +388,8 @@ export async function createTicket(actor: UserContext, input: unknown) {
       }
     }
 
+    const confidentialRecipientId = confidentialResolution?.recipient.id ?? null;
+
     await createInAppNotification(tx, {
       recipientId: actor.id,
       ticketId: ticket.id,
@@ -397,9 +399,9 @@ export async function createTicket(actor: UserContext, input: unknown) {
       deduplicationKey: `ticket-created:${ticket.id}`,
     });
 
-    if (confidentialResolution?.recipient.id) {
+    if (confidentialRecipientId) {
       await createInAppNotification(tx, {
-        recipientId: confidentialResolution.recipient.id,
+        recipientId: confidentialRecipientId,
         ticketId: ticket.id,
         type: NotificationType.QUEUE_NEW_TICKET,
         title: "Nouveau ticket confidentiel",
@@ -427,13 +429,16 @@ export async function createTicket(actor: UserContext, input: unknown) {
       });
     }
 
-    return ticket;
+    return {
+      ticket,
+      confidentialRecipientId,
+    };
   }, {
     maxWait: 10_000,
     timeout: 15_000,
   });
 
-    return result;
+    return result.ticket;
   } catch (error) {
     if (parsed.creationIdempotencyToken && isTicketCreationIdempotencyConflict(error)) {
       const existingTicket = await prisma.ticket.findFirst({
