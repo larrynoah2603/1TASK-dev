@@ -84,7 +84,7 @@ export const serverEnvironmentSchema = z.object({
   }
 
   const pushValues = [environment.WEB_PUSH_PUBLIC_KEY, environment.WEB_PUSH_PRIVATE_KEY, environment.WEB_PUSH_SUBJECT];
-  if (strictRuntime && fullProfile && pushValues.some(Boolean) && !pushValues.every(Boolean)) {
+  if (strictRuntime && pushValues.some(Boolean) && !pushValues.every(Boolean)) {
     context.addIssue({ code: "custom", path: ["WEB_PUSH_PUBLIC_KEY"], message: "Les trois variables Web Push doivent être configurées ensemble." });
   }
 
