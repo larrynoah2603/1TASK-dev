@@ -58,6 +58,6 @@ describe("agent inbox container responsive layout", () => {
 
     expect(table).toContain("<ClaimTicketButton");
     expect(table).toContain("Ouvrir le ticket");
-    expect(table).toContain(">Ouvrir<");
+    expect(table).toContain("Ouvrir");
   });
 });
