@@ -1,4 +1,4 @@
-import { NotificationType, Prisma, RoleCode } from "@prisma/client";
+import { NotificationType, Prisma, RoleCode, ScopeType } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { createInAppNotifications } from "@/lib/notifications";
 
@@ -44,10 +44,10 @@ async function queueSupervisorIds(
           role: { code: { in: [RoleCode.QUEUE_MANAGER, RoleCode.FUNCTIONAL_ADMIN] } },
           OR: [
             { scopeId: null },
-            { scope: { type: "GLOBAL" } },
-            { scope: { type: "QUEUE", queueId } },
-            { scope: { type: "DEPARTMENT", departmentId: queue.departmentId } },
-            ...(teamIds.length ? [{ scope: { type: "TEAM" as const, teamId: { in: teamIds } } }] : []),
+            { scope: { type: ScopeType.GLOBAL } },
+            { scope: { type: ScopeType.QUEUE, queueId } },
+            { scope: { type: ScopeType.DEPARTMENT, departmentId: queue.departmentId } },
+            ...(teamIds.length ? [{ scope: { type: ScopeType.TEAM, teamId: { in: teamIds } } }] : []),
           ],
         },
       },
