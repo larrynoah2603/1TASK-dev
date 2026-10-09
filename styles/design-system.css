@@ -509,13 +509,14 @@ textarea.kit-input { min-height: 88px; padding: var(--kit-space-2) var(--kit-spa
 .kit-stack { display: grid; gap: var(--kit-space-4); }
 .kit-side-flat > * + * { margin-top: var(--kit-space-4); }
 
-/* Indicateur SLA (composant existant) — recoloré avec les tokens */
+/* Indicateur SLA partagé — état et échéance gardent toujours la même hiérarchie. */
 .sla-indicator { display: grid; gap: 6px; min-width: 0; color: var(--kit-text-2); font-size: var(--kit-text-xs); }
-.sla-indicator-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--kit-space-2); }
-.sla-indicator-mark { display: grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; background: color-mix(in srgb, var(--sla-tone, var(--kit-secondary)) 22%, transparent); }
+.sla-indicator-head { display: flex; min-width: 0; align-items: center; gap: var(--kit-space-2); }
+.sla-indicator-mark { display: grid; flex: 0 0 14px; place-items: center; width: 14px; height: 14px; border-radius: 50%; background: color-mix(in srgb, var(--sla-tone, var(--kit-secondary)) 22%, transparent); }
 .sla-indicator-mark > span { width: 6px; height: 6px; border-radius: 50%; background: var(--sla-tone, var(--kit-secondary)); }
-.sla-indicator-label { color: var(--sla-text, var(--kit-text-2)); font-weight: 650; }
-.sla-indicator-countdown { color: var(--kit-text); font-weight: 650; }
+.sla-indicator-copy { display: flex; min-width: 0; flex: 1; align-items: baseline; gap: var(--kit-space-2); }
+.sla-indicator-label { min-width: 0; color: var(--sla-text, var(--kit-text-2)); font-weight: 650; line-height: 1.25; }
+.sla-indicator-countdown { margin-left: auto; flex: 0 0 auto; color: var(--kit-text); font-weight: 650; line-height: 1.25; white-space: nowrap; }
 .sla-indicator-track { display: block; height: 6px; overflow: hidden; border-radius: var(--kit-radius-pill); background: var(--kit-border); }
 .sla-indicator-bar { display: block; height: 100%; border-radius: inherit; background: var(--sla-tone, var(--kit-secondary)); }
 .sla-indicator-due { color: var(--kit-secondary); }
@@ -524,8 +525,25 @@ textarea.kit-input { min-height: 88px; padding: var(--kit-space-2) var(--kit-spa
 .sla-indicator-breached { --sla-tone: var(--kit-danger); --sla-text: var(--kit-danger-text); }
 .sla-indicator-paused { --sla-tone: var(--kit-secondary); --sla-text: var(--kit-text-2); }
 .sla-indicator-none { --sla-tone: var(--kit-secondary); --sla-text: var(--kit-text-2); }
-.sla-indicator-compact { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; padding: 0 10px; border-radius: var(--kit-radius-pill); background: color-mix(in srgb, var(--sla-tone, var(--kit-secondary)) 14%, var(--kit-card)); }
-.sla-indicator-compact .sla-indicator-track, .sla-indicator-compact .sla-indicator-due { display: none; }
+
+/* En listes/cartes : ligne 1 = état, ligne 2 = délai. Aucun retour aléatoire à droite. */
+.sla-indicator-compact {
+  display: inline-grid;
+  width: fit-content;
+  min-width: 0;
+  max-width: 12.5rem;
+  min-height: 36px;
+  padding: 6px 10px;
+  border-radius: var(--kit-radius-lg);
+  background: color-mix(in srgb, var(--sla-tone, var(--kit-secondary)) 14%, var(--kit-card));
+}
+.sla-indicator-compact .sla-indicator-head { display: grid; grid-template-columns: 14px minmax(0, 1fr); align-items: start; gap: 8px; }
+.sla-indicator-compact .sla-indicator-mark { margin-top: 1px; }
+.sla-indicator-compact .sla-indicator-copy { display: grid; min-width: 0; gap: 2px; }
+.sla-indicator-compact .sla-indicator-label { overflow: visible; text-overflow: clip; white-space: normal; }
+.sla-indicator-compact .sla-indicator-countdown { margin-left: 0; color: var(--kit-secondary); font-size: 11px; font-weight: 600; }
+.sla-indicator-compact .sla-indicator-track,
+.sla-indicator-compact .sla-indicator-due { display: none; }
 
 /* --------------------------------------------------------------------------
    8. RESPONSIVE
