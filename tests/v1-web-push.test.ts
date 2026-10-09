@@ -51,15 +51,19 @@ describe("Web Push V1", () => {
     expect(worker).toContain("clients.openWindow(targetUrl)");
   });
 
-  it("normalise l’abonnement navigateur avant le POST strict vers l’API", () => {
+  it("normalise et resynchronise l’abonnement navigateur avant le POST strict vers l’API", () => {
     const button = source("components/push-notification-button.tsx");
     const route = source("app/api/notifications/push-subscriptions/route.ts");
 
     expect(route).toContain(".strict()");
+    expect(button).toContain("function serializeSubscription(subscription: PushSubscription)");
+    expect(button).toContain("function syncSubscription(subscription: PushSubscription)");
     expect(button).toContain("const serialized = subscription.toJSON()");
     expect(button).toContain("endpoint: subscription.endpoint");
     expect(button).toContain("p256dh: serialized.keys?.p256dh");
     expect(button).toContain("auth: serialized.keys?.auth");
+    expect(button).toContain("await syncSubscription(subscription)");
+    expect(button).toContain("Abonnement détecté dans le navigateur, mais non synchronisé avec 1TASK");
     expect(button).not.toContain("body: JSON.stringify(subscription.toJSON())");
   });
 
