@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 function decodeKey(value: string) {
   const padding = "=".repeat((4 - value.length % 4) % 4);
@@ -8,27 +8,41 @@ function decodeKey(value: string) {
   return Uint8Array.from([...raw].map((character) => character.charCodeAt(0)));
 }
 
+type PushSupport = "server" | "supported" | "unsupported";
+
+const subscribeToPushSupport = () => () => {};
+
+function getPushSupportSnapshot(): PushSupport {
+  return "Notification" in window &&
+    "serviceWorker" in navigator &&
+    "PushManager" in window
+    ? "supported"
+    : "unsupported";
+}
+
+function getPushSupportServerSnapshot(): PushSupport {
+  return "server";
+}
+
 export function PushNotificationButton() {
-  const [supported, setSupported] = useState<boolean | null>(null);
+  const support = useSyncExternalStore(
+    subscribeToPushSupport,
+    getPushSupportSnapshot,
+    getPushSupportServerSnapshot,
+  );
   const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    const available =
-      typeof window !== "undefined" &&
-      "Notification" in window &&
-      "serviceWorker" in navigator &&
-      "PushManager" in window;
-    setSupported(available);
-    if (!available) return;
+    if (support !== "supported") return;
 
     void navigator.serviceWorker.getRegistration().then(async (registration) => {
       const subscription = await registration?.pushManager.getSubscription();
       setEnabled(Boolean(subscription));
       if (Notification.permission === "denied") setMessage("Notifications système bloquées dans le navigateur.");
     });
-  }, []);
+  }, [support]);
 
   async function enable() {
     setBusy(true);
@@ -93,10 +107,10 @@ export function PushNotificationButton() {
     }
   }
 
-  if (supported === false) {
+  if (support === "unsupported") {
     return <p className="text-xs text-slate-500">Les notifications système ne sont pas prises en charge par ce navigateur.</p>;
   }
-  if (supported === null) return null;
+  if (support === "server") return null;
 
   return (
     <div className="push-notification-control">
