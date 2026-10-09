@@ -244,6 +244,81 @@ async function notifyRequesterAssetSuccess(
   });
 }
 
+export async function reconcileApprovedAssetRequestOnAssignment(
+  tx: Prisma.TransactionClient,
+  input: {
+    assetId: string;
+    assetTag: string;
+    assetName: string;
+    assetType: AssetType;
+    assignedToId: string | null;
+    actorId: string;
+  },
+) {
+  if (!input.assignedToId) return { status: "NONE" as const };
+
+  const matches = await tx.assetRequest.findMany({
+    where: {
+      requesterId: input.assignedToId,
+      assetType: input.assetType,
+      status: AssetRequestStatus.APPROVED,
+      assetId: null,
+    },
+    orderBy: { createdAt: "asc" },
+    select: { id: true },
+    take: 2,
+  });
+
+  if (!matches.length) return { status: "NONE" as const };
+  if (matches.length > 1) {
+    await notify(tx, {
+      recipientId: input.actorId,
+      type: NotificationType.ASSET_REQUEST,
+      severity: "WARNING",
+      title: "Plusieurs demandes d’actifs à rapprocher",
+      message: `L’actif ${input.assetName} (${input.assetTag}) est affecté, mais plusieurs demandes approuvées du même type attendent une attribution. Choisissez la demande à rattacher manuellement.`,
+      entityType: "ASSET",
+      entityId: input.assetId,
+      actionUrl: "/admin/asset-requests",
+      deduplicationKey: `ASSET_REQUEST_RECONCILIATION_AMBIGUOUS:${input.assetId}`,
+    });
+    return { status: "AMBIGUOUS" as const };
+  }
+
+  const requestId = matches[0].id;
+  const linked = await tx.assetRequest.updateMany({
+    where: {
+      id: requestId,
+      requesterId: input.assignedToId,
+      assetType: input.assetType,
+      status: AssetRequestStatus.APPROVED,
+      assetId: null,
+    },
+    data: { assetId: input.assetId },
+  });
+  if (linked.count !== 1) return { status: "NONE" as const };
+
+  await notifyRequesterAssetSuccess(tx, {
+    requesterId: input.assignedToId,
+    requestId,
+    title: "Actif attribué",
+    message: `${input.assetName} (${input.assetTag}) vous a été attribué et apparaît maintenant dans Mes actifs.`,
+    deduplicationKey: `ASSET_ASSIGNED:${requestId}:${input.assetId}`,
+  });
+
+  await appendAuditLog(tx, {
+    actorId: input.actorId,
+    action: "ASSET_REQUEST_ASSIGNED",
+    objectType: "AssetRequest",
+    objectId: requestId,
+    oldValue: { assetId: null, status: AssetRequestStatus.APPROVED },
+    newValue: { assetId: input.assetId, status: AssetRequestStatus.APPROVED },
+    reason: "Rattachement automatique après affectation d’un actif à une demande déjà approuvée en attente de stock.",
+  });
+
+  return { status: "FULFILLED" as const, requestId };
+}
+
 export async function reviewAssetRequest(
   actor: UserContext,
   requestId: string,
