@@ -69,7 +69,7 @@ consigne les preuves reproductibles et fixe les conditions de passage en staging
 | P07 | Terminé | Désactiver toute auto-affectation en V1 sans effacer la configuration avancée du profil full. |
 | P08 | Terminé | Rendre les responsables de file opérationnels pour le claim et le traitement dans leur périmètre explicite. |
 | P09 | Terminé | Simplifier la navigation, regrouper le pilotage SLA dans Reporting et déplacer la gestion des actifs sous Administration. |
-| P10 | Terminé | Désactiver côté serveur workflows, `/api/v1`, push, Redis, outbox et email externes. |
+| P10 | Terminé | Désactiver côté serveur workflows, `/api/v1`, Redis, outbox HTTP et email externes ; Web Push a été réactivé ensuite comme capacité V1 isolée. |
 | P11 | Terminé (préparation, GO conditionnel) | Matrice d’acceptation auditée et runbook de release ; les contrôles Entra, navigateur et fixtures PostgreSQL restent des portes de staging tant qu’ils ne sont pas exécutés. |
 
 P01 définit les capacités destinées aux phases aval dans
