@@ -173,6 +173,15 @@ export function TicketFilters({
           </button>
         </div>
 
+        {!compactPanelOpen ? (
+          <>
+            <input type="hidden" name="departmentId" value={values.departmentId ?? ""} />
+            <input type="hidden" name="queueId" value={values.queueId ?? ""} />
+            <input type="hidden" name="dossierId" value={values.dossierId ?? ""} />
+            <input type="hidden" name="missionId" value={values.missionId ?? ""} />
+          </>
+        ) : null}
+
         {compactPanelOpen ? (
           <div id="ticket-filters-compact-panel" className="ticket-filters-compact-panel">
             <label className="field-label">
