@@ -85,10 +85,15 @@ describe("parcours métier ticket de bout en bout", () => {
 
   it("notifie l’agent affecté sans contourner ses préférences", async () => {
     const findUnique = vi.fn().mockResolvedValue({ enabled: true });
-    const create = vi.fn().mockResolvedValue({ id: "notification-1" });
+    const findMany = vi.fn().mockResolvedValue([]);
+    const create = vi.fn()
+      .mockResolvedValueOnce({ id: "notification-1", channel: NotificationChannel.IN_APP })
+      .mockResolvedValueOnce({ id: "push-1", channel: NotificationChannel.PUSH });
+    const upsert = vi.fn().mockResolvedValue({ id: "outbox-1" });
     const notification = await createInAppNotification({
-      notificationPreference: { findUnique },
+      notificationPreference: { findUnique, findMany },
       notification: { create },
+      outboxEvent: { upsert },
     } as never, {
       recipientId: "agent-a",
       ticketId: "ticket-1",
@@ -97,7 +102,7 @@ describe("parcours métier ticket de bout en bout", () => {
       body: "Le ticket T-0001 vous a été affecté.",
     });
 
-    expect(notification).toEqual({ id: "notification-1" });
+    expect(notification).toEqual({ id: "notification-1", channel: NotificationChannel.IN_APP });
     expect(findUnique).toHaveBeenCalledWith({
       where: {
         userId_eventType_channel: {
@@ -115,5 +120,16 @@ describe("parcours métier ticket de bout en bout", () => {
         status: NotificationStatus.PENDING,
       }),
     });
+    expect(create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        recipientId: "agent-a",
+        ticketId: "ticket-1",
+        channel: NotificationChannel.PUSH,
+        status: NotificationStatus.PENDING,
+      }),
+    });
+    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({
+      type: "NOTIFICATION_PUSH_REQUESTED",
+    }));
   });
 });
