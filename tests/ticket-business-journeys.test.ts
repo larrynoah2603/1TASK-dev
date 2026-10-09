@@ -84,6 +84,9 @@ describe("parcours métier ticket de bout en bout", () => {
   });
 
   it("notifie l’agent affecté sans contourner ses préférences", async () => {
+    vi.stubEnv("WEB_PUSH_PUBLIC_KEY", "test-value-a");
+    vi.stubEnv("WEB_PUSH_PRIVATE_KEY", "test-value-b");
+    vi.stubEnv("WEB_PUSH_SUBJECT", "mailto:test@example.com");
     const findUnique = vi.fn().mockResolvedValue({ enabled: true });
     const findMany = vi.fn().mockResolvedValue([]);
     const create = vi.fn()
