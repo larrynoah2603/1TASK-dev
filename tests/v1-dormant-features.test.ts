@@ -63,7 +63,18 @@ describe("frontières serveur des fonctions optionnelles V1", () => {
     ]);
     expect(db.outboxEvent.upsert).toHaveBeenCalledOnce();
     expect(db.outboxEvent.upsert).toHaveBeenCalledWith(expect.objectContaining({
-      type: "NOTIFICATION_PUSH_REQUESTED",
+      create: expect.objectContaining({
+        type: "NOTIFICATION_PUSH_REQUESTED",
+        aggregateType: "Notification",
+        aggregateId: "push-1",
+        payload: expect.objectContaining({
+          notificationId: "push-1",
+          channel: "PUSH",
+          recipientId: "user-1",
+        }),
+      }),
+      where: { eventKey: "notification:push-1:push" },
+      update: {},
     }));
 
     await expect(queueEmailNotification(db as never, {
