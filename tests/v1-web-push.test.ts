@@ -54,9 +54,12 @@ describe("Web Push V1", () => {
   it("n’enfile aucun push tant que la configuration VAPID n’est pas complète", () => {
     const notifications = source("lib/notifications.ts");
     const environment = source("lib/env.ts");
+    const outbox = source("lib/outbox.ts");
 
     expect(notifications).toContain("!capabilities.pushNotifications || !webPushConfigured()");
     expect(environment).toContain("pushValues.some(Boolean) && !pushValues.every(Boolean)");
+    expect(outbox).toContain('AND "type" IN');
+    expect(outbox).toContain('"NOTIFICATION_PUSH_REQUESTED"');
     expect(source("package.json")).toContain('"push:keys"');
   });
 });
