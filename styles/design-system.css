@@ -1513,6 +1513,12 @@ html[data-theme="light"] .shell-industrial .ticket-detail-industrial .ticket-tim
   min-width: 0;
 }
 
+.push-notification-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--kit-space-2);
+}
+
 .push-notification-status {
   margin: 0;
   max-width: 18rem;
