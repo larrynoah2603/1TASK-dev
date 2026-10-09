@@ -1551,6 +1551,10 @@ html[data-theme] .priority-ticket-list {
   display: none;
 }
 
+html[data-theme] .agent-priority-card > .agent-card-header {
+  display: none;
+}
+
 html[data-theme] .priority-ticket-banner {
   display: flex;
   align-items: center;
@@ -1611,10 +1615,12 @@ html[data-theme] .ticket-filters-compact-grid {
 html[data-theme] .ticket-filter-search {
   min-width: 0;
   grid-column: 1;
+  grid-row: 1;
 }
 
 html[data-theme] .ticket-filter-more {
   grid-column: 2;
+  grid-row: 1;
 }
 
 html[data-theme] .ticket-filter-quick,
@@ -1793,6 +1799,10 @@ html[data-theme] .agent-ticket-cell-stack small {
 
   html[data-theme] .agent-kpi-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  html[data-theme] .agent-priority-card > .agent-card-header {
+    display: flex;
   }
 
   html[data-theme] .priority-ticket-banner {
