@@ -126,6 +126,8 @@ export function AssetListClient({ initialAssets, departments, users, canManage, 
                     onChange={setAssignedToId}
                     ariaLabel="Utilisateur affecté"
                     placeholder="Non affecté"
+                    searchable
+                    searchPlaceholder="Rechercher un utilisateur…"
                     options={[{ value: "", label: "Non affecté" }, ...users.filter((user) => !departmentId || user.departmentId === departmentId).map((user) => ({ value: user.id, label: `${user.name} · ${user.email}` }))]}
                   />
                 </label>
