@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { PrismaClient, NotificationChannel, NotificationStatus, NotificationType } from "@prisma/client";
 import { enqueueOutboxEvent } from "@/lib/outbox";
 import { getProductCapabilities } from "@/lib/product-policy.server";
+import { readServerEnvironment } from "@/lib/env";
 
 type NotificationDb = Prisma.TransactionClient | PrismaClient;
 
@@ -49,9 +50,18 @@ export function shouldPushByDefault(type: NotificationType) {
   return defaultPushEventTypes.has(type);
 }
 
+function webPushConfigured() {
+  const environment = readServerEnvironment();
+  return Boolean(
+    environment.WEB_PUSH_PUBLIC_KEY &&
+    environment.WEB_PUSH_PRIVATE_KEY &&
+    environment.WEB_PUSH_SUBJECT
+  );
+}
+
 async function createPushMirrors(db: NotificationDb, inputs: InAppNotificationInput[]) {
   const capabilities = getProductCapabilities();
-  if (!capabilities.pushNotifications) return;
+  if (!capabilities.pushNotifications || !webPushConfigured()) return;
   const candidates = inputs.filter((input) => shouldPushByDefault(input.type));
   if (!candidates.length) return;
 
@@ -85,7 +95,7 @@ async function createPushMirrors(db: NotificationDb, inputs: InAppNotificationIn
           severity: input.severity,
           entityType: input.entityType,
           entityId: input.entityId,
-          actionUrl: input.actionUrl,
+          actionUrl: input.actionUrl ?? (input.ticketId ? `/tickets/${input.ticketId}` : undefined),
           deduplicationKey: input.deduplicationKey,
           channel: NotificationChannel.PUSH,
           status: NotificationStatus.PENDING,
@@ -235,7 +245,7 @@ export async function notify(db: NotificationDb, input: NotificationDispatchInpu
   const channels = (configured.length ? [...new Set(configured.map((rule) => rule.channel))] : defaultChannelsForNotification(input.type, input.severity))
     .filter((channel) => channel === NotificationChannel.IN_APP ||
       (channel === NotificationChannel.EMAIL && capabilities.externalEmailDelivery) ||
-      (channel === NotificationChannel.PUSH && capabilities.pushNotifications));
+      (channel === NotificationChannel.PUSH && capabilities.pushNotifications && webPushConfigured()));
   const mandatory = input.type === NotificationType.SECURITY || input.severity === "CRITICAL";
   const preferences = mandatory ? [] : await db.notificationPreference.findMany({ where: { userId: input.recipientId, eventType: input.type, channel: { in: channels } }, select: { channel: true, enabled: true } });
   const disabled = new Set(preferences.filter((item) => !item.enabled).map((item) => item.channel));
@@ -245,7 +255,7 @@ export async function notify(db: NotificationDb, input: NotificationDispatchInpu
       const notification = await db.notification.create({ data: {
         recipientId: input.recipientId, ticketId: input.ticketId, type: input.type, severity: input.severity,
         title: input.title, body: input.message, entityType: input.entityType, entityId: input.entityId,
-        actionUrl: input.actionUrl, deduplicationKey: input.deduplicationKey, channel, status: NotificationStatus.PENDING,
+        actionUrl: input.actionUrl ?? (input.ticketId ? `/tickets/${input.ticketId}` : undefined), deduplicationKey: input.deduplicationKey, channel, status: NotificationStatus.PENDING,
       } });
       created.push(notification);
       if (channel !== NotificationChannel.IN_APP) await enqueueOutboxEvent(db, {
