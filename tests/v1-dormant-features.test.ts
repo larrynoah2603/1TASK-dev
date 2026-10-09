@@ -26,6 +26,9 @@ describe("frontières serveur des fonctions optionnelles V1", () => {
   beforeEach(() => {
     vi.stubEnv("DATABASE_URL", "postgresql://localhost/test");
     vi.stubEnv("PRODUCT_PROFILE", "v1");
+    vi.stubEnv("WEB_PUSH_PUBLIC_KEY", "public-key");
+    vi.stubEnv("WEB_PUSH_PRIVATE_KEY", "private-key");
+    vi.stubEnv("WEB_PUSH_SUBJECT", "mailto:notifications@example.com");
     vi.clearAllMocks();
     outboxDb.$queryRaw.mockResolvedValue([]);
   });
