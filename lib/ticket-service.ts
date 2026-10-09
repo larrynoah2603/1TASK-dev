@@ -1,4 +1,3 @@
-import { after } from "next/server";
 import {
   MessageVisibility,
   NotificationType,
@@ -62,7 +61,6 @@ import { assertOperationalGlobalTriage, V1_CONFIGURATION_ID } from "@/lib/triage
 import { resolveConfidentialRecipient } from "@/lib/confidential-ticket-service";
 import { measureServerOperation } from "@/lib/performance";
 import { DomainError } from "@/lib/domain-error";
-import { logServerError } from "@/lib/http";
 import { accessTarget, ticketAccessInclude, ticketSecurityInclude, type AccessTicket } from "@/lib/ticket-access";
 import { automaticAssignmentOutcome, chooseAutoAssignee, recordAssignment, shouldAutomaticallyAssign, tryAcquireTicketClaim } from "@/lib/ticket-assignment-service";
 import { assertProductCapability, resolveProductCapabilities } from "@/lib/product-policy";
@@ -390,59 +388,54 @@ export async function createTicket(actor: UserContext, input: unknown) {
       }
     }
 
+    const confidentialRecipientId = confidentialResolution?.recipient.id ?? null;
+
+    await createInAppNotification(tx, {
+      recipientId: actor.id,
+      ticketId: ticket.id,
+      type: NotificationType.TICKET_CREATED,
+      title: "Ticket créé",
+      body: `${ticket.reference} a été créé et routé vers ${ticket.queue.name}.`,
+      deduplicationKey: `ticket-created:${ticket.id}`,
+    });
+
+    if (confidentialRecipientId) {
+      await createInAppNotification(tx, {
+        recipientId: confidentialRecipientId,
+        ticketId: ticket.id,
+        type: NotificationType.QUEUE_NEW_TICKET,
+        title: "Nouveau ticket confidentiel",
+        body: "Un nouveau ticket confidentiel nécessite votre attention. Ouvrez 1TASK pour le consulter.",
+        deduplicationKey: `queue-new-ticket:${ticket.id}`,
+      });
+    } else if (autoAssigned && autoAssignedUserId) {
+      await createInAppNotification(tx, {
+        recipientId: autoAssignedUserId,
+        ticketId: ticket.id,
+        type: NotificationType.TICKET_ASSIGNED,
+        title: "Nouveau ticket affecté",
+        body: `${ticket.reference} vous a été affecté automatiquement.`,
+        deduplicationKey: `ticket-assigned:${ticket.id}`,
+      });
+    } else {
+      await notifyQueueWorkers(tx, {
+        queueId: ticket.queue.id,
+        managerId: ticket.queue.managerId,
+        ticketId: ticket.id,
+        type: NotificationType.QUEUE_NEW_TICKET,
+        title: "Nouveau ticket dans votre file",
+        body: `${ticket.reference} attend une qualification ou une prise en charge.`,
+        excludeUserIds: [actor.id],
+      });
+    }
+
     return {
       ticket,
-      autoAssigned,
-      autoAssignedUserId,
-      queueId: ticket.queue.id,
-      managerId: ticket.queue.managerId,
-      confidentialRecipientId: confidentialResolution?.recipient.id ?? null,
+      confidentialRecipientId,
     };
   }, {
     maxWait: 10_000,
     timeout: 15_000,
-  });
-
-  after(async () => {
-    try {
-      await createInAppNotification(prisma, {
-        recipientId: actor.id,
-        ticketId: result.ticket.id,
-        type: NotificationType.TICKET_CREATED,
-        title: "Ticket créé",
-        body: `${result.ticket.reference} a été créé et routé vers ${result.ticket.queue.name}.`,
-      });
-
-      if (result.confidentialRecipientId) {
-        await createInAppNotification(prisma, {
-          recipientId: result.confidentialRecipientId,
-          ticketId: result.ticket.id,
-          type: NotificationType.QUEUE_NEW_TICKET,
-          title: "Nouveau ticket confidentiel",
-          body: "Un nouveau ticket confidentiel nécessite votre attention. Ouvrez 1TASK pour le consulter.",
-        });
-      } else if (result.autoAssigned && result.autoAssignedUserId) {
-        await createInAppNotification(prisma, {
-          recipientId: result.autoAssignedUserId,
-          ticketId: result.ticket.id,
-          type: NotificationType.TICKET_ASSIGNED,
-          title: "Nouveau ticket affecté",
-          body: `${result.ticket.reference} vous a été affecté automatiquement.`,
-        });
-      } else {
-        await notifyQueueWorkers(prisma, {
-          queueId: result.queueId,
-          managerId: result.managerId,
-          ticketId: result.ticket.id,
-          type: NotificationType.QUEUE_NEW_TICKET,
-          title: "Nouveau ticket dans votre file",
-          body: `${result.ticket.reference} attend une qualification ou une prise en charge.`,
-          excludeUserIds: [actor.id],
-        });
-      }
-    } catch (notificationError) {
-      logServerError("ticket_creation_notification_failed", notificationError, { ticketId: result.ticket.id });
-    }
   });
 
     return result.ticket;

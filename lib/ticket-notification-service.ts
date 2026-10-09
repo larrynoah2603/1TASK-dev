@@ -50,11 +50,14 @@ export async function notifyQueueWorkers(
     ...(await queueWorkerIds(db, input.queueId)),
   ].filter(Boolean) as string[]);
   for (const recipientId of input.excludeUserIds ?? []) recipients.delete(recipientId);
-  await createInAppNotifications(db, [...recipients].map((recipientId) => ({
+  const recipientIds = [...recipients];
+  await createInAppNotifications(db, recipientIds.map((recipientId) => ({
     recipientId,
     ticketId: input.ticketId,
     type: input.type,
     title: input.title,
     body: input.body,
+    deduplicationKey: `queue-notification:${input.type}:${input.ticketId}`,
   })));
+  return recipientIds;
 }

@@ -64,7 +64,7 @@ export function NotificationCenter() {
   function toggleOpen() {
     setOpen((current) => {
       const next = !current;
-      if (next && !loaded) void loadNotifications();
+      if (next) void loadNotifications();
       return next;
     });
   }
