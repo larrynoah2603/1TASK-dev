@@ -15,6 +15,8 @@ type ComboboxProps = {
   required?: boolean;
   disabled?: boolean;
   ariaLabel?: string;
+  searchable?: boolean;
+  searchPlaceholder?: string;
   onChange?: (value: string) => void;
 };
 
@@ -29,6 +31,8 @@ export function Combobox({
   required = false,
   disabled = false,
   ariaLabel,
+  searchable = false,
+  searchPlaceholder = "Rechercher…",
   onChange,
 }: ComboboxProps) {
   const generatedId = useId();
@@ -38,11 +42,18 @@ export function Combobox({
   const [internalValue, setInternalValue] = useState(defaultValue);
   const selectedValue = isControlled ? value : internalValue;
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [highlightedIndex, setHighlightedIndex] = useState(() => Math.max(0, options.findIndex((option) => option.value === selectedValue)));
   const wrapperRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const selectedOption = useMemo(() => options.find((option) => option.value === selectedValue), [options, selectedValue]);
+  const filteredOptions = useMemo(() => {
+    const normalized = searchQuery.trim().toLocaleLowerCase("fr");
+    if (!normalized) return options;
+    return options.filter((option) => option.label.toLocaleLowerCase("fr").includes(normalized));
+  }, [options, searchQuery]);
 
   useEffect(() => {
     if (isControlled) return;
@@ -55,6 +66,7 @@ export function Combobox({
 
   useEffect(() => {
     if (!open) return;
+    if (searchable) requestAnimationFrame(() => searchRef.current?.focus());
     const closeOnOutsidePointer = (event: PointerEvent) => {
       if (!wrapperRef.current?.contains(event.target as Node)) setOpen(false);
     };
@@ -70,19 +82,35 @@ export function Combobox({
       document.removeEventListener("pointerdown", closeOnOutsidePointer);
       document.removeEventListener("keydown", closeOnEscape);
     };
-  }, [open]);
+  }, [open, searchable]);
 
   function choose(option: ComboboxOption) {
     if (!isControlled) setInternalValue(option.value);
     onChange?.(option.value);
+    setSearchQuery("");
     setOpen(false);
     triggerRef.current?.focus();
   }
 
   function openAndHighlight(nextIndex?: number) {
     if (disabled) return;
+    setSearchQuery("");
     setOpen(true);
     setHighlightedIndex(nextIndex ?? Math.max(0, options.findIndex((option) => option.value === selectedValue)));
+  }
+
+  function handleSearchKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setHighlightedIndex((current) => Math.min(Math.max(filteredOptions.length - 1, 0), current + 1));
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setHighlightedIndex((current) => Math.max(0, current - 1));
+    } else if (event.key === "Enter") {
+      event.preventDefault();
+      const option = filteredOptions[highlightedIndex];
+      if (option) choose(option);
+    }
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLButtonElement>) {
@@ -103,7 +131,7 @@ export function Combobox({
       openAndHighlight(Math.max(0, options.length - 1));
     } else if ((event.key === "Enter" || event.key === " ") && open) {
       event.preventDefault();
-      const option = options[highlightedIndex];
+      const option = filteredOptions[highlightedIndex];
       if (option) choose(option);
     } else if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
@@ -123,7 +151,7 @@ export function Combobox({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={listboxId}
-        aria-activedescendant={open && options[highlightedIndex] ? `${listboxId}-option-${highlightedIndex}` : undefined}
+        aria-activedescendant={open && filteredOptions[highlightedIndex] ? `${listboxId}-option-${highlightedIndex}` : undefined}
         aria-label={ariaLabel}
         disabled={disabled}
         onClick={() => open ? setOpen(false) : openAndHighlight()}
@@ -134,7 +162,24 @@ export function Combobox({
       </button>
       {open ? (
         <div id={listboxId} className="combobox-listbox" role="listbox" aria-label={ariaLabel ?? placeholder}>
-          {options.map((option, index) => (
+          {searchable ? (
+            <div className="combobox-search-wrap">
+              <input
+                ref={searchRef}
+                type="search"
+                className="combobox-search"
+                value={searchQuery}
+                onChange={(event) => {
+                  setSearchQuery(event.target.value);
+                  setHighlightedIndex(0);
+                }}
+                onKeyDown={handleSearchKeyDown}
+                placeholder={searchPlaceholder}
+                aria-label={searchPlaceholder}
+              />
+            </div>
+          ) : null}
+          {filteredOptions.map((option, index) => (
             <button
               key={option.value || `empty-${index}`}
               id={`${listboxId}-option-${index}`}
@@ -149,6 +194,7 @@ export function Combobox({
               {option.value === selectedValue ? <span className="combobox-check" aria-hidden="true">✓</span> : null}
             </button>
           ))}
+          {searchable && !filteredOptions.length ? <p className="combobox-empty">Aucun résultat.</p> : null}
         </div>
       ) : null}
     </div>
