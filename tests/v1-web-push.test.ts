@@ -51,6 +51,26 @@ describe("Web Push V1", () => {
     expect(worker).toContain("clients.openWindow(targetUrl)");
   });
 
+  it("ne marque Push actif qu’après synchronisation serveur et sait réparer un abonnement local", () => {
+    const button = source("components/push-notification-button.tsx");
+
+    expect(button).toContain("await saveSubscription(subscription)");
+    expect(button).toContain("sameApplicationServerKey(subscription, publicKey)");
+    expect(button).toContain("La clé Push du serveur a changé");
+    expect(button).toContain("Notifications système activées et enregistrées sur cet appareil.");
+  });
+
+  it("propose un test Push qui passe par la vraie outbox", () => {
+    const button = source("components/push-notification-button.tsx");
+    const route = source("app/api/notifications/push-test/route.ts");
+
+    expect(button).toContain('fetch("/api/notifications/push-test", { method: "POST" })');
+    expect(button).toContain("Tester le push");
+    expect(route).toContain('type: "NOTIFICATION_PUSH_REQUESTED"');
+    expect(route).toContain("enqueueOutboxEvent(prisma");
+    expect(route).toContain("Aucun appareil Push enregistré pour ce compte.");
+  });
+
   it("normalise l’abonnement navigateur avant le POST strict vers l’API", () => {
     const button = source("components/push-notification-button.tsx");
     const route = source("app/api/notifications/push-subscriptions/route.ts");
