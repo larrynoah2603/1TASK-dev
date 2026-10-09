@@ -642,6 +642,192 @@ textarea.kit-input { min-height: 88px; padding: var(--kit-space-2) var(--kit-spa
 .asset-review-card { overflow: hidden; }.table-responsive { overflow-x: auto; }.saas-table { width: 100%; min-width: 1080px; border-collapse: collapse; text-align: left; font-size: var(--kit-text-sm); }.saas-table th { padding: var(--kit-space-3) var(--kit-space-4); background: var(--kit-surface-muted); color: var(--kit-secondary); font-size: var(--kit-text-xs); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }.saas-table td { padding: var(--kit-space-4); border-top: 1px solid var(--kit-border); vertical-align: top; }.saas-table tbody tr:hover { background: var(--kit-hover); }.saas-table td small { display: block; margin-top: 3px; color: var(--kit-secondary); font-size: 11px; }.table-reason { display: block; max-width: 250px; }.table-empty { padding: var(--kit-space-8) !important; color: var(--kit-secondary); text-align: center; }.review-actions { display: grid; grid-template-columns: minmax(170px, 1fr) auto auto; gap: var(--kit-space-2); min-width: 390px; }.review-actions .field-control { min-height: 36px; }
 @media (max-width: 700px) { .saas-page-header, .dashboard-asset-cta { align-items: stretch; flex-direction: column; }.saas-page-header button, .dashboard-asset-cta button { width: 100%; }.form-grid, .personal-asset-card dl { grid-template-columns: 1fr; }.request-list article { flex-direction: column; }.request-list article > div:last-child { text-align: left; }.asset-request-modal, .asset-create-modal { width: calc(100vw - 1rem); max-height: calc(100dvh - 1rem); overflow-y: auto; }.asset-create-modal .combobox-listbox { position: static; margin-top: var(--kit-space-2); max-height: 14rem; } }
 
+/* Asset inventory + movement dialog — clearer hierarchy, same business workflow. */
+.asset-inventory-panel {
+  overflow: hidden;
+}
+
+.asset-inventory-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--kit-space-4);
+  padding: var(--kit-space-4) var(--kit-space-5);
+  border-bottom: 1px solid var(--kit-border);
+}
+
+.asset-inventory-header > div {
+  min-width: 0;
+}
+
+.asset-inventory-header h2 {
+  margin: 3px 0 0;
+  color: var(--kit-text);
+  font-size: var(--kit-text-lg);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.asset-inventory-header > div > p:last-child {
+  margin: 4px 0 0;
+  color: var(--kit-text-2);
+  font-size: var(--kit-text-xs);
+  line-height: 1.45;
+}
+
+.asset-inventory-count {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  flex: 0 0 auto;
+  padding: 0 var(--kit-space-3);
+  border: 1px solid var(--kit-border);
+  border-radius: var(--kit-radius-pill);
+  background: var(--kit-surface-muted);
+  color: var(--kit-text-2);
+  font-size: var(--kit-text-xs);
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.asset-inventory-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+html[data-theme] .assets-industrial .asset-inventory-table {
+  width: 100%;
+  min-width: 980px;
+  table-layout: auto;
+}
+
+html[data-theme] .assets-industrial .asset-inventory-table th {
+  padding: 11px var(--kit-space-4) !important;
+  white-space: nowrap;
+}
+
+html[data-theme] .assets-industrial .asset-inventory-table td {
+  padding: var(--kit-space-4) !important;
+  vertical-align: middle;
+}
+
+.asset-inventory-primary {
+  display: grid;
+  min-width: 220px;
+  gap: 3px;
+}
+
+.asset-inventory-tag {
+  width: fit-content;
+  color: var(--kit-primary-text);
+  font-size: var(--kit-text-xs);
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.asset-inventory-primary > strong,
+.asset-inventory-meta > strong {
+  color: var(--kit-text);
+  font-size: var(--kit-text-sm);
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.asset-inventory-primary > small,
+.asset-inventory-meta > small {
+  display: block;
+  color: var(--kit-secondary);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.asset-inventory-meta {
+  color: var(--kit-text-2);
+  font-size: var(--kit-text-xs);
+  line-height: 1.4;
+}
+
+.asset-inventory-muted {
+  color: var(--kit-secondary);
+}
+
+.asset-inventory-action {
+  width: 1%;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.asset-inventory-action .button-secondary {
+  min-height: 32px;
+  padding-inline: var(--kit-space-3);
+}
+
+.asset-inventory-empty {
+  padding: var(--kit-space-8) !important;
+  color: var(--kit-secondary);
+  font-size: var(--kit-text-sm);
+  text-align: center;
+}
+
+.asset-move-modal {
+  width: min(720px, calc(100vw - 2rem));
+  padding: 0;
+  overflow: visible;
+}
+
+.asset-move-reason-section {
+  border-bottom: 0;
+}
+
+.asset-move-reason {
+  min-height: 108px;
+  padding: var(--kit-space-3);
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.asset-move-audit-note {
+  margin: 0;
+  padding: var(--kit-space-3);
+  border: 1px solid var(--kit-border);
+  border-left: 3px solid var(--kit-primary);
+  border-radius: var(--kit-radius-md);
+  background: var(--kit-surface-muted);
+  color: var(--kit-text-2);
+  font-size: var(--kit-text-xs);
+  line-height: 1.5;
+}
+
+@media (max-width: 700px) {
+  .asset-inventory-header {
+    align-items: stretch;
+    flex-direction: column;
+    padding: var(--kit-space-4);
+  }
+
+  .asset-inventory-count {
+    width: fit-content;
+  }
+
+  .asset-move-modal {
+    width: calc(100vw - 1rem);
+    max-height: calc(100dvh - 1rem);
+    overflow-y: auto;
+  }
+
+  .asset-move-modal .combobox-listbox {
+    position: static;
+    margin-top: var(--kit-space-2);
+    max-height: 14rem;
+  }
+
+  .asset-move-modal .form-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+  }
+}
+
 /* --------------------------------------------------------------------------
    9. ÉTATS VIDES / ERREUR / SQUELETTES (composants ui/*)
    -------------------------------------------------------------------------- */
