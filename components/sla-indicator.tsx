@@ -59,8 +59,10 @@ export function SlaIndicator({
     <span className={`sla-indicator ${toneByState[state]}${compact ? " sla-indicator-compact" : ""}`} role="status" aria-label={ariaLabel}>
       <span className="sla-indicator-head">
         <span className="sla-indicator-mark" aria-hidden="true"><span /></span>
-        <span className="sla-indicator-label">{labels[state]}</span>
-        {dueAt ? <strong className="sla-indicator-countdown">{remaining}</strong> : null}
+        <span className="sla-indicator-copy">
+          <span className="sla-indicator-label">{labels[state]}</span>
+          {dueAt ? <strong className="sla-indicator-countdown">{remaining}</strong> : null}
+        </span>
       </span>
       {progress !== null ? (
         <span className="sla-indicator-track" aria-hidden="true"><span className="sla-indicator-bar" style={{ width: `${Math.max(3, Math.round(progress))}%` }} /></span>
