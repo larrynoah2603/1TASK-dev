@@ -41,6 +41,45 @@ describe("workflow V1 des demandes d’actifs", () => {
     expect(service).toContain('action: "ASSET_REQUEST_ASSIGNED"');
   });
 
+  it("rattache automatiquement un actif affecté à une seule demande approuvée en attente", () => {
+    const requestService = source("lib/asset-request-service.ts");
+    const productionService = source("lib/production-service.ts");
+
+    expect(requestService).toContain("reconcileApprovedAssetRequestOnAssignment");
+    expect(requestService).toContain("status: AssetRequestStatus.APPROVED");
+    expect(requestService).toContain("assetId: null");
+    expect(requestService).toContain("requesterId: input.assignedToId");
+    expect(requestService).toContain("assetType: input.assetType");
+    expect(requestService).toContain('status: "FULFILLED" as const');
+    expect(requestService).toContain('title: "Actif attribué"');
+    expect(productionService).toContain("await reconcileApprovedAssetRequestOnAssignment(tx");
+  });
+
+  it("ne choisit pas arbitrairement entre plusieurs demandes compatibles", () => {
+    const requestService = source("lib/asset-request-service.ts");
+
+    expect(requestService).toContain("take: 2");
+    expect(requestService).toContain('status: "AMBIGUOUS" as const');
+    expect(requestService).toContain('title: "Plusieurs demandes d’actifs à rapprocher"');
+    expect(requestService).toContain('actionUrl: "/admin/asset-requests"');
+  });
+
+  it("trace l’attribution initiale et renseigne la date d’affectation", () => {
+    const productionService = source("lib/production-service.ts");
+
+    expect(productionService).toContain('reason: "Création et attribution initiale de l’actif."');
+    expect(productionService).toContain("assignedAt,");
+    expect(productionService).toContain("toUserId: asset.assignedToId");
+  });
+
+  it("permet de créer les accessoires qui peuvent être demandés", () => {
+    const validation = source("lib/validation.ts");
+    const inventory = source("components/asset-list-client.tsx");
+
+    expect(validation).toContain('"ACCESSORY"');
+    expect(inventory).toContain('ACCESSORY: "Accessoire"');
+  });
+
   it("notifie les administrateurs fonctionnels globaux d’une nouvelle demande", () => {
     const service = source("lib/asset-request-service.ts");
     expect(service).toContain("RoleCode.FUNCTIONAL_ADMIN");
