@@ -11,7 +11,7 @@ type AssetRow = { id: string; assetTag: string; type: string; status: string; na
 type DepartmentOption = { id: string; code: string; name: string };
 type UserOption = { id: string; name: string; email: string; departmentId: string | null };
 
-const typeLabels: Record<string, string> = { COMPUTER: "Ordinateur", SCREEN: "Écran", PHONE: "Téléphone", LICENSE: "Licence", OTHER: "Autre" };
+const typeLabels: Record<string, string> = { COMPUTER: "Ordinateur", SCREEN: "Écran", PHONE: "Téléphone", ACCESSORY: "Accessoire", LICENSE: "Licence", OTHER: "Autre" };
 const statusLabels: Record<string, string> = { ACTIVE: "Actif", IN_REPAIR: "En réparation", RETIRED: "Retiré", LOST: "Perdu" };
 function formatDate(value: string | null) { return value ? new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" }).format(new Date(value)) : "—"; }
 

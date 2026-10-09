@@ -159,7 +159,7 @@ export const missionSchema = z.object({
 
 export const assetSchema = z.object({
   assetTag: z.string().trim().min(2).max(80),
-  type: z.enum(["COMPUTER", "SCREEN", "PHONE", "LICENSE", "OTHER"]),
+  type: z.enum(["COMPUTER", "SCREEN", "PHONE", "ACCESSORY", "LICENSE", "OTHER"]),
   name: z.string().trim().min(2).max(180),
   serialNumber: z.string().trim().max(180).nullable().optional(),
   departmentId: z.string().cuid().nullable().optional(),
