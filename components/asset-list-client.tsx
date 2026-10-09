@@ -55,7 +55,49 @@ export function AssetListClient({ initialAssets, departments, users, canManage, 
   return <>
     <section className="grid gap-3 sm:grid-cols-3"><div className="metric-card"><p className="text-[11px] text-slate-500">Actifs visibles</p><p className="mt-1 text-2xl font-bold tracking-tight text-slate-900">{initialAssets.length}</p></div><div className="metric-card"><p className="text-[11px] text-slate-500">Actifs opérationnels</p><p className="mt-1 text-2xl font-bold tracking-tight text-emerald-700">{activeAssets}</p></div><div className="metric-card"><p className="text-[11px] text-slate-500">Actifs affectés</p><p className="mt-1 text-2xl font-bold tracking-tight text-slate-900">{assignedAssets}</p></div></section>
     <section className="panel p-4 sm:p-5"><div className="grid gap-3 lg:grid-cols-[minmax(220px,1.5fr)_minmax(150px,0.8fr)_minmax(150px,0.8fr)_auto] lg:items-end"><label className="field-label">Rechercher<input className="field-control" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tag, nom, série, collaborateur…" /></label><label className="field-label">Type<Combobox value={type} onChange={setType} ariaLabel="Filtrer par type" options={[{ value: "ALL", label: "Tous les types" }, ...Object.entries(typeLabels).map(([value, label]) => ({ value, label }))]} /></label><label className="field-label">État<Combobox value={status} onChange={setStatus} ariaLabel="Filtrer par état" options={[{ value: "ALL", label: "Tous les états" }, ...Object.entries(statusLabels).map(([value, label]) => ({ value, label }))]} /></label>{canManage ? <button type="button" className="button-primary" onClick={() => { setError(""); setShowCreate(true); }}>Nouvel actif</button> : null}</div></section>
-    <section className="panel overflow-hidden"><div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 sm:px-5"><div><p className="eyebrow">Référentiel technique</p><h2 className="mt-1 text-base font-semibold text-slate-900">Inventaire des actifs</h2></div><span className="text-[11px] text-slate-400">{assets.length} résultat(s)</span></div><div className="overflow-x-auto"><table className="data-table min-w-[900px]"><thead><tr><th>Actif</th><th>Type</th><th>État</th><th>Département</th><th>Affecté à</th><th>Échéance licence</th><th aria-label="Action" /></tr></thead><tbody>{assets.map((asset) => <tr key={asset.id}><td><Link href={`${basePath}/${asset.id}` as Route} className="font-semibold operational-link hover:underline">{asset.assetTag}</Link><p className="mt-0.5 max-w-[220px] truncate text-xs text-slate-500">{asset.name}{asset.serialNumber ? ` · ${asset.serialNumber}` : ""}</p></td><td className="text-xs text-slate-600">{typeLabels[asset.type] ?? asset.type}</td><td><span className={`status-chip status-chip-${asset.status.toLowerCase()}`}>{statusLabels[asset.status] ?? asset.status}</span></td><td className="text-xs text-slate-600">{asset.department?.name ?? "Non rattaché"}</td><td className="text-xs text-slate-600">{asset.assignedTo?.name ?? "Non affecté"}</td><td className="text-xs text-slate-500">{formatDate(asset.licenseExpiresAt)}</td><td><Link href={`${basePath}/${asset.id}` as Route} className="button-ghost text-xs">Ouvrir</Link></td></tr>)}{!assets.length ? <tr><td colSpan={7} className="py-10 text-center text-sm text-slate-500">Aucun actif ne correspond aux filtres sélectionnés.</td></tr> : null}</tbody></table></div></section>
+    <section className="panel asset-inventory-panel">
+      <header className="asset-inventory-header">
+        <div>
+          <p className="eyebrow">Référentiel technique</p>
+          <h2>Inventaire des actifs</h2>
+          <p>Consultez l’état, le rattachement et l’affectation de chaque équipement.</p>
+        </div>
+        <span className="asset-inventory-count">{assets.length} résultat{assets.length === 1 ? "" : "s"}</span>
+      </header>
+      <div className="asset-inventory-scroll">
+        <table className="data-table asset-inventory-table">
+          <thead>
+            <tr>
+              <th>Actif</th>
+              <th>Type</th>
+              <th>État</th>
+              <th>Département</th>
+              <th>Affecté à</th>
+              <th>Échéance licence</th>
+              <th aria-label="Action" />
+            </tr>
+          </thead>
+          <tbody>
+            {assets.map((asset) => (
+              <tr key={asset.id} className="asset-inventory-row">
+                <td className="asset-inventory-primary">
+                  <Link href={`${basePath}/${asset.id}` as Route} className="asset-inventory-tag">{asset.assetTag}</Link>
+                  <strong>{asset.name}</strong>
+                  {asset.serialNumber ? <small>N° de série · {asset.serialNumber}</small> : null}
+                </td>
+                <td className="asset-inventory-meta">{typeLabels[asset.type] ?? asset.type}</td>
+                <td><span className={`status-chip status-chip-${asset.status.toLowerCase()}`}>{statusLabels[asset.status] ?? asset.status}</span></td>
+                <td className="asset-inventory-meta">{asset.department?.name ?? <span className="asset-inventory-muted">Non rattaché</span>}</td>
+                <td className="asset-inventory-meta">{asset.assignedTo ? <><strong>{asset.assignedTo.name}</strong><small>{asset.assignedTo.email}</small></> : <span className="asset-inventory-muted">Non affecté</span>}</td>
+                <td className="asset-inventory-meta">{formatDate(asset.licenseExpiresAt)}</td>
+                <td className="asset-inventory-action"><Link href={`${basePath}/${asset.id}` as Route} className="button-secondary">Voir</Link></td>
+              </tr>
+            ))}
+            {!assets.length ? <tr><td colSpan={7} className="asset-inventory-empty">Aucun actif ne correspond aux filtres sélectionnés.</td></tr> : null}
+          </tbody>
+        </table>
+      </div>
+    </section>
     {showCreate ? (
       <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) setShowCreate(false); }}>
         <section className="modal-panel asset-create-modal" role="dialog" aria-modal="true" aria-labelledby="create-asset-title">
