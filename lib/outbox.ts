@@ -31,20 +31,43 @@ export async function enqueueOutboxEvent(db: OutboxDb, input: {
 
 export async function processOutboxBatch(now = new Date()) {
   const capabilities = getProductCapabilities();
-  if (!capabilities.externalOutboxDelivery && !capabilities.externalEmailDelivery && !capabilities.pushNotifications) {
+  const environment = readServerEnvironment();
+  const pushConfigured = Boolean(
+    capabilities.pushNotifications &&
+    environment.WEB_PUSH_PUBLIC_KEY &&
+    environment.WEB_PUSH_PRIVATE_KEY &&
+    environment.WEB_PUSH_SUBJECT
+  );
+  const internalTypes = [
+    ...(pushConfigured ? ["NOTIFICATION_PUSH_REQUESTED"] : []),
+    ...(capabilities.externalEmailDelivery ? ["NOTIFICATION_EMAIL_REQUESTED"] : []),
+  ];
+
+  if (!capabilities.externalOutboxDelivery && !internalTypes.length) {
     return { claimed: 0, processed: 0, failed: 0, disabled: true as const };
   }
-  const batchSize = readServerEnvironment().OUTBOX_BATCH_SIZE;
+
+  const batchSize = environment.OUTBOX_BATCH_SIZE;
   const leaseBefore = new Date(now.getTime() - 5 * 60_000);
   const claimed = await prisma.$transaction(async (tx) => {
-    const rows = await tx.$queryRaw<{ id: string }[]>(Prisma.sql`
-      SELECT "id" FROM "OutboxEvent"
-      WHERE "availableAt" <= ${now}
-        AND ("status" = 'PENDING' OR ("status" = 'PROCESSING' AND "lockedAt" < ${leaseBefore}))
-      ORDER BY "createdAt" ASC
-      FOR UPDATE SKIP LOCKED
-      LIMIT ${batchSize}
-    `);
+    const rows = capabilities.externalOutboxDelivery
+      ? await tx.$queryRaw<{ id: string }[]>(Prisma.sql`
+          SELECT "id" FROM "OutboxEvent"
+          WHERE "availableAt" <= ${now}
+            AND ("status" = 'PENDING' OR ("status" = 'PROCESSING' AND "lockedAt" < ${leaseBefore}))
+          ORDER BY "createdAt" ASC
+          FOR UPDATE SKIP LOCKED
+          LIMIT ${batchSize}
+        `)
+      : await tx.$queryRaw<{ id: string }[]>(Prisma.sql`
+          SELECT "id" FROM "OutboxEvent"
+          WHERE "availableAt" <= ${now}
+            AND ("status" = 'PENDING' OR ("status" = 'PROCESSING' AND "lockedAt" < ${leaseBefore}))
+            AND "type" IN (${Prisma.join(internalTypes)})
+          ORDER BY "createdAt" ASC
+          FOR UPDATE SKIP LOCKED
+          LIMIT ${batchSize}
+        `);
     if (!rows.length) return [];
     const ids = rows.map((row) => row.id);
     await tx.outboxEvent.updateMany({ where: { id: { in: ids } }, data: { status: "PROCESSING", lockedAt: now } });
