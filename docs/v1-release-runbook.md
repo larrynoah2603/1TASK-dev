@@ -11,7 +11,9 @@ identifiants Entra de test ; ne jamais exécuter ces étapes sur une base partag
 - PostgreSQL 16 sauvegardé, URL vérifiée par deux opérateurs, accès migration distinct si prévu.
 - `DATABASE_URL`, secrets NextAuth/session, identifiants Microsoft Entra, domaine autorisé,
   `CRON_SECRET` robuste et `PRODUCT_PROFILE=v1` dans **staging seulement**.
-- Redis, push, mail Graph, livraison outbox et upload privé restent inactifs en V1. Une lecture
+- Web Push est disponible en V1 : configurer les trois variables VAPID
+  `WEB_PUSH_PUBLIC_KEY`, `WEB_PUSH_PRIVATE_KEY` et `WEB_PUSH_SUBJECT` pour l’activer.
+  Redis, mail Graph, livraison outbox HTTP externe et upload privé restent inactifs. Une lecture
   de pièce jointe historique requiert toutefois un stockage privé durable correctement configuré.
 - Un calendrier ouvré actif, un SLA TRIAGE actif et un service global TRIAGE choisi explicitement.
 
@@ -86,7 +88,7 @@ un schedule POST toutes les cinq minutes (`*/5 * * * *`) vers le domaine Vercel 
 QStash `Upstash-Forward | Authorization | Bearer <CRON_SECRET>` doit transmettre le même
 `CRON_SECRET` que celui défini côté Vercel. Aucun secret réel ne doit être versionné. Vérifier
 au moins une exécution `DELIVERED` puis un second déclenchement automatique réussi. Voir
-`docs/v1-qstash-scheduler.md`. Ne pas programmer de rejeu outbox.
+`docs/v1-qstash-scheduler.md`. Programmer aussi le traitement normal de `/api/jobs/outbox` pour Web Push ; ne jamais déclencher un rejeu global des événements historiques ou morts.
 
 Effectuer la revue desktop/mobile : navigation, formulaire trois champs, feedback succès/conflit,
 chargement, liste vide, accès refusé et erreur contrôlée. Archiver captures et journaux expurgés.
