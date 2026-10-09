@@ -29,6 +29,65 @@ export async function enqueueOutboxEvent(db: OutboxDb, input: {
   return db.outboxEvent.upsert({ where: { eventKey: input.eventKey }, create: input, update: {} });
 }
 
+
+export async function acceleratePushOutboxEvent(notificationId: string, now = new Date()) {
+  const eventKey = `notification:${notificationId}:push`;
+  const claimed = await prisma.outboxEvent.updateMany({
+    where: {
+      eventKey,
+      type: "NOTIFICATION_PUSH_REQUESTED",
+      status: "PENDING",
+      availableAt: { lte: now },
+    },
+    data: { status: "PROCESSING", lockedAt: now },
+  });
+  if (claimed.count !== 1) return { claimed: 0, processed: 0, failed: 0 };
+
+  const event = await prisma.outboxEvent.findUnique({ where: { eventKey } });
+  if (!event) return { claimed: 0, processed: 0, failed: 0 };
+
+  try {
+    await deliverInternalNotificationEvent(
+      event.type,
+      event.payload as { notificationId?: string },
+    );
+    await prisma.outboxEvent.update({
+      where: { id: event.id },
+      data: {
+        status: "PROCESSED",
+        processedAt: new Date(),
+        lockedAt: null,
+        lastError: null,
+      },
+    });
+    return { claimed: 1, processed: 1, failed: 0 };
+  } catch (error) {
+    const attempts = event.attempts + 1;
+    const providerDelay =
+      typeof error === "object" &&
+      error &&
+      "retryAfterMs" in error &&
+      typeof error.retryAfterMs === "number"
+        ? error.retryAfterMs
+        : 0;
+    const retryDelay = Math.max(
+      providerDelay,
+      Math.min(3_600_000, 1_000 * 2 ** attempts),
+    );
+    await prisma.outboxEvent.update({
+      where: { id: event.id },
+      data: {
+        status: attempts >= 10 ? "DEAD" : "PENDING",
+        attempts,
+        lockedAt: null,
+        availableAt: new Date(Date.now() + retryDelay),
+        lastError: error instanceof Error ? error.message.slice(0, 500) : "delivery failed",
+      },
+    });
+    return { claimed: 1, processed: 0, failed: 1 };
+  }
+}
+
 export async function processOutboxBatch(now = new Date()) {
   const capabilities = getProductCapabilities();
   const environment = readServerEnvironment();

@@ -78,4 +78,21 @@ describe("Web Push V1", () => {
     expect(outbox).toContain('"NOTIFICATION_PUSH_REQUESTED"');
     expect(source("package.json")).toContain('"push:keys"');
   });
+
+  it("accélère le Push après la requête tout en gardant QStash comme filet de sécurité", () => {
+    const notifications = source("lib/notifications.ts");
+    const outbox = source("lib/outbox.ts");
+    const schedulerDoc = source("docs/v1-qstash-scheduler.md");
+
+    expect(notifications).toContain('import { after } from "next/server"');
+    expect(notifications).toContain("after(async () =>");
+    expect(notifications).toContain("acceleratePushOutboxEvent(notificationId)");
+    expect(notifications).toContain("scheduleImmediatePush(notification.id)");
+    expect(outbox).toContain("export async function acceleratePushOutboxEvent");
+    expect(outbox).toContain('type: "NOTIFICATION_PUSH_REQUESTED"');
+    expect(outbox).toContain('status: "PENDING"');
+    expect(outbox).toContain('data: { status: "PROCESSING", lockedAt: now }');
+    expect(schedulerDoc).toContain("Le schedule d’une minute reste le filet de sécurité");
+    expect(schedulerDoc).toContain("/api/jobs/outbox");
+  });
 });

@@ -41,9 +41,13 @@ Le job traite les événements `NOTIFICATION_PUSH_REQUESTED` créés par 1TASK.
 Dans le profil V1, il ne réactive ni Microsoft Graph Mail, ni Redis, ni la
 livraison HTTP externe du profil `full`.
 
-Une fréquence d’une minute donne un comportement proche d’une notification
-temps réel sans coupler les transactions métier au réseau Push. Les événements
-restent persistés dans l’outbox et bénéficient du retry existant.
+1TASK tente maintenant une livraison Push immédiate après la fin de la requête
+qui a créé la notification. Cette accélération est opportuniste et ne remplace
+jamais l’outbox persistée.
+
+Le schedule d’une minute reste le filet de sécurité : s’il n’y a pas de contexte
+requête, si la tentative immédiate échoue, ou si une instance Vercel s’arrête,
+l’événement reste disponible pour `/api/jobs/outbox` avec le retry existant.
 
 ## Authentification
 
