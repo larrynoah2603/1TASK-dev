@@ -26,10 +26,23 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, []);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
+    const initial = window.setTimeout(() => {
       void refreshUnreadCount();
     }, 250);
-    return () => window.clearTimeout(timer);
+    const poll = window.setInterval(() => {
+      void refreshUnreadCount();
+    }, 20_000);
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") void refreshUnreadCount();
+    };
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      window.clearTimeout(initial);
+      window.clearInterval(poll);
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
   }, [refreshUnreadCount]);
 
   const value = useMemo(() => ({ unreadCount, setUnreadCount, refreshUnreadCount }), [unreadCount, refreshUnreadCount]);
