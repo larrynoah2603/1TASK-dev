@@ -303,19 +303,19 @@ adressées au demandeur pointent vers `/my-assets`, jamais vers la revue adminis
 
 Le déploiement V1 doit définir `PRODUCT_PROFILE=v1`. La base PostgreSQL,
 NextAuth, Microsoft Entra ID, le domaine autorisé et `CRON_SECRET` restent
-obligatoires en production. Redis, Web Push, Microsoft Graph Mail et la
-livraison outbox externe sont inactifs : leurs variables peuvent être absentes
-ou contenir une ancienne configuration partielle sans empêcher le démarrage.
-Le profil `full` conserve la validation stricte de chaque ensemble de variables.
+obligatoires en production. **Web Push est actif en V1** lorsqu’une paire VAPID
+complète est configurée via `WEB_PUSH_PUBLIC_KEY`, `WEB_PUSH_PRIVATE_KEY` et
+`WEB_PUSH_SUBJECT`. Redis, Microsoft Graph Mail et la livraison outbox externe
+restent dormants et ne sont pas réactivés par cette capacité.
 
 En V1, l’API `/api/v1`, les définitions de workflow déclaratives, les nouveaux
 uploads, les nouveaux tickets confidentiels et l’activation de délégations
 confidentielles sont refusés côté serveur. Le moteur d’état des tickets, les
-SLA, les notifications dans l’application, les lectures autorisées de pièces
-jointes historiques et la révocation des délégations existantes restent actifs.
-Les jobs SLA/fermeture automatique restent planifiés. Le job outbox exige
-toujours son secret mais répond par un résultat vide sans acquérir de lignes ni
-initialiser de fournisseur.
+SLA, les notifications dans l’application, **les notifications système Web Push**,
+les lectures autorisées de pièces jointes historiques et la révocation des
+délégations existantes restent actifs. Le job outbox devient utile en V1 pour
+livrer les événements `NOTIFICATION_PUSH_REQUESTED`; il ne réactive ni l’e-mail
+Graph ni la livraison outbox HTTP externe.
 
 Les lignes outbox historiques en attente sont conservées telles quelles. Avant
 toute réactivation ou tout passage au profil `full`, un opérateur doit examiner
