@@ -1520,3 +1520,417 @@ html[data-theme="light"] .shell-industrial .ticket-detail-industrial .ticket-tim
   font-size: 11px;
   line-height: 1.35;
 }
+
+
+/* === Inbox container-responsive adaptation 2026-10-09 === */
+
+/* The inbox reacts to its usable content width, not to the browser viewport. */
+html[data-theme] .agent-workspace {
+  container-name: agent-inbox;
+  container-type: inline-size;
+}
+
+html[data-theme] .agent-workspace-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+html[data-theme] .agent-workspace-main,
+html[data-theme] .agent-workspace-rail {
+  min-width: 0;
+}
+
+html[data-theme] .agent-workspace-rail {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+html[data-theme] .agent-kpi-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+html[data-theme] .priority-ticket-list {
+  display: none;
+}
+
+html[data-theme] .priority-ticket-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--kit-space-3);
+  padding: var(--kit-space-3) var(--kit-space-4);
+  background: var(--kit-warning-soft);
+  color: var(--kit-text);
+}
+
+html[data-theme] .priority-ticket-banner > div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+html[data-theme] .priority-ticket-banner strong {
+  font-size: var(--kit-text-sm);
+  font-weight: 700;
+}
+
+html[data-theme] .priority-ticket-banner span {
+  overflow: hidden;
+  color: var(--kit-text-2);
+  font-size: var(--kit-text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-theme] .priority-ticket-banner .button-secondary {
+  flex: none;
+}
+
+html[data-theme] .agent-workspace-header {
+  align-items: stretch;
+  flex-direction: column;
+}
+
+html[data-theme] .agent-card-header {
+  min-width: 0;
+}
+
+/* Compact filters get their own local container, so sidebar/rail width is respected. */
+html[data-theme] .ticket-filters-compact {
+  position: relative;
+  container-name: ticket-filters;
+  container-type: inline-size;
+}
+
+html[data-theme] .ticket-filters-compact-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--kit-space-2);
+  align-items: end;
+  min-width: 0;
+}
+
+html[data-theme] .ticket-filter-search {
+  min-width: 0;
+  grid-column: 1;
+}
+
+html[data-theme] .ticket-filter-more {
+  grid-column: 2;
+}
+
+html[data-theme] .ticket-filter-quick,
+html[data-theme] .ticket-filter-apply {
+  display: none;
+  min-width: 0;
+}
+
+html[data-theme] .ticket-filters-compact[data-compact-filters-open="true"] .ticket-filter-quick {
+  display: block;
+  grid-column: 1 / -1;
+}
+
+html[data-theme] .ticket-filters-compact-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--kit-space-3);
+  margin-top: var(--kit-space-3);
+  padding: var(--kit-space-3);
+  border: 1px solid var(--kit-border);
+  border-radius: var(--kit-radius-lg);
+  background: var(--kit-surface);
+  box-shadow: var(--kit-shadow-sm);
+}
+
+html[data-theme] .ticket-filters-compact-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--kit-space-2);
+}
+
+html[data-theme] .ticket-filter-active-chips {
+  min-width: 0;
+}
+
+/* Ticket list: mobile cards by default, then 4-column and 7-column table modes. */
+html[data-theme] .agent-ticket-workspace {
+  container-name: agent-ticket-list;
+  container-type: inline-size;
+  min-width: 0;
+}
+
+html[data-theme] .agent-ticket-table-view {
+  display: none;
+}
+
+html[data-theme] .agent-ticket-mobile-list {
+  display: grid;
+  gap: var(--kit-space-3);
+  padding: var(--kit-space-3);
+}
+
+html[data-theme] .agent-ticket-mobile-card {
+  display: grid;
+  gap: var(--kit-space-3);
+  min-width: 0;
+  padding: var(--kit-space-3);
+  border: 1px solid var(--kit-border);
+  border-radius: var(--kit-radius-lg);
+  background: var(--kit-surface);
+  box-shadow: var(--kit-shadow-xs);
+}
+
+html[data-theme] .agent-ticket-mobile-topline,
+html[data-theme] .agent-ticket-mobile-badges,
+html[data-theme] .agent-ticket-mobile-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--kit-space-2);
+}
+
+html[data-theme] .agent-ticket-mobile-topline {
+  justify-content: space-between;
+}
+
+html[data-theme] .agent-ticket-mobile-card h3 {
+  margin: 0;
+  color: var(--kit-text);
+  font-size: var(--kit-text-sm);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+html[data-theme] .agent-ticket-mobile-card > p {
+  margin: 0;
+  overflow: hidden;
+  color: var(--kit-text-2);
+  font-size: var(--kit-text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-theme] .agent-ticket-mobile-card dl {
+  display: grid;
+  gap: var(--kit-space-2);
+  margin: 0;
+}
+
+html[data-theme] .agent-ticket-mobile-card dl > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--kit-space-3);
+  min-width: 0;
+}
+
+html[data-theme] .agent-ticket-mobile-card dt {
+  color: var(--kit-secondary);
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+html[data-theme] .agent-ticket-mobile-card dd {
+  margin: 0;
+  overflow: hidden;
+  color: var(--kit-text-2);
+  font-size: var(--kit-text-xs);
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-theme] .agent-ticket-mobile-actions {
+  justify-content: flex-end;
+  padding-top: var(--kit-space-2);
+  border-top: 1px solid var(--kit-border);
+}
+
+html[data-theme] .agent-ticket-col-condensed {
+  display: none;
+}
+
+html[data-theme] .agent-ticket-cell-stack {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+html[data-theme] .agent-ticket-cell-stack small {
+  overflow: hidden;
+  color: var(--kit-secondary);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@container agent-inbox (min-width: 700px) {
+  html[data-theme] .agent-workspace-header {
+    align-items: flex-end;
+    flex-direction: row;
+  }
+
+  html[data-theme] .agent-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container agent-inbox (min-width: 1000px) and (max-width: 1350px) {
+  html[data-theme] .agent-workspace-rail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container agent-inbox (min-width: 1351px) {
+  html[data-theme] .agent-workspace-grid {
+    grid-template-columns: minmax(0, 1fr) 19rem;
+  }
+
+  html[data-theme] .agent-workspace-rail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html[data-theme] .agent-kpi-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  html[data-theme] .priority-ticket-banner {
+    display: none;
+  }
+
+  html[data-theme] .priority-ticket-list {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@container agent-inbox (max-width: 999px) {
+  html[data-theme] .agent-workspace .agent-card-header .eyebrow,
+  html[data-theme] .agent-workspace .agent-workspace-header .eyebrow {
+    display: none;
+  }
+}
+
+@container agent-inbox (max-width: 699px) {
+  html[data-theme] .priority-ticket-banner {
+    align-items: flex-start;
+  }
+
+  html[data-theme] .priority-ticket-banner span {
+    white-space: normal;
+  }
+
+  html[data-theme] .agent-card-header {
+    padding-inline: var(--kit-space-3);
+  }
+
+  html[data-theme] .agent-ticket-layout-toolbar > div:first-child span {
+    display: none;
+  }
+}
+
+@container ticket-filters (min-width: 700px) {
+  html[data-theme] .ticket-filters-compact-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  html[data-theme] .ticket-filter-search {
+    grid-column: 1 / -1;
+  }
+
+  html[data-theme] .ticket-filter-status,
+  html[data-theme] .ticket-filter-priority,
+  html[data-theme] .ticket-filter-sort,
+  html[data-theme] .ticket-filter-more,
+  html[data-theme] .ticket-filter-apply {
+    display: block;
+    grid-column: auto;
+    min-width: 0;
+  }
+
+  html[data-theme] .ticket-filters-compact-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  html[data-theme] .ticket-filters-compact-panel-actions {
+    grid-column: 1 / -1;
+  }
+}
+
+@container ticket-filters (min-width: 1000px) {
+  html[data-theme] .ticket-filters-compact-grid {
+    grid-template-columns:
+      minmax(260px, 1.7fr)
+      minmax(150px, .75fr)
+      minmax(150px, .75fr)
+      auto
+      minmax(170px, .8fr)
+      auto;
+  }
+
+  html[data-theme] .ticket-filter-search,
+  html[data-theme] .ticket-filter-status,
+  html[data-theme] .ticket-filter-priority,
+  html[data-theme] .ticket-filter-more,
+  html[data-theme] .ticket-filter-sort,
+  html[data-theme] .ticket-filter-apply {
+    grid-column: auto;
+  }
+}
+
+@container agent-ticket-list (min-width: 700px) {
+  html[data-theme] .agent-ticket-table-view {
+    display: block;
+  }
+
+  html[data-theme] .agent-ticket-mobile-list {
+    display: none;
+  }
+
+  html[data-theme] .agent-ticket-responsive-table {
+    width: 100%;
+    min-width: 0 !important;
+    table-layout: fixed;
+  }
+
+  html[data-theme] .agent-ticket-col-wide {
+    display: none;
+  }
+
+  html[data-theme] th.agent-ticket-col-condensed,
+  html[data-theme] td.agent-ticket-col-condensed {
+    display: table-cell;
+  }
+
+  html[data-theme] .agent-ticket-col-ticket {
+    width: 40%;
+  }
+
+  html[data-theme] .agent-ticket-col-treatment {
+    width: 28%;
+  }
+
+  html[data-theme] .agent-ticket-col-sla {
+    width: 17%;
+  }
+
+  html[data-theme] .agent-ticket-col-activity {
+    width: 15%;
+  }
+}
+
+@container agent-ticket-list (min-width: 1100px) {
+  html[data-theme] .agent-ticket-responsive-table {
+    table-layout: auto;
+  }
+
+  html[data-theme] th.agent-ticket-col-wide,
+  html[data-theme] td.agent-ticket-col-wide {
+    display: table-cell;
+  }
+
+  html[data-theme] .agent-ticket-col-condensed {
+    display: none !important;
+  }
+}
