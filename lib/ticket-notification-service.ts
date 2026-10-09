@@ -1,4 +1,4 @@
-import { NotificationType, Prisma, RoleCode } from "@prisma/client";
+import { NotificationType, Prisma, RoleCode, ScopeType } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { createInAppNotifications } from "@/lib/notifications";
 
@@ -17,6 +17,44 @@ export async function queueWorkerIds(db: Prisma.TransactionClient | typeof prism
     select: { userId: true },
   });
   return [...new Set(members.map((member) => member.userId))];
+}
+
+
+async function queueSupervisorIds(
+  db: Prisma.TransactionClient | typeof prisma,
+  queueId: string,
+): Promise<string[]> {
+  const queue = await db.queue.findUnique({
+    where: { id: queueId },
+    select: {
+      departmentId: true,
+      teams: { where: { isActive: true }, select: { id: true } },
+    },
+  });
+  if (!queue) return [];
+
+  const teamIds = queue.teams.map((team) => team.id);
+  const supervisors = await db.user.findMany({
+    where: {
+      status: "ACTIVE",
+      administrativelyDisabled: false,
+      OR: [{ authorizedQueueId: null }, { authorizedQueueId: queueId }],
+      roleAssignments: {
+        some: {
+          role: { code: { in: [RoleCode.QUEUE_MANAGER, RoleCode.FUNCTIONAL_ADMIN] } },
+          OR: [
+            { scopeId: null },
+            { scope: { type: ScopeType.GLOBAL } },
+            { scope: { type: ScopeType.QUEUE, queueId } },
+            { scope: { type: ScopeType.DEPARTMENT, departmentId: queue.departmentId } },
+            ...(teamIds.length ? [{ scope: { type: ScopeType.TEAM, teamId: { in: teamIds } } }] : []),
+          ],
+        },
+      },
+    },
+    select: { id: true },
+  });
+  return supervisors.map((user) => user.id);
 }
 
 export async function notifyQueueWorkers(
@@ -45,9 +83,14 @@ export async function notifyQueueWorkers(
         select: { id: true },
       })
     : null;
+  const [workerIds, supervisorIds] = await Promise.all([
+    queueWorkerIds(db, input.queueId),
+    queueSupervisorIds(db, input.queueId),
+  ]);
   const recipients = new Set([
     manager?.id,
-    ...(await queueWorkerIds(db, input.queueId)),
+    ...workerIds,
+    ...supervisorIds,
   ].filter(Boolean) as string[]);
   for (const recipientId of input.excludeUserIds ?? []) recipients.delete(recipientId);
   const recipientIds = [...recipients];
