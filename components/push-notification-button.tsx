@@ -68,10 +68,17 @@ export function PushNotificationButton() {
         userVisibleOnly: true,
         applicationServerKey: decodeKey(config.publicKey),
       });
+      const serialized = subscription.toJSON();
       const response = await fetch("/api/notifications/push-subscriptions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(subscription.toJSON()),
+        body: JSON.stringify({
+          endpoint: subscription.endpoint,
+          keys: {
+            p256dh: serialized.keys?.p256dh,
+            auth: serialized.keys?.auth,
+          },
+        }),
       });
       if (!response.ok) throw new Error("subscription-failed");
       setEnabled(true);
