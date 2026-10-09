@@ -26,6 +26,27 @@ describe("ticket notification reliability", () => {
     expect(queueNotifications).toContain("return recipientIds");
   });
 
+  it("notifies the operational receiver even when the creator also holds an agent or manager role", () => {
+    const ticketService = source("lib/ticket-service.ts");
+
+    expect(ticketService).toContain("operationalRecipientIds = await notifyQueueWorkers(tx");
+    expect(ticketService).not.toContain("excludeUserIds: [actor.id]");
+    expect(ticketService).toContain("if (!operationalRecipientIds.includes(actor.id))");
+    expect(ticketService).toContain("type: NotificationType.QUEUE_NEW_TICKET");
+  });
+
+  it("includes active scoped queue supervisors in recipient discovery", () => {
+    const queueNotifications = source("lib/ticket-notification-service.ts");
+
+    expect(queueNotifications).toContain("queueSupervisorIds");
+    expect(queueNotifications).toContain("RoleCode.QUEUE_MANAGER");
+    expect(queueNotifications).toContain("RoleCode.FUNCTIONAL_ADMIN");
+    expect(queueNotifications).toContain("ScopeType.QUEUE");
+    expect(queueNotifications).toContain("ScopeType.DEPARTMENT");
+    expect(queueNotifications).toContain("ScopeType.TEAM");
+    expect(queueNotifications).toContain("...supervisorIds");
+  });
+
   it("refreshes unread state while an authenticated app stays open", () => {
     const state = source("components/notification-state.tsx");
     const center = source("components/notification-center.tsx");
