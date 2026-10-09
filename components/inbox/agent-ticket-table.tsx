@@ -32,20 +32,25 @@ export function AgentTicketTable({
 
   return (
     <div className="agent-ticket-workspace">
-      <div className="agent-table-wrap">
+      <div className="agent-ticket-table-view agent-table-wrap">
         <div className="ui-data-table">
           <div className="ui-data-table-scroll">
-            <table>
+            <table className="agent-ticket-responsive-table">
               <caption className="ui-sr-only">Mes tickets agent</caption>
               <thead>
                 <tr>
-                  <th scope="col">Référence</th>
-                  <th scope="col">Sujet</th>
-                  <th scope="col">Priorité</th>
-                  <th scope="col">Statut</th>
-                  <th scope="col">Demandeur</th>
-                  <th scope="col">SLA</th>
-                  <th scope="col">Dernière activité</th>
+                  <th className="agent-ticket-col-wide" scope="col">Référence</th>
+                  <th className="agent-ticket-col-wide" scope="col">Sujet</th>
+                  <th className="agent-ticket-col-wide" scope="col">Priorité</th>
+                  <th className="agent-ticket-col-wide" scope="col">Statut</th>
+                  <th className="agent-ticket-col-wide" scope="col">Demandeur</th>
+                  <th className="agent-ticket-col-wide" scope="col">SLA</th>
+                  <th className="agent-ticket-col-wide" scope="col">Dernière activité</th>
+
+                  <th className="agent-ticket-col-condensed agent-ticket-col-ticket" scope="col">Ticket</th>
+                  <th className="agent-ticket-col-condensed agent-ticket-col-treatment" scope="col">Traitement</th>
+                  <th className="agent-ticket-col-condensed agent-ticket-col-sla" scope="col">SLA</th>
+                  <th className="agent-ticket-col-condensed agent-ticket-col-activity" scope="col">Activité</th>
                 </tr>
               </thead>
               <tbody>
@@ -70,18 +75,37 @@ export function AgentTicketTable({
                           }
                         }}
                       >
-                        <td><span className="agent-ticket-reference">{ticket.reference}</span></td>
-                        <td><span className="agent-ticket-title">{ticket.title}</span></td>
-                        <td><PriorityBadge priority={ticket.priority} /></td>
-                        <td><StatusBadge status={ticket.status} /></td>
-                        <td>{ticket.requester.name}</td>
-                        <td><SlaBadge state={ticket.slaState} dueAt={ticket.slaDueAt} compact /></td>
-                        <td>{formatActivity(ticket.updatedAt)}</td>
+                        <td className="agent-ticket-col-wide"><span className="agent-ticket-reference">{ticket.reference}</span></td>
+                        <td className="agent-ticket-col-wide"><span className="agent-ticket-title">{ticket.title}</span></td>
+                        <td className="agent-ticket-col-wide"><PriorityBadge priority={ticket.priority} /></td>
+                        <td className="agent-ticket-col-wide"><StatusBadge status={ticket.status} /></td>
+                        <td className="agent-ticket-col-wide">{ticket.requester.name}</td>
+                        <td className="agent-ticket-col-wide"><SlaBadge state={ticket.slaState} dueAt={ticket.slaDueAt} compact /></td>
+                        <td className="agent-ticket-col-wide">{formatActivity(ticket.updatedAt)}</td>
+
+                        <td className="agent-ticket-col-condensed agent-ticket-col-ticket">
+                          <div className="agent-ticket-cell-stack">
+                            <span className="agent-ticket-reference">{ticket.reference}</span>
+                            <span className="agent-ticket-title">{ticket.title}</span>
+                            <small>{ticket.requester.name} · {ticket.queue.name}</small>
+                          </div>
+                        </td>
+                        <td className="agent-ticket-col-condensed agent-ticket-col-treatment">
+                          <div className="agent-ticket-cell-stack">
+                            <StatusBadge status={ticket.status} />
+                            <PriorityBadge priority={ticket.priority} />
+                            <small>{ticket.assignedTo?.name ?? "Non affecté"}</small>
+                          </div>
+                        </td>
+                        <td className="agent-ticket-col-condensed agent-ticket-col-sla">
+                          <SlaBadge state={ticket.slaState} dueAt={ticket.slaDueAt} compact />
+                        </td>
+                        <td className="agent-ticket-col-condensed agent-ticket-col-activity">{formatActivity(ticket.updatedAt)}</td>
                       </tr>
 
                       {expanded ? (
                         <tr className="bg-slate-50/70">
-                          <td colSpan={7} className="p-0">
+                          <td colSpan={11} className="p-0">
                             <section
                               className="border-y border-slate-200 px-4 py-4"
                               aria-label={`Détails rapides de ${ticket.reference}`}
@@ -148,7 +172,7 @@ export function AgentTicketTable({
                   );
                 }) : (
                   <tr>
-                    <td colSpan={7}>
+                    <td colSpan={11}>
                       <div className="ui-data-table-empty">Aucun ticket actif pour ces critères.</div>
                     </td>
                   </tr>
@@ -157,6 +181,48 @@ export function AgentTicketTable({
             </table>
           </div>
         </div>
+      </div>
+
+      <div className="agent-ticket-mobile-list">
+        {tickets.length ? tickets.map((ticket) => {
+          const claimable = claimableTicketIdSet.has(ticket.id);
+          return (
+            <article key={ticket.id} className="agent-ticket-mobile-card">
+              <div className="agent-ticket-mobile-topline">
+                <span className="agent-ticket-reference">{ticket.reference}</span>
+                <SlaBadge state={ticket.slaState} dueAt={ticket.slaDueAt} compact />
+              </div>
+
+              <h3>{ticket.title}</h3>
+              <p>{ticket.requester.name} · {ticket.queue.name}</p>
+
+              <div className="agent-ticket-mobile-badges">
+                <StatusBadge status={ticket.status} />
+                <PriorityBadge priority={ticket.priority} />
+              </div>
+
+              <dl>
+                <div>
+                  <dt>Assigné</dt>
+                  <dd>{ticket.assignedTo?.name ?? "Non affecté"}</dd>
+                </div>
+                <div>
+                  <dt>Dernière activité</dt>
+                  <dd>{formatActivity(ticket.updatedAt)}</dd>
+                </div>
+              </dl>
+
+              <div className="agent-ticket-mobile-actions">
+                {claimable ? <ClaimTicketButton ticketId={ticket.id} /> : null}
+                <Link href={`/tickets/${ticket.id}` as Route} className="button-secondary">
+                  Ouvrir
+                </Link>
+              </div>
+            </article>
+          );
+        }) : (
+          <div className="ui-data-table-empty">Aucun ticket actif pour ces critères.</div>
+        )}
       </div>
     </div>
   );
