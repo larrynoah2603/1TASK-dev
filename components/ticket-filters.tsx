@@ -2,7 +2,7 @@
 
 import { Priority, TicketStatus } from "@prisma/client";
 import type { Route } from "next";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { PRIORITY_LABELS, STATUS_LABELS } from "@/lib/domain";
 import type { TicketListScope, TicketListSlaFilter, TicketListSort } from "@/lib/ticket-service";
@@ -58,6 +58,7 @@ export function TicketFilters({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+  const [compactPanelOpen, setCompactPanelOpen] = useState(false);
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -72,9 +73,11 @@ export function TicketFilters({
       ? buildTicketFilterPatchHref(pathname, searchParams.toString(), nextValues)
       : buildTicketFilterHref(pathname, searchParams.toString(), nextValues);
     startTransition(() => router.replace(href as Route, { scroll: false }));
+    setCompactPanelOpen(false);
   }
 
   function handleReset() {
+    setCompactPanelOpen(false);
     startTransition(() => router.replace(resetHref as Route, { scroll: false }));
   }
 
@@ -95,87 +98,108 @@ export function TicketFilters({
 
   if (compact) {
     return (
-      <form key={filterStateKey} aria-label="Filtres de tickets" className="border-y border-[var(--kit-border)] bg-[var(--kit-glass)] px-3 py-2" onSubmit={handleSubmit}>
+      <form
+        key={filterStateKey}
+        aria-label="Filtres de tickets"
+        className="ticket-filters-compact border-y border-[var(--kit-border)] bg-[var(--kit-glass)] px-3 py-2"
+        data-compact-filters-open={compactPanelOpen ? "true" : "false"}
+        onSubmit={handleSubmit}
+      >
         <input type="hidden" name="scope" value={values.scope ?? "all"} />
         <input type="hidden" name="sla" value={values.sla ?? ""} />
 
-        <div className="grid items-end gap-2 md:grid-cols-2 xl:grid-cols-[minmax(260px,1.7fr)_minmax(150px,.75fr)_minmax(150px,.75fr)_auto_minmax(170px,.8fr)_auto]">
-          <label className="sr-only" htmlFor="ticket-search-compact">Recherche</label>
-          <input
-            id="ticket-search-compact"
-            name="q"
-            defaultValue={values.q}
-            placeholder="Référence, objet ou description…"
-            aria-label="Rechercher par référence, objet ou description"
-            className="field-control"
-          />
+        <div className="ticket-filters-compact-grid">
+          <div className="ticket-filter-search">
+            <label className="sr-only" htmlFor="ticket-search-compact">Recherche</label>
+            <input
+              id="ticket-search-compact"
+              name="q"
+              defaultValue={values.q}
+              placeholder="Référence, objet ou description…"
+              aria-label="Rechercher par référence, objet ou description"
+              className="field-control"
+            />
+          </div>
 
-          <label className="sr-only" htmlFor="ticket-status-compact">Statut</label>
-          <Combobox
-            id="ticket-status-compact"
-            name="status"
-            defaultValue={values.status ?? ""}
-            placeholder="Tous les statuts"
-            options={[{ value: "", label: "Tous les statuts" }, ...Object.values(TicketStatus).map((status) => ({ value: status, label: STATUS_LABELS[status] }))]}
-          />
+          <div className="ticket-filter-quick ticket-filter-status">
+            <label className="sr-only" htmlFor="ticket-status-compact">Statut</label>
+            <Combobox
+              id="ticket-status-compact"
+              name="status"
+              defaultValue={values.status ?? ""}
+              placeholder="Tous les statuts"
+              options={[{ value: "", label: "Tous les statuts" }, ...Object.values(TicketStatus).map((status) => ({ value: status, label: STATUS_LABELS[status] }))]}
+            />
+          </div>
 
-          <label className="sr-only" htmlFor="ticket-priority-compact">Priorité</label>
-          <Combobox
-            id="ticket-priority-compact"
-            name="priority"
-            defaultValue={values.priority ?? ""}
-            placeholder="Toutes les priorités"
-            options={[{ value: "", label: "Toutes les priorités" }, ...Object.values(Priority).map((priority) => ({ value: priority, label: `${PRIORITY_LABELS[priority]}${priority === Priority.HIGH || priority === Priority.CRITICAL ? " — urgent" : ""}` }))]}
-          />
+          <div className="ticket-filter-quick ticket-filter-priority">
+            <label className="sr-only" htmlFor="ticket-priority-compact">Priorité</label>
+            <Combobox
+              id="ticket-priority-compact"
+              name="priority"
+              defaultValue={values.priority ?? ""}
+              placeholder="Toutes les priorités"
+              options={[{ value: "", label: "Toutes les priorités" }, ...Object.values(Priority).map((priority) => ({ value: priority, label: `${PRIORITY_LABELS[priority]}${priority === Priority.HIGH || priority === Priority.CRITICAL ? " — urgent" : ""}` }))]}
+            />
+          </div>
 
-          <details className="relative">
-            <summary className="button-secondary flex min-h-10 cursor-pointer list-none items-center justify-center gap-2 whitespace-nowrap px-3 text-xs">
-              Filtres{advancedCount ? ` (${advancedCount})` : ""}
-            </summary>
-            <div className="z-30 mt-2 grid gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-xl md:grid-cols-2 xl:absolute xl:right-0 xl:w-[36rem]">
-              <label className="field-label">
-                Département
-                <Combobox name="departmentId" defaultValue={values.departmentId ?? ""} placeholder="Tous les départements autorisés" options={[{ value: "", label: "Tous les départements autorisés" }, ...departments.map((department) => ({ value: department.id, label: department.name }))]} />
-              </label>
-              <label className="field-label">
-                File
-                <Combobox name="queueId" defaultValue={values.queueId ?? ""} placeholder="Toutes les files autorisées" options={[{ value: "", label: "Toutes les files autorisées" }, ...queues.map((queue) => ({ value: queue.id, label: `${queue.department.name} — ${queue.name}` }))]} />
-              </label>
-              {dossiers.length || missions.length ? <label className="field-label">
-                Dossier
-                <Combobox name="dossierId" defaultValue={values.dossierId ?? ""} placeholder="Tous les dossiers autorisés" options={[{ value: "", label: "Tous les dossiers autorisés" }, ...dossiers.map((dossier) => ({ value: dossier.id, label: `${dossier.client.name} · ${dossier.code} · ${dossier.name}` }))]} />
-              </label> : <input type="hidden" name="dossierId" value="" />}
-              {missions.length ? <label className="field-label">
-                Mission
-                <Combobox name="missionId" defaultValue={values.missionId ?? ""} placeholder="Toutes les missions autorisées" options={[{ value: "", label: "Toutes les missions autorisées" }, ...availableMissions.map((mission) => ({ value: mission.id, label: `${mission.code} · ${mission.name}` }))]} />
-              </label> : <input type="hidden" name="missionId" value="" />}
-              <div className="flex items-center justify-end gap-2 md:col-span-2">
-                <button type="button" disabled={isPending} onClick={handleReset} className="button-ghost min-h-9 text-xs disabled:opacity-60">Réinitialiser</button>
-                <button type="submit" disabled={isPending} className="button-primary min-h-9 px-4 text-xs disabled:opacity-60">{isPending ? "Mise à jour…" : "Appliquer"}</button>
-              </div>
-            </div>
-          </details>
+          <button
+            type="button"
+            className="ticket-filter-more button-secondary flex min-h-10 items-center justify-center gap-2 whitespace-nowrap px-3 text-xs"
+            aria-expanded={compactPanelOpen}
+            aria-controls="ticket-filters-compact-panel"
+            onClick={() => setCompactPanelOpen((open) => !open)}
+          >
+            Filtres{advancedCount ? ` (${advancedCount})` : ""}
+          </button>
 
-          <label className="sr-only" htmlFor="ticket-sort-compact">Trier par</label>
-          <Combobox
-            id="ticket-sort-compact"
-            name="sort"
-            defaultValue={values.sort ?? "updated_desc"}
-            options={[
-              { value: "updated_desc", label: "Dernière activité" },
-              { value: "created_desc", label: "Plus récents" },
-              { value: "created_asc", label: "Plus anciens" },
-              { value: "status_asc", label: "Statut" },
-            ]}
-          />
+          <div className="ticket-filter-quick ticket-filter-sort">
+            <label className="sr-only" htmlFor="ticket-sort-compact">Trier par</label>
+            <Combobox
+              id="ticket-sort-compact"
+              name="sort"
+              defaultValue={values.sort ?? "updated_desc"}
+              options={[
+                { value: "updated_desc", label: "Dernière activité" },
+                { value: "created_desc", label: "Plus récents" },
+                { value: "created_asc", label: "Plus anciens" },
+                { value: "status_asc", label: "Statut" },
+              ]}
+            />
+          </div>
 
-          <button type="submit" disabled={isPending} className="button-primary min-h-10 px-4 text-xs disabled:opacity-60">
+          <button type="submit" disabled={isPending} className="ticket-filter-apply button-primary min-h-10 px-4 text-xs disabled:opacity-60">
             {isPending ? "…" : "Appliquer"}
           </button>
         </div>
 
+        {compactPanelOpen ? (
+          <div id="ticket-filters-compact-panel" className="ticket-filters-compact-panel">
+            <label className="field-label">
+              Département
+              <Combobox name="departmentId" defaultValue={values.departmentId ?? ""} placeholder="Tous les départements autorisés" options={[{ value: "", label: "Tous les départements autorisés" }, ...departments.map((department) => ({ value: department.id, label: department.name }))]} />
+            </label>
+            <label className="field-label">
+              File
+              <Combobox name="queueId" defaultValue={values.queueId ?? ""} placeholder="Toutes les files autorisées" options={[{ value: "", label: "Toutes les files autorisées" }, ...queues.map((queue) => ({ value: queue.id, label: `${queue.department.name} — ${queue.name}` }))]} />
+            </label>
+            {dossiers.length || missions.length ? <label className="field-label">
+              Dossier
+              <Combobox name="dossierId" defaultValue={values.dossierId ?? ""} placeholder="Tous les dossiers autorisés" options={[{ value: "", label: "Tous les dossiers autorisés" }, ...dossiers.map((dossier) => ({ value: dossier.id, label: `${dossier.client.name} · ${dossier.code} · ${dossier.name}` }))]} />
+            </label> : <input type="hidden" name="dossierId" value="" />}
+            {missions.length ? <label className="field-label">
+              Mission
+              <Combobox name="missionId" defaultValue={values.missionId ?? ""} placeholder="Toutes les missions autorisées" options={[{ value: "", label: "Toutes les missions autorisées" }, ...availableMissions.map((mission) => ({ value: mission.id, label: `${mission.code} · ${mission.name}` }))]} />
+            </label> : <input type="hidden" name="missionId" value="" />}
+            <div className="ticket-filters-compact-panel-actions">
+              <button type="button" disabled={isPending} onClick={handleReset} className="button-ghost min-h-9 text-xs disabled:opacity-60">Réinitialiser</button>
+              <button type="submit" disabled={isPending} className="button-primary min-h-9 px-4 text-xs disabled:opacity-60">{isPending ? "Mise à jour…" : "Appliquer"}</button>
+            </div>
+          </div>
+        ) : null}
+
         {advancedCount ? (
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+          <div className="ticket-filter-active-chips mt-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
             {departmentName ? <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1">Département : {departmentName}</span> : null}
             {queueName ? <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1">File : {queueName}</span> : null}
             {dossierName ? <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1">Dossier : {dossierName}</span> : null}
