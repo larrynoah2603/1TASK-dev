@@ -36,6 +36,7 @@ export function AgentTicketWorkspaceView({
             type="button"
             className={layout === "kanban" ? "is-active" : ""}
             aria-pressed={layout === "kanban"}
+            title="Kanban en consultation uniquement"
             onClick={() => setLayout("kanban")}
           >
             Kanban
