@@ -33,7 +33,7 @@ export async function deliverPushNotification(notificationId: string) {
   let delivered = 0;
   for (const subscription of notification.recipient.pushSubscriptions) {
     try {
-      await webpush.sendNotification({ endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } }, JSON.stringify({ title: notification.title, body: notification.body, severity: notification.severity, actionUrl: notification.actionUrl ?? "/notifications" }));
+      await webpush.sendNotification({ endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } }, JSON.stringify({ notificationId: notification.id, title: notification.title, body: notification.body, severity: notification.severity, actionUrl: notification.actionUrl ?? "/notifications" }));
       await prisma.pushSubscription.update({ where: { id: subscription.id }, data: { lastUsedAt: new Date() } });
       delivered += 1;
     } catch (error) {
