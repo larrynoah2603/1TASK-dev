@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { PrismaClient, NotificationChannel, NotificationStatus, NotificationType } from "@prisma/client";
-import { enqueueOutboxEvent } from "@/lib/outbox";
+import { after } from "next/server";
+import { acceleratePushOutboxEvent, enqueueOutboxEvent } from "@/lib/outbox";
 import { getProductCapabilities } from "@/lib/product-policy.server";
 import { readServerEnvironment } from "@/lib/env";
 
@@ -59,6 +60,25 @@ function webPushConfigured() {
   );
 }
 
+
+function scheduleImmediatePush(notificationId: string) {
+  try {
+    after(async () => {
+      try {
+        await acceleratePushOutboxEvent(notificationId);
+      } catch (error) {
+        console.warn("[push] immediate delivery failed; scheduler retry remains available", {
+          notificationId,
+          error: error instanceof Error ? error.message : "delivery failed",
+        });
+      }
+    });
+  } catch {
+    // Outside a Next.js request lifecycle, the persisted outbox event remains
+    // available for the scheduled /api/jobs/outbox worker.
+  }
+}
+
 async function createPushMirrors(db: NotificationDb, inputs: InAppNotificationInput[]) {
   const capabilities = getProductCapabilities();
   if (!capabilities.pushNotifications || !webPushConfigured()) return;
@@ -112,6 +132,7 @@ async function createPushMirrors(db: NotificationDb, inputs: InAppNotificationIn
           recipientId: input.recipientId,
         },
       });
+      scheduleImmediatePush(notification.id);
     } catch (error) {
       if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2002") throw error;
     }
@@ -258,11 +279,16 @@ export async function notify(db: NotificationDb, input: NotificationDispatchInpu
         actionUrl: input.actionUrl ?? (input.ticketId ? `/tickets/${input.ticketId}` : undefined), deduplicationKey: input.deduplicationKey, channel, status: NotificationStatus.PENDING,
       } });
       created.push(notification);
-      if (channel !== NotificationChannel.IN_APP) await enqueueOutboxEvent(db, {
-        eventKey: `notification:${notification.id}:${channel.toLowerCase()}`, type: `NOTIFICATION_${channel}_REQUESTED`,
-        aggregateType: "Notification", aggregateId: notification.id,
-        payload: { notificationId: notification.id, channel, recipientId: input.recipientId },
-      });
+      if (channel !== NotificationChannel.IN_APP) {
+        await enqueueOutboxEvent(db, {
+          eventKey: `notification:${notification.id}:${channel.toLowerCase()}`,
+          type: `NOTIFICATION_${channel}_REQUESTED`,
+          aggregateType: "Notification",
+          aggregateId: notification.id,
+          payload: { notificationId: notification.id, channel, recipientId: input.recipientId },
+        });
+        if (channel === NotificationChannel.PUSH) scheduleImmediatePush(notification.id);
+      }
     } catch (error) {
       if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2002") throw error;
     }
