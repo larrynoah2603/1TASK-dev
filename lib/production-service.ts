@@ -2,6 +2,7 @@ import { AssetStatus, MissionStatus, RoleCode } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { canManageQueue, hasGlobalRole } from "@/lib/access-control";
 import { assertFunctionalAssetAdministrator } from "@/lib/asset-access";
+import { reconcileApprovedAssetRequestOnAssignment } from "@/lib/asset-request-service";
 import {
   AuthorizationError,
   ResourceNotFoundError,
@@ -522,9 +523,67 @@ export async function createAsset(actor: UserContext, input: AssetInput) {
   assertFunctionalAssetAdministrator(actor);
   const parsed = assetSchema.parse(input);
   if (!departmentAllowed(actor, parsed.departmentId)) throw new AuthorizationError("Le département de l’actif est hors de votre périmètre.");
-  const asset = await prisma.asset.create({ data: { ...parsed, status: AssetStatus.ACTIVE }, include: { department: true, assignedTo: { select: { id: true, name: true } } } });
-  await appendAuditLog(prisma, { actorId: actor.id, action: "ASSET_CREATED", objectType: "Asset", objectId: asset.id, newValue: parsed, reason: "Création d’un actif." });
-  return asset;
+
+  const targetUser = parsed.assignedToId
+    ? await prisma.user.findUnique({
+        where: { id: parsed.assignedToId },
+        select: { id: true, departmentId: true },
+      })
+    : null;
+  if (parsed.assignedToId && !targetUser) throw new ResourceNotFoundError("Utilisateur affecté introuvable.");
+  if (parsed.departmentId && targetUser?.departmentId && parsed.departmentId !== targetUser.departmentId) {
+    throw new AuthorizationError("Le département de l’actif doit correspondre à celui de l’utilisateur affecté.");
+  }
+
+  const departmentId = parsed.departmentId ?? targetUser?.departmentId ?? null;
+  const assignedAt = parsed.assignedToId ? new Date() : null;
+
+  return prisma.$transaction(async (tx) => {
+    const asset = await tx.asset.create({
+      data: {
+        ...parsed,
+        departmentId,
+        assignedAt,
+        status: AssetStatus.ACTIVE,
+      },
+      include: {
+        department: true,
+        assignedTo: { select: { id: true, name: true } },
+      },
+    });
+
+    if (asset.assignedToId) {
+      await tx.assetMovement.create({
+        data: {
+          assetId: asset.id,
+          toUserId: asset.assignedToId,
+          toDepartmentId: asset.departmentId,
+          reason: "Création et attribution initiale de l’actif.",
+          createdById: actor.id,
+        },
+      });
+    }
+
+    const requestReconciliation = await reconcileApprovedAssetRequestOnAssignment(tx, {
+      assetId: asset.id,
+      assetTag: asset.assetTag,
+      assetName: asset.name,
+      assetType: asset.type,
+      assignedToId: asset.assignedToId,
+      actorId: actor.id,
+    });
+
+    await appendAuditLog(tx, {
+      actorId: actor.id,
+      action: "ASSET_CREATED",
+      objectType: "Asset",
+      objectId: asset.id,
+      newValue: { ...parsed, departmentId, assignedAt: assignedAt?.toISOString() ?? null },
+      reason: "Création d’un actif.",
+    });
+
+    return { ...asset, requestReconciliation: requestReconciliation.status };
+  });
 }
 
 export async function moveAsset(actor: UserContext, assetId: string, input: AssetMovementInput) {
@@ -542,8 +601,34 @@ export async function moveAsset(actor: UserContext, assetId: string, input: Asse
   if (parsed.toDepartmentId && (!targetDepartment || !targetDepartment.isActive)) throw new ResourceNotFoundError("Département cible introuvable ou inactif.");
   const departmentId = parsed.toDepartmentId ?? targetUser?.departmentId ?? asset.departmentId;
   const updated = await prisma.$transaction(async (tx) => {
-    await tx.asset.update({ where: { id: assetId }, data: { assignedToId: parsed.toUserId ?? null, departmentId } });
-    return tx.assetMovement.create({ data: { assetId, fromUserId: asset.assignedToId, toUserId: parsed.toUserId ?? null, fromDepartmentId: asset.departmentId, toDepartmentId: departmentId, reason: parsed.reason, createdById: actor.id } });
+    const updatedAsset = await tx.asset.update({
+      where: { id: assetId },
+      data: {
+        assignedToId: parsed.toUserId ?? null,
+        assignedAt: parsed.toUserId ? new Date() : null,
+        departmentId,
+      },
+    });
+    const movement = await tx.assetMovement.create({
+      data: {
+        assetId,
+        fromUserId: asset.assignedToId,
+        toUserId: parsed.toUserId ?? null,
+        fromDepartmentId: asset.departmentId,
+        toDepartmentId: departmentId,
+        reason: parsed.reason,
+        createdById: actor.id,
+      },
+    });
+    await reconcileApprovedAssetRequestOnAssignment(tx, {
+      assetId: updatedAsset.id,
+      assetTag: updatedAsset.assetTag,
+      assetName: updatedAsset.name,
+      assetType: updatedAsset.type,
+      assignedToId: updatedAsset.assignedToId,
+      actorId: actor.id,
+    });
+    return movement;
   });
   await appendAuditLog(prisma, { actorId: actor.id, action: "ASSET_MOVED", objectType: "Asset", objectId: assetId, oldValue: { assignedToId: asset.assignedToId, departmentId: asset.departmentId }, newValue: { assignedToId: parsed.toUserId ?? null, departmentId }, reason: parsed.reason });
   return updated;
