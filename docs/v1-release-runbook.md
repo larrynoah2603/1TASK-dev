@@ -79,12 +79,14 @@ métadonnées de pièces jointes et outbox externe en attente.
 ## 5. Activation staging et jobs authentifiés
 
 Définir `PRODUCT_PROFILE=v1`, redéployer l’artefact validé et vérifier login Entra, création,
-notification IN_APP et My Assets. Appeler GET et POST `/api/jobs/sla-monitor` avec le secret du
-scheduler, puis sans/mauvais secret (refus attendu). Vérifier de même `/api/jobs/outbox` : authentifié,
-il retourne un lot vide sans changer les lignes ; non authentifié, il est refusé.
+notification IN_APP, My Assets et activation Web Push sur un navigateur de test. Appeler GET et POST
+`/api/jobs/sla-monitor` avec le secret du scheduler, puis sans/mauvais secret (refus attendu).
+Vérifier de même `/api/jobs/outbox` : sans VAPID il reste inactif ; avec VAPID il traite uniquement
+les événements Push éligibles en V1 ; non authentifié, il est refusé.
 
-La V1 utilise **Upstash QStash** comme scheduler externe pour `/api/jobs/sla-monitor`. Configurer
-un schedule POST toutes les cinq minutes (`*/5 * * * *`) vers le domaine Vercel actif. Le header
+La V1 utilise **Upstash QStash** comme scheduler externe pour `/api/jobs/sla-monitor` et
+`/api/jobs/outbox`. Configurer le SLA toutes les cinq minutes (`*/5 * * * *`) et l’outbox
+Push toutes les minutes (`* * * * *`) vers le domaine Vercel actif. Le header
 QStash `Upstash-Forward | Authorization | Bearer <CRON_SECRET>` doit transmettre le même
 `CRON_SECRET` que celui défini côté Vercel. Aucun secret réel ne doit être versionné. Vérifier
 au moins une exécution `DELIVERED` puis un second déclenchement automatique réussi. Voir
