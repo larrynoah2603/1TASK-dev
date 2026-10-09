@@ -2,7 +2,7 @@
 
 La V1 utilise **Upstash QStash** comme scheduler externe pour le moniteur SLA
 et la livraison asynchrone des notifications Web Push.
-Aucun secret QStash, `CRON_SECRET` ou clé VAPID réelle ne doit être stocké dans GitHub.
+Aucun secret QStash ni `CRON_SECRET` réel ne doit être stocké dans GitHub. Aucune clé VAPID privée réelle ne doit non plus être versionnée.
 
 ## Jobs à programmer
 
