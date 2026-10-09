@@ -8,6 +8,27 @@ function decodeKey(value: string) {
   return Uint8Array.from([...raw].map((character) => character.charCodeAt(0)));
 }
 
+
+function serializeSubscription(subscription: PushSubscription) {
+  const serialized = subscription.toJSON();
+  return {
+    endpoint: subscription.endpoint,
+    keys: {
+      p256dh: serialized.keys?.p256dh,
+      auth: serialized.keys?.auth,
+    },
+  };
+}
+
+async function syncSubscription(subscription: PushSubscription) {
+  const response = await fetch("/api/notifications/push-subscriptions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(serializeSubscription(subscription)),
+  });
+  if (!response.ok) throw new Error("subscription-sync-failed");
+}
+
 type PushSupport = "server" | "supported" | "unsupported";
 
 const subscribeToPushSupport = () => () => {};
@@ -37,11 +58,30 @@ export function PushNotificationButton() {
   useEffect(() => {
     if (support !== "supported") return;
 
-    void navigator.serviceWorker.getRegistration().then(async (registration) => {
+    void (async () => {
+      const registration = await navigator.serviceWorker.getRegistration();
       const subscription = await registration?.pushManager.getSubscription();
-      setEnabled(Boolean(subscription));
-      if (Notification.permission === "denied") setMessage("Notifications système bloquées dans le navigateur.");
-    });
+
+      if (Notification.permission === "denied") {
+        setEnabled(false);
+        setMessage("Notifications système bloquées dans le navigateur.");
+        return;
+      }
+
+      if (!subscription) {
+        setEnabled(false);
+        return;
+      }
+
+      try {
+        await syncSubscription(subscription);
+        setEnabled(true);
+        setMessage("Notifications système activées sur cet appareil.");
+      } catch {
+        setEnabled(false);
+        setMessage("Abonnement détecté dans le navigateur, mais non synchronisé avec 1TASK. Cliquez sur Activer le push pour réessayer.");
+      }
+    })();
   }, [support]);
 
   async function enable() {
@@ -68,19 +108,7 @@ export function PushNotificationButton() {
         userVisibleOnly: true,
         applicationServerKey: decodeKey(config.publicKey),
       });
-      const serialized = subscription.toJSON();
-      const response = await fetch("/api/notifications/push-subscriptions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          endpoint: subscription.endpoint,
-          keys: {
-            p256dh: serialized.keys?.p256dh,
-            auth: serialized.keys?.auth,
-          },
-        }),
-      });
-      if (!response.ok) throw new Error("subscription-failed");
+      await syncSubscription(subscription);
       setEnabled(true);
       setMessage("Notifications système activées sur cet appareil.");
     } catch {
