@@ -389,17 +389,10 @@ export async function createTicket(actor: UserContext, input: unknown) {
     }
 
     const confidentialRecipientId = confidentialResolution?.recipient.id ?? null;
-
-    await createInAppNotification(tx, {
-      recipientId: actor.id,
-      ticketId: ticket.id,
-      type: NotificationType.TICKET_CREATED,
-      title: "Ticket créé",
-      body: `${ticket.reference} a été créé et routé vers ${ticket.queue.name}.`,
-      deduplicationKey: `ticket-created:${ticket.id}`,
-    });
+    let operationalRecipientIds: string[] = [];
 
     if (confidentialRecipientId) {
+      operationalRecipientIds = [confidentialRecipientId];
       await createInAppNotification(tx, {
         recipientId: confidentialRecipientId,
         ticketId: ticket.id,
@@ -409,6 +402,7 @@ export async function createTicket(actor: UserContext, input: unknown) {
         deduplicationKey: `queue-new-ticket:${ticket.id}`,
       });
     } else if (autoAssigned && autoAssignedUserId) {
+      operationalRecipientIds = [autoAssignedUserId];
       await createInAppNotification(tx, {
         recipientId: autoAssignedUserId,
         ticketId: ticket.id,
@@ -418,14 +412,24 @@ export async function createTicket(actor: UserContext, input: unknown) {
         deduplicationKey: `ticket-assigned:${ticket.id}`,
       });
     } else {
-      await notifyQueueWorkers(tx, {
+      operationalRecipientIds = await notifyQueueWorkers(tx, {
         queueId: ticket.queue.id,
         managerId: ticket.queue.managerId,
         ticketId: ticket.id,
         type: NotificationType.QUEUE_NEW_TICKET,
         title: "Nouveau ticket dans votre file",
         body: `${ticket.reference} attend une qualification ou une prise en charge.`,
-        excludeUserIds: [actor.id],
+      });
+    }
+
+    if (!operationalRecipientIds.includes(actor.id)) {
+      await createInAppNotification(tx, {
+        recipientId: actor.id,
+        ticketId: ticket.id,
+        type: NotificationType.TICKET_CREATED,
+        title: "Ticket créé",
+        body: `${ticket.reference} a été créé et routé vers ${ticket.queue.name}.`,
+        deduplicationKey: `ticket-created:${ticket.id}`,
       });
     }
 
