@@ -72,8 +72,7 @@ export default async function InboxPage({
     ),
     measureServerOperation(
       "inbox.ticket_page",
-      () => listVisibleTicketsPage(
-        user,
+      () => listVisibleTicketsPage(user,
         {
           cursor: params.cursor,
           pageSize: params.pageSize,
