@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 const source = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("compact ticket filters", () => {
-  it("uses the compact filter layout on every shared ticket list surface", () => {
+  it("keeps shared compact filters on generic ticket surfaces while Inbox uses its dedicated workbench", () => {
     const inbox = source("app/(app)/inbox/page.tsx");
     const ticketList = source("components/tickets/ticket-list.tsx");
     const ticketsToolbar = source("components/tickets/tickets-toolbar.tsx");
@@ -13,9 +13,9 @@ describe("compact ticket filters", () => {
     const ticketsPage = source("app/(app)/tickets/page.tsx");
     const queuesPage = source("app/(app)/queues/page.tsx");
 
-    expect(inbox).toContain("<TicketViewSwitcher compactLabels");
-    expect(inbox).toContain("query={rawParams}");
-    expect(inbox).toContain("<TicketFilters compact");
+    expect(inbox).toContain("<InboxWorkbench");
+    expect(inbox).not.toContain("<TicketViewSwitcher");
+    expect(inbox).not.toContain("<TicketFilters");
     expect(ticketList).toContain("<TicketFilter compact");
     expect(ticketsToolbar).toContain("<TicketFilter compact");
     expect(adminTickets).toContain("<TicketFilters compact");
@@ -24,8 +24,9 @@ describe("compact ticket filters", () => {
     expect(queuesPage).toContain("<TicketViewSwitcher compactLabels");
   });
 
-  it("keeps scope and SLA in quick views instead of duplicating them in the compact toolbar", () => {
+  it("keeps the generic compact toolbar contract for non-Inbox surfaces", () => {
     const filters = source("components/ticket-filters.tsx");
+
     expect(filters).toContain('type="hidden" name="scope"');
     expect(filters).toContain('type="hidden" name="sla"');
     expect(filters).toContain("Filtres{advancedCount");
@@ -33,15 +34,14 @@ describe("compact ticket filters", () => {
     expect(filters).toContain("File : {queueName}");
   });
 
-  it("keeps ownership views and SLA shortcuts visually separate", () => {
+  it("keeps the reusable ownership and SLA switcher unchanged outside the Inbox", () => {
     const switcher = source("components/ticket-view-switcher.tsx");
+
     expect(switcher).toContain("compactScopeLabels");
     expect(switcher).toContain('label: compactLabels ? "À surveiller" : "SLA à surveiller"');
     expect(switcher).toContain("link.alert && index > 0");
     expect(switcher).toContain("links.push(...slaLinks)");
     expect(switcher).toContain('requested: "Mes demandes"');
     expect(switcher).toContain('sla === "attention" ? null : "attention"');
-    expect(switcher).not.toContain("scopeLinks.splice");
-    expect(switcher).not.toContain("useSearchParams");
   });
 });
