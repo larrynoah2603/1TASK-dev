@@ -5,15 +5,16 @@ import { describe, expect, it } from "vitest";
 const source = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("V1 agent inbox consultation kanban", () => {
-  it("keeps list as the default view and exposes a Kanban consultation toggle", () => {
-    const workspace = source("components/inbox/agent-ticket-workspace-view.tsx");
+  it("keeps list as the default view and exposes Kanban from the unified workbench", () => {
+    const workspace = source("components/inbox/inbox-workbench.tsx");
 
     expect(workspace).toContain('useState<InboxLayout>("list")');
     expect(workspace).toContain("Liste");
     expect(workspace).toContain("Kanban");
-    expect(workspace).toContain("La vue Kanban est en consultation uniquement.");
+    expect(workspace).toContain("Kanban en consultation uniquement");
     expect(workspace).toContain("<AgentTicketTable");
     expect(workspace).toContain("<AgentTicketKanban");
+    expect(workspace).not.toContain("agent-ticket-layout-toolbar");
   });
 
   it("uses stable workflow lane ids and a centralized status mapping", () => {
@@ -42,12 +43,13 @@ describe("V1 agent inbox consultation kanban", () => {
     expect(kanban).not.toContain("onDrop");
   });
 
-  it("integrates the switchable workspace into the existing filtered inbox", () => {
+  it("integrates the switchable workbench into the server-filtered inbox", () => {
     const inbox = source("app/(app)/inbox/page.tsx");
 
-    expect(inbox).toContain('import { AgentTicketWorkspaceView }');
-    expect(inbox).toContain("<TicketFilters");
-    expect(inbox).toContain("<AgentTicketWorkspaceView tickets={currentRows} claimableTicketIds={claimableTicketIds} />");
+    expect(inbox).toContain('import { InboxWorkbench }');
+    expect(inbox).toContain("<InboxWorkbench");
+    expect(inbox).toContain("tickets={currentRows}");
+    expect(inbox).toContain("claimableTicketIds={claimableTicketIds}");
     expect(inbox).toContain("<TicketCursorPagination");
   });
 

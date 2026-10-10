@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Route } from "next";
+import { AlertTriangle, ArrowRight } from "lucide-react";
 import type { DashboardTicketRow } from "@/components/dashboard-visuals";
 
 export function PriorityTickets({ tickets }: { tickets: DashboardTicketRow[] }) {
@@ -14,25 +15,20 @@ export function PriorityTickets({ tickets }: { tickets: DashboardTicketRow[] }) 
   if (!firstPriorityTicket) return null;
 
   return (
-    <section
-      className="agent-card agent-priority-card agent-priority-compact"
-      aria-labelledby="priority-tickets-title"
-    >
-      <h2 id="priority-tickets-title" className="ui-sr-only">
-        Tickets nécessitant une action
-      </h2>
-
-      <div className="priority-ticket-banner" aria-live="polite">
-        <div>
-          <strong>
-            {priority.length} ticket{priority.length > 1 ? "s" : ""} nécessite{priority.length > 1 ? "nt" : ""} une action
-          </strong>
-          <span>Les détails restent visibles dans votre liste de travail.</span>
-        </div>
-        <Link href={`/tickets/${firstPriorityTicket.id}` as Route} className="button-secondary">
-          Voir
-        </Link>
+    <aside className="inbox-priority-notice" aria-live="polite">
+      <span className="inbox-priority-notice-icon" aria-hidden>
+        <AlertTriangle />
+      </span>
+      <div>
+        <strong>
+          {priority.length} ticket{priority.length > 1 ? "s" : ""} à traiter en priorité
+        </strong>
+        <span>SLA à risque, dépassé ou priorité critique.</span>
       </div>
-    </section>
+      <Link href={`/tickets/${firstPriorityTicket.id}` as Route}>
+        Voir le premier
+        <ArrowRight aria-hidden />
+      </Link>
+    </aside>
   );
 }

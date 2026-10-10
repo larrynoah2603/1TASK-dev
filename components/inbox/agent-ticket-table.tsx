@@ -138,7 +138,7 @@ export function AgentTicketTable({
                         aria-label={expanded
                           ? `${ticket.reference} ${ticket.title}, détails affichés`
                           : `${ticket.reference} ${ticket.title}, afficher les détails`}
-                        className={`cursor-pointer transition-colors hover:bg-slate-50 focus:outline-none focus-visible:bg-slate-50 ${expanded ? "bg-slate-50" : ""}`}
+                        className={`agent-ticket-row ${expanded ? "is-expanded" : ""}`}
                         onClick={() => toggleTicket(ticket.id)}
                         onKeyDown={(event) => {
                           if (event.key === "Enter" || event.key === " ") {
@@ -176,7 +176,7 @@ export function AgentTicketTable({
                       </tr>
 
                       {expanded ? (
-                        <tr className="bg-slate-50/70">
+                        <tr className="agent-ticket-expanded-row">
                           <td colSpan={7} className="agent-ticket-col-wide p-0">
                             <ExpandedTicketDetails ticket={ticket} claimable={claimable} onReduce={() => toggleTicket(ticket.id)} />
                           </td>
@@ -190,7 +190,7 @@ export function AgentTicketTable({
                 }) : (
                   <tr>
                     <td colSpan={11}>
-                      <div className="ui-data-table-empty">Aucun ticket actif pour ces critères.</div>
+                      <div className="ui-data-table-empty inbox-ticket-empty"><strong>Aucun ticket dans cette vue</strong><span>Modifiez la recherche ou les filtres pour élargir les résultats.</span></div>
                     </td>
                   </tr>
                 )}
@@ -238,7 +238,7 @@ export function AgentTicketTable({
             </article>
           );
         }) : (
-          <div className="ui-data-table-empty">Aucun ticket actif pour ces critères.</div>
+          <div className="ui-data-table-empty inbox-ticket-empty"><strong>Aucun ticket dans cette vue</strong><span>Modifiez la recherche ou les filtres pour élargir les résultats.</span></div>
         )}
       </div>
     </div>
