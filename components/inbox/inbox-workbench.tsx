@@ -189,7 +189,7 @@ export function InboxWorkbench({
               id="inbox-search"
               name="q"
               defaultValue={values.q ?? ""}
-              placeholder="Rechercher une référence, un sujet, un demandeur…"
+              placeholder="Rechercher une référence, un sujet ou une description…"
               autoComplete="off"
             />
           </div>
