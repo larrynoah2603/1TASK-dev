@@ -2440,6 +2440,7 @@ html[data-theme] .inbox-search-box input::placeholder {
 }
 
 html[data-theme] .inbox-filter-trigger {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
