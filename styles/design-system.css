@@ -1944,3 +1944,161 @@ html[data-theme] .agent-ticket-cell-stack small {
     display: none !important;
   }
 }
+
+
+/* === Inbox compact reception redesign 2026-10-10 === */
+
+/* Keep the ticket list above the fold: KPIs are indicators, not large content cards. */
+html[data-theme] .inbox-operations-industrial .agent-kpi-strip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow-x: auto;
+  padding: 4px;
+  border: 1px solid var(--kit-border);
+  border-radius: var(--kit-radius-lg);
+  background: var(--kit-surface);
+  box-shadow: var(--kit-shadow-xs);
+  scrollbar-width: thin;
+}
+
+html[data-theme] .inbox-operations-industrial .agent-kpi-chip {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--kit-space-2);
+  flex: 1 1 0;
+  min-width: 9.5rem;
+  min-height: 38px;
+  padding: 0 var(--kit-space-3);
+  border: 1px solid transparent;
+  border-radius: var(--kit-radius-md);
+  background: transparent;
+  color: var(--kit-text-2);
+  font-size: var(--kit-text-xs);
+  font-weight: 650;
+  white-space: nowrap;
+  transition:
+    background-color var(--kit-fast) var(--kit-ease),
+    border-color var(--kit-fast) var(--kit-ease),
+    color var(--kit-fast) var(--kit-ease);
+}
+
+html[data-theme] .inbox-operations-industrial a.agent-kpi-chip:hover {
+  border-color: var(--kit-border);
+  background: var(--kit-hover);
+  color: var(--kit-text);
+}
+
+html[data-theme] .inbox-operations-industrial .agent-kpi-chip:focus-visible {
+  outline: 2px solid var(--kit-primary);
+  outline-offset: 1px;
+}
+
+html[data-theme] .inbox-operations-industrial .agent-kpi-chip svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+html[data-theme] .inbox-operations-industrial .agent-kpi-chip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+html[data-theme] .inbox-operations-industrial .agent-kpi-chip strong {
+  min-width: 1.5rem;
+  color: var(--kit-text);
+  font-size: var(--kit-text-md);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+html[data-theme] .inbox-operations-industrial .agent-kpi-chip-warning {
+  background: var(--kit-warning-soft);
+  color: var(--kit-warning-text);
+}
+
+html[data-theme] .inbox-operations-industrial .agent-kpi-chip-warning strong {
+  color: var(--kit-warning-text);
+}
+
+/* The urgent area is a single alert row; ticket cards remain only in the work list. */
+html[data-theme] .inbox-operations-industrial .agent-priority-compact {
+  border-color: var(--kit-warning-line);
+  box-shadow: none;
+}
+
+html[data-theme] .inbox-operations-industrial .agent-priority-compact .priority-ticket-banner {
+  display: flex;
+  min-height: 44px;
+  padding: var(--kit-space-2) var(--kit-space-3);
+}
+
+html[data-theme] .inbox-operations-industrial .agent-priority-compact .priority-ticket-banner .button-secondary {
+  min-height: 32px;
+  padding-inline: var(--kit-space-3);
+}
+
+/* Compress only the Inbox work card. The global navbar and shell are intentionally untouched. */
+html[data-theme] .inbox-operations-industrial .agent-workspace-main {
+  gap: var(--kit-space-3);
+}
+
+html[data-theme] .inbox-operations-industrial .agent-workspace-main > .agent-card:not(.agent-priority-card) > .agent-card-header {
+  align-items: center;
+  padding: var(--kit-space-2) var(--kit-space-3);
+}
+
+html[data-theme] .inbox-operations-industrial .agent-workspace-main > .agent-card:not(.agent-priority-card) > .agent-card-header .eyebrow {
+  display: none;
+}
+
+html[data-theme] .inbox-operations-industrial .agent-workspace-main > .agent-card:not(.agent-priority-card) > .agent-card-header h2 {
+  font-size: var(--kit-text-sm);
+}
+
+html[data-theme] .inbox-operations-industrial .agent-workspace-main > .agent-card:not(.agent-priority-card) > .agent-card-header .agent-card-count {
+  min-width: 1.45rem;
+  height: 1.45rem;
+}
+
+/* Match the loading state to the new compact indicator strip. */
+html[data-theme] .inbox-operations-industrial .inbox-skeleton-kpis {
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 4px;
+  border: 1px solid var(--kit-border);
+  border-radius: var(--kit-radius-lg);
+  background: var(--kit-surface);
+}
+
+html[data-theme] .inbox-operations-industrial .inbox-skeleton-kpis > div {
+  flex: 1 1 0;
+  min-width: 9.5rem;
+  min-height: 38px;
+  border-radius: var(--kit-radius-md);
+}
+
+@container agent-inbox (max-width: 699px) {
+  html[data-theme] .inbox-operations-industrial .agent-kpi-chip {
+    flex: 0 0 auto;
+    min-width: 8.25rem;
+    padding-inline: var(--kit-space-2);
+  }
+
+  html[data-theme] .inbox-operations-industrial .agent-kpi-chip svg {
+    display: none;
+  }
+
+  html[data-theme] .inbox-operations-industrial .agent-priority-compact .priority-ticket-banner {
+    align-items: center;
+  }
+
+  html[data-theme] .inbox-operations-industrial .agent-priority-compact .priority-ticket-banner span {
+    display: none;
+  }
+}
