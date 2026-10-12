@@ -7,7 +7,7 @@
    ========================================================================== */
 
 :root {
-  /* ---- Espacement (échelle imposée : 4 · 8 · 12 · 16 · 24 · 32 · 48) ---- */
+  /* ---- Espacement (échelle : 4 · 8 · 12 · 16 · 24 · 32 · 48 · 64) ---- */
   --kit-space-1: 4px;
   --kit-space-2: 8px;
   --kit-space-3: 12px;
@@ -15,6 +15,7 @@
   --kit-space-5: 24px;
   --kit-space-6: 32px;
   --kit-space-7: 48px;
+  --kit-space-8: 64px;
 
   /* ---- Rayons : les cartes ne descendent jamais sous 16px ---- */
   --kit-radius-sm: 8px;
