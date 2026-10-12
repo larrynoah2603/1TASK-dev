@@ -35,13 +35,13 @@ export function TicketTable({
   showActions?: boolean;
 }) {
   const claimable = new Set(claimableTicketIds);
-  if (!tickets.length) return <div className="table-shell ticket-table-empty px-6 py-12 text-center text-sm text-slate-500" role="status">{empty}</div>;
+  if (!tickets.length) return <div className="table-shell ticket-table-empty px-6 py-12 text-center text-sm text-[var(--kit-text-2)]" role="status">{empty}</div>;
 
   return (
     <div className="table-shell">
       <div className="overflow-x-auto">
         <table aria-label="Liste des tickets" className="ticket-data-table w-full min-w-[1080px] text-left text-[12px]">
-          <thead className="border-b border-slate-100 text-[10px] font-semibold uppercase tracking-[0.12em]">
+          <thead className="border-b border-[var(--kit-border)] text-xs font-semibold uppercase tracking-[0.12em]">
             <tr>
               <th className="px-4 py-3.5">Ticket</th>
               <th className="px-4 py-3.5">Service</th>
@@ -62,23 +62,23 @@ export function TicketTable({
                   <Link href={("/tickets/" + ticket.id) as Route} className="ticket-reference-link font-semibold hover:underline">
                     {ticket.reference}
                   </Link>
-                  <p className="mt-1 max-w-xs truncate font-medium text-slate-700">{ticket.title}</p>
-                  <p className="mt-1 text-[11px] text-slate-400">
+                  <p className="mt-1 max-w-xs truncate font-medium text-[var(--kit-text)]">{ticket.title}</p>
+                  <p className="mt-1 text-xs text-[var(--kit-text-2)]">
                     Demandeur : {ticket.requester.name}
                     {ticket.sourceDepartment ? " · source " + ticket.sourceDepartment.name : ""}
                   </p>
                 </td>
-                <td className="px-4 py-3.5 text-slate-600">{ticket.serviceCatalogItem.name}</td>
-                <td className="px-4 py-3.5 text-slate-600">
+                <td className="px-4 py-3.5 text-[var(--kit-text-2)]">{ticket.serviceCatalogItem.name}</td>
+                <td className="px-4 py-3.5 text-[var(--kit-text-2)]">
                   {ticket.queue.name}
-                  <p className="text-[11px] text-slate-400">{ticket.queue.department.name}</p>
+                  <p className="text-xs text-[var(--kit-text-2)]">{ticket.queue.department.name}</p>
                 </td>
-                <td className="px-4 py-3.5 text-slate-600">{ticket.assignedTo?.name ?? "Non affecté"}</td>
-                <td className="px-4 py-3.5 text-slate-600">{ticket.queue.manager?.name ?? "Non désigné"}</td>
+                <td className="px-4 py-3.5 text-[var(--kit-text-2)]">{ticket.assignedTo?.name ?? "Non affecté"}</td>
+                <td className="px-4 py-3.5 text-[var(--kit-text-2)]">{ticket.queue.manager?.name ?? "Non désigné"}</td>
                 <td className="px-4 py-3.5"><PriorityBadge priority={ticket.priority} /></td>
                 <td className="px-4 py-3.5"><StatusBadge status={ticket.status} /></td>
                 <td className="px-4 py-3.5"><SlaIndicator state={ticket.slaState} dueAt={ticket.slaDueAt} startedAt={ticket.createdAt} pausedMinutes={ticket.totalPausedMinutes} compact /></td>
-                <td className="px-4 py-3.5 text-[11px] text-slate-500">
+                <td className="px-4 py-3.5 text-xs text-[var(--kit-text-2)]">
                   {new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" }).format(ticket.updatedAt)}
                 </td>
                 {showActions ? (
