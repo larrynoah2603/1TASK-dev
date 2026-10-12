@@ -107,6 +107,7 @@ export function AdminConfigurationPanel({ configuration, sections, autoAssignmen
   const router = useRouter();
   const { toast } = useToast();
   const [message, setMessage] = useState("");
+  const [messageTone, setMessageTone] = useState<"success" | "error">("success");
   const [busy, setBusy] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<{ path: string; label: string } | null>(null);
   const [deleteReason, setDeleteReason] = useState("");
@@ -130,7 +131,7 @@ export function AdminConfigurationPanel({ configuration, sections, autoAssignmen
       const response = await fetch(pendingDelete.path, { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ reason: deleteReason }) });
       const data = await response.json();
       if (!response.ok) {
-        setMessage(data.error ?? "La suppression a été refusée.");
+        setMessageTone("error"); setMessage(data.error ?? "La suppression a été refusée.");
         toast(data.error ?? "La suppression a été refusée.", "error");
         return;
       }
@@ -139,7 +140,7 @@ export function AdminConfigurationPanel({ configuration, sections, autoAssignmen
       setDeleteReason("");
       router.refresh();
     } catch {
-      setMessage("La suppression n’a pas pu être envoyée.");
+      setMessageTone("error"); setMessage("La suppression n’a pas pu être envoyée.");
       toast("La suppression n’a pas pu être envoyée.", "error");
     } finally {
       setBusy(false);
@@ -152,9 +153,9 @@ export function AdminConfigurationPanel({ configuration, sections, autoAssignmen
     try {
       const response = await fetch(`/api/admin/deletion-impact?entityType=${entityType}&entityId=${encodeURIComponent(entityId)}`, { cache: "no-store" });
       const data = await response.json();
-      if (!response.ok) { setMessage(data.error ?? "Analyse des dépendances impossible."); setPendingDelete(null); return; }
+      if (!response.ok) { setMessageTone("error"); setMessage(data.error ?? "Analyse des dépendances impossible."); setPendingDelete(null); return; }
       setDeletionImpact(data);
-    } catch { setMessage("Analyse des dépendances impossible."); setPendingDelete(null); }
+    } catch { setMessageTone("error"); setMessage("Analyse des dépendances impossible."); setPendingDelete(null); }
     finally { setImpactBusy(false); }
   }
 
@@ -165,16 +166,16 @@ export function AdminConfigurationPanel({ configuration, sections, autoAssignmen
       const response = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const data = await response.json();
       if (!response.ok) {
-        setMessage(data.error ?? "La modification a été refusée.");
+        setMessageTone("error"); setMessage(data.error ?? "La modification a été refusée.");
         toast(data.error ?? "La modification a été refusée.", "error");
         return;
       }
-      setMessage("Modification enregistrée et auditée.");
+      setMessageTone("success"); setMessage("Modification enregistrée et auditée.");
       toast("Modification enregistrée et auditée.");
       form.reset();
       router.refresh();
     } catch {
-      setMessage("La modification n’a pas pu être enregistrée.");
+      setMessageTone("error"); setMessage("La modification n’a pas pu être enregistrée.");
       toast("La modification n’a pas pu être enregistrée.", "error");
     } finally {
       setBusy(false);
@@ -182,7 +183,7 @@ export function AdminConfigurationPanel({ configuration, sections, autoAssignmen
   }
 
   return <div className="space-y-6">
-    {message ? <div role="status" className="rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-800">{message}</div> : null}
+    {message ? <div role={messageTone === "error" ? "alert" : "status"} className="admin-form-feedback" data-tone={messageTone}>{message}</div> : null}
 
     {enabled("departments") ? <section className="panel admin-config-section p-6">
       <AdminSectionTitle icon="department">Départements</AdminSectionTitle>
