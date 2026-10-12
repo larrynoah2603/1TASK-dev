@@ -1,16 +1,40 @@
+import Link from "next/link";
+import type { Route } from "next";
 import type { DashboardTicketRow } from "@/components/dashboard-visuals";
-import { SlaProgress } from "@/components/ui/sla-progress";
 
 export function SlaMonitorPanel({ tickets }: { tickets: DashboardTicketRow[] }) {
-  const critical = tickets.filter((ticket) => ticket.slaState === "BREACHED");
-  const attention = tickets.filter((ticket) => ticket.slaState === "AT_RISK");
-  const normal = tickets.filter((ticket) => ticket.slaState === "OK");
-  const total = tickets.length;
-  const percentage = (count: number) => total ? Math.round((count / total) * 100) : 0;
-  const rows = [
-    { label: "Normal", count: normal.length, tone: "normal" as const, value: percentage(normal.length) },
-    { label: "Attention", count: attention.length, tone: "attention" as const, value: percentage(attention.length) },
-    { label: "Critique", count: critical.length, tone: "overdue" as const, value: percentage(critical.length) },
-  ];
-  return <aside className="agent-card agent-sla-panel" aria-labelledby="agent-sla-title"><div className="agent-card-header"><div><p className="eyebrow">Surveillance continue</p><h2 id="agent-sla-title">Surveillance SLA</h2></div></div><div className="agent-sla-list">{rows.map((row) => <div className="agent-sla-row" key={row.label}><div className="agent-sla-row-heading"><span className={`agent-sla-dot agent-sla-dot-${row.tone}`} />{row.label}<strong>{row.count}</strong></div><SlaProgress value={row.value} tone={row.tone} showValue={false} label={row.label} /></div>)}</div></aside>;
+  const alerts = tickets.filter((ticket) => ticket.slaState === "AT_RISK" || ticket.slaState === "BREACHED");
+
+  return (
+    <aside className="agent-card agent-sla-panel" aria-labelledby="agent-sla-title">
+      <div className="agent-card-header">
+        <div>
+          <p className="eyebrow">Surveillance ciblée</p>
+          <h2 id="agent-sla-title">Alertes SLA</h2>
+        </div>
+      </div>
+      {alerts.length ? (
+        <ul className="agent-sla-alert-list">
+          {alerts.map((ticket) => (
+            <li key={ticket.id}>
+              <Link href={`/tickets/${ticket.id}` as Route} className="agent-sla-alert-link">
+                <span className="agent-sla-alert-topline">
+                  <span className="agent-sla-alert-ref">{ticket.reference}</span>
+                  <span className={`agent-sla-alert-badge${ticket.slaState === "BREACHED" ? " is-breached" : ""}`}>
+                    {ticket.slaState === "BREACHED" ? "Dépassé" : "À risque"}
+                  </span>
+                </span>
+                <span className="agent-sla-alert-title">{ticket.title}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="agent-sla-alert-empty">Aucune alerte SLA dans cette sélection.</p>
+      )}
+      <p className="agent-sla-alert-footnote">
+        Échantillon limité à six tickets visibles, triés par mise à jour. Il ne représente pas un taux SLA global.
+      </p>
+    </aside>
+  );
 }
