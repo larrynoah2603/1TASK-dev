@@ -208,12 +208,12 @@ export function TicketFilters({
         ) : null}
 
         {advancedCount ? (
-          <div className="ticket-filter-active-chips mt-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
-            {departmentName ? <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1">Département : {departmentName}</span> : null}
-            {queueName ? <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1">File : {queueName}</span> : null}
-            {dossierName ? <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1">Dossier : {dossierName}</span> : null}
-            {missionName ? <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1">Mission : {missionName}</span> : null}
-            <button type="button" disabled={isPending} onClick={handleReset} className="ml-auto text-[11px] font-semibold text-slate-500 hover:text-slate-900 disabled:opacity-60">Réinitialiser</button>
+          <div className="ticket-filter-active-chips mt-2 flex flex-wrap items-center gap-2 text-xs text-[var(--kit-text-2)]">
+            {departmentName ? <span className="rounded-full border border-[var(--kit-border)] bg-[var(--kit-surface-muted)] px-2 py-1">Département : {departmentName}</span> : null}
+            {queueName ? <span className="rounded-full border border-[var(--kit-border)] bg-[var(--kit-surface-muted)] px-2 py-1">File : {queueName}</span> : null}
+            {dossierName ? <span className="rounded-full border border-[var(--kit-border)] bg-[var(--kit-surface-muted)] px-2 py-1">Dossier : {dossierName}</span> : null}
+            {missionName ? <span className="rounded-full border border-[var(--kit-border)] bg-[var(--kit-surface-muted)] px-2 py-1">Mission : {missionName}</span> : null}
+            <button type="button" disabled={isPending} onClick={handleReset} className="ml-auto text-xs font-semibold text-[var(--kit-text-2)] hover:text-[var(--kit-text)] disabled:opacity-60">Réinitialiser</button>
           </div>
         ) : null}
 
@@ -225,7 +225,7 @@ export function TicketFilters({
   return (
     <form key={filterStateKey} aria-label="Filtres de tickets" className="filter-panel grid gap-3 md:grid-cols-2 xl:grid-cols-4" onSubmit={handleSubmit}>
       <div className="filter-heading md:col-span-2 xl:col-span-4">
-        <div><p className="eyebrow">Affiner la vue</p><p className="mt-1 text-xs text-slate-500">Recherchez et réduisez la liste selon votre périmètre autorisé.</p></div>
+        <div><p className="eyebrow">Affiner la vue</p><p className="mt-1 text-xs text-[var(--kit-text-2)]">Recherchez et réduisez la liste selon votre périmètre autorisé.</p></div>
         <span className="filter-heading-hint">{isPending ? "Mise à jour…" : "Filtres persistants dans l’URL"}</span>
       </div>
       <label className="sr-only" htmlFor="ticket-search">Recherche</label>
@@ -278,7 +278,7 @@ export function TicketFilters({
       <div className="flex flex-wrap items-center gap-3 md:col-span-2 xl:col-span-4">
         <button type="submit" disabled={isPending} className="button-primary disabled:opacity-60">{isPending ? "Mise à jour…" : "Filtrer"}</button>
         <button type="button" disabled={isPending} onClick={handleReset} className="button-ghost min-h-10 text-xs disabled:opacity-60">Réinitialiser</button>
-        <span aria-live="polite" className="text-[11px] text-slate-400">{isPending ? "Actualisation des résultats…" : "Départements et files limités à votre périmètre serveur."}</span>
+        <span aria-live="polite" className="text-xs text-[var(--kit-text-2)]">{isPending ? "Actualisation des résultats…" : "Départements et files limités à votre périmètre serveur."}</span>
       </div>
     </form>
   );
