@@ -18,7 +18,7 @@ vi.mock("@/lib/server-auth", () => ({
 }));
 vi.mock("@/lib/ticket-query-service", () => ({ visibleTicketWhere: mocks.visibleTicketWhere }));
 
-import { getReportingSummary } from "@/lib/reporting-service";
+import { getReportingSummary, reportingPeriodFromQuery } from "@/lib/reporting-service";
 
 describe("reporting métier", () => {
   beforeEach(() => {
@@ -96,6 +96,27 @@ describe("reporting métier", () => {
       where: { AND: [{ confidential: false }, { resolvedAt: { not: null } }] },
       _count: { _all: true },
     });
+  });
+
+  it.each([
+    ["7d", 7],
+    ["30d", 30],
+  ] as const)("filtre réellement %s sans élargir le périmètre d'accès", async (period, days) => {
+    const now = Date.now();
+    await getReportingSummary({ id: `reader-${period}` } as never, period);
+    const groupedWhere = mocks.groupBy.mock.calls[0][0].where;
+    expect(groupedWhere.AND[0]).toEqual({ confidential: false });
+    const after = groupedWhere.AND[1].createdAt.gte.getTime();
+    expect(after).toBeGreaterThan(now - days * 86_400_000 - 10_000);
+    expect(after).toBeLessThanOrEqual(Date.now() - days * 86_400_000);
+    const slaWhere = mocks.count.mock.calls[0][0].where;
+    expect(slaWhere.AND[0]).toEqual(groupedWhere);
+  });
+
+  it("ignore une période arbitraire transmise dans l'URL", () => {
+    expect(reportingPeriodFromQuery("90d")).toBe("all");
+    expect(reportingPeriodFromQuery("7d")).toBe("7d");
+    expect(reportingPeriodFromQuery(undefined)).toBe("all");
   });
 
   it("refuse un acteur dépourvu de la permission reporting", async () => {
