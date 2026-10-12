@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import type { Route } from "next";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
+import { useDialogFocus } from "@/components/ui/use-dialog-focus";
 import { useRouter } from "next/navigation";
 import { Combobox } from "@/components/combobox";
 import { useToast } from "@/components/toast-provider";
@@ -22,6 +23,7 @@ export function AssetListClient({ initialAssets, departments, users, canManage, 
   const [type, setType] = useState("ALL");
   const [status, setStatus] = useState("ALL");
   const [showCreate, setShowCreate] = useState(false);
+  const createTitleId = useId();
   const [assetTag, setAssetTag] = useState("");
   const [assetType, setAssetType] = useState("COMPUTER");
   const [name, setName] = useState("");
@@ -31,6 +33,7 @@ export function AssetListClient({ initialAssets, departments, users, canManage, 
   const [licenseExpiresAt, setLicenseExpiresAt] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const dialogRef = useDialogFocus({ open: showCreate, onClose: () => setShowCreate(false), closeOnEscape: !submitting });
 
   const assets = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -53,8 +56,8 @@ export function AssetListClient({ initialAssets, departments, users, canManage, 
   }
 
   return <>
-    <section className="grid gap-3 sm:grid-cols-3"><div className="metric-card"><p className="text-[11px] text-slate-500">Actifs visibles</p><p className="mt-1 text-2xl font-bold tracking-tight text-slate-900">{initialAssets.length}</p></div><div className="metric-card"><p className="text-[11px] text-slate-500">Actifs opérationnels</p><p className="mt-1 text-2xl font-bold tracking-tight text-emerald-700">{activeAssets}</p></div><div className="metric-card"><p className="text-[11px] text-slate-500">Actifs affectés</p><p className="mt-1 text-2xl font-bold tracking-tight text-slate-900">{assignedAssets}</p></div></section>
-    <section className="panel p-4 sm:p-5"><div className="grid gap-3 lg:grid-cols-[minmax(220px,1.5fr)_minmax(150px,0.8fr)_minmax(150px,0.8fr)_auto] lg:items-end"><label className="field-label">Rechercher<input className="field-control" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tag, nom, série, collaborateur…" /></label><label className="field-label">Type<Combobox value={type} onChange={setType} ariaLabel="Filtrer par type" options={[{ value: "ALL", label: "Tous les types" }, ...Object.entries(typeLabels).map(([value, label]) => ({ value, label }))]} /></label><label className="field-label">État<Combobox value={status} onChange={setStatus} ariaLabel="Filtrer par état" options={[{ value: "ALL", label: "Tous les états" }, ...Object.entries(statusLabels).map(([value, label]) => ({ value, label }))]} /></label>{canManage ? <button type="button" className="button-primary" onClick={() => { setError(""); setShowCreate(true); }}>Nouvel actif</button> : null}</div></section>
+    <section className="asset-summary-grid" aria-label="Résumé de l’inventaire"><div className="metric-card"><p className="text-[11px] text-slate-500">Actifs visibles</p><p className="mt-1 text-2xl font-bold tracking-tight text-slate-900">{initialAssets.length}</p></div><div className="metric-card"><p className="text-[11px] text-slate-500">Actifs opérationnels</p><p className="mt-1 text-2xl font-bold tracking-tight text-emerald-700">{activeAssets}</p></div><div className="metric-card"><p className="text-[11px] text-slate-500">Actifs affectés</p><p className="mt-1 text-2xl font-bold tracking-tight text-slate-900">{assignedAssets}</p></div></section>
+    <section className="panel asset-filter-panel p-4 sm:p-5" aria-label="Filtres de l’inventaire"><div className="asset-filter-controls"><label className="field-label">Rechercher<input type="search" className="field-control" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tag, nom, série, collaborateur…" /></label><label className="field-label">Type<Combobox value={type} onChange={setType} ariaLabel="Filtrer par type" options={[{ value: "ALL", label: "Tous les types" }, ...Object.entries(typeLabels).map(([value, label]) => ({ value, label }))]} /></label><label className="field-label">État<Combobox value={status} onChange={setStatus} ariaLabel="Filtrer par état" options={[{ value: "ALL", label: "Tous les états" }, ...Object.entries(statusLabels).map(([value, label]) => ({ value, label }))]} /></label>{canManage ? <button type="button" className="button-primary" onClick={() => { setError(""); setShowCreate(true); }}>Nouvel actif</button> : null}</div></section>
     <section className="panel asset-inventory-panel">
       <header className="asset-inventory-header">
         <div>
@@ -62,10 +65,11 @@ export function AssetListClient({ initialAssets, departments, users, canManage, 
           <h2>Inventaire des actifs</h2>
           <p>Consultez l’état, le rattachement et l’affectation de chaque équipement.</p>
         </div>
-        <span className="asset-inventory-count">{assets.length} résultat{assets.length === 1 ? "" : "s"}</span>
+        <span className="asset-inventory-count" aria-live="polite" aria-atomic="true">{assets.length} résultat{assets.length === 1 ? "" : "s"}</span>
       </header>
-      <div className="asset-inventory-scroll">
+      <div className="asset-inventory-scroll" role="region" aria-label="Inventaire des actifs, tableau défilant" tabIndex={0}>
         <table className="data-table asset-inventory-table">
+          <caption className="sr-only">Inventaire des actifs, types, états, départements et affectations</caption>
           <thead>
             <tr>
               <th>Actif</th>
@@ -80,17 +84,17 @@ export function AssetListClient({ initialAssets, departments, users, canManage, 
           <tbody>
             {assets.map((asset) => (
               <tr key={asset.id} className="asset-inventory-row">
-                <td className="asset-inventory-primary">
+                <td className="asset-inventory-primary" data-label="Actif">
                   <Link href={`${basePath}/${asset.id}` as Route} className="asset-inventory-tag">{asset.assetTag}</Link>
                   <strong>{asset.name}</strong>
                   {asset.serialNumber ? <small>N° de série · {asset.serialNumber}</small> : null}
                 </td>
-                <td className="asset-inventory-meta">{typeLabels[asset.type] ?? asset.type}</td>
-                <td><span className={`status-chip status-chip-${asset.status.toLowerCase()}`}>{statusLabels[asset.status] ?? asset.status}</span></td>
-                <td className="asset-inventory-meta">{asset.department?.name ?? <span className="asset-inventory-muted">Non rattaché</span>}</td>
-                <td className="asset-inventory-meta">{asset.assignedTo ? <><strong>{asset.assignedTo.name}</strong><small>{asset.assignedTo.email}</small></> : <span className="asset-inventory-muted">Non affecté</span>}</td>
-                <td className="asset-inventory-meta">{formatDate(asset.licenseExpiresAt)}</td>
-                <td className="asset-inventory-action"><Link href={`${basePath}/${asset.id}` as Route} className="button-secondary">Voir</Link></td>
+                <td className="asset-inventory-meta" data-label="Type">{typeLabels[asset.type] ?? asset.type}</td>
+                <td data-label="État"><span className={`status-chip status-chip-${asset.status.toLowerCase()}`}>{statusLabels[asset.status] ?? asset.status}</span></td>
+                <td className="asset-inventory-meta" data-label="Département">{asset.department?.name ?? <span className="asset-inventory-muted">Non rattaché</span>}</td>
+                <td className="asset-inventory-meta" data-label="Affecté à">{asset.assignedTo ? <><strong>{asset.assignedTo.name}</strong><small>{asset.assignedTo.email}</small></> : <span className="asset-inventory-muted">Non affecté</span>}</td>
+                <td className="asset-inventory-meta" data-label="Échéance licence">{formatDate(asset.licenseExpiresAt)}</td>
+                <td className="asset-inventory-action" data-label="Détails"><Link href={`${basePath}/${asset.id}` as Route} className="button-secondary">Voir</Link></td>
               </tr>
             ))}
             {!assets.length ? <tr><td colSpan={7} className="asset-inventory-empty">Aucun actif ne correspond aux filtres sélectionnés.</td></tr> : null}
@@ -99,15 +103,15 @@ export function AssetListClient({ initialAssets, departments, users, canManage, 
       </div>
     </section>
     {showCreate ? (
-      <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) setShowCreate(false); }}>
-        <section className="modal-panel asset-create-modal" role="dialog" aria-modal="true" aria-labelledby="create-asset-title">
+      <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target && !submitting) setShowCreate(false); }}>
+        <section className="modal-panel asset-create-modal" role="dialog" aria-modal="true" aria-labelledby={createTitleId} tabIndex={-1} ref={dialogRef}>
           <header className="asset-form-header">
             <div>
               <p className="eyebrow">Référentiel technique</p>
-              <h2 id="create-asset-title">Créer un actif</h2>
+              <h2 id={createTitleId}>Créer un actif</h2>
               <p>Enregistrez d’abord l’actif. Son affectation peut être faite maintenant ou plus tard.</p>
             </div>
-            <button type="button" className="button-ghost" onClick={() => setShowCreate(false)} aria-label="Fermer">×</button>
+            <button type="button" className="button-ghost" onClick={() => setShowCreate(false)} disabled={submitting} aria-label="Fermer">×</button>
           </header>
 
           <form onSubmit={createAsset}>
@@ -188,7 +192,7 @@ export function AssetListClient({ initialAssets, departments, users, canManage, 
             ) : null}
 
             <div className="form-actions">
-              <button type="button" className="button-secondary" onClick={() => setShowCreate(false)}>Annuler</button>
+              <button type="button" className="button-secondary" onClick={() => setShowCreate(false)} disabled={submitting}>Annuler</button>
               <button type="submit" className="button-primary" disabled={submitting} aria-busy={submitting}>{submitting ? "Création…" : "Créer l’actif"}</button>
             </div>
           </form>
