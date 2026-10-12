@@ -16,7 +16,7 @@ export function AdminDashboard({ stats }: { stats: AdminDashboardStats }) {
   return (
     <div className="admin-console-page">
       <header className="admin-console-header">
-        <div><p className="eyebrow">Console d’administration</p><h1>Admin Overview</h1><p>Supervisez la structure 1TASK, les accès et les périmètres opérationnels.</p></div>
+        <div><p className="eyebrow">Console d’administration</p><h2 className="admin-console-heading">Vue d’ensemble</h2><p>Supervisez la structure 1TASK, les accès et les périmètres opérationnels.</p></div>
         <div className="admin-console-header-actions"><Link href="/admin/users" className="button-primary">Gérer les utilisateurs</Link></div>
       </header>
       <nav className="admin-section-nav" aria-label="Sections administration">
