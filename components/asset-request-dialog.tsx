@@ -34,10 +34,10 @@ export function AssetRequestDialog({
   const { toast } = useToast();
   const titleId = useId();
   const [open, setOpen] = useState(false);
-  const dialogRef = useDialogFocus({ open, onClose: () => setOpen(false), closeOnEscape: !submitting });
   const [assetType, setAssetType] = useState<RequesterAssetType>("COMPUTER");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const dialogRef = useDialogFocus({ open, onClose: () => setOpen(false), closeOnEscape: !submitting });
 
   const availableCount = availability[assetType] ?? 0;
 
