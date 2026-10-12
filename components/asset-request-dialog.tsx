@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { useDialogFocus } from "@/components/ui/use-dialog-focus";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/icons";
 import { useToast } from "@/components/toast-provider";
@@ -36,6 +37,7 @@ export function AssetRequestDialog({
   const [assetType, setAssetType] = useState<RequesterAssetType>("COMPUTER");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const dialogRef = useDialogFocus({ open, onClose: () => setOpen(false), closeOnEscape: !submitting });
 
   const availableCount = availability[assetType] ?? 0;
 
@@ -96,7 +98,7 @@ export function AssetRequestDialog({
           if (event.target === event.currentTarget) setOpen(false);
         }}
       >
-        <section className="modal-panel asset-request-modal" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+        <section className="modal-panel asset-request-modal" role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} ref={dialogRef}>
           <header className="asset-form-header">
             <div>
               <p className="eyebrow">Nouvelle demande</p>
