@@ -117,7 +117,7 @@ export default async function InboxPage({
       <AgentWorkspaceHeader>
         <div className="inbox-modern-header">
           <div className="inbox-modern-header-copy">
-            <h1>Inbox</h1>
+            <h1>Boîte agent</h1>
             <p>Un seul espace pour trouver, prioriser et traiter les tickets.</p>
           </div>
           <Suspense fallback={<InboxKpiSkeleton />}>
