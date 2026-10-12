@@ -1,21 +1,23 @@
-"use client";
+import type { ReportingPeriod } from "@/lib/reporting-service";
 
-import { useState } from "react";
+const options: { value: ReportingPeriod; label: string }[] = [
+  { value: "all", label: "Tout l’historique" },
+  { value: "7d", label: "7 derniers jours" },
+  { value: "30d", label: "30 derniers jours" },
+];
 
-const periods = ["Aujourd’hui", "7 jours", "30 jours", "Personnalisé"];
-
-export function ReportingFilterClient() {
-  const [period, setPeriod] = useState("30 jours");
-  const [department, setDepartment] = useState("Tous les départements");
-  const [team, setTeam] = useState("Toutes les équipes");
-  const [service, setService] = useState("Tous les services");
-
+/** GET navigation re-runs server aggregates: no decorative client-only filters. */
+export function ReportingFilterClient({ period = "all" }: { period?: ReportingPeriod }) {
   return (
-    <div className="reporting-filter-client" aria-label="Filtres du reporting">
-      <label><span>Période</span><select value={period} onChange={(event) => setPeriod(event.target.value)}>{periods.map((item) => <option key={item}>{item}</option>)}</select></label>
-      <label><span>Département</span><select value={department} onChange={(event) => setDepartment(event.target.value)}><option>Tous les départements</option></select></label>
-      <label><span>Équipe</span><select value={team} onChange={(event) => setTeam(event.target.value)}><option>Toutes les équipes</option></select></label>
-      <label><span>Service</span><select value={service} onChange={(event) => setService(event.target.value)}><option>Tous les services</option></select></label>
-    </div>
+    <form method="get" className="reporting-filter-client" role="search" aria-label="Filtrer les indicateurs du reporting">
+      <label htmlFor="reporting-period">
+        <span>Période de création</span>
+        <select id="reporting-period" name="period" defaultValue={period}>
+          {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+        </select>
+      </label>
+      <button type="submit" className="button-secondary">Appliquer</button>
+      <p className="reporting-filter-help">Les indicateurs concernent les tickets créés dans la période choisie, selon vos habilitations. Les SLA affichés sont ceux de ces tickets.</p>
+    </form>
   );
 }
