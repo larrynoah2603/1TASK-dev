@@ -63,9 +63,9 @@ function statusLabel(status: Status) {
 }
 
 function statusClass(status: Status) {
-  if (status === "ACTIVE") return "bg-emerald-50 text-emerald-700";
-  if (status === "DISABLED") return "bg-rose-50 text-rose-700";
-  return "bg-amber-50 text-amber-700";
+  if (status === "ACTIVE") return "bg-[var(--kit-success-soft)] text-[var(--kit-success-text)]";
+  if (status === "DISABLED") return "bg-[var(--kit-danger-soft)] text-[var(--kit-danger-text)]";
+  return "bg-[var(--kit-warning-soft)] text-[var(--kit-warning-text)]";
 }
 
 export function AdminUserActions({
@@ -251,20 +251,20 @@ export function AdminUserActions({
       <div className="flex flex-col gap-4 px-5 py-5 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="truncate text-base font-bold text-slate-900">{displayName}</h2>
-            <span className={"rounded-md px-2 py-1 text-[11px] font-semibold " + statusClass(user.status)}>
+            <h2 className="truncate text-base font-bold text-[var(--kit-text)]">{displayName}</h2>
+            <span className={"rounded-md px-2 py-1 text-xs font-semibold " + statusClass(user.status)}>
               {statusLabel(user.status)}
             </span>
           </div>
-          <p className="mt-1 text-sm text-slate-500">{user.email}</p>
-          <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-600">
-              <span className="rounded-md border border-slate-100 bg-slate-50/70 px-2.5 py-1.5">
+          <p className="mt-1 text-sm text-[var(--kit-text-2)]">{user.email}</p>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs text-[var(--kit-text-2)]">
+              <span className="rounded-md border border-[var(--kit-border)] bg-[var(--kit-surface-muted)] px-2.5 py-1.5">
               Département : <strong>{user.department?.name ?? "Non affecté"}</strong>
             </span>
-            <span className="rounded-md border border-slate-100 bg-slate-50/70 px-2.5 py-1.5">
+            <span className="rounded-md border border-[var(--kit-border)] bg-[var(--kit-surface-muted)] px-2.5 py-1.5">
               Manager applicatif : <strong>{user.manager?.name ?? "Non affecté"}</strong>
             </span>
-            <span className="rounded-md border border-slate-100 bg-slate-50/70 px-2.5 py-1.5">
+            <span className="rounded-md border border-[var(--kit-border)] bg-[var(--kit-surface-muted)] px-2.5 py-1.5">
               File : <strong>{user.authorizedQueue?.name ?? "Non affectée"}</strong>
             </span>
           </div>
@@ -279,23 +279,23 @@ export function AdminUserActions({
       </div>
 
       {open ? (
-        <div className="border-t border-slate-100 bg-slate-50/70 px-5 py-5">
-          <div className="mb-4 grid gap-3 rounded-lg border border-slate-200 bg-white p-4 text-xs text-slate-600 md:grid-cols-3">
-            <div><p className="font-bold text-slate-800">Identité Entra ID</p><p className="mt-1 break-all">{user.entraDisplayName ?? "Non renseigné"}</p></div>
-            <div><p className="font-bold text-slate-800">Identifiant unique</p><p className="mt-1 break-all">{user.entraObjectId ?? "Non renseigné"}</p></div>
-            <div><p className="font-bold text-slate-800">Manager hiérarchique Entra</p><p className="mt-1">{user.entraManager?.name ?? user.entraManagerDisplayName ?? "Non renseigné"}{user.entraManager || user.entraManagerDisplayName ? " · lecture seule" : ""}</p><p className="mt-1 break-all text-[11px]">{user.entraManagerEmail ?? user.entraManagerObjectId ?? ""}</p></div>
+        <div className="border-t border-[var(--kit-border)] bg-[var(--kit-surface-muted)] px-5 py-5">
+          <div className="mb-4 grid gap-3 rounded-lg border border-[var(--kit-border)] bg-[var(--kit-card)] p-4 text-xs text-[var(--kit-text-2)] md:grid-cols-3">
+            <div><p className="font-bold text-[var(--kit-text)]">Identité Entra ID</p><p className="mt-1 break-all">{user.entraDisplayName ?? "Non renseigné"}</p></div>
+            <div><p className="font-bold text-[var(--kit-text)]">Identifiant unique</p><p className="mt-1 break-all">{user.entraObjectId ?? "Non renseigné"}</p></div>
+            <div><p className="font-bold text-[var(--kit-text)]">Manager hiérarchique Entra</p><p className="mt-1">{user.entraManager?.name ?? user.entraManagerDisplayName ?? "Non renseigné"}{user.entraManager || user.entraManagerDisplayName ? " · lecture seule" : ""}</p><p className="mt-1 break-all text-xs">{user.entraManagerEmail ?? user.entraManagerObjectId ?? ""}</p></div>
           </div>
 
           <form onSubmit={submit} className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <label className="grid gap-1 text-xs font-semibold text-slate-600 xl:col-span-2">
+            <label className="grid gap-1 text-xs font-semibold text-[var(--kit-text-2)] xl:col-span-2">
               Nom affiché dans 1TASK
-              <input name="managedDisplayName" required minLength={2} defaultValue={displayName} className="field-control font-normal text-slate-900" />
+              <input name="managedDisplayName" required minLength={2} defaultValue={displayName} className="field-control font-normal text-[var(--kit-text)]" />
             </label>
-            <label className="grid gap-1 text-xs font-semibold text-slate-600">
+            <label className="grid gap-1 text-xs font-semibold text-[var(--kit-text-2)]">
               Département
               <Combobox name="departmentId" value={departmentId} onChange={handleDepartmentChange} options={[{ value: "", label: "Non affecté" }, ...options.departments.filter((item) => item.isActive).map((item) => ({ value: item.id, label: item.name }))]} />
             </label>
-            <label className="grid gap-1 text-xs font-semibold text-slate-600">
+            <label className="grid gap-1 text-xs font-semibold text-[var(--kit-text-2)]">
               Manager applicatif
               <AdminManagerSearch
                 name="managerId"
@@ -306,15 +306,15 @@ export function AdminUserActions({
                 currentManager={user.manager}
               />
             </label>
-            <div className="grid gap-2 text-xs font-semibold text-slate-600 xl:col-span-2">
+            <div className="grid gap-2 text-xs font-semibold text-[var(--kit-text-2)] xl:col-span-2">
               <label className="grid gap-1">
                 Rôle principal
                 <Combobox name="primaryRoleCode" defaultValue={user.primaryRoleCode ?? ""} options={[{ value: "", label: "Non défini" }, ...options.roles.map((item) => ({ value: item.code, label: item.name }))]} />
               </label>
-              <div className="rounded-lg border border-slate-200 bg-white p-3">
+              <div className="rounded-lg border border-[var(--kit-border)] bg-[var(--kit-card)] p-3">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="font-bold text-slate-800">Rôles actuellement attribués</p>
-                  <span className="text-[11px] font-normal text-slate-500">{user.roleAssignments.length} attribution{user.roleAssignments.length > 1 ? "s" : ""}</span>
+                  <p className="font-bold text-[var(--kit-text)]">Rôles actuellement attribués</p>
+                  <span className="text-xs font-normal text-[var(--kit-text-2)]">{user.roleAssignments.length} attribution{user.roleAssignments.length > 1 ? "s" : ""}</span>
                 </div>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {user.roleAssignments.map((assignment) => {
@@ -322,16 +322,16 @@ export function AdminUserActions({
                     const isPrimary = assignment.scopeId === null && assignment.role.code === user.primaryRoleCode;
                     const removable = !isBaseRequester && !isPrimary;
                     return (
-                      <span key={assignment.id} className="inline-flex min-h-8 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-semibold text-slate-700">
+                      <span key={assignment.id} className="inline-flex min-h-8 items-center gap-2 rounded-md border border-[var(--kit-border)] bg-[var(--kit-surface-muted)] px-2.5 py-1.5 text-xs font-semibold text-[var(--kit-text)]">
                         <span>{assignment.role.name}</span>
-                        <span className="font-normal text-slate-500">· {roleScopeLabel(assignment)}</span>
-                        {isPrimary ? <span className="rounded bg-orange-50 px-1.5 py-0.5 text-[10px] font-bold text-orange-700">PRINCIPAL</span> : null}
-                        {isBaseRequester ? <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">BASE</span> : null}
+                        <span className="font-normal text-[var(--kit-text-2)]">· {roleScopeLabel(assignment)}</span>
+                        {isPrimary ? <span className="rounded bg-[var(--kit-selected)] px-1.5 py-0.5 text-xs font-bold text-[var(--kit-selected-text)]">PRINCIPAL</span> : null}
+                        {isBaseRequester ? <span className="rounded bg-[var(--kit-neutral-soft)] px-1.5 py-0.5 text-xs font-bold text-[var(--kit-text-2)]">BASE</span> : null}
                         {removable ? (
                           <button
                             type="button"
                             onClick={() => { setRoleToRemove(assignment); setRoleRemovalReason(""); }}
-                            className="inline-grid h-5 w-5 place-items-center rounded text-sm leading-none text-slate-500 hover:bg-rose-50 hover:text-rose-700"
+                            className="inline-grid h-5 w-5 place-items-center rounded text-sm leading-none text-[var(--kit-text-2)] hover:bg-[var(--kit-danger-soft)] hover:text-[var(--kit-danger-text)]"
                             aria-label={`Retirer le rôle ${assignment.role.name} (${roleScopeLabel(assignment)})`}
                             title="Retirer cette attribution"
                           >
@@ -341,54 +341,54 @@ export function AdminUserActions({
                       </span>
                     );
                   })}
-                  {!user.roleAssignments.length ? <span className="text-[11px] font-normal text-slate-500">Aucun rôle attribué.</span> : null}
+                  {!user.roleAssignments.length ? <span className="text-xs font-normal text-[var(--kit-text-2)]">Aucun rôle attribué.</span> : null}
                 </div>
-                <p className="mt-2 text-[11px] font-normal leading-5 text-slate-500">
+                <p className="mt-2 text-xs font-normal leading-5 text-[var(--kit-text-2)]">
                   Le rôle Demandeur de base et le rôle principal ne sont pas supprimables ici. Pour retirer le rôle principal, choisissez d’abord un autre rôle principal puis enregistrez la fiche.
                 </p>
               </div>
             </div>
-            <label className="grid gap-1 text-xs font-semibold text-slate-600">
+            <label className="grid gap-1 text-xs font-semibold text-[var(--kit-text-2)]">
               Équipe principale
               <Combobox name="primaryTeamId" value={primaryTeamId} onChange={setPrimaryTeamId} disabled={!departmentId} options={[{ value: "", label: departmentId ? "Non affectée" : "Sélectionnez d’abord un département" }, ...filteredTeams.map((item) => ({ value: item.id, label: `${item.name} — ${item.queue.name}` }))]} />
             </label>
-            <label className="grid gap-1 text-xs font-semibold text-slate-600">
+            <label className="grid gap-1 text-xs font-semibold text-[var(--kit-text-2)]">
               File autorisée
               <Combobox name="authorizedQueueId" value={authorizedQueueId} onChange={setAuthorizedQueueId} disabled={!departmentId} options={[{ value: "", label: departmentId ? "Non affectée" : "Sélectionnez d’abord un département" }, ...filteredQueues.map((item) => ({ value: item.id, label: `${item.department.name} — ${item.name}` }))]} />
             </label>
-            <label className="grid gap-1 text-xs font-semibold text-slate-600">
+            <label className="grid gap-1 text-xs font-semibold text-[var(--kit-text-2)]">
               Statut applicatif
               <Combobox name="status" defaultValue={user.status} options={[{ value: "PENDING_ASSIGNMENT", label: "En attente d’affectation" }, { value: "PENDING_VALIDATION", label: "Ancienne validation à reprendre" }, { value: "ACTIVE", label: "Actif — valider" }, { value: "DISABLED", label: "Désactivé" }]} />
             </label>
-            <label className="grid gap-1 text-xs font-semibold text-slate-600 xl:col-span-3">
+            <label className="grid gap-1 text-xs font-semibold text-[var(--kit-text-2)] xl:col-span-3">
               Justification obligatoire
-              <input name="reason" required minLength={10} placeholder="Ex. Validation de la fiche après contrôle avec le responsable…" className="field-control font-normal text-slate-900" />
+              <input name="reason" required minLength={10} placeholder="Ex. Validation de la fiche après contrôle avec le responsable…" className="field-control font-normal text-[var(--kit-text)]" />
             </label>
             <button disabled={busy} className="button-primary self-end">
               {busy ? "Enregistrement…" : "Enregistrer la fiche"}
             </button>
           </form>
-          <p className="mt-3 text-[11px] leading-5 text-slate-500">Les managers, équipes et files affichés sont automatiquement filtrés par département. Le changement de département réinitialise les trois attributions dépendantes.</p>
-          <div className="mt-5 border-t border-slate-200 pt-4">
+          <p className="mt-3 text-xs leading-5 text-[var(--kit-text-2)]">Les managers, équipes et files affichés sont automatiquement filtrés par département. Le changement de département réinitialise les trois attributions dépendantes.</p>
+          <div className="mt-5 border-t border-[var(--kit-border)] pt-4">
             <button type="button" onClick={() => void loadHistory()} disabled={historyBusy} className="button-secondary min-h-9 px-3 py-2 text-xs">
               {historyBusy ? "Chargement de l’historique…" : "Afficher l’historique des changements"}
             </button>
             {history?.length ? (
               <div className="mt-3 space-y-2">
                 {history.map((change) => (
-                  <div key={change.id} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600">
-                    <p className="font-bold text-slate-800">{change.field} · {new Date(change.createdAt).toLocaleString("fr-FR")}</p>
+                  <div key={change.id} className="rounded-lg border border-[var(--kit-border)] bg-[var(--kit-card)] px-3 py-2 text-xs text-[var(--kit-text-2)]">
+                    <p className="font-bold text-[var(--kit-text)]">{change.field} · {new Date(change.createdAt).toLocaleString("fr-FR")}</p>
                     <p className="mt-1 break-words">{JSON.stringify(change.oldValue)} → {JSON.stringify(change.newValue)}</p>
                     <p className="mt-1">Motif : {change.reason} · {change.actor?.name ?? "Administrateur"}</p>
                   </div>
                 ))}
               </div>
-            ) : history ? <p className="mt-3 text-xs text-slate-500">Aucun changement historisé.</p> : null}
+            ) : history ? <p className="mt-3 text-xs text-[var(--kit-text-2)]">Aucun changement historisé.</p> : null}
           </div>
-          {message ? <p role="status" aria-live="polite" className="mt-3 text-xs font-semibold text-slate-600">{message}</p> : null}
+          {message ? <p role="status" aria-live="polite" className="mt-3 text-xs font-semibold text-[var(--kit-text-2)]">{message}</p> : null}
         </div>
       ) : null}
-      <ConfirmDialog open={deleteOpen} title="Supprimer l’utilisateur ?" description={`Vous êtes sur le point de supprimer définitivement ${displayName} (${user.email}). La suppression sera refusée si un historique métier existe.`} confirmLabel="Supprimer définitivement" busyLabel="Suppression…" danger busy={busy} confirmDisabled={impactBusy || !deletionImpact?.canDelete || deleteReason.trim().length < 10} onCancel={() => { if (!busy) { setDeleteOpen(false); setDeleteReason(""); } }} onConfirm={() => void deleteUser()}>{impactBusy ? <p className="mt-4 text-sm">Analyse des dépendances…</p> : deletionImpact && !deletionImpact.canDelete ? <div className="mt-4 space-y-2"><p className="font-semibold text-rose-700">{deletionImpact.totalBlockers} dépendance(s) empêchent la suppression.</p>{deletionImpact.blockers.map((item) => <div key={item.type} className="flex items-center justify-between rounded-lg border p-3 text-sm"><span>{item.protectedHistory ? "Historique protégé · " : ""}{item.label} ({item.count})</span><Link href={item.adminPath as Route} className="button-secondary px-2 py-1 text-xs">Voir</Link></div>)}<Link href={`/admin/dependencies/user/${user.id}` as Route} className="button-secondary inline-flex">Voir toutes les dépendances</Link></div> : <label className="field-label mt-4">Motif de suppression<textarea autoFocus required minLength={10} maxLength={2000} value={deleteReason} onChange={(event) => setDeleteReason(event.target.value)} className="field-control min-h-24" /></label>}</ConfirmDialog>
+      <ConfirmDialog open={deleteOpen} title="Supprimer l’utilisateur ?" description={`Vous êtes sur le point de supprimer définitivement ${displayName} (${user.email}). La suppression sera refusée si un historique métier existe.`} confirmLabel="Supprimer définitivement" busyLabel="Suppression…" danger busy={busy} confirmDisabled={impactBusy || !deletionImpact?.canDelete || deleteReason.trim().length < 10} onCancel={() => { if (!busy) { setDeleteOpen(false); setDeleteReason(""); } }} onConfirm={() => void deleteUser()}>{impactBusy ? <p className="mt-4 text-sm">Analyse des dépendances…</p> : deletionImpact && !deletionImpact.canDelete ? <div className="mt-4 space-y-2"><p className="font-semibold text-[var(--kit-danger-text)]">{deletionImpact.totalBlockers} dépendance(s) empêchent la suppression.</p>{deletionImpact.blockers.map((item) => <div key={item.type} className="flex items-center justify-between rounded-lg border p-3 text-sm"><span>{item.protectedHistory ? "Historique protégé · " : ""}{item.label} ({item.count})</span><Link href={item.adminPath as Route} className="button-secondary px-2 py-1 text-xs">Voir</Link></div>)}<Link href={`/admin/dependencies/user/${user.id}` as Route} className="button-secondary inline-flex">Voir toutes les dépendances</Link></div> : <label className="field-label mt-4">Motif de suppression<textarea autoFocus required minLength={10} maxLength={2000} value={deleteReason} onChange={(event) => setDeleteReason(event.target.value)} className="field-control min-h-24" /></label>}</ConfirmDialog>
       <ConfirmDialog
         open={Boolean(roleToRemove)}
         title={roleToRemove ? `Retirer « ${roleToRemove.role.name} » ?` : "Retirer ce rôle ?"}
