@@ -22,7 +22,7 @@ type DialogFocusOptions = {
  * Does not change business actions, dismissal rules or visual structure.
  */
 export function useDialogFocus({ open, onClose, closeOnEscape = true }: DialogFocusOptions) {
-  const dialogRef = useRef<HTMLSectionElement>(null);
+  const dialogRef = useRef<HTMLElement>(null);
   const onCloseRef = useRef(onClose);
   const closeOnEscapeRef = useRef(closeOnEscape);
 
@@ -38,8 +38,8 @@ export function useDialogFocus({ open, onClose, closeOnEscape = true }: DialogFo
     if (!dialog) return;
 
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const focusableElements = () => Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
-      .filter((element) => element.getClientRects().length > 0 && element.getAttribute("aria-hidden") !== "true");
+    const focusableElements = (): HTMLElement[] => Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
+      .filter((element: HTMLElement) => element.getClientRects().length > 0 && element.getAttribute("aria-hidden") !== "true");
 
     const preferred = dialog.querySelector<HTMLElement>("[data-dialog-initial-focus]");
     const firstField = dialog.querySelector<HTMLElement>(
@@ -59,15 +59,15 @@ export function useDialogFocus({ open, onClose, closeOnEscape = true }: DialogFo
 
       if (event.key !== "Tab") return;
 
-      const elements = focusableElements();
+      const elements: HTMLElement[] = focusableElements();
       if (!elements.length) {
         event.preventDefault();
         dialog?.focus();
         return;
       }
 
-      const first = elements[0];
-      const last = elements[elements.length - 1];
+      const first: HTMLElement = elements[0]!;
+      const last: HTMLElement = elements[elements.length - 1]!;
       const current = document.activeElement;
 
       if (event.shiftKey && (current === first || !dialog?.contains(current))) {
