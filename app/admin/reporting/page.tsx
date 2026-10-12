@@ -2,16 +2,19 @@ import { redirect } from "next/navigation";
 import { getProductCapabilities } from "@/lib/product-policy.server";
 import { AdminEmptyState, AdminPageHeader, AdminStatCard } from "@/components/admin-primitives";
 import { STATUS_LABELS } from "@/lib/domain";
-import { getReportingSummary } from "@/lib/reporting-service";
+import { getReportingSummary, reportingPeriodFromQuery } from "@/lib/reporting-service";
+import { ReportingFilterClient } from "@/components/reporting/reporting-filter.client";
 import { requireAdminAccess } from "@/lib/server-auth";
 
-export default async function AdminReportingPage() {
+export default async function AdminReportingPage({ searchParams }: { searchParams: Promise<{ period?: string }> }) {
+  const period = reportingPeriodFromQuery((await searchParams).period);
   const admin = await requireAdminAccess("FUNCTIONAL");
   if (!getProductCapabilities().productionPortfolio) redirect("/reporting");
-  const summary = await getReportingSummary(admin);
+  const summary = await (period === "all" ? getReportingSummary(admin) : getReportingSummary(admin, period));
   return (
     <div className="space-y-6 admin-reporting-industrial sla-reporting-industrial">
-      <AdminPageHeader eyebrow="Indicateurs autorisés" title="Reporting administrateur" description="Les indicateurs sont calculés côté serveur sur les tickets non confidentiels couverts par l’accès fonctionnel. Aucun détail de ticket n’est exposé à un rôle reporting seul." actions={<Link href="/api/reporting/export" className="button-secondary">Exporter en CSV</Link>} />
+      <AdminPageHeader eyebrow="Indicateurs autorisés" title="Reporting administrateur" description="Les indicateurs sont calculés côté serveur sur les tickets non confidentiels couverts par l’accès fonctionnel. Aucun détail de ticket n’est exposé à un rôle reporting seul." actions={<Link href="/api/reporting/export" className="button-secondary" title="L’export porte sur tout l’historique autorisé">Exporter CSV · historique complet</Link>} />
+      <ReportingFilterClient period={period} />
       <div className="reporting-kpi-grid grid gap-4 sm:grid-cols-3">
         <AdminStatCard label="Tickets analysés" value={summary.total} detail="Périmètre non confidentiel" />
         <AdminStatCard label="SLA dépassés" value={summary.overdue} detail={`${summary.firstResponseBreached} réponse · ${summary.resolutionBreached} résolution`} tone={summary.overdue ? "danger" : "success"} />
