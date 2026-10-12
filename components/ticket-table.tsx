@@ -55,7 +55,7 @@ export function TicketTable({
               {showActions ? <th className="px-4 py-3.5">Action</th> : null}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-[var(--kit-border)]">
             {tickets.map((ticket) => (
               <tr key={ticket.id}>
                 <td className="px-4 py-3.5">
