@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="fr" data-theme="light">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BIOS Glass Corporate v3.1 — 1TASK (référence documentaire)</title>
+<style>
+/* Hors application et hors production : illustration des règles BIOS v3.1. */
+:root{--orange:#E8702A;--orange-deep:#D4601D;--ink:#14201D;--ink2:#3A4744;--muted:#5E6B67;--line:#E2E5E2;--canvas:#EEF0EC;--success:#1F7A55;--error:#B42323;--warning:#93590A;--info:#1F5FAE;--glass:rgb(255 255 255 / 62%);--menu:rgb(255 255 255 / 82%);--edge:rgb(20 32 29 / 12%);--radius-card:10px;--radius-control:6px;--radius-tile:12px}
+html[data-theme="dark"]{--ink:#F2F7F3;--ink2:#D0DED4;--muted:#B8C8C0;--line:#41544C;--canvas:#101B18;--glass:rgb(25 43 35 / 85%);--menu:rgb(25 43 35 / 94%);--edge:rgb(255 255 255 / 18%);--success:#76D5A6;--error:#FF928A;--warning:#F0BC73;--info:#A0C8F1}
+*{box-sizing:border-box}body{margin:0;min-width:320px;background:var(--canvas);color:var(--ink);font:14px/1.5 "IBM Plex Sans",Arial,sans-serif}
+h1,h2,h3{font-family:"Schibsted Grotesk",Arial,sans-serif;margin:0}h1{font-size:24px;line-height:1.3}h2{font-size:16px}
+button,input,select,textarea{font:inherit}button,select{cursor:pointer}:focus-visible{outline:3px solid var(--orange);outline-offset:3px}
+.demo-tools{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:12px 24px;background:var(--menu);border-bottom:1px solid var(--line)}
+.demo-tools label{display:flex;align-items:center;gap:8px;font-size:13px}.demo-tools select,.demo-tools button{min-height:40px;padding:6px 12px;border:1px solid var(--line);border-radius:6px;color:var(--ink);background:var(--glass)}.disclaimer{font-size:12px;color:var(--muted)}
+.app{min-height:calc(100dvh - 64px);display:grid;grid-template-columns:240px minmax(0,1fr);background:radial-gradient(circle at 93% 4%,rgb(232 112 42 / 9%),transparent 36%),radial-gradient(circle at 10% 94%,rgb(31 122 85 / 7%),transparent 40%),var(--canvas)}
+.sidebar{display:flex;flex-direction:column;padding:16px 12px;background:var(--menu);border-right:1px solid var(--line);backdrop-filter:blur(20px)}
+.brand{display:flex;align-items:center;gap:10px;padding:0 10px 24px;font:700 16px "Schibsted Grotesk",Arial,sans-serif}
+.brand-tile{display:grid;place-items:center;width:36px;height:36px;background:var(--orange);color:#14201D;border-radius:12px;font-weight:700}
+.nav-title,.eyebrow{color:var(--muted);font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:600}.nav-title{margin:14px 10px 7px}
+.nav-row{display:flex;align-items:center;gap:10px;padding:10px 12px;min-height:40px;border-radius:6px;color:var(--ink2)}.nav-row.active{background:var(--ink);color:var(--canvas);font-weight:600}
+.nav-dot{display:inline-block;flex:none;width:8px;height:8px;border-radius:50%;background:var(--muted)}.nav-row.active .nav-dot{background:var(--orange)}
+.workspace{min-width:0}.topbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;min-height:56px;padding:8px 32px;border-bottom:1px solid var(--line);background:var(--menu);backdrop-filter:blur(20px)}
+.breadcrumb{color:var(--muted);font-size:13px}.tools{display:flex;align-items:center;gap:10px}.avatar{display:grid;place-items:center;width:32px;height:32px;border:1px solid var(--line);border-radius:50%}
+.primary{display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 16px;border:0;border-radius:var(--radius-control);background:var(--orange);color:#14201D;font-weight:700}
+.secondary{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 14px;border:1px solid var(--line);border-radius:6px;color:var(--ink);background:var(--menu)}
+.content{max-width:1360px;margin:0 auto;padding:32px;display:grid;gap:18px}.page-head{display:flex;align-items:end;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.subtitle{margin:7px 0 0;color:var(--ink2)}.overline{margin:0 0 5px}
+.glass{min-width:0;padding:22px;background:var(--glass);border:1px solid var(--edge);border-radius:var(--radius-card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:inset 0 1px rgb(255 255 255 / 30%),0 8px 30px rgb(20 32 29 / 4%)}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.stat-label{font-size:13px;color:var(--muted)}.stat-number{font:600 32px "IBM Plex Mono",monospace;margin:8px 0 3px; font-variant-numeric:tabular-nums}.stat-note{font-size:12px;color:var(--muted)}
+.panel-head{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}.panel-head small{color:var(--muted)}
+.table-scroll{overflow-x:auto}.data-table{width:100%;border-collapse:collapse;font-size:13px}.data-table th{text-align:left;color:var(--muted);font-weight:600}.data-table th,.data-table td{padding:11px 12px;border-bottom:1px solid var(--line);min-height:44px}.data-table th:last-child,.data-table td:last-child{text-align:right}
+.ref{font:600 13px "IBM Plex Mono",monospace}.badge{display:inline-flex;padding:3px 9px;border:1px solid var(--line);border-radius:99px;background:var(--menu);font-size:12px;font-weight:600}.badge.success{color:var(--success)}.badge.warning{color:var(--warning)}
+.filters{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin-bottom:18px}.field{display:grid;gap:6px;flex:1;min-width:130px;font-size:13px;color:var(--ink2)}
+.field input,.field select,.field textarea{min-height:40px;width:100%;padding:9px 12px;color:var(--ink);background:var(--menu);border:1px solid var(--line);border-radius:6px}.field textarea{min-height:118px;resize:vertical}
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.wide{grid-column:1/-1}
+.note{padding:12px 14px;border-left:3px solid var(--orange);border-radius:6px;background:var(--menu);color:var(--ink2);font-size:13px}
+.mock-view[hidden]{display:none}.demotext{margin:0;color:var(--muted);font-size:12px}
+@media(max-width:1023px){.app{grid-template-columns:64px minmax(0,1fr)}.sidebar{padding-inline:7px}.brand{justify-content:center;padding-inline:0}.brand-name,.nav-title,.nav-label{display:none}.nav-row{justify-content:center}.topbar{padding-inline:24px}.content{padding:24px}}
+@media(max-width:700px){.app{display:block}.sidebar{display:none}.topbar{padding:8px 16px}.content{padding:16px}.stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.glass{padding:16px}.fields{grid-template-columns:1fr}.wide{grid-column:auto}.data-table{min-width:520px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+@supports not (backdrop-filter:blur(20px)){.glass,.sidebar,.topbar{background:var(--menu)}}
+</style>
+</head>
+<body>
+<div class="demo-tools"><label for="view-select">Écran témoin <select id="view-select"><option value="dashboard">Dashboard</option><option value="inbox">Inbox</option><option value="ticket">Création ticket</option></select></label>
+<button type="button" id="theme-button" aria-pressed="false">Mode sombre</button><span class="disclaimer">Aperçu autonome · données fictives · sans effet sur 1TASK</span></div>
+<div class="app">
+<aside class="sidebar" aria-label="Navigation de démonstration"><div class="brand"><span class="brand-tile">1T</span><span class="brand-name">1TASK</span></div>
+<p class="nav-title">Espace de travail</p>
+<div class="nav-row active"><i class="nav-dot"></i><span class="nav-label">Tableau de bord</span></div>
+<div class="nav-row"><i class="nav-dot"></i><span class="nav-label">Boîte agent</span></div>
+<div class="nav-row"><i class="nav-dot"></i><span class="nav-label">Mes tickets</span></div>
+<p class="nav-title">Administration</p><div class="nav-row"><i class="nav-dot"></i><span class="nav-label">Gestion</span></div></aside>
+<div class="workspace"><header class="topbar"><span class="breadcrumb">1TASK / <span id="crumb">Tableau de bord</span></span>
+<div class="tools"><span class="disclaimer">Recherche · Notifications</span><span class="primary">Nouveau ticket</span><span class="avatar">●</span></div></header>
+<main class="content">
+<section id="view-dashboard" class="mock-view">
+<div class="page-head"><div><p class="eyebrow overline">Vue opérationnelle</p><h1>Tableau de bord</h1><p class="subtitle">L'essentiel pour travailler, sans surcharge de KPI.</p></div><span class="demotext">Périmètre autorisé · démonstration</span></div>
+<div class="stats"><article class="glass"><p class="stat-label">Tickets à traiter</p><p class="stat-number">18</p><p class="stat-note">Exemple uniquement</p></article>
+<article class="glass"><p class="stat-label">SLA à risque</p><p class="stat-number">03</p><p class="stat-note">Exemple uniquement</p></article>
+<article class="glass"><p class="stat-label">Nouvelles demandes</p><p class="stat-number">07</p><p class="stat-note">Exemple uniquement</p></article></div>
+<section class="glass"><div class="panel-head"><h2>Tickets récents</h2><small>Données fictives</small></div>
+<div class="table-scroll"><table class="data-table"><thead><tr><th scope="col">Référence</th><th scope="col">Objet</th><th scope="col">Statut</th><th scope="col">Priorité</th></tr></thead>
+<tbody><tr><td class="ref">INC-0241</td><td>Accès logiciel</td><td><span class="badge">En cours</span></td><td>Normale</td></tr>
+<tr><td class="ref">INC-0240</td><td>Équipement</td><td><span class="badge warning">À traiter</span></td><td>Haute</td></tr>
+<tr><td class="ref">INC-0239</td><td>Demande d'information</td><td><span class="badge success">Résolu</span></td><td>Basse</td></tr></tbody></table></div></section>
+</section>
+<section id="view-inbox" class="mock-view" hidden>
+<div class="page-head"><div><p class="eyebrow overline">Réception</p><h1>Boîte agent</h1><p class="subtitle">Une zone de filtres, liste lisible et aperçu rapide conservé.</p></div></div>
+<section class="glass"><div class="filters"><label class="field">Rechercher<input type="search" placeholder="Référence ou titre"></label><label class="field">Statut<select><option>Tous</option></select></label><label class="field">Priorité<select><option>Toutes</option></select></label><span class="secondary">Appliquer</span></div>
+<div class="panel-head"><h2>À examiner</h2><small>Exemples</small></div>
+<div class="table-scroll"><table class="data-table"><thead><tr><th scope="col">Référence</th><th scope="col">Sujet</th><th scope="col">File</th><th scope="col">Statut</th></tr></thead><tbody>
+<tr><td class="ref">INC-0241</td><td>Accès logiciel</td><td>Support</td><td><span class="badge warning">À traiter</span></td></tr>
+<tr><td class="ref">INC-0240</td><td>Équipement</td><td>IT</td><td><span class="badge">En cours</span></td></tr></tbody></table></div>
+<p class="demotext" style="margin-top:12px">La prise en charge, les détails rapides et les droits restent ceux du code actuel.</p></section>
+</section>
+<section id="view-ticket" class="mock-view" hidden>
+<div class="page-head"><div><p class="eyebrow overline">Nouvelle demande</p><h1>Créer un ticket</h1><p class="subtitle">Décrivez votre besoin, 1TASK se charge du routage.</p></div></div>
+<section class="glass"><div class="fields"><label class="field">Département<select><option>Choisir un département</option></select></label>
+<label class="field">Service<select><option>Choisir un service</option></select></label>
+<label class="field wide">Objet<input placeholder="Résumé du besoin"></label>
+<label class="field wide">Description<textarea placeholder="Décrire votre demande"></textarea></label>
+<p class="note wide">Routage, idempotence et confidentialité : comportements V1 existants à préserver.</p></div>
+<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:22px"><span class="secondary">Annuler</span><span class="primary">Créer le ticket</span></div>
+</section></section>
+<p class="demotext">Illustration esthétique uniquement : aucune donnée de production, aucune opération métier.</p>
+</main></div></div>
+<script>
+const selection=document.getElementById("view-select"), button=document.getElementById("theme-button");
+const labels={dashboard:"Tableau de bord",inbox:"Boîte agent",ticket:"Créer un ticket"};
+selection.addEventListener("change",()=>{for(const name of Object.keys(labels))document.getElementById("view-"+name).hidden=name!==selection.value;document.getElementById("crumb").textContent=labels[selection.value]});
+button.addEventListener("click",()=>{const dark=document.documentElement.dataset.theme!=="dark";document.documentElement.dataset.theme=dark?"dark":"light";button.setAttribute("aria-pressed",String(dark));button.textContent=dark?"Mode clair":"Mode sombre"});
+</script></body></html>
