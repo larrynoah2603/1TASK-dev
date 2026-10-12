@@ -13,7 +13,7 @@ type PageHeaderProps = {
 
 export function PageHeader({ title, description, breadcrumb, actions, eyebrow, className = "" }: PageHeaderProps) {
   return (
-    <header className={`ui-page-header ${className}`}>
+    <header className={`page-header ui-page-header ${className}`}>
       <div className="ui-page-header-copy">
         {breadcrumb?.length ? (
           <nav aria-label="Fil d’Ariane" className="ui-breadcrumb">

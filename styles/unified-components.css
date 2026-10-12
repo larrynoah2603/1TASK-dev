@@ -1,0 +1,191 @@
+/* ==========================================================================
+   1TASK — Lot UI/UX 02 : composants transversaux
+   Harmonise les familles UI et legacy encore actives sans remplacer leurs APIs.
+   Aucun changement des zones de navigation, filtres métier, rôles ou workflows.
+   Les valeurs proviennent exclusivement des tokens 1TASK --kit-*.
+   ========================================================================== */
+
+/* Variantes de taille : `ui/button` conserve les classes DS héritées. */
+.kit-btn-lg {
+  min-height: 44px;
+  padding-inline: var(--kit-space-5);
+}
+
+/* Hiérarchie commune des en-têtes dans toutes les familles de pages. */
+html[data-theme] :is(
+  .page-header,
+  .ui-page-header,
+  .ds-page-header,
+  .saas-page-header,
+  .reporting-page-header
+) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  column-gap: var(--kit-space-5);
+  row-gap: var(--kit-space-3);
+  min-width: 0;
+}
+
+html[data-theme] :is(
+  .page-header,
+  .ui-page-header,
+  .ds-page-header,
+  .saas-page-header,
+  .reporting-page-header
+) h1 {
+  margin: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  color: var(--kit-text);
+  font-size: var(--kit-text-2xl);
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+}
+
+html[data-theme] :is(
+  .page-header-description,
+  .ui-page-header-description,
+  .ds-page-header-description,
+  .saas-page-header .page-header-description,
+  .reporting-page-header p:last-child
+) {
+  max-width: 68ch;
+  color: var(--kit-text-2);
+  font-size: var(--kit-text-md);
+  line-height: 1.5;
+}
+
+html[data-theme] :is(
+  .page-header-actions,
+  .ui-page-header-actions,
+  .ds-page-header-actions,
+  .reporting-page-actions
+) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--kit-space-2);
+  min-width: 0;
+}
+
+/* Cartes et indicateurs : une seule surface, chiffres compacts et lisibles. */
+html[data-theme] :is(
+  .admin-stat,
+  .ui-stat-card,
+  .ds-stat-card,
+  .ds-kpi-card,
+  .metric-card,
+  .reporting-card
+) {
+  min-width: 0;
+  border-radius: var(--kit-radius-lg) !important;
+  background: var(--kit-card) !important;
+}
+
+html[data-theme] :is(
+  .ui-stat-card-value,
+  .ds-stat-card-value,
+  .admin-stat-value,
+  .ds-kpi-card strong
+) {
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(1.375rem, 1.15rem + 0.55vw, 1.75rem);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+html[data-theme] :is(
+  .ui-stat-card-header,
+  .ui-stat-card-footer,
+  .ds-stat-card-label,
+  .ds-stat-card-detail,
+  .admin-stat > p:not(.admin-stat-value)
+) {
+  font-size: var(--kit-text-xs);
+  line-height: 1.45;
+}
+
+/* Contrôles de filtrage : une surface unique par page, jamais une barre ajoutée. */
+html[data-theme] :is(.ui-filter-bar, .ds-filter-bar) {
+  min-width: 0;
+  max-width: 100%;
+  gap: var(--kit-space-2);
+  border-color: var(--kit-border);
+  border-radius: var(--kit-radius-lg);
+  background: var(--kit-card);
+}
+
+html[data-theme] .ui-filter-search {
+  min-width: 0;
+  max-width: 100%;
+  color: var(--kit-text-2);
+  border-color: var(--kit-border-strong);
+  border-radius: var(--kit-radius-md);
+}
+
+html[data-theme] .ui-filter-search svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+html[data-theme] .ui-filter-search:focus-within {
+  border-color: var(--kit-primary);
+  box-shadow: 0 0 0 3px var(--kit-ring);
+}
+
+html[data-theme] .ui-filter-search input {
+  min-width: 0;
+  color: var(--kit-text);
+}
+
+html[data-theme] :is(.ds-table-container, .ui-data-table-scroll, .kit-table-wrap) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* La console conserve un seul h1 : les sections utilisent des h2. */
+html[data-theme] .admin-console-header .admin-console-heading {
+  margin: 0;
+  color: var(--kit-text);
+  font-size: var(--kit-text-xl);
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+}
+
+@media (max-width: 640px) {
+  html[data-theme] :is(
+    .page-header,
+    .ui-page-header,
+    .ds-page-header,
+    .saas-page-header,
+    .reporting-page-header
+  ) {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  html[data-theme] :is(
+    .page-header-actions,
+    .ui-page-header-actions,
+    .ds-page-header-actions,
+    .reporting-page-actions
+  ) {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  html[data-theme] :is(.ui-filter-bar, .ds-filter-bar) {
+    align-items: stretch;
+  }
+
+  html[data-theme] .ui-filter-search {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+}

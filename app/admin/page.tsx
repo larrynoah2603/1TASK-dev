@@ -49,12 +49,12 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="space-y-7 admin-dashboard-industrial">
-      <AdminDashboard stats={{ users: userSummary.active, departments: departmentCount, teams: teamCount, queues: queueCount }} />
       <AdminPageHeader
         eyebrow="Tableau de bord global"
         title="Administration du ticketing"
         description="Deux espaces restent séparés : l’espace normal pour les demandes et le traitement, puis cette console réservée aux administrateurs fonctionnels."
       />
+      <AdminDashboard stats={{ users: userSummary.active, departments: departmentCount, teams: teamCount, queues: queueCount }} />
       <AdminNotice>Les valeurs brutes du département viennent de Microsoft Entra ID. Le département interne du profil et sa validation sont gérés explicitement dans <code>/admin/users</code> ; le référentiel de correspondance reste audité et ne remplace pas cette affectation.</AdminNotice>
 
       <div className="admin-console-secondary-grid">
