@@ -1,0 +1,118 @@
+/* PR 02 — BIOS Glass Corporate v3.1 : couleurs + polices, activables en
+   préversion uniquement. Ce fichier n'affecte JAMAIS le thème sans opt-in.
+   PR 03 portera sur rayons/Glass, PR 04 sur structure et navigation visuelle.
+   Référence : docs/uiux/bios-glass-v31/README.md. */
+
+/* Invariants du design : alias --kit-* conservés afin de ne modifier aucun
+   appel CSS dans les composants ou les workflows de production. */
+html[data-visual-profile="bios-glass-v31"] {
+  color-scheme: light;
+  --kit-brand: #E8702A;
+  --kit-primary: #E8702A;
+  --kit-primary-hover: #D86620; /* variante accessible, Ink >= 4.5:1 */
+  --kit-primary-text: #A6450A; /* #B8520F du guide n'atteint pas 4.5 sur Canvas */
+  --kit-on-primary: #14201D; /* texte blanc sur orange BIOS = 3.10:1 */
+  --kit-on-brand: #14201D;
+  --kit-bg: #EEF0EC;
+  --kit-surface: #FFFFFF;
+  --kit-card: #FFFFFF;
+  --kit-surface-muted: #F6F7F3;
+  --kit-border: #E2E5E2;
+  --kit-border-strong: #BCC7BD;
+  --kit-text: #14201D;
+  --kit-text-2: #3A4744;
+  --kit-secondary: #5E6B67;
+  --kit-selected: #FDF0E7;
+  --kit-selected-text: #A6450A;
+
+  --kit-success: #1F7A55;
+  --kit-success-text: #1F7A55;
+  --kit-danger: #B42323;
+  --kit-danger-text: #B42323;
+  --kit-warning: #93590A;
+  --kit-warning-text: #93590A;
+  --kit-info: #1F5FAE;
+  --kit-info-text: #1F5FAE;
+  --kit-on-success: #FFFFFF;
+  --kit-glass: rgb(255 255 255 / 82%);
+  --kit-font-display: var(--font-schibsted-grotesk), "Schibsted Grotesk", sans-serif;
+  --kit-font-mono: var(--font-ibm-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme="dark"] {
+  color-scheme: dark;
+  /* Le guide ne contient pas de palette sombre complète ; valeurs prototypes
+     avec contrôle WCAG, révisables après tests de rendu. */
+  --kit-brand: #E8702A;
+  --kit-primary: #E8702A;
+  --kit-primary-hover: #D86620;
+  --kit-primary-text: #FFB57D;
+  --kit-on-primary: #14201D;
+  --kit-on-brand: #14201D;
+  --kit-bg: #101B18;
+  --kit-surface: #192B23;
+  --kit-card: #192B23;
+  --kit-surface-muted: #21372C;
+  --kit-border: #40544B;
+  --kit-border-strong: #62796B;
+  --kit-text: #F2F7F3;
+  --kit-text-2: #CEDBD3;
+  --kit-secondary: #B8C8C0;
+  --kit-selected: #35271E;
+  --kit-selected-text: #FFB57D;
+  --kit-success: #76D5A6;
+  --kit-success-text: #76D5A6;
+  --kit-danger: #FF928A;
+  --kit-danger-text: #FF928A;
+  --kit-warning: #F0BC73;
+  --kit-warning-text: #F0BC73;
+  --kit-info: #A0C8F1;
+  --kit-info-text: #A0C8F1;
+  --kit-on-success: #14201D;
+  --kit-glass: rgb(25 43 35 / 94%);
+}
+
+/* Le corps garde IBM Plex Sans. Titres et indicateurs adoptent uniquement
+   dans l'opt-in les polices du guide, sans changer la sémantique des balises. */
+html[data-visual-profile="bios-glass-v31"] :is(
+  h1, h2, h3, .kit-page-title, .ds-page-header h1,
+  .ds-section-heading h2, .admin-console-heading
+) {
+  font-family: var(--kit-font-display);
+}
+html[data-visual-profile="bios-glass-v31"] :is(
+  .ds-kpi-card > strong, .ds-stat-card-value, .stat-number,
+  .metric-value, .admin-stat-value, .kit-search-ref, .kit-ref
+) {
+  font-family: var(--kit-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* L'opt-in est signalé uniquement sur Vercel Preview ou en développement.
+   Rien de fixe dans la production courante. */
+.bios-glass-preview-toggle {
+  position: fixed;
+  z-index: 1000;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  max-width: min(320px, calc(100vw - 24px));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 2px solid var(--kit-primary);
+  border-radius: 8px;
+  color: var(--kit-on-primary);
+  background: var(--kit-primary);
+  font: 700 13px/1.35 var(--kit-font);
+  box-shadow: var(--kit-shadow-md);
+}
+.bios-glass-preview-toggle:focus-visible {
+  outline: 3px solid var(--kit-text);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bios-glass-preview-toggle { transition: none; }
+}
