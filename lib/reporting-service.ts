@@ -31,20 +31,31 @@ function reportingScopeFingerprint(current: UserContext) {
   return hash.digest("hex").slice(0, 24);
 }
 
-export async function getReportingSummary(actor: UserContext) {
+export type ReportingPeriod = "all" | "7d" | "30d";
+
+/** Rolling time window over ticket creation, never wider than the viewer's ACL. */
+export function reportingPeriodFromQuery(value: string | undefined): ReportingPeriod {
+  return value === "7d" || value === "30d" ? value : "all";
+}
+
+export async function getReportingSummary(actor: UserContext, period: ReportingPeriod = "all") {
   const current = await requireCurrentActor(actor);
   if (!hasPermission(current, "reporting:read")) {
     throw new AuthorizationError("Vous n’êtes pas habilité à consulter ces rapports.");
   }
 
   const scopeFingerprint = reportingScopeFingerprint(current);
-  return cacheAside(`reporting:v2:${current.id}:${scopeFingerprint}`, 45, () => getReportingSummaryUncached(current));
+  return cacheAside(`reporting:v3:${current.id}:${scopeFingerprint}:${period}`, 45, () => getReportingSummaryUncached(current, period));
 }
 
 export type ReportingSummary = Awaited<ReturnType<typeof getReportingSummaryUncached>>;
 
-async function getReportingSummaryUncached(current: UserContext) {
-  const where = await visibleTicketWhere(current, { mode: "REPORTING" });
+async function getReportingSummaryUncached(current: UserContext, period: ReportingPeriod = "all") {
+  const scope = await visibleTicketWhere(current, { mode: "REPORTING" });
+  const days = period === "7d" ? 7 : period === "30d" ? 30 : null;
+  const where: Prisma.TicketWhereInput = days === null
+    ? scope
+    : { AND: [scope, { createdAt: { gte: new Date(Date.now() - days * 86_400_000) } }] };
   const now = new Date();
   const activeSlaWhere: Prisma.TicketWhereInput = {
     status: { notIn: [TicketStatus.CLOSED, TicketStatus.CANCELLED, TicketStatus.BLOCKED, TicketStatus.RESOLUTION_PENDING] },
