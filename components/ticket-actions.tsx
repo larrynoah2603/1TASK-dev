@@ -180,13 +180,13 @@ export function TicketActions({
 
   return (
     <div className="space-y-3">
-      {error ? <div role="alert" aria-live="polite" className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
+      {error ? <div role="alert" aria-live="polite" className="rounded-lg border border-[var(--kit-danger)] bg-[var(--kit-danger-soft)] px-4 py-3 text-sm text-[var(--kit-danger-text)]">{error}</div> : null}
 
       {canClaim ? (
         <TicketSidePanel title="Prise en charge" subtitle="Devenir responsable du traitement" defaultOpen>
           <section className="action-card kit-callout">
-          <p className="text-sm font-semibold text-slate-900">Ticket non affecté</p>
-          <p className="mt-1 text-xs text-slate-600">Vous êtes un agent actif habilité dans l’équipe de cette file.</p>
+          <p className="text-sm font-semibold text-[var(--kit-text)]">Ticket non affecté</p>
+          <p className="mt-1 text-xs text-[var(--kit-text-2)]">Vous êtes un agent actif habilité dans l’équipe de cette file.</p>
           <button type="button" onClick={() => setConfirmation({ title: "Confirmer la prise en charge", description: "Vous deviendrez l’agent responsable de ce ticket. Cette action sera visible dans l’historique.", confirmLabel: "Prendre en charge", run: () => { void post("/api/tickets/" + ticketId + "/claim", {}, "Ticket pris en charge."); } })} disabled={busy} className="button-primary mt-4">
             {busy ? "Prise en charge…" : "Prendre en charge"}
           </button>
@@ -205,8 +205,8 @@ export function TicketActions({
               {canStartOrResume ? (
                 <form onSubmit={(event) => { event.preventDefault(); confirmTransition(TicketStatus.IN_PROGRESS, status === TicketStatus.BLOCKED || status === TicketStatus.REOPENED ? "Reprendre le traitement" : "Démarrer le traitement", "Traitement démarré."); }} className="space-y-3">
                   {requiresAdministrativeReason ? (
-                    <label className="field-label text-amber-800">Motif de l’action administrative
-                      <textarea required minLength={10} value={transitionReason} onChange={(event) => setTransitionReason(event.target.value)} placeholder="Motif obligatoire, 10 caractères minimum." className="field-control min-h-20 border-amber-200 bg-amber-50/40 font-normal" />
+                    <label className="field-label text-[var(--kit-warning-text)]">Motif de l’action administrative
+                      <textarea required minLength={10} value={transitionReason} onChange={(event) => setTransitionReason(event.target.value)} placeholder="Motif obligatoire, 10 caractères minimum." className="field-control min-h-20 border-[var(--kit-border-strong)] bg-[var(--kit-warning-soft)] font-normal" />
                     </label>
                   ) : null}
                   <button disabled={busy || (requiresAdministrativeReason && transitionReason.trim().length < 10)} className="button-primary">
@@ -217,7 +217,7 @@ export function TicketActions({
 
               {canPause ? workspaceAction("Mettre en attente", (
                 <form onSubmit={(event) => { event.preventDefault(); confirmTransition(TicketStatus.BLOCKED, "Mettre en attente", "Ticket mis en attente."); }} className="space-y-3">
-                  <p className="text-sm font-semibold text-slate-900">Mettre en attente</p>
+                  <p className="text-sm font-semibold text-[var(--kit-text)]">Mettre en attente</p>
                   <label className="field-label">Motif du blocage
                     <select required value={blockReason} onChange={(event) => setBlockReason(event.target.value as BlockReason)} className="field-control" aria-label="Motif du blocage">{Object.values(BlockReason).map((item) => <option key={item} value={item}>{BLOCK_REASON_LABELS[item]}</option>)}</select>
                   </label>
@@ -225,8 +225,8 @@ export function TicketActions({
                     <textarea required minLength={1} value={blockDetails} onChange={(event) => setBlockDetails(event.target.value)} placeholder="Expliquez ce qui est attendu et par qui." className="field-control min-h-20 font-normal" />
                   </label>
                   {requiresAdministrativeReason ? (
-                    <label className="field-label text-amber-800">Motif de l’action administrative
-                      <textarea required minLength={10} value={transitionReason} onChange={(event) => setTransitionReason(event.target.value)} placeholder="Motif obligatoire, 10 caractères minimum." className="field-control min-h-20 border-amber-200 bg-amber-50/40 font-normal" />
+                    <label className="field-label text-[var(--kit-warning-text)]">Motif de l’action administrative
+                      <textarea required minLength={10} value={transitionReason} onChange={(event) => setTransitionReason(event.target.value)} placeholder="Motif obligatoire, 10 caractères minimum." className="field-control min-h-20 border-[var(--kit-border-strong)] bg-[var(--kit-warning-soft)] font-normal" />
                     </label>
                   ) : null}
                   <button disabled={busy || !blockDetails.trim() || (requiresAdministrativeReason && transitionReason.trim().length < 10)} className="button-secondary">Mettre en attente</button>
@@ -235,13 +235,13 @@ export function TicketActions({
 
               {canSubmitResolution ? workspaceAction("Résoudre le ticket", (
                 <form onSubmit={(event) => { event.preventDefault(); confirmTransition(TicketStatus.RESOLUTION_PENDING, "Proposer la résolution", "Résolution proposée au demandeur."); }} className="space-y-3">
-                  <p className="text-sm font-semibold text-slate-900">Résoudre le ticket</p>
+                  <p className="text-sm font-semibold text-[var(--kit-text)]">Résoudre le ticket</p>
                   <label className="field-label">Cause<input required value={cause} onChange={(event) => setCause(event.target.value)} placeholder="Cause identifiée" className="field-control font-normal" /></label>
                   <label className="field-label">Action réalisée<input required value={action} onChange={(event) => setAction(event.target.value)} placeholder="Action effectuée" className="field-control font-normal" /></label>
                   <label className="field-label">Solution apportée<textarea required minLength={1} value={solution} onChange={(event) => setSolution(event.target.value)} placeholder="Décrivez la solution et le résultat." className="field-control min-h-20 font-normal" /></label>
                   {requiresAdministrativeReason ? (
-                    <label className="field-label text-amber-800">Motif de l’action administrative
-                      <textarea required minLength={10} value={transitionReason} onChange={(event) => setTransitionReason(event.target.value)} placeholder="Motif obligatoire, 10 caractères minimum." className="field-control min-h-20 border-amber-200 bg-amber-50/40 font-normal" />
+                    <label className="field-label text-[var(--kit-warning-text)]">Motif de l’action administrative
+                      <textarea required minLength={10} value={transitionReason} onChange={(event) => setTransitionReason(event.target.value)} placeholder="Motif obligatoire, 10 caractères minimum." className="field-control min-h-20 border-[var(--kit-border-strong)] bg-[var(--kit-warning-soft)] font-normal" />
                     </label>
                   ) : null}
                   <button disabled={busy || !cause.trim() || !action.trim() || !solution.trim() || (requiresAdministrativeReason && transitionReason.trim().length < 10)} className="button-primary">Résoudre le ticket</button>
@@ -282,9 +282,9 @@ export function TicketActions({
                       },
                     });
                   }}
-                  className="space-y-3 border-t border-slate-200 pt-4"
+                  className="space-y-3 border-t border-[var(--kit-border)] pt-4"
                 >
-                  <p className="text-sm font-semibold text-rose-700">{requesterView ? "Annuler ma demande" : "Annuler le ticket"}</p>
+                  <p className="text-sm font-semibold text-[var(--kit-danger-text)]">{requesterView ? "Annuler ma demande" : "Annuler le ticket"}</p>
                   <label className="field-label">Motif de l’annulation
                     <textarea
                       required
@@ -298,7 +298,7 @@ export function TicketActions({
                   </label>
                   <button
                     disabled={busy || cancellationReason.trim().length < 10}
-                    className="button-secondary border-rose-200 text-rose-700"
+                    className="button-secondary border-[var(--kit-danger)] text-[var(--kit-danger-text)]"
                   >
                     {requesterView ? "Annuler ma demande" : "Annuler le ticket"}
                   </button>
@@ -311,8 +311,8 @@ export function TicketActions({
         <TicketSidePanel title="Workflow" subtitle="Changer l’étape du ticket" defaultOpen={!canClaim}>
           <form onSubmit={transition} className="action-card space-y-4">
           <div>
-            <p className="text-sm font-semibold text-slate-900">Faire évoluer le workflow</p>
-            <p className="mt-1 text-xs text-slate-500">Seules les transitions autorisées pour votre rôle et l’état actuel sont proposées.</p>
+            <p className="text-sm font-semibold text-[var(--kit-text)]">Faire évoluer le workflow</p>
+            <p className="mt-1 text-xs text-[var(--kit-text-2)]">Seules les transitions autorisées pour votre rôle et l’état actuel sont proposées.</p>
           </div>
           <label className="field-label">Nouvelle étape
             <select value={nextStatus} onChange={(event) => setNextStatus(event.target.value as TicketStatus)} className="field-control" aria-label="Nouvelle étape">{allowedStatuses.map((item) => <option key={item} value={item}>{STATUS_LABELS[item]}</option>)}</select>
@@ -340,8 +340,8 @@ export function TicketActions({
             </label>
           ) : null}
           {requiresAdministrativeReason || nextStatus === TicketStatus.CANCELLED ? (
-            <label className="field-label text-amber-800">{nextStatus === TicketStatus.CANCELLED ? "Motif de l’annulation" : "Motif de l’action administrative"}
-              <textarea required minLength={10} value={transitionReason} onChange={(event) => setTransitionReason(event.target.value)} placeholder={nextStatus === TicketStatus.CANCELLED ? "Expliquez clairement pourquoi cette demande est annulée." : "Motif obligatoire, 10 caractères minimum."} className="field-control min-h-24 border-amber-200 bg-amber-50/40 font-normal" />
+            <label className="field-label text-[var(--kit-warning-text)]">{nextStatus === TicketStatus.CANCELLED ? "Motif de l’annulation" : "Motif de l’action administrative"}
+              <textarea required minLength={10} value={transitionReason} onChange={(event) => setTransitionReason(event.target.value)} placeholder={nextStatus === TicketStatus.CANCELLED ? "Expliquez clairement pourquoi cette demande est annulée." : "Motif obligatoire, 10 caractères minimum."} className="field-control min-h-24 border-[var(--kit-border-strong)] bg-[var(--kit-warning-soft)] font-normal" />
             </label>
           ) : null}
             <button disabled={busy || ((requiresAdministrativeReason || nextStatus === TicketStatus.CANCELLED) && transitionReason.trim().length < 10)} aria-busy={busy} className="button-primary">{busy ? "Enregistrement…" : "Enregistrer la transition"}</button>
@@ -353,11 +353,11 @@ export function TicketActions({
         <TicketSidePanel title="Affectation" subtitle="Choisir le responsable du traitement" onOpen={() => void loadAssignmentOptions()}>
           <form onSubmit={assign} className="action-card space-y-4">
           <div>
-            <p className="text-sm font-semibold text-slate-900">Affecter ou réaffecter</p>
-            <p className="mt-1 text-xs text-slate-500">Seuls les agents actifs membres d’une équipe de cette file sont proposés.</p>
+            <p className="text-sm font-semibold text-[var(--kit-text)]">Affecter ou réaffecter</p>
+            <p className="mt-1 text-xs text-[var(--kit-text-2)]">Seuls les agents actifs membres d’une équipe de cette file sont proposés.</p>
           </div>
-          {agentsLoading ? <p className="text-xs text-slate-500">Chargement des agents habilités…</p> : null}
-          {agentsLoaded && !agents.length ? <p className="text-xs text-slate-500">Aucun agent habilité disponible.</p> : null}
+          {agentsLoading ? <p className="text-xs text-[var(--kit-text-2)]">Chargement des agents habilités…</p> : null}
+          {agentsLoaded && !agents.length ? <p className="text-xs text-[var(--kit-text-2)]">Aucun agent habilité disponible.</p> : null}
           {agents.length ? <label className="field-label">Agent
             <select value={assignedToId} onChange={(event) => setAssignedToId(event.target.value)} className="field-control" aria-label="Agent">{agents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name} — {agent.email}</option>)}</select>
           </label> : null}
@@ -373,11 +373,11 @@ export function TicketActions({
         <TicketSidePanel title="Réorientation" subtitle="Transférer vers une autre file" onOpen={() => void loadTransferOptions()}>
           <form onSubmit={transfer} className="action-card space-y-4">
           <div>
-            <p className="text-sm font-semibold text-slate-900">Réorienter vers une autre file</p>
-            <p className="mt-1 text-xs text-slate-500">Le nouveau routage conserve le SLA, l’historique et le contexte du ticket.</p>
+            <p className="text-sm font-semibold text-[var(--kit-text)]">Réorienter vers une autre file</p>
+            <p className="mt-1 text-xs text-[var(--kit-text-2)]">Le nouveau routage conserve le SLA, l’historique et le contexte du ticket.</p>
           </div>
-          {queuesLoading ? <p className="text-xs text-slate-500">Chargement des files autorisées…</p> : null}
-          {queuesLoaded && !transferableQueues.length ? <p className="text-xs text-slate-500">Aucune autre file autorisée.</p> : null}
+          {queuesLoading ? <p className="text-xs text-[var(--kit-text-2)]">Chargement des files autorisées…</p> : null}
+          {queuesLoaded && !transferableQueues.length ? <p className="text-xs text-[var(--kit-text-2)]">Aucune autre file autorisée.</p> : null}
           {transferableQueues.length ? <label className="field-label">File cible
             <select value={destinationQueueId} onChange={(event) => setDestinationQueueId(event.target.value)} className="field-control" aria-label="File cible">{transferableQueues.map((queue) => <option key={queue.id} value={queue.id}>{queue.departmentName} — {queue.name}</option>)}</select>
           </label> : null}
