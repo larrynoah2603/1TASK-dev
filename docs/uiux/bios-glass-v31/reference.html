@@ -52,7 +52,7 @@ button,input,select,textarea{font:inherit}button,select{cursor:pointer}:focus-vi
 <div class="nav-row"><i class="nav-dot"></i><span class="nav-label">Mes tickets</span></div>
 <p class="nav-title">Administration</p><div class="nav-row"><i class="nav-dot"></i><span class="nav-label">Gestion</span></div></aside>
 <div class="workspace"><header class="topbar"><span class="breadcrumb">1TASK / <span id="crumb">Tableau de bord</span></span>
-<div class="tools"><span class="disclaimer">Recherche · Notifications</span><span class="primary">Nouveau ticket</span><span class="avatar">●</span></div></header>
+<div class="tools"><span class="disclaimer">Recherche · Notifications</span><span class="primary" id="global-create-visual">Nouveau ticket</span><span class="avatar">●</span></div></header>
 <main class="content">
 <section id="view-dashboard" class="mock-view">
 <div class="page-head"><div><p class="eyebrow overline">Vue opérationnelle</p><h1>Tableau de bord</h1><p class="subtitle">L'essentiel pour travailler, sans surcharge de KPI.</p></div><span class="demotext">Périmètre autorisé · démonstration</span></div>
@@ -88,6 +88,6 @@ button,input,select,textarea{font:inherit}button,select{cursor:pointer}:focus-vi
 <script>
 const selection=document.getElementById("view-select"), button=document.getElementById("theme-button");
 const labels={dashboard:"Tableau de bord",inbox:"Boîte agent",ticket:"Créer un ticket"};
-selection.addEventListener("change",()=>{for(const name of Object.keys(labels))document.getElementById("view-"+name).hidden=name!==selection.value;document.getElementById("crumb").textContent=labels[selection.value]});
+selection.addEventListener("change",()=>{for(const name of Object.keys(labels))document.getElementById("view-"+name).hidden=name!==selection.value;document.getElementById("crumb").textContent=labels[selection.value];document.getElementById("global-create-visual").hidden=selection.value==="ticket";document.querySelectorAll(".nav-row").forEach(row=>row.classList.toggle("active",row.textContent.trim()===labels[selection.value]))});
 button.addEventListener("click",()=>{const dark=document.documentElement.dataset.theme!=="dark";document.documentElement.dataset.theme=dark?"dark":"light";button.setAttribute("aria-pressed",String(dark));button.textContent=dark?"Mode clair":"Mode sombre"});
 </script></body></html>
