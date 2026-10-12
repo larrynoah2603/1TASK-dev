@@ -45,7 +45,8 @@ describe("BIOS Glass Corporate v3.1 — PR 01 préparatoire", () => {
     expect(shell).toContain("visibleLinks = links.filter");
     expect(shell).toContain("<NotificationCenter />");
     expect(admin).toContain("visibleLinks = adminLinks.filter");
-    expect(admin).not.toContain("<NewTicketLauncher");
+    expect(admin.match(/<NewTicketLauncher\\b/g)).toHaveLength(1);
+    expect(admin).toContain("simplified={!capabilities.confidentialTicketCreation && !capabilities.productionPortfolio}");
   });
 
   it("préserve le filtre unique et les parcours de réception de l'Inbox", () => {
