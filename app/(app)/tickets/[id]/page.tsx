@@ -300,7 +300,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
           </section>
         </aside>
 
-        <main className="ticket-detail-main">
+        <section className="ticket-detail-main" aria-label="Contenu du ticket">
           <TicketPanel title="Demande" subtitle="Besoin et description initiale">
             {ticket.requestedService ? (
               <div className="kit-need">
@@ -340,7 +340,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
             }
             attachments={<TicketAdvancedPanels only="attachments" embedded {...advancedPanelProps} />}
           />
-        </main>
+        </section>
       </div>
     </div>
   );
