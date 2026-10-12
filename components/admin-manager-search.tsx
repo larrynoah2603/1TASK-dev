@@ -27,10 +27,10 @@ export function AdminManagerSearch({ name, value, onChange, departmentId, exclud
     <input type="hidden" name={name} value={value} />
     <input value={query} onChange={(event) => setQuery(event.target.value)} disabled={!departmentId} className="field-control font-normal" placeholder={departmentId ? "Rechercher un manager…" : "Sélectionnez d’abord un département"} aria-label="Rechercher un manager applicatif" />
     {selected ? <button type="button" onClick={() => onChange("")} className="button-ghost min-h-8 w-full justify-between text-xs"><span className="truncate">{selected.name} — {selected.email}</span><span>×</span></button> : null}
-    {departmentId && !selected ? <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-200 bg-white p-1">
-      {loading ? <p className="px-2 py-2 text-xs text-slate-500">Recherche…</p> : null}
-      {!loading && options.map((item) => <button key={item.id} type="button" onClick={() => { onChange(item.id); setQuery(""); }} className="block w-full rounded-md px-2 py-2 text-left text-xs hover:bg-slate-50"><strong>{item.name}</strong><span className="ml-1 text-slate-500">— {item.email}</span></button>)}
-      {!loading && !options.length ? <p className="px-2 py-2 text-xs text-slate-500">Aucun manager correspondant.</p> : null}
+    {departmentId && !selected ? <div className="max-h-40 overflow-y-auto rounded-lg border border-[var(--kit-border)] bg-[var(--kit-card)] p-1">
+      {loading ? <p className="px-2 py-2 text-xs text-[var(--kit-text-2)]">Recherche…</p> : null}
+      {!loading && options.map((item) => <button key={item.id} type="button" onClick={() => { onChange(item.id); setQuery(""); }} className="block w-full rounded-md px-2 py-2 text-left text-xs hover:bg-[var(--kit-surface-muted)]"><strong>{item.name}</strong><span className="ml-1 text-[var(--kit-text-2)]">— {item.email}</span></button>)}
+      {!loading && !options.length ? <p className="px-2 py-2 text-xs text-[var(--kit-text-2)]">Aucun manager correspondant.</p> : null}
     </div> : null}
   </div>;
 }
