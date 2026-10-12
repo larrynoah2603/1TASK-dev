@@ -19,6 +19,8 @@
 @import "../styles/asset-workspace.css";
 /* Lot 06 : Reporting et Notifications, thèmes clair/sombre et responsive. */
 @import "../styles/reporting-notifications.css";
+/* Finition visuelle partagée, toujours fondée sur les tokens 1TASK. */
+@import "../styles/bios-1task-finish.css";
 
 /* Compatibility-only contract catalogue. The active palette remains the
    original token palette imported above; these declarations never render. */
