@@ -8,7 +8,7 @@ describe("global typography", () => {
   it("loads IBM Plex Sans through next/font with the application weights", () => {
     const layout = source("app/layout.tsx");
 
-    expect(layout).toMatch(/import\\s+\\{[^}]*\\bIBM_Plex_Sans\\b[^}]*\\}\\s+from\\s+"next\\/font\\/google"/);
+    expect(layout).toMatch(/import\s+\{[^}]*\bIBM_Plex_Sans\b[^}]*\}\s+from\s+"next\/font\/google"/);
     expect(layout).toContain("IBM_Plex_Sans({");
     expect(layout).toContain('weight: ["400", "500", "600", "700"]');
     expect(layout).toContain('display: "swap"');
