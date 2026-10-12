@@ -56,6 +56,6 @@ describe("UI/UX lot 03 — ticketing clarity", () => {
     expect(css).toContain("html[data-theme]");
     expect(css).toContain("@media (max-width: 640px)");
     expect(css).toContain("var(--kit-border)");
-    expect(css).not.toMatch(/#[0-9a-f]{3,8}\\b/i);
+    expect(css).not.toMatch(/#[0-9a-f]{3,8}\b/i);
   });
 });
