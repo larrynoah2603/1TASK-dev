@@ -96,6 +96,13 @@ html[data-theme] .inbox-v2 :is(.agent-sla-alert-empty, .agent-activity-empty) {
   font-size: var(--kit-text-sm);
 }
 
+html[data-theme] .queues-industrial .queue-context-line {
+  color: var(--kit-text-2);
+  font-size: var(--kit-text-xs);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
 html[data-theme] .queues-industrial .queue-stat {
   min-width: 0;
 }
