@@ -45,7 +45,7 @@ export async function getReportingSummary(actor: UserContext, period: ReportingP
   }
 
   const scopeFingerprint = reportingScopeFingerprint(current);
-  return cacheAside(`reporting:v3:${current.id}:${scopeFingerprint}:${period}`, 45, () => getReportingSummaryUncached(current, period));
+  return cacheAside(`reporting:v2:${current.id}:${scopeFingerprint}:${period}`, 45, () => getReportingSummaryUncached(current, period));
 }
 
 export type ReportingSummary = Awaited<ReturnType<typeof getReportingSummaryUncached>>;
