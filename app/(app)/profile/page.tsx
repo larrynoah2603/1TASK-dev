@@ -15,15 +15,15 @@ export default async function ProfilePage() {
       </header>
       <AdminNotice>Microsoft Entra ID reste la source de l’identité et de l’adresse e-mail. Le profil affiché dans 1TASK est géré par l’administration fonctionnelle.</AdminNotice>
       <section className="panel overflow-hidden">
-        <div className="border-b border-slate-100 bg-slate-50/60 px-5 py-4"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Informations du profil</p></div>
+        <div className="border-b border-[var(--kit-border)] bg-[var(--kit-surface-muted)] px-5 py-4"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--kit-text-2)]">Informations du profil</p></div>
         <dl className="grid gap-x-8 gap-y-6 p-5 sm:grid-cols-2">
-          <div><dt className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">Nom affiché</dt><dd className="mt-1.5 text-base font-semibold text-slate-900">{user.name}</dd></div>
-          <div><dt className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">Adresse e-mail</dt><dd className="mt-1.5 text-sm font-medium text-slate-700">{user.email}</dd></div>
-          <div><dt className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">Département</dt><dd className="mt-1.5 text-sm font-medium text-slate-700">{user.department?.name ?? "Non affecté"}</dd></div>
-          <div><dt className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">Manager applicatif</dt><dd className="mt-1.5 text-sm font-medium text-slate-700">{user.manager?.name ?? "Non affecté"}</dd></div>
-          <div><dt className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">Équipe principale</dt><dd className="mt-1.5 text-sm font-medium text-slate-700">{user.primaryTeam?.name ?? "Non affectée"}</dd></div>
-          <div><dt className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">File autorisée</dt><dd className="mt-1.5 text-sm font-medium text-slate-700">{user.authorizedQueue?.name ?? "Non affectée"}</dd></div>
-          <div className="sm:col-span-2"><dt className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">Rôles</dt><dd className="mt-2 flex flex-wrap gap-2">{roles.map((role) => <span key={role} className="rounded-md bg-[var(--kit-primary-soft)] px-2.5 py-1.5 text-xs font-semibold operational-link">{ROLE_LABELS[role]}</span>)}</dd><p className="mt-3 text-xs leading-5 text-slate-500">Périmètre actif : {user.department?.name ?? "aucun département"} · équipe {user.primaryTeam?.name ?? "non affectée"} · file {user.authorizedQueue?.name ?? "non affectée"}.</p></div>
+          <div><dt className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--kit-text-2)]">Nom affiché</dt><dd className="mt-1.5 text-base font-semibold text-[var(--kit-text)]">{user.name}</dd></div>
+          <div><dt className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--kit-text-2)]">Adresse e-mail</dt><dd className="mt-1.5 text-sm font-medium text-[var(--kit-text)]">{user.email}</dd></div>
+          <div><dt className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--kit-text-2)]">Département</dt><dd className="mt-1.5 text-sm font-medium text-[var(--kit-text)]">{user.department?.name ?? "Non affecté"}</dd></div>
+          <div><dt className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--kit-text-2)]">Manager applicatif</dt><dd className="mt-1.5 text-sm font-medium text-[var(--kit-text)]">{user.manager?.name ?? "Non affecté"}</dd></div>
+          <div><dt className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--kit-text-2)]">Équipe principale</dt><dd className="mt-1.5 text-sm font-medium text-[var(--kit-text)]">{user.primaryTeam?.name ?? "Non affectée"}</dd></div>
+          <div><dt className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--kit-text-2)]">File autorisée</dt><dd className="mt-1.5 text-sm font-medium text-[var(--kit-text)]">{user.authorizedQueue?.name ?? "Non affectée"}</dd></div>
+          <div className="sm:col-span-2"><dt className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--kit-text-2)]">Rôles</dt><dd className="mt-2 flex flex-wrap gap-2">{roles.map((role) => <span key={role} className="rounded-md bg-[var(--kit-primary-soft)] px-2.5 py-1.5 text-xs font-semibold operational-link">{ROLE_LABELS[role]}</span>)}</dd><p className="mt-3 text-xs leading-5 text-[var(--kit-text-2)]">Périmètre actif : {user.department?.name ?? "aucun département"} · équipe {user.primaryTeam?.name ?? "non affectée"} · file {user.authorizedQueue?.name ?? "non affectée"}.</p></div>
         </dl>
       </section>
     </div>
