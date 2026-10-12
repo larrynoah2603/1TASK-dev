@@ -23,6 +23,8 @@
 @import "../styles/bios-1task-finish.css";
 /* Finition V1 : tickets, administration et notification, couleurs et clavier. */
 @import "../styles/v1-visual-finish.css";
+/* PR 02 : uniquement data-visual-profile=bios-glass-v31 (préversion). */
+@import "../styles/bios-glass-v31-preview.css";
 
 /* Compatibility-only contract catalogue. The active palette remains the
    original token palette imported above; these declarations never render. */
