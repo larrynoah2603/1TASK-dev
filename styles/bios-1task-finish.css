@@ -1,0 +1,54 @@
+/* BIOS / 1TASK — Finition transversale V1, sans nouvelle palette.
+   Les valeurs visuelles de 1TASK (--kit-*) priment sur les références BIOS.
+   Aucune navigation, permission, donnée métier ou modale n'est modifiée. */
+
+html[data-theme] :is(.profile-industrial, .assets-detail-page-shell, .admin-industrial, .queues-industrial) {
+  min-width: 0;
+}
+
+html[data-theme] :is(.profile-industrial, .assets-detail-page-shell, .admin-industrial, .queues-industrial)
+:is(.panel, .metric-card, .table-shell, .field-label) {
+  min-width: 0;
+}
+
+/* Les identifiants, adresses et valeurs de grille doivent rester lisibles
+   lorsque le panneau latéral réduit l'espace réellement disponible. */
+html[data-theme] :is(.profile-industrial, .assets-detail-page-shell, .admin-industrial)
+:is(dd, .metric-card > p, .panel h2, .panel pre) {
+  overflow-wrap: anywhere;
+}
+
+/* La navigation au clavier reste visible dans les tableaux et les détails
+   administratifs repliables, en mode clair comme en mode sombre. */
+html[data-theme] .admin-industrial :is(.table-shell[tabindex], details > summary):focus-visible,
+html[data-theme] .assets-detail-page-shell [role="region"][tabindex]:focus-visible {
+  outline: 2px solid var(--kit-primary);
+  outline-offset: 2px;
+}
+
+html[data-theme] .admin-industrial .table-shell pre {
+  max-width: 100%;
+  color: var(--kit-text);
+  background: var(--kit-surface-muted);
+}
+
+/* Chiffres alignés sans imposer une seconde police métier. */
+html[data-theme] :is(.assets-detail-page-shell .metric-card, .queues-industrial .queue-stat)
+:is(p, strong) {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+  html[data-theme] .profile-industrial .page-header {
+    flex-wrap: wrap;
+  }
+  html[data-theme] .admin-industrial .table-shell {
+    max-width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme] .admin-industrial :is(.table-shell, summary) {
+    scroll-behavior: auto;
+  }
+}
