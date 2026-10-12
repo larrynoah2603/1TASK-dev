@@ -1,0 +1,55 @@
+/* 1TASK — Finition V1 : tickets, inbox, administration et notifications.
+   La palette, la police et les paramètres visuels du dépôt restent l'autorité.
+   Aucun effet Glass Corporate forcé sur les surfaces de travail. */
+
+html[data-theme] .inbox-ticket-card {
+  min-width: 0;
+  border-left: 3px solid transparent;
+  color: var(--kit-text);
+  overflow-wrap: anywhere;
+}
+
+html[data-theme] .inbox-ticket-card:hover {
+  background: var(--kit-hover);
+}
+
+html[data-theme] .inbox-ticket-card.is-selected,
+html[data-theme] .inbox-ticket-card.is-selected:hover {
+  border-left-color: var(--kit-primary);
+  background: var(--kit-selected);
+}
+
+html[data-theme] .inbox-ticket-card:focus-visible {
+  outline: 2px solid var(--kit-primary);
+  outline-offset: -2px;
+}
+
+html[data-theme] .admin-industrial [role="region"][aria-label="Règles de notification, tableau défilant"]:focus-visible {
+  outline: 2px solid var(--kit-primary);
+  outline-offset: -2px;
+}
+
+html[data-theme] :is(.ticket-composer-industrial, .ticket-detail-industrial, .inbox-operations-industrial)
+:is(.route-panel, .preview-panel, .panel, .field-label, .field-control) {
+  min-width: 0;
+}
+
+html[data-theme] .ticket-composer-industrial :is(.route-panel, .preview-panel) {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  html[data-theme] .ticket-composer-industrial :is(.route-panel, .preview-panel) {
+    padding: var(--kit-space-4);
+  }
+
+  html[data-theme] .admin-industrial [role="region"][aria-label="Règles de notification, tableau défilant"] {
+    max-width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme] .inbox-ticket-card {
+    transition: none;
+  }
+}
