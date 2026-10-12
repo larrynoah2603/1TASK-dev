@@ -21,6 +21,8 @@
 @import "../styles/reporting-notifications.css";
 /* Finition visuelle partagée, toujours fondée sur les tokens 1TASK. */
 @import "../styles/bios-1task-finish.css";
+/* Finition V1 : tickets, administration et notification, couleurs et clavier. */
+@import "../styles/v1-visual-finish.css";
 
 /* Compatibility-only contract catalogue. The active palette remains the
    original token palette imported above; these declarations never render. */

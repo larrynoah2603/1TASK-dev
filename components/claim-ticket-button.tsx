@@ -44,11 +44,11 @@ export function ClaimTicketButton({ ticketId }: { ticketId: string }) {
         onClick={() => setConfirmOpen(true)}
         disabled={busy}
         aria-busy={busy}
-        className="button-primary min-h-8 px-2.5 text-[11px]"
+        className="button-primary min-h-8 px-2.5 text-xs"
       >
         {busy ? "Prise en charge…" : "Prendre en charge"}
       </button>
-      {error ? <span className="max-w-40 text-[11px] text-rose-700">{error}</span> : null}
+      {error ? <span className="max-w-40 text-xs text-[var(--kit-danger-text)]">{error}</span> : null}
       <ConfirmDialog open={confirmOpen} title="Confirmer la prise en charge" description="Vous deviendrez l’agent responsable de ce ticket. L’action sera enregistrée dans l’historique." confirmLabel="Prendre en charge" busy={busy} onCancel={() => setConfirmOpen(false)} onConfirm={() => { setConfirmOpen(false); void claim(); }} />
     </div>
   );

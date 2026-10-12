@@ -56,7 +56,7 @@ Files support
 
 
 <p className="
-text-slate-500
+text-[var(--kit-text-2)]
 ">
 
 Supervision des Ã©quipes.
@@ -87,7 +87,7 @@ key={queue.id}
 className="
 rounded-2xl
 border
-bg-white
+bg-[var(--kit-card)]
 p-6
 shadow-sm
 hover:shadow-xl
@@ -108,7 +108,7 @@ justify-between
 <p className="
 text-xs
 uppercase
-text-slate-400
+text-[var(--kit-text-2)]
 ">
 
 {queue.department.name}
@@ -129,7 +129,7 @@ font-bold
 <p className="
 font-mono
 text-xs
-text-slate-400
+text-[var(--kit-text-2)]
 ">
 
 {queue.code}
@@ -169,7 +169,7 @@ mt-6
 
 <div className="
 rounded-xl
-bg-slate-50
+bg-[var(--kit-surface-muted)]
 p-4
 ">
 
@@ -187,7 +187,7 @@ Tickets
 
 <div className="
 rounded-xl
-bg-slate-50
+bg-[var(--kit-surface-muted)]
 p-4
 ">
 
@@ -211,7 +211,7 @@ Equipes
 <div className="
 mt-5
 text-sm
-text-slate-600
+text-[var(--kit-text-2)]
 ">
 
 Responsable :

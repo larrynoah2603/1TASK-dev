@@ -67,17 +67,17 @@ export default async function AdminDashboardPage() {
         </div>
       </section>
 
-      {!capabilities.productionPortfolio ? <section className="panel p-5 sm:p-6"><div><p className="eyebrow">Gestion secondaire</p><h2 className="text-lg font-semibold text-slate-900">Actifs</h2><p className="mt-1 text-sm text-slate-600">L’inventaire et les validations restent administrés sans encombrer la navigation principale.</p></div><div className="mt-4 grid gap-3 sm:grid-cols-2"><Link href={"/admin/assets" as Route} className="metric-card"><strong>Inventaire</strong><p>{assetCount} actif(s)</p></Link><Link href={"/admin/asset-requests" as Route} className="metric-card"><strong>Demandes d’actifs</strong><p>{pendingAssetRequests} à traiter</p></Link></div></section> : null}
+      {!capabilities.productionPortfolio ? <section className="panel p-5 sm:p-6"><div><p className="eyebrow">Gestion secondaire</p><h2 className="text-lg font-semibold text-[var(--kit-text)]">Actifs</h2><p className="mt-1 text-sm text-[var(--kit-text-2)]">L’inventaire et les validations restent administrés sans encombrer la navigation principale.</p></div><div className="mt-4 grid gap-3 sm:grid-cols-2"><Link href={"/admin/assets" as Route} className="metric-card"><strong>Inventaire</strong><p>{assetCount} actif(s)</p></Link><Link href={"/admin/asset-requests" as Route} className="metric-card"><strong>Demandes d’actifs</strong><p>{pendingAssetRequests} à traiter</p></Link></div></section> : null}
 
       <section className="panel p-5 sm:p-6">
-        <h2 className="text-lg font-semibold text-slate-900">Garde-fous actifs</h2>
+        <h2 className="text-lg font-semibold text-[var(--kit-text)]">Garde-fous actifs</h2>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           {[
             "Aucune suppression définitive des tickets ou de l’historique.",
             "Toute action sensible exige un motif et conserve l’état avant/après.",
             "Le catalogue reste l’unique source de routage des nouveaux tickets.",
             "L’administrateur technique ne reçoit pas d’accès automatique au contenu sensible.",
-          ].map((item) => <p key={item} className="rounded-lg border border-slate-100 bg-slate-50/70 px-4 py-3 text-sm text-slate-700">✓ {item}</p>)}
+          ].map((item) => <p key={item} className="rounded-lg border border-[var(--kit-border)] bg-[var(--kit-surface-muted)] px-4 py-3 text-sm text-[var(--kit-text)]">✓ {item}</p>)}
         </div>
       </section>
     </div>

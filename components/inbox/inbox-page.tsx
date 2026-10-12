@@ -14,7 +14,7 @@ export function InboxPage({ tickets, claimableTicketIds, navigation, kpis, filte
   const [selected, setSelected] = useState<DashboardTicketRow | null>(tickets[0] ?? null);
   return <div className="space-y-5">{navigation}<InboxHeader ticketCount={tickets.length} />{kpis}<InboxFilterBar>{filters}</InboxFilterBar>
     <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_19rem]">
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"><div className="grid md:grid-cols-[minmax(17rem,38%)_minmax(0,1fr)]"><InboxTicketList tickets={tickets} selectedId={selected?.id} onSelect={setSelected} /><InboxDetailPreview ticket={selected} claimable={selected ? claimableTicketIds.includes(selected.id) : false} /></div><div className="border-t border-slate-200 p-3">{pagination}</div></div>
+      <div className="overflow-hidden rounded-xl border border-[var(--kit-border)] bg-[var(--kit-card)] shadow-sm"><div className="grid md:grid-cols-[minmax(17rem,38%)_minmax(0,1fr)]"><InboxTicketList tickets={tickets} selectedId={selected?.id} onSelect={setSelected} /><InboxDetailPreview ticket={selected} claimable={selected ? claimableTicketIds.includes(selected.id) : false} /></div><div className="border-t border-[var(--kit-border)] p-3">{pagination}</div></div>
       {agentPanel}
     </div>
   </div>;

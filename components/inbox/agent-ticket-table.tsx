@@ -27,7 +27,7 @@ function ExpandedTicketDetails({
 }) {
   return (
     <section
-      className="border-y border-slate-200 px-4 py-4"
+      className="border-y border-[var(--kit-border)] px-4 py-4"
       aria-label={`Détails rapides de ${ticket.reference}`}
     >
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
@@ -37,34 +37,34 @@ function ExpandedTicketDetails({
             <PriorityBadge priority={ticket.priority} />
             <StatusBadge status={ticket.status} />
           </div>
-          <h3 className="mt-1 truncate text-sm font-semibold text-slate-900">
+          <h3 className="mt-1 truncate text-sm font-semibold text-[var(--kit-text)]">
             {ticket.reference} · {ticket.title}
           </h3>
 
           <dl className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             <div>
-              <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Demandeur</dt>
-              <dd className="mt-1 text-xs font-medium text-slate-700">{ticket.requester.name}</dd>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-[var(--kit-text-2)]">Demandeur</dt>
+              <dd className="mt-1 text-xs font-medium text-[var(--kit-text)]">{ticket.requester.name}</dd>
             </div>
             <div>
-              <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Département</dt>
-              <dd className="mt-1 text-xs font-medium text-slate-700">{ticket.queue.department.name}</dd>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-[var(--kit-text-2)]">Département</dt>
+              <dd className="mt-1 text-xs font-medium text-[var(--kit-text)]">{ticket.queue.department.name}</dd>
             </div>
             <div>
-              <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">File</dt>
-              <dd className="mt-1 text-xs font-medium text-slate-700">{ticket.queue.name}</dd>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-[var(--kit-text-2)]">File</dt>
+              <dd className="mt-1 text-xs font-medium text-[var(--kit-text)]">{ticket.queue.name}</dd>
             </div>
             <div>
-              <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Service</dt>
-              <dd className="mt-1 text-xs font-medium text-slate-700">{ticket.serviceCatalogItem?.name ?? "Non renseigné"}</dd>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-[var(--kit-text-2)]">Service</dt>
+              <dd className="mt-1 text-xs font-medium text-[var(--kit-text)]">{ticket.serviceCatalogItem?.name ?? "Non renseigné"}</dd>
             </div>
             <div>
-              <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Assigné</dt>
-              <dd className="mt-1 text-xs font-medium text-slate-700">{ticket.assignedTo?.name ?? "Non affecté"}</dd>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-[var(--kit-text-2)]">Assigné</dt>
+              <dd className="mt-1 text-xs font-medium text-[var(--kit-text)]">{ticket.assignedTo?.name ?? "Non affecté"}</dd>
             </div>
           </dl>
 
-          <div className="mt-3 flex items-center gap-2 text-xs text-slate-600">
+          <div className="mt-3 flex items-center gap-2 text-xs text-[var(--kit-text-2)]">
             <span className="font-semibold">SLA</span>
             <SlaBadge state={ticket.slaState} dueAt={ticket.slaDueAt} />
           </div>
