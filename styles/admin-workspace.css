@@ -11,7 +11,7 @@ html[data-theme] .admin-industrial :is(.admin-console-kpis, .admin-console-secon
   gap: var(--kit-space-3);
 }
 
-html[data-theme] .admin-industrial :is(.admin-stat, .admin-config-section, .admin-console-card) {
+html[data-theme] .admin-industrial :is(.admin-stat, .admin-config-section, .admin-console-card, .admin-user-card, .admin-role-card) {
   min-width: 0;
   border: 1px solid var(--kit-border) !important;
   border-radius: var(--kit-radius-lg) !important;
@@ -35,6 +35,19 @@ html[data-theme] .admin-industrial .admin-console-grid {
 html[data-theme] .admin-industrial .admin-console-card :is(p, small, strong),
 html[data-theme] .admin-industrial .admin-config-section :is(p, small) {
   overflow-wrap: anywhere;
+}
+
+/* Sépare clairement le suivi du ticketing des chiffres d'organisation. */
+html[data-theme] .admin-industrial .admin-operational-section {
+  min-width: 0;
+}
+
+html[data-theme] .admin-industrial .admin-operational-heading {
+  margin: 0 0 var(--kit-space-3);
+  color: var(--kit-text);
+  font-size: var(--kit-text-lg);
+  font-weight: 650;
+  line-height: 1.35;
 }
 
 /* En-têtes et notifications issus des primitives partagées. */
