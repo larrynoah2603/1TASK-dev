@@ -30,9 +30,9 @@ export function AdminStatCard({ label, value, detail, tone = "primary" }: { labe
   } as const;
   return (
     <div className="admin-stat">
-      <p className="text-xs font-semibold text-slate-500">{label}</p>
+      <p className="text-xs font-semibold text-[var(--kit-text-2)]">{label}</p>
       <p className={`admin-stat-value mt-2 ${tones[tone]}`}>{value}</p>
-      <p className="mt-2 text-xs text-slate-400">{detail}</p>
+      <p className="mt-2 text-xs text-[var(--kit-text-2)]">{detail}</p>
     </div>
   );
 }
