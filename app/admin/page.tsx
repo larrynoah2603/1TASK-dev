@@ -57,12 +57,15 @@ export default async function AdminDashboardPage() {
       <AdminDashboard stats={{ users: userSummary.active, departments: departmentCount, teams: teamCount, queues: queueCount }} />
       <AdminNotice>Les valeurs brutes du département viennent de Microsoft Entra ID. Le département interne du profil et sa validation sont gérés explicitement dans <code>/admin/users</code> ; le référentiel de correspondance reste audité et ne remplace pas cette affectation.</AdminNotice>
 
-      <div className="admin-console-secondary-grid">
+      <section aria-labelledby="admin-operational-title" className="admin-operational-section">
+        <h2 id="admin-operational-title" className="admin-operational-heading">Suivi opérationnel</h2>
+        <div className="admin-console-secondary-grid">
         <AdminStatCard label="Tickets actifs" value={activeTicketCount} detail={`${ticketCount} tickets non confidentiels visibles`} tone="success" />
         <AdminStatCard label="SLA à surveiller" value={overdueCount} detail="Tickets dépassant l’échéance" tone={overdueCount ? "danger" : "success"} />
         <AdminStatCard label="Règles notification" value={notificationCount} detail="Règles actives" tone="warning" />
         <AdminStatCard label="Événements d’audit" value={auditCount} detail="Historique conservé" />
-      </div>
+        </div>
+      </section>
 
       {!capabilities.productionPortfolio ? <section className="panel p-5 sm:p-6"><div><p className="eyebrow">Gestion secondaire</p><h2 className="text-lg font-semibold text-slate-900">Actifs</h2><p className="mt-1 text-sm text-slate-600">L’inventaire et les validations restent administrés sans encombrer la navigation principale.</p></div><div className="mt-4 grid gap-3 sm:grid-cols-2"><Link href={"/admin/assets" as Route} className="metric-card"><strong>Inventaire</strong><p>{assetCount} actif(s)</p></Link><Link href={"/admin/asset-requests" as Route} className="metric-card"><strong>Demandes d’actifs</strong><p>{pendingAssetRequests} à traiter</p></Link></div></section> : null}
 

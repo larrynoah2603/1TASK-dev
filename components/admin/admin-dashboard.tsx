@@ -19,9 +19,6 @@ export function AdminDashboard({ stats }: { stats: AdminDashboardStats }) {
         <div><p className="eyebrow">Console d’administration</p><h2 className="admin-console-heading">Vue d’ensemble</h2><p>Supervisez la structure 1TASK, les accès et les périmètres opérationnels.</p></div>
         <div className="admin-console-header-actions"><Link href="/admin/users" className="button-primary">Gérer les utilisateurs</Link></div>
       </header>
-      <nav className="admin-section-nav" aria-label="Sections administration">
-        {sections.map((section) => <Link key={section.href} href={section.href as Route}><section.icon aria-hidden="true" /><span>{section.label}</span></Link>)}
-      </nav>
       <section className="admin-console-kpis" aria-label="Indicateurs administration">
         <StatCard title="Utilisateurs actifs" value={stats.users} description="Identités synchronisées" iconComponent={Users} tone="info" />
         <StatCard title="Départements" value={stats.departments} description="Organisation active" iconComponent={Building2} tone="success" />

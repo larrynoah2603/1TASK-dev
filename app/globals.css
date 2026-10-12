@@ -13,6 +13,8 @@
 @import "../styles/unified-components.css";
 /* Lot 03 : parcours tickets et surveillance SLA, présentation uniquement. */
 @import "../styles/ticketing-workflows.css";
+/* Lot 04 : présentation de la console Admin, isolée des workflows métier. */
+@import "../styles/admin-workspace.css";
 
 /* Compatibility-only contract catalogue. The active palette remains the
    original token palette imported above; these declarations never render. */

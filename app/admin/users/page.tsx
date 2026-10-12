@@ -33,7 +33,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
       </div>
 
       <form method="get" className="filter-panel grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
-        <label className="field-label"><span>Rechercher un utilisateur</span><input name="q" defaultValue={raw.q} className="field-control" placeholder="Nom, e-mail, département…" /></label>
+        <label className="field-label"><span>Rechercher un utilisateur</span><input type="search" name="q" defaultValue={raw.q} className="field-control" placeholder="Nom, e-mail, département…" /></label>
         <label className="field-label"><span>Statut</span><Combobox name="status" defaultValue={status ?? ""} options={[{ value: "", label: "Tous" }, { value: "ACTIVE", label: "Actifs" }, { value: "PENDING_ASSIGNMENT", label: "À affecter" }, { value: "PENDING_VALIDATION", label: "À valider" }, { value: "DISABLED", label: "Désactivés" }]} /></label>
         <label className="field-label"><span>Par page</span><Combobox name="pageSize" defaultValue={String(userPage.pageSize)} options={[{ value: "10", label: "10" }, { value: "25", label: "25" }, { value: "50", label: "50" }]} /></label>
         <div className="flex items-end gap-2"><button className="button-primary">Rechercher</button><a href="/admin/users" className="button-ghost min-h-10 text-xs">Réinitialiser</a></div>
