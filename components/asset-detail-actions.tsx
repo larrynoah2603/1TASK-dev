@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
+import { useDialogFocus } from "@/components/ui/use-dialog-focus";
 import { useRouter } from "next/navigation";
 import { Combobox } from "@/components/combobox";
 import { useToast } from "@/components/toast-provider";
@@ -28,11 +29,13 @@ export function AssetDetailActions({
   const router = useRouter();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const moveTitleId = useId();
   const [toDepartmentId, setToDepartmentId] = useState(currentDepartmentId ?? "");
   const [toUserId, setToUserId] = useState(currentUserId ?? "");
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const dialogRef = useDialogFocus({ open, onClose: () => setOpen(false), closeOnEscape: !submitting });
 
   if (!canManage) return null;
 
@@ -85,15 +88,15 @@ export function AssetDetailActions({
       </button>
 
       {open ? (
-        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) setOpen(false); }}>
-          <section className="modal-panel asset-move-modal" role="dialog" aria-modal="true" aria-labelledby="asset-move-title">
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target && !submitting) setOpen(false); }}>
+          <section className="modal-panel asset-move-modal" role="dialog" aria-modal="true" aria-labelledby={moveTitleId} tabIndex={-1} ref={dialogRef}>
             <header className="asset-form-header">
               <div>
                 <p className="eyebrow">Inventaire</p>
-                <h2 id="asset-move-title">Affectation de l’actif</h2>
+                <h2 id={moveTitleId}>Affectation de l’actif</h2>
                 <p>Choisissez la nouvelle destination. L’affectation actuelle est préremplie pour éviter une modification involontaire.</p>
               </div>
-              <button type="button" className="modal-close-button" onClick={() => setOpen(false)} aria-label="Fermer">×</button>
+              <button type="button" className="modal-close-button" onClick={() => setOpen(false)} disabled={submitting} aria-label="Fermer">×</button>
             </header>
 
             <form onSubmit={moveAsset}>
@@ -151,7 +154,7 @@ export function AssetDetailActions({
               </fieldset>
 
               <div className="form-actions">
-                <button type="button" className="button-secondary" onClick={() => setOpen(false)}>Annuler</button>
+                <button type="button" className="button-secondary" onClick={() => setOpen(false)} disabled={submitting}>Annuler</button>
                 <button type="submit" className="button-primary" disabled={submitting} aria-busy={submitting}>
                   {submitting ? "Enregistrement…" : "Enregistrer le mouvement"}
                 </button>

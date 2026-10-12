@@ -99,8 +99,8 @@ export function AssetRequestReviewTable({
   return (
     <section className="saas-card asset-review-card">
       {error ? <div className="form-error" role="alert">{error}</div> : null}
-      <div className="table-responsive">
-        <table className="saas-table">
+      <div className="table-responsive" role="region" aria-label="Demandes d’actifs : tableau défilant" tabIndex={0}>
+        <table className="saas-table asset-review-table">
           <caption className="sr-only">Demandes d’actifs à valider et à attribuer depuis l’inventaire</caption>
           <thead>
             <tr>
@@ -122,28 +122,28 @@ export function AssetRequestReviewTable({
 
               return (
                 <tr key={request.id}>
-                  <td>
+                  <td data-label="Utilisateur">
                     <strong>{request.requester.name}</strong>
                     <small>{request.requester.email}</small>
                   </td>
-                  <td>{request.requester.department?.name ?? "Non renseigné"}</td>
-                  <td>
+                  <td data-label="Département">{request.requester.department?.name ?? "Non renseigné"}</td>
+                  <td data-label="Actif demandé">
                     <strong>{labels[request.assetType]}</strong>
                     <small>
                       Priorité {labels[request.priority]?.toLowerCase()} · {matchingAssets.length} disponible{matchingAssets.length > 1 ? "s" : ""}
                     </small>
                   </td>
-                  <td>
+                  <td data-label="Motif">
                     <span className="table-reason">{request.reason}</span>
                     {request.rejectedReason ? <small>Motif : {request.rejectedReason}</small> : null}
                   </td>
-                  <td>{new Intl.DateTimeFormat("fr-FR").format(new Date(request.createdAt))}</td>
-                  <td>
+                  <td data-label="Date">{new Intl.DateTimeFormat("fr-FR").format(new Date(request.createdAt))}</td>
+                  <td data-label="Statut">
                     <span className={`request-status request-status-${request.status.toLowerCase()}`}>
                       {requestStatusLabel(request)}
                     </span>
                   </td>
-                  <td>
+                  <td data-label="Inventaire et actions">
                     {actionable ? (
                       <div className="review-actions">
                         <select
