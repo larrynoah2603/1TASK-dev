@@ -5,6 +5,12 @@
    Les valeurs proviennent exclusivement des tokens 1TASK --kit-*.
    ========================================================================== */
 
+/* Variantes de taille : `ui/button` conserve les classes DS héritées. */
+.kit-btn-lg {
+  min-height: 44px;
+  padding-inline: var(--kit-space-5);
+}
+
 /* Hiérarchie commune des en-têtes dans toutes les familles de pages. */
 html[data-theme] :is(
   .page-header,
