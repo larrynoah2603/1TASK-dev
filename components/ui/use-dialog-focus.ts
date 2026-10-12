@@ -22,7 +22,7 @@ type DialogFocusOptions = {
  * Does not change business actions, dismissal rules or visual structure.
  */
 export function useDialogFocus({ open, onClose, closeOnEscape = true }: DialogFocusOptions) {
-  const dialogRef = useRef<HTMLElement>(null);
+  const dialogRef = useRef<HTMLSectionElement>(null);
   const onCloseRef = useRef(onClose);
   const closeOnEscapeRef = useRef(closeOnEscape);
 
