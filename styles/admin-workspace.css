@@ -1,0 +1,154 @@
+/* 1TASK — Lot 04 : Administration
+ * Présentation et responsive uniquement : les permissions, APIs et workflows
+ * restent sous le contrôle des services existants.
+ * Les tokens --kit-* conservent leur priorité sur la référence BIOS générique.
+ */
+
+/* Grilles d'indicateurs lisibles même avec une sidebar dépliée. */
+html[data-theme] .admin-industrial :is(.admin-console-kpis, .admin-console-secondary-grid) {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: var(--kit-space-3);
+}
+
+html[data-theme] .admin-industrial :is(.admin-stat, .admin-config-section, .admin-console-card) {
+  min-width: 0;
+  border: 1px solid var(--kit-border) !important;
+  border-radius: var(--kit-radius-lg) !important;
+  background: var(--kit-card) !important;
+  box-shadow: var(--kit-shadow-xs) !important;
+}
+
+html[data-theme] .admin-industrial .admin-stat {
+  padding: var(--kit-space-4) !important;
+}
+
+html[data-theme] .admin-industrial .admin-stat-value {
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+html[data-theme] .admin-industrial .admin-console-grid {
+  align-items: start;
+}
+
+html[data-theme] .admin-industrial .admin-console-card :is(p, small, strong),
+html[data-theme] .admin-industrial .admin-config-section :is(p, small) {
+  overflow-wrap: anywhere;
+}
+
+/* En-têtes et notifications issus des primitives partagées. */
+html[data-theme] .admin-industrial .admin-page-header {
+  min-width: 0;
+}
+
+html[data-theme] .admin-industrial .admin-notice {
+  border: 1px solid var(--kit-info-line) !important;
+  border-radius: var(--kit-radius-md) !important;
+  background: var(--kit-info-soft) !important;
+  color: var(--kit-text) !important;
+  line-height: 1.55;
+}
+
+html[data-theme] .admin-industrial .admin-notice-warning {
+  border-color: var(--kit-warning-line, var(--kit-border-strong)) !important;
+  background: var(--kit-warning-soft) !important;
+}
+
+/* Un retour d'enregistrement distingué d'une erreur, aussi en mode sombre. */
+html[data-theme] .admin-industrial .admin-form-feedback {
+  margin: 0;
+  padding: var(--kit-space-3) var(--kit-space-4);
+  border: 1px solid var(--kit-success-line, var(--kit-border-strong));
+  border-radius: var(--kit-radius-md);
+  background: var(--kit-success-soft);
+  color: var(--kit-success-text);
+  font-size: var(--kit-text-sm);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+html[data-theme] .admin-industrial .admin-form-feedback[data-tone="error"] {
+  border-color: var(--kit-danger-line, var(--kit-border-strong));
+  background: var(--kit-danger-soft);
+  color: var(--kit-danger-text);
+}
+
+/* Les formulaires répondent à la largeur de leur carte, pas à celle du viewport. */
+html[data-theme] .admin-industrial .admin-config-section {
+  container-type: inline-size;
+}
+
+html[data-theme] .admin-industrial .admin-config-section .field-label,
+html[data-theme] .admin-industrial .admin-config-section .field-control {
+  min-width: 0;
+}
+
+@container (max-width: 750px) {
+  html[data-theme] .admin-industrial .admin-config-section form[class*="grid"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@container (max-width: 510px) {
+  html[data-theme] .admin-industrial .admin-config-section form[class*="grid"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  html[data-theme] .admin-industrial .admin-config-section {
+    padding: var(--kit-space-4) !important;
+  }
+}
+
+/* Tableau sémantique : les en-têtes suivent les colonnes, même au clavier. */
+html[data-theme] .admin-industrial .admin-permission-matrix {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--kit-border);
+  border-radius: var(--kit-radius-md);
+  background: var(--kit-card);
+}
+
+html[data-theme] .admin-industrial .admin-permission-table {
+  width: 100%;
+  min-width: 440px;
+  border-collapse: collapse;
+  color: var(--kit-text);
+  font-size: var(--kit-text-sm);
+}
+
+html[data-theme] .admin-industrial .admin-permission-table th,
+html[data-theme] .admin-industrial .admin-permission-table td {
+  padding: var(--kit-space-3) var(--kit-space-4);
+  border-bottom: 1px solid var(--kit-border);
+  text-align: center;
+}
+
+html[data-theme] .admin-industrial .admin-permission-table th:first-child {
+  text-align: left;
+}
+
+html[data-theme] .admin-industrial .admin-permission-head th {
+  background: var(--kit-surface-muted);
+  color: var(--kit-text-2);
+  font-weight: 600;
+}
+
+html[data-theme] .admin-industrial .admin-permission-table tbody tr:last-child th,
+html[data-theme] .admin-industrial .admin-permission-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+html[data-theme] .admin-industrial :is(.admin-permission-matrix, .admin-form-feedback):focus-visible {
+  outline: 2px solid var(--kit-primary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  html[data-theme] .admin-industrial .admin-console-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  html[data-theme] .admin-industrial :is(.admin-console-kpis, .admin-console-secondary-grid) {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+  }
+}
