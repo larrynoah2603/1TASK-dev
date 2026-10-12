@@ -8,12 +8,14 @@ describe("global typography", () => {
   it("loads IBM Plex Sans through next/font with the application weights", () => {
     const layout = source("app/layout.tsx");
 
-    expect(layout).toContain('import { IBM_Plex_Sans } from "next/font/google"');
+    expect(layout).toMatch(/import\\s+\\{[^}]*\\bIBM_Plex_Sans\\b[^}]*\\}\\s+from\\s+"next\\/font\\/google"/);
     expect(layout).toContain("IBM_Plex_Sans({");
     expect(layout).toContain('weight: ["400", "500", "600", "700"]');
     expect(layout).toContain('display: "swap"');
     expect(layout).toContain('variable: "--font-ibm-plex-sans"');
-    expect(layout).toContain("className={ibmPlexSans.variable}");
+    expect(layout).toContain("ibmPlexSans.variable");
+    expect(layout).toContain("schibstedGrotesk.variable");
+    expect(layout).toContain("ibmPlexMono.variable");
   });
 
   it("uses IBM Plex Sans as the design-system font token with safe fallbacks", () => {
