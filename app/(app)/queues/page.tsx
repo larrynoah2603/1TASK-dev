@@ -37,10 +37,11 @@ export default async function QueuesPage() {
               </div>
               <span className="queue-status-chip rounded-md bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-700">Active</span>
             </div>
-            <div className="mt-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+            <p className="queue-context-line mt-3">
+              {queue._count.teams} équipe{queue._count.teams === 1 ? "" : "s"} · Responsable : {queue.manager?.name ?? "Non désigné"}
+            </p>
+            <div className="queue-workload-strip mt-4 grid gap-2 sm:grid-cols-3" aria-label={`Charge de la file ${queue.name}`}>
               <div className="queue-stat rounded-lg border border-slate-100 bg-slate-50/70 p-3"><p className="text-[11px] text-slate-500">Tickets autorisés</p><p className="mt-1 text-lg font-bold text-slate-900">{queue._count.tickets}</p></div>
-              <div className="queue-stat rounded-lg border border-slate-100 bg-slate-50/70 p-3"><p className="text-[11px] text-slate-500">Équipes</p><p className="mt-1 text-lg font-bold text-slate-900">{queue._count.teams}</p></div>
-              <div className="queue-stat rounded-lg border border-slate-100 bg-slate-50/70 p-3"><p className="text-[11px] text-slate-500">Responsable</p><p className="mt-1 truncate text-xs font-semibold text-slate-800">{queue.manager?.name ?? "Non désigné"}</p></div>
               <div className="queue-stat queue-stat-warning rounded-lg border border-amber-100 bg-amber-50/70 p-3"><p className="text-[11px] text-amber-800">Urgents</p><p className="mt-1 text-lg font-bold text-amber-800">{queue.operationalStats.urgent}</p></div>
               <div className="queue-stat queue-stat-danger rounded-lg border border-rose-100 bg-rose-50/70 p-3"><p className="text-[11px] text-rose-800">Bloqués · SLA</p><p className="mt-1 text-lg font-bold text-rose-800">{queue.operationalStats.blocked} · {queue.operationalStats.slaAtRisk}</p></div>
             </div>

@@ -21,7 +21,7 @@ export function PriorityTickets({ tickets }: { tickets: DashboardTicketRow[] }) 
       </span>
       <div>
         <strong>
-          {priority.length} ticket{priority.length > 1 ? "s" : ""} à traiter en priorité
+          {priority.length} ticket{priority.length > 1 ? "s" : ""} à traiter en priorité sur cette page
         </strong>
         <span>SLA à risque, dépassé ou priorité critique.</span>
       </div>
