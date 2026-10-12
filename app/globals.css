@@ -17,6 +17,8 @@
 @import "../styles/admin-workspace.css";
 /* Lot 05 : actifs personnels, inventaire et décisions, responsive. */
 @import "../styles/asset-workspace.css";
+/* Lot 06 : Reporting et Notifications, thèmes clair/sombre et responsive. */
+@import "../styles/reporting-notifications.css";
 
 /* Compatibility-only contract catalogue. The active palette remains the
    original token palette imported above; these declarations never render. */
