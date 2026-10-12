@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Route } from "next";
 import type { DashboardTicketRow } from "@/components/dashboard-visuals";
 import { formatRelativeActivityDate } from "@/components/activity-icon";
+import { Timeline } from "@/components/ui/timeline";
 
 export function AgentActivity({ tickets }: { tickets: DashboardTicketRow[] }) {
   const recent = [...tickets]
@@ -17,9 +18,10 @@ export function AgentActivity({ tickets }: { tickets: DashboardTicketRow[] }) {
         </div>
       </div>
       {recent.length ? (
-        <ul className="agent-activity-list">
-          {recent.map((ticket) => (
-            <li key={ticket.id}>
+        <div className="agent-activity-list">
+          <Timeline items={recent.map((ticket) => ({
+            title: ticket.reference,
+            content: (
               <Link href={`/tickets/${ticket.id}` as Route} className="agent-activity-link">
                 <span className="agent-activity-topline">
                   <span className="agent-activity-ref">{ticket.reference}</span>
@@ -27,9 +29,9 @@ export function AgentActivity({ tickets }: { tickets: DashboardTicketRow[] }) {
                 </span>
                 <span className="agent-activity-title">{ticket.title}</span>
               </Link>
-            </li>
-          ))}
-        </ul>
+            ),
+          }))} />
+        </div>
       ) : (
         <p className="agent-activity-empty">Aucun ticket sur cette page.</p>
       )}
