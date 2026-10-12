@@ -16,8 +16,8 @@ export default async function AdminTechnicalPage() {
         <AdminStatCard label="Périmètre" value="Technique" detail="Paramètres explicitement autorisés" />
       </div>
       <section className="panel p-5 sm:p-6">
-        <h2 className="text-lg font-semibold text-slate-900">Paramètres disponibles</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-600">Les intégrations et erreurs techniques peuvent être raccordées ici selon les permissions prévues. Aucun module d’appels, d’infrastructure ou de bureau distant n’est introduit dans le ticketing.</p>
+        <h2 className="text-lg font-semibold text-[var(--kit-text)]">Paramètres disponibles</h2>
+        <p className="mt-2 text-sm leading-6 text-[var(--kit-text-2)]">Les intégrations et erreurs techniques peuvent être raccordées ici selon les permissions prévues. Aucun module d’appels, d’infrastructure ou de bureau distant n’est introduit dans le ticketing.</p>
       </section>
     </div>
   );
