@@ -324,13 +324,13 @@ export function TicketAdvancedPanels(props: Props) {
 
   return (
     <div className="space-y-5">
-      {error ? <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">{error}</div> : null}
+      {error ? <div role="alert" className="rounded-lg border border-[var(--kit-danger)] bg-[var(--kit-danger-soft)] px-3 py-2 text-xs text-[var(--kit-danger-text)]">{error}</div> : null}
 
       {showManagement && props.canQualify ? (
         <TicketSidePanel title="Qualification" subtitle="Impact, urgence et priorité" defaultOpen={!props.compact}>
           <section className="panel p-5">
           <p className="eyebrow">Qualification</p>
-          <h2 className="mt-1 text-base font-semibold text-slate-900">Impact, urgence et priorité</h2>
+          <h2 className="mt-1 text-base font-semibold text-[var(--kit-text)]">Impact, urgence et priorité</h2>
           <form onSubmit={submitQualification} className="mt-4 space-y-3">
             <label className="field-label">Service catalogue de destination<Combobox value={qualificationServiceId} onChange={setQualificationServiceId} options={[{ value: "", label: "Conserver le service et la file actuels" }, ...qualificationServices.map((service) => ({ value: service.id, label: `${service.name} · ${service.category} · ${service.queue.department.name} / ${service.queue.name}` }))]} /></label>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -350,8 +350,8 @@ export function TicketAdvancedPanels(props: Props) {
         <TicketSidePanel title="SLA" subtitle="Échéances et dérogation contrôlée">
           <section className="panel p-5">
           <p className="eyebrow">SLA</p>
-          <h2 className="mt-1 text-base font-semibold text-slate-900">Dérogation contrôlée</h2>
-          <dl className="mt-3 grid gap-2 text-xs text-slate-600"><div className="flex justify-between gap-3"><dt>Première réponse</dt><dd className="font-semibold">{formatDate(props.firstResponseDueAt)}</dd></div><div className="flex justify-between gap-3"><dt>Résolution</dt><dd className="font-semibold">{formatDate(props.resolutionDueAt)}</dd></div></dl>
+          <h2 className="mt-1 text-base font-semibold text-[var(--kit-text)]">Dérogation contrôlée</h2>
+          <dl className="mt-3 grid gap-2 text-xs text-[var(--kit-text-2)]"><div className="flex justify-between gap-3"><dt>Première réponse</dt><dd className="font-semibold">{formatDate(props.firstResponseDueAt)}</dd></div><div className="flex justify-between gap-3"><dt>Résolution</dt><dd className="font-semibold">{formatDate(props.resolutionDueAt)}</dd></div></dl>
           <form onSubmit={submitSlaException} className="mt-4 space-y-3">
             <label className="field-label">Minutes ajoutées<input required type="number" min={1} max={2000000} value={addedMinutes} onChange={(event) => setAddedMinutes(event.target.value)} className="field-control font-normal" /></label>
             <label className="field-label">Motif obligatoire<textarea required minLength={10} maxLength={2000} value={slaReason} onChange={(event) => setSlaReason(event.target.value)} className="field-control min-h-20 font-normal" placeholder="Motif de la dérogation…" /></label>
@@ -364,16 +364,16 @@ export function TicketAdvancedPanels(props: Props) {
       {showManagement ? <TicketSidePanel title="Relations" subtitle="Tickets liés" onOpen={() => void loadLinks()}>
         <section className="panel p-5">
         <p className="eyebrow">Relations</p>
-        <h2 className="mt-1 text-base font-semibold text-slate-900">Tickets liés</h2>
+        <h2 className="mt-1 text-base font-semibold text-[var(--kit-text)]">Tickets liés</h2>
         {props.canLink ? <form onSubmit={submitLink} className="mt-4 space-y-3">
           <label className="field-label">Rechercher un ticket cible<input value={linkQuery} onChange={(event) => void searchTickets(event.target.value)} className="field-control font-normal" placeholder="Référence ou titre…" /></label>
-          {linkResults.length ? <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-200 bg-white p-1">{linkResults.map((ticket) => <button type="button" key={ticket.id} onClick={() => { setSelectedTicket(ticket); setLinkQuery(ticketLabel(ticket)); setLinkResults([]); }} className="block w-full rounded-md px-2 py-2 text-left text-xs hover:bg-slate-50"><strong>{ticket.reference}</strong> · {ticket.title}</button>)}</div> : null}
+          {linkResults.length ? <div className="max-h-40 overflow-y-auto rounded-lg border border-[var(--kit-border)] bg-[var(--kit-card)] p-1">{linkResults.map((ticket) => <button type="button" key={ticket.id} onClick={() => { setSelectedTicket(ticket); setLinkQuery(ticketLabel(ticket)); setLinkResults([]); }} className="block w-full rounded-md px-2 py-2 text-left text-xs hover:bg-[var(--kit-surface-muted)]"><strong>{ticket.reference}</strong> · {ticket.title}</button>)}</div> : null}
           {selectedTicket ? <p className="kit-callout rounded-md px-2 py-2 text-xs">Cible : {ticketLabel(selectedTicket)}</p> : null}
           <label className="field-label">Type de relation<Combobox value={linkType} onChange={setLinkType} options={LINK_TYPES} /></label>
           <label className="field-label">Motif facultatif<input value={linkReason} onChange={(event) => setLinkReason(event.target.value)} className="field-control font-normal" /></label>
           <button disabled={!selectedTicket || busy === "link"} className="button-secondary w-full">{busy === "link" ? "Création…" : "Créer le lien"}</button>
         </form> : null}
-          <div className="mt-4 space-y-2">{linksLoading ? <p className="text-xs text-slate-500">Chargement des relations…</p> : null}{links.map((link) => { const other = link.fromTicket.id === props.ticketId ? link.toTicket : link.fromTicket; return <div key={link.id} className="rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 text-xs"><p className="font-semibold text-slate-800">{LINK_TYPES.find((item) => item.value === link.type)?.label ?? link.type} · {other.reference}</p><p className="mt-1 text-slate-500">{other.title} · {formatDate(link.createdAt)}</p>{link.reason ? <p className="mt-1 text-slate-500">Motif : {link.reason}</p> : null}</div>; })}{!links.length ? <p className="text-xs text-slate-500">Aucun lien visible.</p> : null}</div>
+          <div className="mt-4 space-y-2">{linksLoading ? <p className="text-xs text-[var(--kit-text-2)]">Chargement des relations…</p> : null}{links.map((link) => { const other = link.fromTicket.id === props.ticketId ? link.toTicket : link.fromTicket; return <div key={link.id} className="rounded-lg border border-[var(--kit-border)] bg-[var(--kit-surface-muted)] px-3 py-2 text-xs"><p className="font-semibold text-[var(--kit-text)]">{LINK_TYPES.find((item) => item.value === link.type)?.label ?? link.type} · {other.reference}</p><p className="mt-1 text-[var(--kit-text-2)]">{other.title} · {formatDate(link.createdAt)}</p>{link.reason ? <p className="mt-1 text-[var(--kit-text-2)]">Motif : {link.reason}</p> : null}</div>; })}{!links.length ? <p className="text-xs text-[var(--kit-text-2)]">Aucun lien visible.</p> : null}</div>
         </section>
       </TicketSidePanel> : null}
 
@@ -389,16 +389,16 @@ export function TicketAdvancedPanels(props: Props) {
             </div>
             <div className="ticket-attachments-body">
               {props.canUpload ? <label className="flex cursor-pointer items-center justify-center rounded-lg border border-dashed kit-dropzone px-3 py-4 text-xs font-semibold">{busy === "attachment" ? "Envoi…" : "Ajouter un fichier · 10 Mo maximum"}<input type="file" onChange={(event) => void uploadAttachment(event)} disabled={busy === "attachment"} className="sr-only" /></label> : null}
-              <div className="space-y-2">{attachmentsLoading ? <p className="text-xs text-slate-500">Chargement des pièces jointes…</p> : null}{attachments.map((attachment) => <a key={attachment.id} href={`/api/tickets/${props.ticketId}/attachments/${attachment.id}`} className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 text-xs hover:bg-slate-100"><span className="min-w-0 truncate font-semibold text-slate-800">{attachment.fileName}<span className="ml-2 font-normal text-slate-400">{formatBytes(attachment.sizeBytes)}</span></span><span className="shrink-0 text-slate-500">{attachment.uploadedBy.name}</span></a>)}{!attachmentsLoading && !attachments.length ? <p className="text-xs text-slate-500">Aucune pièce jointe visible.</p> : null}</div>
+              <div className="space-y-2">{attachmentsLoading ? <p className="text-xs text-[var(--kit-text-2)]">Chargement des pièces jointes…</p> : null}{attachments.map((attachment) => <a key={attachment.id} href={`/api/tickets/${props.ticketId}/attachments/${attachment.id}`} className="flex items-center justify-between gap-3 rounded-lg border border-[var(--kit-border)] bg-[var(--kit-surface-muted)] px-3 py-2 text-xs hover:bg-[var(--kit-neutral-soft)]"><span className="min-w-0 truncate font-semibold text-[var(--kit-text)]">{attachment.fileName}<span className="ml-2 font-normal text-[var(--kit-text-2)]">{formatBytes(attachment.sizeBytes)}</span></span><span className="shrink-0 text-[var(--kit-text-2)]">{attachment.uploadedBy.name}</span></a>)}{!attachmentsLoading && !attachments.length ? <p className="text-xs text-[var(--kit-text-2)]">Aucune pièce jointe visible.</p> : null}</div>
             </div>
           </section>
         ) : (
           <TicketSidePanel title="Pièces jointes" subtitle="Fichiers du ticket" onOpen={() => void loadAttachments()}>
             <section className="panel p-5">
             <p className="eyebrow">Fichiers</p>
-            <h2 className="mt-1 text-base font-semibold text-slate-900">Pièces jointes</h2>
+            <h2 className="mt-1 text-base font-semibold text-[var(--kit-text)]">Pièces jointes</h2>
             {props.canUpload ? <label className="mt-4 flex cursor-pointer items-center justify-center rounded-lg border border-dashed kit-dropzone px-3 py-4 text-xs font-semibold">{busy === "attachment" ? "Envoi…" : "Ajouter un fichier · 10 Mo maximum"}<input type="file" onChange={(event) => void uploadAttachment(event)} disabled={busy === "attachment"} className="sr-only" /></label> : null}
-              <div className="mt-4 space-y-2">{attachmentsLoading ? <p className="text-xs text-slate-500">Chargement des pièces jointes…</p> : null}{attachments.map((attachment) => <a key={attachment.id} href={`/api/tickets/${props.ticketId}/attachments/${attachment.id}`} className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 text-xs hover:bg-slate-100"><span className="min-w-0 truncate font-semibold text-slate-800">{attachment.fileName}<span className="ml-2 font-normal text-slate-400">{formatBytes(attachment.sizeBytes)}</span></span><span className="shrink-0 text-slate-500">{attachment.uploadedBy.name}</span></a>)}{!attachments.length ? <p className="text-xs text-slate-500">Aucune pièce jointe visible.</p> : null}</div>
+              <div className="mt-4 space-y-2">{attachmentsLoading ? <p className="text-xs text-[var(--kit-text-2)]">Chargement des pièces jointes…</p> : null}{attachments.map((attachment) => <a key={attachment.id} href={`/api/tickets/${props.ticketId}/attachments/${attachment.id}`} className="flex items-center justify-between gap-3 rounded-lg border border-[var(--kit-border)] bg-[var(--kit-surface-muted)] px-3 py-2 text-xs hover:bg-[var(--kit-neutral-soft)]"><span className="min-w-0 truncate font-semibold text-[var(--kit-text)]">{attachment.fileName}<span className="ml-2 font-normal text-[var(--kit-text-2)]">{formatBytes(attachment.sizeBytes)}</span></span><span className="shrink-0 text-[var(--kit-text-2)]">{attachment.uploadedBy.name}</span></a>)}{!attachments.length ? <p className="text-xs text-[var(--kit-text-2)]">Aucune pièce jointe visible.</p> : null}</div>
             </section>
           </TicketSidePanel>
         )
