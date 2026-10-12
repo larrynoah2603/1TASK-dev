@@ -10,14 +10,14 @@ export function AdminPageHeader({
   actions?: React.ReactNode;
 }) {
   return (
-    <div className="page-header">
+    <header className="page-header admin-page-header">
       <div>
         <p className="eyebrow">{eyebrow}</p>
         <h1 className="mt-2">{title}</h1>
         <p className="page-header-description mt-2">{description}</p>
       </div>
       {actions ? <div className="page-header-actions shrink-0">{actions}</div> : null}
-    </div>
+    </header>
   );
 }
 
