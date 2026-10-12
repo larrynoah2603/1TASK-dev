@@ -9,6 +9,8 @@
 @import "../styles/tokens.css";
 @import "../styles/legacy-bridge.css";
 @import "../styles/design-system.css";
+/* Lot 02 : styles de convergence des composants de toutes les pages. */
+@import "../styles/unified-components.css";
 
 /* Compatibility-only contract catalogue. The active palette remains the
    original token palette imported above; these declarations never render. */
