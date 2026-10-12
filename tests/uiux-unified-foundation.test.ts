@@ -8,8 +8,8 @@ describe("UI/UX foundation — all app surfaces", () => {
   it("keeps the approved 1TASK palette and defines every shared spacing token", () => {
     const tokens = source("styles/tokens.css");
     const css = [tokens, source("styles/design-system.css"), source("styles/legacy-bridge.css")].join("\n");
-    const definitions = new Set([...css.matchAll(/(--kit-[\\w-]+)\\s*:/g)].map((match) => match[1]));
-    const references = [...css.matchAll(/var\\((--kit-[\\w-]+)/g)].map((match) => match[1]);
+    const definitions = new Set([...css.matchAll(/(--kit-[\w-]+)\s*:/g)].map((match) => match[1]));
+    const references = [...css.matchAll(/var\((--kit-[\w-]+)/g)].map((match) => match[1]);
 
     for (const reference of references) expect(definitions.has(reference), reference).toBe(true);
     expect(tokens).toContain("--kit-space-8: 64px");
