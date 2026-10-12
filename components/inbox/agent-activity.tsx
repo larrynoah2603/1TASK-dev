@@ -35,7 +35,7 @@ export function AgentActivity({ tickets }: { tickets: DashboardTicketRow[] }) {
       ) : (
         <p className="agent-activity-empty">Aucun ticket sur cette page.</p>
       )}
-      <p className="agent-activity-footnote">D'après la date de mise à jour des tickets affichés, pas le journal d'audit.</p>
+      <p className="agent-activity-footnote">D’après la date de mise à jour des tickets affichés, pas le journal d’audit.</p>
     </section>
   );
 }
