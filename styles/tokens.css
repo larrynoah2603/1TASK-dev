@@ -135,7 +135,7 @@ html[data-theme="dark"] {
   --kit-primary-line: color-mix(in srgb, var(--kit-primary) 36%, var(--kit-card));
   --kit-info-soft: color-mix(in srgb, var(--kit-info) 14%, var(--kit-card));
   --kit-info-line: color-mix(in srgb, var(--kit-info) 34%, var(--kit-card));
-  --kit-success-soft: color-mix(in srgb, var(--kit-success) 14%, var(--kit-card));
+  --kit-success-soft: color-mix(in srgb, var(--kit-success) 8%, var(--kit-card));
   --kit-warning-soft: color-mix(in srgb, var(--kit-warning) 16%, var(--kit-card));
   --kit-danger-soft: color-mix(in srgb, var(--kit-danger) 14%, var(--kit-card));
   --kit-neutral-soft: color-mix(in srgb, var(--kit-secondary) 14%, var(--kit-card));
