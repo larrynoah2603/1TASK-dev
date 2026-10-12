@@ -6,7 +6,7 @@ import { SlaOverview } from "./sla-overview";
 
 export function DashboardPage({ firstName, kpis, tickets, children }: { firstName: string; kpis: DashboardKpis; tickets: DashboardTicket[]; children?: ReactNode }) {
   return <div className="dashboard-page dashboard-reference-page">
-    <header className="dashboard-reference-header"><div><p className="eyebrow">Votre espace de support</p><h1>Bonjour {firstName} <span aria-hidden="true">👋</span></h1><p className="page-header-description">Voici un aperçu de votre activité aujourd&apos;hui.</p></div></header>
+    <header className="dashboard-reference-header"><div><p className="eyebrow">Votre espace de support</p><h1>Bonjour {firstName}</h1><p className="page-header-description">Voici un aperçu de vos demandes et de leur suivi.</p></div></header>
     <KpiGrid values={kpis} />
     <div className="dashboard-reference-main-grid"><RecentTickets tickets={tickets} /><ActivityTimeline tickets={tickets} /></div>
     <SlaOverview tickets={tickets} />
