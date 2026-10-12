@@ -1,0 +1,118 @@
+/* 1TASK / UIUX lot 03 — ticketing surfaces.
+   Only presentation: no routes, access checks, search filters or workflows changed.
+   The existing --kit-* tokens stay authoritative in both themes. */
+
+html[data-theme] .inbox-v2 .agent-sla-alert-list,
+html[data-theme] .inbox-v2 .agent-activity-list {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+html[data-theme] .inbox-v2 :is(.agent-sla-alert-link, .agent-activity-link) {
+  display: grid;
+  gap: var(--kit-space-1);
+  min-width: 0;
+  padding: var(--kit-space-3);
+  color: var(--kit-text);
+  text-decoration: none;
+  border-top: 1px solid var(--kit-border);
+  transition: background-color var(--kit-fast) var(--kit-ease);
+}
+
+html[data-theme] .inbox-v2 :is(.agent-sla-alert-link, .agent-activity-link):hover {
+  background: var(--kit-hover);
+}
+
+html[data-theme] .inbox-v2 :is(.agent-sla-alert-link, .agent-activity-link):focus-visible {
+  position: relative;
+  outline: 2px solid var(--kit-primary);
+  outline-offset: -3px;
+  border-radius: var(--kit-radius-sm);
+}
+
+html[data-theme] .inbox-v2 .agent-sla-alert-topline,
+html[data-theme] .inbox-v2 .agent-activity-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--kit-space-2);
+  min-width: 0;
+}
+
+html[data-theme] .inbox-v2 .agent-sla-alert-ref,
+html[data-theme] .inbox-v2 .agent-activity-ref {
+  color: var(--kit-primary-text);
+  font-size: var(--kit-text-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+html[data-theme] .inbox-v2 .agent-sla-alert-badge {
+  flex: none;
+  color: var(--kit-warning-text);
+  background: var(--kit-warning-soft);
+  border-radius: var(--kit-radius-pill);
+  padding: 3px var(--kit-space-2);
+  font-size: var(--kit-text-xs);
+  font-weight: 600;
+}
+
+html[data-theme] .inbox-v2 .agent-sla-alert-badge.is-breached {
+  color: var(--kit-danger-text);
+  background: var(--kit-danger-soft);
+}
+
+html[data-theme] .inbox-v2 :is(.agent-sla-alert-title, .agent-activity-title) {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: var(--kit-text);
+  font-size: var(--kit-text-sm);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+html[data-theme] .inbox-v2 .agent-activity-date,
+html[data-theme] .inbox-v2 :is(.agent-sla-alert-footnote, .agent-activity-footnote) {
+  color: var(--kit-text-2);
+  font-size: var(--kit-text-xs);
+  line-height: 1.4;
+}
+
+html[data-theme] .inbox-v2 :is(.agent-sla-alert-footnote, .agent-activity-footnote) {
+  margin: 0;
+  padding: var(--kit-space-2) var(--kit-space-3);
+  border-top: 1px solid var(--kit-border);
+}
+
+html[data-theme] .inbox-v2 :is(.agent-sla-alert-empty, .agent-activity-empty) {
+  padding: var(--kit-space-4);
+  margin: 0;
+  color: var(--kit-text-2);
+  font-size: var(--kit-text-sm);
+}
+
+html[data-theme] .queues-industrial .queue-stat {
+  min-width: 0;
+}
+
+html[data-theme] .queues-industrial .queue-stat > :last-child {
+  overflow-wrap: anywhere;
+}
+
+html[data-theme] .ticket-detail-main {
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  html[data-theme] .inbox-v2 :is(.agent-sla-alert-link, .agent-activity-link) {
+    padding: var(--kit-space-2) var(--kit-space-3);
+  }
+  html[data-theme] .queues-industrial .queues-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
