@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useId } from "react";
+import { useDialogFocus } from "@/components/ui/use-dialog-focus";
 
 export function ConfirmDialog({
   open,
@@ -29,22 +30,16 @@ export function ConfirmDialog({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
-  useEffect(() => {
-    if (!open) return undefined;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !busy) onCancel();
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [busy, onCancel, open]);
+  const titleId = useId();
+  const dialogRef = useDialogFocus({ open, onClose: onCancel, closeOnEscape: !busy });
 
   if (!open) return null;
 
   return (
     <div className="confirm-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) onCancel(); }}>
-      <section className="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title">
+      <section className="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} ref={dialogRef}>
         <p className="eyebrow">Confirmation requise</p>
-        <h2 id="confirm-dialog-title" className="mt-2 text-lg font-bold text-slate-950">{title}</h2>
+        <h2 id={titleId} className="mt-2 text-lg font-bold text-slate-950">{title}</h2>
         <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
         {children}
         <div className="mt-6 flex flex-col-reverse justify-end gap-3 sm:flex-row">
