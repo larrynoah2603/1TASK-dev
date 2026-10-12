@@ -1,0 +1,54 @@
+/* 1TASK — Lot UI/UX 05 : Actifs. Valeurs CSS 1TASK uniquement. */
+html[data-theme] :is(.assets-page-shell,.asset-review-page,.asset-self-service-page) { min-width: 0; }
+html[data-theme] :is(.asset-review-page,.asset-self-service-page) .saas-page-header { flex-wrap: wrap; min-width: 0; }
+html[data-theme] .assets-industrial .asset-summary-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,190px),1fr)); gap: var(--kit-space-3); }
+html[data-theme] .assets-industrial .asset-summary-grid .metric-card { min-width: 0; padding: var(--kit-space-4); font-variant-numeric: tabular-nums; }
+html[data-theme] .assets-industrial .asset-filter-panel { container: asset-filters / inline-size; min-width: 0; }
+html[data-theme] .assets-industrial .asset-filter-controls { display: grid; grid-template-columns: minmax(190px,1.5fr) minmax(150px,.8fr) minmax(150px,.8fr) auto; align-items: end; gap: var(--kit-space-3); min-width: 0; }
+html[data-theme] .assets-industrial .asset-filter-controls :is(.field-label,.field-control) { min-width: 0; max-width: 100%; }
+@container asset-filters (max-width: 850px) {
+  html[data-theme] .assets-industrial .asset-filter-controls { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@container asset-filters (max-width: 530px) {
+  html[data-theme] .assets-industrial .asset-filter-controls { grid-template-columns: minmax(0,1fr); }
+  html[data-theme] .assets-industrial .asset-filter-controls > button { width: 100%; }
+}
+html[data-theme] .assets-industrial .asset-inventory-panel { container: asset-inventory / inline-size; }
+html[data-theme] .asset-review-page .asset-review-card { container: asset-review / inline-size; }
+html[data-theme] :is(.asset-inventory-scroll,.asset-review-card .table-responsive) { max-width: 100%; overflow-x: auto; }
+html[data-theme] :is(.asset-inventory-scroll,.asset-review-card .table-responsive):focus-visible { outline: 2px solid var(--kit-primary); outline-offset: -2px; }
+html[data-theme] .asset-review-card .review-actions { min-width: 0; }
+html[data-theme] .asset-review-card .review-actions :is(button,select) { min-width: 0; max-width: 100%; }
+@container asset-inventory (max-width: 760px) {
+  html[data-theme] .assets-industrial .asset-inventory-table { display: block; width: 100%; min-width: 0; }
+  .asset-inventory-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+  .asset-inventory-table tbody { display: grid; gap: var(--kit-space-3); padding: var(--kit-space-3); }
+  .asset-inventory-table tbody tr { display: grid; min-width: 0; border: 1px solid var(--kit-border); border-radius: var(--kit-radius-md); background: var(--kit-card); overflow: hidden; }
+  html[data-theme] .assets-industrial .asset-inventory-table td { display: grid; grid-template-columns: minmax(0,108px) minmax(0,1fr); gap: var(--kit-space-2); min-width: 0; padding: var(--kit-space-2) var(--kit-space-3) !important; border: 0; text-align: left; overflow-wrap: anywhere; }
+  .asset-inventory-table td[data-label]::before { content: attr(data-label); color: var(--kit-text-2); font-size: var(--kit-text-xs); font-weight: 600; }
+  html[data-theme] .assets-industrial .asset-inventory-table td.asset-inventory-primary { display: grid; grid-template-columns: 1fr; min-width: 0; padding-top: var(--kit-space-3) !important; }
+  .asset-inventory-table td.asset-inventory-primary::before { display: none; }
+  html[data-theme] .assets-industrial .asset-inventory-table td.asset-inventory-action { width: auto; white-space: normal; }
+  .asset-inventory-table .asset-inventory-action .button-secondary { width: fit-content; }
+  html[data-theme] .assets-industrial .asset-inventory-table .asset-inventory-empty { display: block; padding: var(--kit-space-5) !important; }
+}
+@container asset-review (max-width: 850px) {
+  html[data-theme] .asset-review-card .asset-review-table { display: block; min-width: 0; width: 100%; }
+  .asset-review-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+  .asset-review-table tbody { display: grid; gap: var(--kit-space-3); padding: var(--kit-space-3); }
+  .asset-review-table tbody tr { display: grid; min-width: 0; overflow: hidden; border: 1px solid var(--kit-border); border-radius: var(--kit-radius-md); background: var(--kit-card); }
+  html[data-theme] .asset-review-table td { display: grid; grid-template-columns: minmax(0,100px) minmax(0,1fr); gap: var(--kit-space-2); min-width: 0; padding: var(--kit-space-2) var(--kit-space-3); border: 0; overflow-wrap: anywhere; }
+  .asset-review-table td[data-label]::before { content: attr(data-label); color: var(--kit-text-2); font-size: var(--kit-text-xs); font-weight: 600; }
+  html[data-theme] .asset-review-card .review-actions { grid-template-columns: minmax(0,1fr); min-width: 0; }
+  html[data-theme] .asset-review-card .review-actions :is(button,select) { width: 100%; white-space: normal; }
+  html[data-theme] .asset-review-table .table-empty { display: block; padding: var(--kit-space-5) !important; }
+}
+html[data-theme] .asset-self-service-page :is(.personal-asset-card,.request-list article,.request-list article > div) { min-width: 0; overflow-wrap: anywhere; }
+html[data-theme] .asset-self-service-page .request-list .request-status { white-space: normal; max-width: 100%; }
+html[data-theme] .assets-detail-page-shell .asset-detail-highlights { grid-template-columns: repeat(auto-fit,minmax(min(100%,230px),1fr)); }
+html[data-theme] .assets-detail-page-shell .asset-detail-highlights .metric-card { min-width: 0; }
+html[data-theme] .assets-detail-page-shell .asset-detail-highlights .metric-card p { overflow-wrap: anywhere; }
+@media (max-width: 700px) {
+  html[data-theme] .asset-review-page .header-stat { width: fit-content; }
+  html[data-theme] .asset-self-service-page .personal-asset-card { padding: var(--kit-space-4); }
+}
