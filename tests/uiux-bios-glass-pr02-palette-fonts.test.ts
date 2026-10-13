@@ -45,8 +45,11 @@ describe("BIOS Glass v3.1 — PR 02 : couleurs, fontes et activation isolée", (
     expect(css).not.toContain(":root {");
   });
 
-  it("active le basculement seulement en développement ou sur Vercel Preview", () => {
+  it("garde le toggle en Preview et active BIOS en production avec retour arrière explicite", () => {
     expect(layout).toContain('process.env.VERCEL_ENV === "preview" || process.env.NODE_ENV === "development"');
+    expect(layout).toContain('process.env.VERCEL_ENV === "production"');
+    expect(layout).toContain('process.env.BIOS_GLASS_ENABLED !== "false"');
+    expect(layout).toContain('data-visual-profile={enableProductionBios ? "bios-glass-v31" : undefined}');
     expect(layout).toContain("allowVisualPreview ? <BiosGlassPreviewToggle /> : null");
     expect(layout).not.toContain("next/font/google");
     expect(globals).toContain('--font-ibm-plex-sans: "IBM Plex Sans Variable";');
