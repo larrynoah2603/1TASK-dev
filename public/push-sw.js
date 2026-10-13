@@ -3,7 +3,7 @@ const DEFAULT_PUSH_ICON = "/push-icon.svg";
 async function resolveRequesterIcon(photoUrl) {
   // Only the protected same-origin endpoint may supply an avatar.
   if (typeof photoUrl !== "string" ||
-      !/^\\/api\\/notifications\\/push-photo\\/[A-Za-z0-9_-]+$/.test(photoUrl)) {
+      !/^\/api\/notifications\/push-photo\/[A-Za-z0-9_-]+$/.test(photoUrl)) {
     return DEFAULT_PUSH_ICON;
   }
   try {
