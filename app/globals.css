@@ -27,6 +27,8 @@
 @import "../styles/bios-glass-v31-preview.css";
 /* PR 03 : cartes, rayons, contrôles, tableaux et modales BIOS, opt-in uniquement. */
 @import "../styles/bios-glass-v31-components.css";
+/* PR 04 : Shell + Dashboard / Inbox / ticket, esthétique opt-in exclusivement. */
+@import "../styles/bios-glass-v31-shell-v1.css";
 
 /* Compatibility-only contract catalogue. The active palette remains the
    original token palette imported above; these declarations never render. */
