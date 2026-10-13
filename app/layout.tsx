@@ -16,11 +16,13 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  // Vercel production and CI builds have no preview toggle. The visual
-  // profile stays off unless enabled by the user on a preview/dev deployment.
+  // Approved BIOS visual profile is enabled on Vercel Production.
+  // Emergency visual rollback: BIOS_GLASS_ENABLED=false, then redeploy.
+  // Preview and development keep their existing reversible session switch.
+  const enableProductionBios = process.env.VERCEL_ENV === "production" && process.env.BIOS_GLASS_ENABLED !== "false";
   const allowVisualPreview = process.env.VERCEL_ENV === "preview" || process.env.NODE_ENV === "development";
   return (
-    <html lang="fr" suppressHydrationWarning>
+    <html lang="fr" data-visual-profile={enableProductionBios ? "bios-glass-v31" : undefined} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
