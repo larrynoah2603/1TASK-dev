@@ -58,7 +58,7 @@ export function formatPushPresentation(input: PushPresentationInput) {
     };
   }
 
-  const heading = ticketHeadings[input.type] ?? compact(input.title, 36) || "Ticket";
+  const heading = ticketHeadings[input.type] ?? (compact(input.title, 36) || "Ticket");
   const reference = compact(input.ticket.reference, 44);
   const requesterName = compact(input.ticket.requesterName ?? "", 55);
 
