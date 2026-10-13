@@ -21,7 +21,7 @@ export const PATTERNS = [
   ["aws-access-key", /(?:AKIA|ASIA)[0-9A-Z]{16}/g],
   ["slack-bot-token", /xox[baprs]-[A-Za-z0-9-]{20,}/g],
   ["stripe-secret-key", /sk_(?:live|test)_[A-Za-z0-9]{20,}/g],
-  ["openai-secret-key", /sk-(?:proj-)?[A-Za-z0-9_-]{35,}/g],
+  ["openai-secret-key", /(?<![A-Za-z0-9_-])sk-(?:proj-)?[A-Za-z0-9_-]{35,}/g],
 ];
 
 export function scanContent(text) {
