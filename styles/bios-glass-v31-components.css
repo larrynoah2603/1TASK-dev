@@ -239,3 +239,44 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .kit-modal-foot {
     transition: none;
   }
 }
+
+
+/* Conformité transversale : le CTA unique de la barre supérieure ne doit
+   jamais hériter du bleu codé en dur dans legacy.css. */
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-new-ticket.new-ticket-launcher {
+  background: var(--kit-primary) !important;
+  border-color: var(--kit-primary) !important;
+  color: var(--kit-on-primary) !important;
+  box-shadow: var(--bios-glass-shadow);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-new-ticket.new-ticket-launcher:hover:not(:disabled) {
+  background: var(--kit-primary-hover) !important;
+  border-color: var(--kit-primary-hover) !important;
+  color: var(--kit-on-primary) !important;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .kit-new-ticket, .field-control, .combobox-trigger, .combobox-option,
+  .kit-popover-menu a, .modal-close-button
+):focus-visible {
+  outline: 2px solid var(--kit-primary);
+  outline-offset: 2px;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .field-control, .combobox-trigger, .combobox-search, .kit-popover-menu,
+  .combobox-listbox, .modal-panel, .confirm-dialog
+) {
+  color: var(--kit-text);
+  border-color: var(--kit-border-strong);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .field-control, .combobox-trigger, .combobox-search, .kit-popover-menu,
+  .combobox-listbox, .modal-panel, .confirm-dialog
+) {
+  background: var(--bios-glass-raised) !important;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .kit-popover-menu, .combobox-listbox, .modal-panel, .confirm-dialog
+) {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
