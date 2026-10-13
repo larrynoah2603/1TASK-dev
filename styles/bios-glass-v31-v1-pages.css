@@ -206,8 +206,9 @@ html[data-visual-profile="bios-glass-v31"][data-theme] :is(
 ) :is(.modal-panel, .confirm-dialog, .asset-create-modal, .combobox-listbox) {
   background: var(--bios-glass-raised) !important;
   border-radius: var(--kit-radius-xl) !important;
-  -webkit-backdrop-filter: var(--bios-glass-backdrop);
-  backdrop-filter: var(--bios-glass-backdrop);
+  /* Near-opaque dialogs should not spend GPU resources on 20px blur. */
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 /* Fallback si le flou n'est pas pris en charge / refus de transparence :
@@ -225,6 +226,14 @@ html[data-visual-profile="bios-glass-v31"][data-theme] :is(
     background: var(--kit-card) !important;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+  }
+  html[data-visual-profile="bios-glass-v31"][data-theme] .notification-industrial :is(
+    .notification-history-header, .notification-history-panel
+  ) {
+    /* The header was previously omitted from the no-backdrop support fallback. */
+    background: var(--kit-card) !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 }
 @media (prefers-reduced-transparency: reduce) {
@@ -244,7 +253,7 @@ html[data-visual-profile="bios-glass-v31"][data-theme] :is(
   html[data-visual-profile="bios-glass-v31"][data-theme] .notification-industrial :is(
     .notification-history-header, .notification-history-panel
   ) {
-    background: var(--kit-card);
+    background: var(--kit-card) !important;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
