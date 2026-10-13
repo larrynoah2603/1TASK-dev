@@ -125,7 +125,7 @@ export async function requireAuthenticatedUser(): Promise<UserContext> {
       "Votre profil est en attente de validation par l’administrateur fonctionnel.",
     );
   }
-  if (user.status !== "ACTIVE") {
+  if (user.status !== "ACTIVE" || user.administrativelyDisabled) {
     throw new AuthorizationError("Votre compte est désactivé.");
   }
   return user;
@@ -376,6 +376,11 @@ export type AdminArea = "FUNCTIONAL" | "TECHNICAL" | "ANY";
 export async function requireAdminAccess(area: AdminArea = "ANY"): Promise<UserContext> {
   const user = await getSessionUserContext();
   if (!user) throw new AuthenticationError();
+  // A suspension revokes both active sessions and the one-time pending-admin
+  // bootstrap, without changing existing role/permission business logic.
+  if (user.administrativelyDisabled) {
+    throw new AuthorizationError("Votre compte est désactivé.");
+  }
   const subject = toAccessSubject(user);
   const pendingFunctionalAdministrator = isPendingFunctionalAdministrator(user);
 

@@ -1,0 +1,42 @@
+name: Security S3
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-s3-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: Security — dependencies and tracked secrets
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out tracked project
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Verify tracked content for high-confidence secret patterns
+        run: node scripts/security-secret-scan.mjs
+
+      - name: Audit production dependency advisories (high and critical)
+        if: always()
+        run: npm audit --package-lock-only --omit=dev --audit-level=high --no-fund
+
+      - name: Audit all dependency advisories (critical only)
+        if: always()
+        run: npm audit --package-lock-only --audit-level=critical --no-fund
