@@ -1,0 +1,241 @@
+/* PR 03/06 — BIOS Glass Corporate v3.1 : composants partagés
+   Opt-in EXCLUSIF via data-visual-profile déjà protégé par PR 02.
+   La navigation, les composants React et les tokens de production restent intacts.
+   Palette et typographies : styles/bios-glass-v31-preview.css. */
+
+html[data-visual-profile="bios-glass-v31"] {
+  --kit-radius-sm: 6px;
+  --kit-radius-md: 6px;
+  --kit-radius-lg: 10px;
+  --kit-radius-xl: 12px;
+
+  --bios-glass-card: rgb(255 255 255 / 62%);
+  --bios-glass-menu: rgb(255 255 255 / 82%);
+  --bios-glass-raised: rgb(255 255 255 / 96%);
+  --bios-glass-border: rgb(20 32 29 / 14%);
+  --bios-glass-inner: inset 0 1px 0 rgb(255 255 255 / 48%);
+  --bios-glass-shadow: 0 8px 24px rgb(20 32 29 / 6%);
+  --bios-glass-backdrop: blur(20px);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme="dark"] {
+  --bios-glass-card: rgb(25 43 35 / 85%);
+  --bios-glass-menu: rgb(25 43 35 / 94%);
+  --bios-glass-raised: rgb(25 43 35 / 97%);
+  --bios-glass-border: rgb(242 247 243 / 20%);
+  --bios-glass-inner: inset 0 1px 0 rgb(255 255 255 / 8%);
+  --bios-glass-shadow: 0 10px 32px rgb(0 0 0 / 22%);
+}
+
+/* 62% glass belongs on reading cards, not on editable form controls.
+   Two attributes + a component class beat the current html[data-theme]
+   visual layers, without increasing specificity for the normal 1TASK theme. */
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .kit-card,
+  .ds-panel,
+  .ds-chart-card,
+  .ds-kpi-card,
+  .ds-stat-card,
+  .metric-card,
+  .reporting-card,
+  .admin-stat
+) {
+  min-width: 0;
+  border: 1px solid var(--bios-glass-border);
+  border-radius: var(--kit-radius-lg);
+  background: var(--bios-glass-card);
+  -webkit-backdrop-filter: var(--bios-glass-backdrop);
+  backdrop-filter: var(--bios-glass-backdrop);
+  box-shadow: var(--bios-glass-inner), var(--bios-glass-shadow);
+  color: var(--kit-text);
+}
+
+/* Table shells use the glass surface; cells keep sufficient fill for rows. */
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .kit-table-wrap,
+  .ds-data-table-shell
+) {
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid var(--bios-glass-border);
+  border-radius: var(--kit-radius-lg);
+  background: var(--bios-glass-card);
+  -webkit-backdrop-filter: var(--bios-glass-backdrop);
+  backdrop-filter: var(--bios-glass-backdrop);
+  box-shadow: var(--bios-glass-inner), var(--bios-glass-shadow);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-table {
+  color: var(--kit-text);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-table th {
+  min-height: 44px;
+  padding: 12px 14px;
+  background: var(--bios-glass-menu);
+  color: var(--kit-text-2);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-table td {
+  padding: 12px 14px;
+  color: var(--kit-text);
+  border-top-color: var(--kit-border);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-table tbody tr:hover {
+  background: var(--kit-hover);
+}
+
+/* Interactive primitives: one primary action per page remains a page-level
+   contract; no new actions, wrappers or duplicate filters are introduced. */
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .kit-btn,
+  .ds-button,
+  .button-primary,
+  .button-secondary
+) {
+  border-radius: var(--kit-radius-md);
+  min-height: 40px;
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .kit-btn-sm,
+  .ds-button-sm
+) {
+  min-height: 36px;
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .kit-btn-primary,
+  .ds-button-primary,
+  .button-primary
+) {
+  background: var(--kit-primary);
+  color: var(--kit-on-primary);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .kit-btn-primary,
+  .ds-button-primary,
+  .button-primary
+):hover:not(:disabled) {
+  background: var(--kit-primary-hover);
+  color: var(--kit-on-primary);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .kit-btn-secondary,
+  .ds-button-secondary,
+  .button-secondary
+) {
+  border-color: var(--kit-border-strong);
+  background: var(--bios-glass-menu);
+  color: var(--kit-text);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .kit-input,
+  .ds-input,
+  .combobox-search
+) {
+  min-height: 40px;
+  border: 1px solid var(--kit-border-strong);
+  border-radius: var(--kit-radius-md);
+  background: var(--bios-glass-raised);
+  color: var(--kit-text);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .kit-input,
+  .ds-input,
+  .combobox-search
+):focus-visible {
+  outline: 2px solid var(--kit-primary);
+  outline-offset: 2px;
+  border-color: var(--kit-primary);
+}
+
+/* Preserve semantic badge tones; keep status meaning in the text and icons. */
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-badge {
+  min-height: 24px;
+  border-radius: var(--kit-radius-pill);
+  font-size: var(--kit-text-xs);
+  font-weight: 600;
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .kit-btn,
+  .ds-button,
+  .button-primary,
+  .button-secondary
+):focus-visible,
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-table-wrap:focus-visible {
+  outline: 2px solid var(--kit-primary);
+  outline-offset: 2px;
+}
+
+/* Dialogs and editable surfaces stay MORE opaque than the 62% glass cards.
+   This protects form/error legibility over coloured halos and page content. */
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-modal {
+  border: 1px solid var(--bios-glass-border);
+  border-radius: var(--kit-radius-xl);
+  background: var(--bios-glass-raised);
+  -webkit-backdrop-filter: var(--bios-glass-backdrop);
+  backdrop-filter: var(--bios-glass-backdrop);
+  box-shadow: var(--kit-shadow-lg);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-modal-head,
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-modal-foot {
+  border-color: var(--kit-border);
+}
+
+/* Glass must remain readable when blur or transparency isn't supported.
+   Raised controls keep opaque surfaces even in this fallback. */
+@supports not ((backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px))) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+    .kit-card, .ds-panel, .ds-chart-card, .ds-kpi-card, .ds-stat-card,
+    .metric-card, .reporting-card, .admin-stat,
+    .kit-table-wrap, .ds-data-table-shell
+  ) {
+    background: var(--kit-card);
+  }
+  html[data-visual-profile="bios-glass-v31"][data-theme] .kit-modal {
+    background: var(--kit-surface);
+  }
+}
+
+/* Graceful fallback for users requesting non-translucent UI. */
+@media (prefers-reduced-transparency: reduce) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+    .kit-card, .ds-panel, .ds-chart-card, .ds-kpi-card, .ds-stat-card,
+    .metric-card, .reporting-card, .admin-stat,
+    .kit-table-wrap, .ds-data-table-shell
+  ) {
+    background: var(--kit-card);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  html[data-visual-profile="bios-glass-v31"][data-theme] .kit-modal {
+    background: var(--kit-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (max-width: 640px) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+    .kit-card, .ds-kpi-card, .ds-stat-card, .metric-card, .admin-stat
+  ) {
+    max-width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+    .kit-btn, .kit-input, .kit-modal
+  ) {
+    animation: none;
+    transition: none;
+  }
+}
