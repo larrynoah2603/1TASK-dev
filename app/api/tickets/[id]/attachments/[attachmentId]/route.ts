@@ -91,6 +91,9 @@ export async function GET(
 
           "Cache-Control":
             "private, no-store",
+
+          "X-Content-Type-Options": "nosniff",
+          "Content-Security-Policy": "sandbox",
         },
       },
     );
