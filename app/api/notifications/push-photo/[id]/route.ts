@@ -44,7 +44,7 @@ export async function GET(
     const photo = decodePushRequesterPhoto(ticket.requester.image);
     if (!photo) return new Response(null, { status: 404, headers: noStoreHeaders });
 
-    return new Response(photo.bytes, {
+    return new Response(Uint8Array.from(photo.bytes).buffer, {
       status: 200,
       headers: { ...noStoreHeaders, "Content-Type": photo.mime },
     });
