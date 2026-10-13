@@ -37,7 +37,7 @@ function recipient() {
       { isActive: true, team: { id: "team-1", queueId: "queue-1", isActive: true } },
     ],
     roleAssignments: [{
-      role: { code: RoleCode.AGENT },
+      role: { code: RoleCode.AGENT as RoleCode },
       scope: {
         type: ScopeType.QUEUE,
         departmentId: null,
