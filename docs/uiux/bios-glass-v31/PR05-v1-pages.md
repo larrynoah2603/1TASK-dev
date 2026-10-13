@@ -4,13 +4,15 @@
 
 Références : [guide et décision de migration](./README.md) · [PR02](./PR02-preview.md) · [PR03](./PR03-components.md) · [PR04](./PR04-shell-v1.md) · [référence HTML autonome](./reference.html).
 
-## Important : état des PR précédentes et base de cette PR
+## État réel des intégrations (actualisation du 13/10/2026)
 
-- La PR #95 a été fusionnée dans `main` **le 13/10/2026 à 07:00 UTC**.
-- La PR #96 a été fusionnée à **07:17 UTC dans l'ancienne branche de #95**, *après* fusion de #95 dans `main`. Bien que GitHub affiche #96 « merged », `styles/bios-glass-v31-shell-v1.css` n'est donc **pas encore dans `main`**.
-- **PR #97, brouillon** : regroupe désormais PR04 et PR05, puisque la fusion #98 a ciblé la branche PR04 et non `main`.
-- **Seule #97** doit faire l'objet d'une fusion future vers `main`, après validation V1/Full et recette visuelle. Ne pas refusionner #96 ou #98.
-- Les tests CI ne remplacent pas la recette visuelle sur une session V1 authentifiée.
+- **PR03 (#95)** fusionnée dans `main` le 13/10/2026 à 07:00 UTC.
+- **PR04 (#96)** fusionnée initialement dans une ancienne branche PR03 à 07:17 UTC : son statut GitHub « merged » ne représentait pas une intégration directe à `main`.
+- **PR05 (#98)** fusionnée initialement dans la branche PR04 à 07:31 UTC, sans intégration directe à `main` à ce moment.
+- **PR #97, désormais fusionnée dans `main` le 13/10/2026 à 09:00:21 UTC**, commit `a9687aa86a7b5e2c77ec110dc3b49f2e460e255e`, a consolidé PR04 et PR05. Leurs deux feuilles `styles/bios-glass-v31-shell-v1.css` et `styles/bios-glass-v31-v1-pages.css` ainsi que leurs imports dans `app/globals.css` sont **présents dans `main`**.
+- **Ne pas refusionner #96 ou #98.** Les anciens avertissements de fusion empilée sont historiques, et non des tâches à refaire.
+- **Pas de changement visuel par défaut sur le site de production** : la nouvelle palette de PR02, les cartes PR03 et les styles PR04/PR05 sont conditionnés par le profil `data-visual-profile="bios-glass-v31"`, activable seulement sur Preview/développement par `BiosGlassPreviewToggle`.
+- La CI V1/Full de #97 était verte avant fusion, mais les tests automatisés ne remplacent pas une recette visuelle authentifiée. **PR06 ne doit pas activer automatiquement BIOS en production** : décision de déploiement distincte après validation de la qualité et des workflows V1.
 
 ## Diagnostic du code V1
 
@@ -53,7 +55,7 @@ Les composants possèdent **déjà** des tokens CSS `--kit-*`. Nous réutilisons
 3. **Contrastes sur halos Glass** : le CSS source ne valide pas les couleurs calculées réelles ; mesurer sur un élément de chaque groupe en clair et sombre.
 4. **Tableaux** : les vues mobiles `asset-inventory-table` et `asset-review-table` ont des règles responsive spécifiques. Ne pas écraser `display`, `grid-template-columns`, `overflow-x` ou les libellés.
 5. **Filtres** : la PR ne crée aucune barre ou contrôle, et ne modifie aucun paramètre de requête.
-6. **Dépendance de branches** : #97 regroupe PR04 et PR05 pour éviter de perdre leurs styles lors d'une fusion vers une ancienne branche.
+6. **Dépendance de branches** : résolue le 13/10/2026 par la fusion de #97 dans `main`. Aucun nouveau rattrapage des lots PR04/PR05 n'est nécessaire.
 
 ## Plan de vérification
 
@@ -69,6 +71,6 @@ Les composants possèdent **déjà** des tokens CSS `--kit-*`. Nous réutilisons
 | A11y | Présence focus/fallback | Naviguer au clavier, vérifier contrastes calculés et réduction transparence |
 | Production | CI V1/Full | Vérifier absence de nouveau rendu sans activation opt-in |
 
-**Rollback :** sur Vercel Preview, cliquer sur « BIOS Glass · Actif — Revenir à 1TASK ». Ne fusionner aucune migration fonctionnelle ; le style habituel reste défaut production. PR06 traitera le nettoyage ciblé des règles historiques *après* preuve visuelle, et non la suppression aveugle du CSS.
+**Retour à l'ancien style :** en Vercel Preview, cliquer sur « BIOS Glass · Actif — Revenir à 1TASK ». Le rendu habituel reste celui de production ; PR06 doit se limiter à la finition UI, aux tests visuels et au nettoyage sélectif des règles historiques, **sans bascule implicite de la palette en production**. Une activation générale demandera un accord explicite et un retour arrière prévu.
 
 **Lot 07 Full toujours suspendu.**
