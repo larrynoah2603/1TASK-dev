@@ -81,7 +81,7 @@ describe("Web Push V1 — messages courts, demandeur et accès direct", () => {
     expect(service).toContain("formatPushPresentation({");
     expect(service).toContain("presentation.actionUrl");
     expect(service).toContain("recipient: { select: { pushSubscriptions: true } }");
-    expect(service).toContain("requester: { select: { managedDisplayName: true, name: true } }");
+    expect(service).toContain("requester: { select: { managedDisplayName: true, name: true, image: true } }");
     expect(guard).toContain("delegationId: null");
     expect(worker).toContain("client.navigate(targetUrl)");
     expect(worker).toContain("requestedUrl.origin === self.location.origin");

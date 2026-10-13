@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { readServerEnvironment } from "@/lib/env";
 import { notificationMayBeDelivered } from "@/lib/notification-authorization";
 import { formatPushPresentation } from "@/lib/push-notification-presentation";
+import { decodePushRequesterPhoto } from "@/lib/push-requester-photo";
 
 const require = createRequire(import.meta.url);
 
@@ -47,7 +48,7 @@ export async function deliverPushNotification(notificationId: string) {
           id: true,
           reference: true,
           confidential: true,
-          requester: { select: { managedDisplayName: true, name: true } },
+          requester: { select: { managedDisplayName: true, name: true, image: true } },
         },
       })
     : null;
@@ -63,10 +64,17 @@ export async function deliverPushNotification(notificationId: string) {
       requesterName: ticket.requester.managedDisplayName || ticket.requester.name,
     } : null,
   });
+  // A tiny protected same-origin URL travels through Web Push, never the
+  // potentially 128 KB Microsoft Graph photo stored in User.image.
+  const requesterPhotoUrl = ticket && !ticket.confidential &&
+    decodePushRequesterPhoto(ticket.requester.image)
+    ? `/api/notifications/push-photo/${encodeURIComponent(notification.id)}`
+    : undefined;
+
   let delivered = 0;
   for (const subscription of notification.recipient.pushSubscriptions) {
     try {
-      await webpush.sendNotification({ endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } }, JSON.stringify({ notificationId: notification.id, title: presentation.title, body: presentation.body, severity: notification.severity, actionUrl: presentation.actionUrl }));
+      await webpush.sendNotification({ endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } }, JSON.stringify({ notificationId: notification.id, title: presentation.title, body: presentation.body, severity: notification.severity, actionUrl: presentation.actionUrl, requesterPhotoUrl }));
       await prisma.pushSubscription.update({ where: { id: subscription.id }, data: { lastUsedAt: new Date() } });
       delivered += 1;
     } catch (error) {
