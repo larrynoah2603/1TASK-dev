@@ -145,7 +145,6 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .inbox-operations-industr
 html[data-visual-profile="bios-glass-v31"][data-theme] :is(
   .inbox-workbench,
   .inbox-command-surface,
-  .inbox-filter-panel,
   .inbox-operations-industrial .agent-workspace-rail > section
 ) {
   min-width: 0;
@@ -155,6 +154,22 @@ html[data-visual-profile="bios-glass-v31"][data-theme] :is(
   -webkit-backdrop-filter: var(--bios-glass-backdrop);
   backdrop-filter: var(--bios-glass-backdrop);
   box-shadow: var(--bios-glass-inner), var(--bios-glass-shadow);
+}
+
+/* PR06 — A filter popover is an editing surface, not a translucent reading card.
+   Keep the existing one-filter workflow, with enough height to scroll on mobile. */
+html[data-visual-profile="bios-glass-v31"][data-theme] .inbox-filter-panel {
+  min-width: 0;
+  max-height: min(70dvh, 640px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--bios-glass-border);
+  border-radius: var(--kit-radius-lg);
+  background: var(--bios-glass-raised);
+  box-shadow: var(--kit-shadow-lg);
+  color: var(--kit-text);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 html[data-visual-profile="bios-glass-v31"][data-theme] :is(
@@ -228,7 +243,8 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-composer .form-ac
     .kit-sidebar, .kit-topbar,
     .dashboard-kpi-card, .dashboard-widget, .dashboard-reference-card,
     .dashboard-enterprise-card, .dashboard-modern-kpi,
-    .inbox-workbench, .inbox-command-surface, .inbox-filter-panel
+    .inbox-workbench, .inbox-command-surface, .inbox-filter-panel,
+    .inbox-operations-industrial .agent-workspace-rail > section
   ) {
     background: var(--kit-card) !important;
   }
@@ -239,7 +255,8 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-composer .form-ac
     .kit-sidebar, .kit-topbar,
     .dashboard-kpi-card, .dashboard-widget, .dashboard-reference-card,
     .dashboard-enterprise-card, .dashboard-modern-kpi,
-    .inbox-workbench, .inbox-command-surface, .inbox-filter-panel
+    .inbox-workbench, .inbox-command-surface, .inbox-filter-panel,
+    .inbox-operations-industrial .agent-workspace-rail > section
   ) {
     background: var(--kit-card) !important;
     -webkit-backdrop-filter: none;
