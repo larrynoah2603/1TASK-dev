@@ -27,6 +27,17 @@
 @import "../styles/bios-glass-v31-preview.css";
 /* PR 03 : cartes, rayons, contrôles, tableaux et modales BIOS, opt-in uniquement. */
 @import "../styles/bios-glass-v31-components.css";
+/* PR 04 : Shell + Dashboard / Inbox / ticket, esthétique opt-in exclusivement. */
+@import "../styles/bios-glass-v31-shell-v1.css";
+/* PR 05 : généralisation BIOS Glass aux vues V1 restantes, toujours opt-in. */
+@import "../styles/bios-glass-v31-v1-pages.css";
+
+/* Fontsource bundles these fonts locally; preserve existing --kit-* tokens. */
+:root {
+  --font-ibm-plex-sans: "IBM Plex Sans Variable";
+  --font-ibm-plex-mono: "IBM Plex Mono";
+  --font-schibsted-grotesk: "Schibsted Grotesk Variable";
+}
 
 /* Compatibility-only contract catalogue. The active palette remains the
    original token palette imported above; these declarations never render. */

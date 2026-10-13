@@ -5,17 +5,32 @@ import { describe, expect, it } from "vitest";
 const source = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("global typography", () => {
-  it("loads IBM Plex Sans through next/font with the application weights", () => {
+  it("self-hosts the approved families with versioned, integrity-checked NPM packages", () => {
     const layout = source("app/layout.tsx");
+    const globals = source("app/globals.css");
+    const packageJson = JSON.parse(source("package.json"));
+    const lock = JSON.parse(source("package-lock.json"));
 
-    expect(layout).toMatch(/import\s+\{[^}]*\bIBM_Plex_Sans\b[^}]*\}\s+from\s+"next\/font\/google"/);
-    expect(layout).toContain("IBM_Plex_Sans({");
-    expect(layout).toContain('weight: ["400", "500", "600", "700"]');
-    expect(layout).toContain('display: "swap"');
-    expect(layout).toContain('variable: "--font-ibm-plex-sans"');
-    expect(layout).toContain("ibmPlexSans.variable");
-    expect(layout).toContain("schibstedGrotesk.variable");
-    expect(layout).toContain("ibmPlexMono.variable");
+    expect(layout).not.toContain("next/font/google");
+    expect(layout).toContain('@fontsource-variable/ibm-plex-sans/wght.css');
+    expect(layout).toContain('@fontsource-variable/schibsted-grotesk/wght.css');
+    for (const weight of [400, 600, 700]) {
+      expect(layout).toContain(`@fontsource/ibm-plex-mono/latin-${weight}.css`);
+    }
+    for (const [token, family] of [
+      ["ibm-plex-sans", "IBM Plex Sans Variable"],
+      ["schibsted-grotesk", "Schibsted Grotesk Variable"],
+      ["ibm-plex-mono", "IBM Plex Mono"],
+    ]) expect(globals).toContain(`--font-${token}: "${family}";`);
+    for (const name of [
+      "@fontsource-variable/ibm-plex-sans",
+      "@fontsource-variable/schibsted-grotesk",
+      "@fontsource/ibm-plex-mono",
+    ]) {
+      expect(packageJson.dependencies[name]).toBe("5.3.0");
+      expect(lock.packages[""].dependencies[name]).toBe("5.3.0");
+      expect(lock.packages[`node_modules/${name}`].integrity).toMatch(/^sha512-/);
+    }
   });
 
   it("uses IBM Plex Sans as the design-system font token with safe fallbacks", () => {

@@ -82,6 +82,7 @@ describe("Finition V1 — uniformisation visuelle sans régression métier", () 
     const tokens = source("styles/tokens.css");
     expect(tokens).toContain("--kit-brand: #EA7C29;");
     expect(tokens).toContain("--kit-primary: #C4510D;");
-    expect(source("app/layout.tsx")).toContain("IBM_Plex_Sans");
+    expect(source("app/layout.tsx")).toContain('@fontsource-variable/ibm-plex-sans/wght.css');
+    expect(source("app/globals.css")).toContain('--font-ibm-plex-sans: "IBM Plex Sans Variable";');
   });
 });

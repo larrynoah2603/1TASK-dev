@@ -37,7 +37,7 @@ La palette BIOS 600 `#D4601D` reste la couleur du guide mais **n'est pas utilis�
 
 Le CSS réutilise **les mêmes noms `--kit-*`** afin que les composants et le pont CSS historiques continuent à fonctionner ; les valeurs initiales dans `styles/tokens.css` restent intactes.
 
-La PR charge les polices avec `next/font/google`, `display: "swap"`, `preload: false` pour les deux nouvelles familles. Elles ne sont utilisées que sous la variante BIOS. En cas de chargement impossible, les familles de fallback restent disponibles.
+**Mise à jour PR #97 (stabilisation CI) :** les trois familles sont désormais fournies en local par Fontsource `5.3.0`, avec intégrité SHA-512 dans le lockfile. Les variantes variables IBM Plex Sans et Schibsted Grotesk couvrent les poids précédemment définis ; IBM Plex Mono conserve 400/600/700. Le chargement utilise `font-display: swap`, les tokens `--kit-*` et le toggle BIOS sont inchangés. Aucun téléchargement distant de police n'est nécessaire durant `next build` (incident Next.js `vercel/next.js#99114`).
 
 ## Fichiers impactés
 

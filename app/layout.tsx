@@ -1,35 +1,14 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Sans, IBM_Plex_Mono, Schibsted_Grotesk } from "next/font/google";
+// Self-hosted Fontsource files eliminate the flaky remote build dependency.
+// Typeface families, permitted weights, and visual-profile toggle are unchanged.
+import "@fontsource-variable/ibm-plex-sans/wght.css";
+import "@fontsource-variable/schibsted-grotesk/wght.css";
+import "@fontsource/ibm-plex-mono/latin-400.css";
+import "@fontsource/ibm-plex-mono/latin-600.css";
+import "@fontsource/ibm-plex-mono/latin-700.css";
 import { ToastProvider } from "@/components/toast-provider";
 import { BiosGlassPreviewToggle } from "@/components/uiux/bios-glass-preview-toggle";
 import "./globals.css";
-
-const ibmPlexSans = IBM_Plex_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  style: ["normal"],
-  display: "swap",
-  variable: "--font-ibm-plex-sans",
-});
-
-// Additional fonts are not preloaded in production. They render only while the
-// preview-only data-visual-profile="bios-glass-v31" attribute is active.
-const schibstedGrotesk = Schibsted_Grotesk({
-  subsets: ["latin"],
-  weight: ["600", "700"],
-  display: "swap",
-  preload: false,
-  variable: "--font-schibsted-grotesk",
-});
-
-const ibmPlexMono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["400", "600", "700"],
-  style: ["normal"],
-  display: "swap",
-  preload: false,
-  variable: "--font-ibm-plex-mono",
-});
 
 export const metadata: Metadata = {
   title: "1TASK — Service desk interne",
@@ -41,7 +20,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   // profile stays off unless enabled by the user on a preview/dev deployment.
   const allowVisualPreview = process.env.VERCEL_ENV === "preview" || process.env.NODE_ENV === "development";
   return (
-    <html lang="fr" className={`${ibmPlexSans.variable} ${schibstedGrotesk.variable} ${ibmPlexMono.variable}`} suppressHydrationWarning>
+    <html lang="fr" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{

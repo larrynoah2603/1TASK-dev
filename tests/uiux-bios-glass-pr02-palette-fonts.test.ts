@@ -48,7 +48,8 @@ describe("BIOS Glass v3.1 — PR 02 : couleurs, fontes et activation isolée", (
   it("active le basculement seulement en développement ou sur Vercel Preview", () => {
     expect(layout).toContain('process.env.VERCEL_ENV === "preview" || process.env.NODE_ENV === "development"');
     expect(layout).toContain("allowVisualPreview ? <BiosGlassPreviewToggle /> : null");
-    expect(layout).toContain('className={`${ibmPlexSans.variable} ${schibstedGrotesk.variable} ${ibmPlexMono.variable}`}');
+    expect(layout).not.toContain("next/font/google");
+    expect(globals).toContain('--font-ibm-plex-sans: "IBM Plex Sans Variable";');
     expect(toggle).toContain('window.sessionStorage.getItem(STORAGE_KEY)');
     expect(toggle).toContain('window.sessionStorage.setItem(STORAGE_KEY');
     expect(toggle).toContain("delete document.documentElement.dataset.visualProfile");
@@ -58,10 +59,11 @@ describe("BIOS Glass v3.1 — PR 02 : couleurs, fontes et activation isolée", (
   });
 
   it("prévisualise les fontes du guide sans supprimer IBM Plex Sans du corps", () => {
-    expect(layout).toContain("Schibsted_Grotesk");
-    expect(layout).toContain("IBM_Plex_Mono");
-    expect(layout).toContain("IBM_Plex_Sans");
-    expect(layout.match(/preload: false/g)).toHaveLength(2);
+    expect(layout).toContain('@fontsource-variable/schibsted-grotesk/wght.css');
+    expect(layout).toContain('@fontsource/ibm-plex-mono/latin-700.css');
+    expect(layout).toContain('@fontsource-variable/ibm-plex-sans/wght.css');
+    expect(globals).toContain('--font-schibsted-grotesk: "Schibsted Grotesk Variable";');
+    expect(globals).toContain('--font-ibm-plex-mono: "IBM Plex Mono";');
     expect(css).toContain("--kit-font-display: var(--font-schibsted-grotesk)");
     expect(css).toContain("--kit-font-mono: var(--font-ibm-plex-mono)");
     expect(css).toContain("font-family: var(--kit-font-display)");
