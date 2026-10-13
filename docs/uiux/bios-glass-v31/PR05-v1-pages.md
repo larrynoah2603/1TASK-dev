@@ -8,8 +8,8 @@ Références : [guide et décision de migration](./README.md) · [PR02](./PR02-p
 
 - La PR #95 a été fusionnée dans `main` **le 13/10/2026 à 07:00 UTC**.
 - La PR #96 a été fusionnée à **07:17 UTC dans l'ancienne branche de #95**, *après* fusion de #95 dans `main`. Bien que GitHub affiche #96 « merged », `styles/bios-glass-v31-shell-v1.css` n'est donc **pas encore dans `main`**.
-- **PR #97, brouillon** : rattrapage séparé PR04 vers `main`.
-- Cette PR05 est empilée sur **`uiux/bios-glass-v31-pr04-shell-dashboard-inbox-ticket-20261013`** ; elle doit rester distincte de #97. L'ordre de fusion requis est **#97 → PR05**, puis contrôle CI `main`.
+- **PR #97, brouillon** : regroupe désormais PR04 et PR05, puisque la fusion #98 a ciblé la branche PR04 et non `main`.
+- **Seule #97** doit faire l'objet d'une fusion future vers `main`, après validation V1/Full et recette visuelle. Ne pas refusionner #96 ou #98.
 - Les tests CI ne remplacent pas la recette visuelle sur une session V1 authentifiée.
 
 ## Diagnostic du code V1
@@ -53,7 +53,7 @@ Les composants possèdent **déjà** des tokens CSS `--kit-*`. Nous réutilisons
 3. **Contrastes sur halos Glass** : le CSS source ne valide pas les couleurs calculées réelles ; mesurer sur un élément de chaque groupe en clair et sombre.
 4. **Tableaux** : les vues mobiles `asset-inventory-table` et `asset-review-table` ont des règles responsive spécifiques. Ne pas écraser `display`, `grid-template-columns`, `overflow-x` ou les libellés.
 5. **Filtres** : la PR ne crée aucune barre ou contrôle, et ne modifie aucun paramètre de requête.
-6. **Dépendance de branches** : #97 doit être revue et fusionnée **avant** cette PR pour éviter une perte silencieuse des styles PR04.
+6. **Dépendance de branches** : #97 regroupe PR04 et PR05 pour éviter de perdre leurs styles lors d'une fusion vers une ancienne branche.
 
 ## Plan de vérification
 
