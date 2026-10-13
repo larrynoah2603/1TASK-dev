@@ -44,6 +44,13 @@ export async function POST(
 
 
 
+    // Reject obviously oversized multipart requests before materializing them.
+    // The service still rechecks the exact file size (10 MiB) before storage.
+    const declaredLength = request.headers.get("content-length");
+    if (declaredLength && Number(declaredLength) > 10 * 1024 * 1024 + 512 * 1024) {
+      return apiErrorResponse({ message: "Pièce jointe trop volumineuse.", code: "HTTP_ERROR", status: 413 });
+    }
+
     const form =
       await request.formData();
 
