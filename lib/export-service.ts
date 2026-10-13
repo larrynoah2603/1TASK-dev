@@ -3,11 +3,7 @@ import { prisma } from "@/lib/db";
 import { PRIORITY_LABELS, STATUS_LABELS } from "@/lib/domain";
 import { getReportingSummary } from "@/lib/reporting-service";
 import { listVisibleTickets, type TicketListOptions } from "@/lib/ticket-query-service";
-
-function csvCell(value: unknown): string {
-  const text = value instanceof Date ? value.toISOString() : String(value ?? "");
-  return `"${text.replaceAll('"', '""')}"`;
-}
+import { csvCell } from "@/lib/csv-export";
 
 export async function exportVisibleTickets(actor: UserContext, options: TicketListOptions = {}) {
   const current = await requireCurrentActor(actor);
