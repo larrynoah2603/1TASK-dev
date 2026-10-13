@@ -77,12 +77,12 @@ describe("BIOS Glass v3.1 — PR06 : finition ciblée, compatible avec activatio
     let noBlurSupport = false;
     let reducedTransparency = false;
     sheet.walkAtRules((at) => {
-      if (at.name === "supports" && at.params.includes("not")) {
+      if (at.name === "supports" && at.params.includes("not") && at.toString().includes(".notification-history-header")) {
         expect(at.toString()).toContain(".notification-history-header, .notification-history-panel");
         expect(at.toString()).toContain("background: var(--kit-card) !important");
         noBlurSupport = true;
       }
-      if (at.name === "media" && at.params.includes("prefers-reduced-transparency")) {
+      if (at.name === "media" && at.params.includes("prefers-reduced-transparency") && at.toString().includes(".notification-history-header")) {
         expect(at.toString()).toContain(".notification-history-header, .notification-history-panel");
         expect(at.toString()).toContain("background: var(--kit-card) !important");
         reducedTransparency = true;
