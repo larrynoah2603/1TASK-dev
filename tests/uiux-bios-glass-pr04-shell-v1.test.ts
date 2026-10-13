@@ -6,7 +6,6 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 const css = read("styles/bios-glass-v31-shell-v1.css");
 const globals = read("app/globals.css");
-const profile = 'html[data-visual-profile="bios-glass-v31"]';
 
 function linear(hex: string) {
   const rgb = [1, 3, 5].map((pos) => Number.parseInt(hex.slice(pos, pos + 2), 16) / 255);
