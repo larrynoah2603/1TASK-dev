@@ -35,7 +35,19 @@ jobs:
 
       - name: Audit production dependency advisories (high and critical)
         if: always()
-        run: npm audit --package-lock-only --omit=dev --audit-level=high --no-fund
+        shell: bash
+        run: |
+          # npm audit returns 1 for advisories; errors and malformed output must
+          # still fail closed. Do not hide the report with continue-on-error.
+          set +e
+          npm audit --package-lock-only --omit=dev --audit-level=high --no-fund --json > "$RUNNER_TEMP/npm-audit-production.json"
+          audit_status=$?
+          set -e
+          if [ "$audit_status" -gt 1 ]; then
+            echo "::error title=npm audit unavailable::npm audit command failed"
+            exit "$audit_status"
+          fi
+          node scripts/security-audit-gate.mjs "$RUNNER_TEMP/npm-audit-production.json"
 
       - name: Audit all dependency advisories (critical only)
         if: always()
