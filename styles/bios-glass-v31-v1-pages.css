@@ -284,3 +284,111 @@ html[data-visual-profile="bios-glass-v31"][data-theme] :is(
     transition: none;
   }
 }
+
+
+/* Généralisation de la charte aux écrans V1 hérités des composants
+   partagés. Cette couche complète PR05 sans reconfigurer leurs workflows. */
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .ticket-workspace, .ticket-wizard, .ticket-reference-list,
+  .admin-console-page, .admin-industrial, .signin-shell,
+  .pending-assignment-page
+) {
+  min-width: 0;
+  color: var(--kit-text);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .ticket-workspace-header, .ticket-wizard-intro, .admin-console-header
+) :is(h1, h2) {
+  font-family: var(--kit-font-display);
+  color: var(--kit-text);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .ticket-reference-list, .ticket-workspace .table-shell,
+  .admin-industrial .filter-panel, .admin-industrial .table-shell,
+  .admin-console-page .admin-console-card
+) {
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid var(--bios-glass-border) !important;
+  border-radius: var(--kit-radius-lg) !important;
+  background: var(--bios-glass-card) !important;
+  box-shadow: var(--bios-glass-inner), var(--bios-glass-shadow);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .ticket-workspace, .admin-industrial, .admin-console-page
+) :is(th, .table-head, .ui-data-table thead) {
+  background: var(--bios-glass-menu);
+  color: var(--kit-text-2);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .ticket-workspace, .admin-industrial
+) :is(td, .field-label) {
+  color: var(--kit-text);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .ticket-workspace, .admin-industrial
+) :is(.field-control, .combobox-trigger, input, select, textarea):focus-visible {
+  outline: 2px solid var(--kit-primary);
+  outline-offset: 2px;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .ticket-workspace, .admin-industrial, .assets-industrial
+) :is(.table-shell, .asset-inventory-scroll, .ui-data-table) {
+  max-width: 100%;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .ticket-workspace, .admin-industrial, .assets-industrial
+) :is(.table-shell, .asset-inventory-scroll) {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .signin-shell,
+html[data-visual-profile="bios-glass-v31"][data-theme] .pending-assignment-page {
+  background: var(--kit-bg) !important;
+  color: var(--kit-text) !important;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .signin-card, .pending-assignment-page [class~="bg-white"]
+) {
+  background: var(--bios-glass-raised) !important;
+  color: var(--kit-text);
+  border: 1px solid var(--bios-glass-border);
+  border-radius: var(--kit-radius-lg);
+  box-shadow: var(--bios-glass-shadow);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .pending-assignment-page :is(
+  h1, h2, p, strong
+) {
+  color: var(--kit-text);
+}
+@supports not ((backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px))) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+    .ticket-reference-list, .ticket-workspace .table-shell,
+    .admin-industrial .filter-panel, .admin-industrial .table-shell,
+    .admin-console-page .admin-console-card
+  ) {
+    background: var(--kit-card) !important;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+    .ticket-reference-list, .ticket-workspace .table-shell,
+    .admin-industrial .filter-panel, .admin-industrial .table-shell,
+    .admin-console-page .admin-console-card
+  ) {
+    background: var(--kit-card) !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+@media (max-width: 640px) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+    .ticket-workspace, .ticket-wizard, .ticket-reference-list,
+    .admin-industrial, .admin-console-page
+  ) {
+    max-width: 100%;
+  }
+}
