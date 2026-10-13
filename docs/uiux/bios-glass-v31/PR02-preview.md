@@ -1,5 +1,8 @@
 # BIOS Glass Corporate v3.1 — PR 02 : Palette et typographies en prévisualisation isolée
 
+> **Actualisation 13/10/2026 :** le présent texte décrit l'ancienne configuration Preview de PR02. Sur demande du propriétaire, BIOS Glass est désormais actif par défaut en Vercel Production via `app/layout.tsx` sauf si `BIOS_GLASS_ENABLED=false` (suivi d'un redéploiement). Le toggle reste réservé à Preview/développement. Les valeurs historiques de `styles/tokens.css` sont conservées pour rollback. Voir [README](./README.md).
+
+
 > **Non activé en production.** PR 02 présente la véritable palette BIOS et les polices Schibsted Grotesk / IBM Plex Mono **uniquement après activation volontaire sur un déploiement Vercel Preview ou en développement**. La V1 en production continue à utiliser les tokens initiaux de `styles/tokens.css`.
 
 Références : [PR 01 — spécification, conflits et recette](./README.md) · [référence HTML autonome](./reference.html).
