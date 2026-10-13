@@ -294,3 +294,52 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-composer .form-ac
     transition: none;
   }
 }
+
+
+/* Validation cross-vues : le Kanban V1 garde ses cinq états et son
+   comportement consultatif, mais ne déborde plus systématiquement à 1365 px. */
+html[data-visual-profile="bios-glass-v31"][data-theme] .agent-kanban {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .agent-kanban-board {
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: stretch;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .agent-kanban-column {
+  min-width: 0;
+  border-color: var(--bios-glass-border);
+  border-radius: var(--kit-radius-lg);
+  background: var(--bios-glass-card);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .agent-kanban-column-header {
+  color: var(--kit-text);
+  background: var(--bios-glass-menu);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .agent-kanban-card {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  background: var(--bios-glass-raised);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .agent-kanban-card:focus-within {
+  outline: 2px solid var(--kit-primary);
+  outline-offset: -2px;
+}
+@media (max-width: 1199px) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] .agent-kanban-board {
+    width: max-content;
+    min-width: max-content;
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(224px, 30vw);
+  }
+}
+@media (max-width: 640px) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] .agent-kanban-board {
+    grid-auto-columns: minmax(220px, 78vw);
+  }
+}
