@@ -6,6 +6,19 @@
 >
 > **Décision explicite du 12/10/2026 :** adoption du HTML BIOS **au plus près**, y compris palette, Schibsted Grotesk, IBM Plex Mono, rayons et glassmorphism. Elle **supplante les anciennes décisions visuelles** `#EA7C29` / IBM Plex Sans *pour la cible future*, sans autoriser une modification brutale de l'application ni des workflows V1.
 
+## Décision actuelle : activation BIOS Glass en production — 13/10/2026
+
+Sur demande explicite du propriétaire, le profil visuel BIOS Glass est désormais activé dans `app/layout.tsx` sur Vercel Production : `VERCEL_ENV=production` et `BIOS_GLASS_ENABLED` différent de `false`. Le mode Preview/dev conserve son toggle de session. Les données métier, règles V1, API et l'ancienne palette `styles/tokens.css` ne sont pas modifiées.
+
+**Retour arrière immédiat après redéploiement :** dans Vercel, définir `BIOS_GLASS_ENABLED=false` pour Production, redéployer. Pour réactiver : supprimer la variable ou utiliser `true`, redéployer. La bascule ne change que l'attribut `data-visual-profile` sur la racine.
+
+**Correctifs transversaux associés :** CTA Nouveau avec couleurs de la variante (plus de bleu hérité), Kanban de cinq colonnes sans minimum fixe de 1248 px sur desktop, intégration des listes Tickets et panneaux d'administration, surfaces de connexion, dialogues et champs cohérents, focus visible et fallback opaque en transparence réduite.
+
+**Validation restante :** CI V1/Full après changement, puis vraie recette visuelle authentifiée à 320/375/390/768/1024/1280/1440 px, clair/sombre, clavier, contrastes calculés (4,5:1 texte normal, 3:1 grand texte) et vérification des parcours V1. Ne pas qualifier « 100 % conforme » sans captures de ces états.
+
+---
+**Les statuts « Preview seulement » ci-dessous décrivent les anciennes étapes PR01–PR06 et ne reflètent plus l'activation courante.**
+
 ## Situation actuelle et règle d'activation (actualisation du 13/10/2026)
 
 | Lot | Présence dans `main` | Visible sur le site de production |
