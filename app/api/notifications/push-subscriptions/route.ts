@@ -3,7 +3,7 @@ import { z } from "zod";
 import { isSameOriginMutation, pushSubscriptionSchema, readBoundedJson } from "@/lib/push-subscription-security";
 import { prisma } from "@/lib/db";
 import { readServerEnvironment } from "@/lib/env";
-import { errorResponse } from "@/lib/http";
+import { errorResponse, httpErrorResponse } from "@/lib/http";
 import { requireProductCapability } from "@/lib/product-policy.server";
 import { requireSessionUserContext } from "@/lib/server-auth";
 
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
   try {
     requireProductCapability("pushNotifications");
     const actor = await requireSessionUserContext();
-    if (!isSameOriginMutation(request)) return NextResponse.json({ error: "Origine refusée." }, { status: 403 });
+    if (!isSameOriginMutation(request)) return httpErrorResponse("Origine refusée.", 403);
     const input = pushSubscriptionSchema.parse(await readBoundedJson(request));
     const subscription = await prisma.pushSubscription.upsert({ where: { endpoint: input.endpoint }, update: { userId: actor.id, p256dh: input.keys.p256dh, auth: input.keys.auth, userAgent: request.headers.get("user-agent") }, create: { userId: actor.id, endpoint: input.endpoint, p256dh: input.keys.p256dh, auth: input.keys.auth, userAgent: request.headers.get("user-agent") } });
     // Never echo P-256 key material, auth secrets or endpoint URLs to the UI.
@@ -33,7 +33,7 @@ export async function DELETE(request: Request) {
   try {
     requireProductCapability("pushNotifications");
     const actor = await requireSessionUserContext();
-    if (!isSameOriginMutation(request)) return NextResponse.json({ error: "Origine refusée." }, { status: 403 });
+    if (!isSameOriginMutation(request)) return httpErrorResponse("Origine refusée.", 403);
     const { endpoint } = z.object({ endpoint: z.url().max(2048) }).strict().parse(await readBoundedJson(request));
     await prisma.pushSubscription.deleteMany({ where: { endpoint, userId: actor.id } });
     return NextResponse.json({ ok: true });
