@@ -1,6 +1,6 @@
 # BIOS Glass Corporate v3.1 — PR 04 : Shell, Dashboard, Inbox et formulaire V1
 
-> **Statut : prévisualisation uniquement**, dans la variante `html[data-visual-profile="bios-glass-v31"]` introduite par PR 02. Cette PR est **empilée sur la PR #95** (PR 03) non encore fusionnée lors de sa création. **Ne pas fusionner dans `main` avant #95** et avant la recette visuelle des deux PR.
+> **État actuel (13/10/2026) :** les fichiers PR04 ont été intégrés à `main` par la [PR #97](https://github.com/larrynoah2603/1TASK-dev/pull/97), fusionnée à **09:00:21 UTC**, après la fusion de PR03 (#95). La PR #96 avait initialement été fusionnée dans une ancienne branche : il ne faut pas la refusionner. **Le rendu reste réservé à la prévisualisation BIOS**, au moyen de `html[data-visual-profile="bios-glass-v31"]` ; aucune activation générale n'a été effectuée en production.
 
 Références : [référence HTML autonome](./reference.html) · [conflits et contrat V1](./README.md) · [PR 02 palette et polices](./PR02-preview.md) · [PR 03 composants partagés](./PR03-components.md).
 
@@ -51,7 +51,7 @@ Références : [référence HTML autonome](./reference.html) · [conflits et con
 - Les formulaires et les panneaux de prévisualisation restent quasi opaques afin que leurs valeurs/erreurs ne disparaissent pas.
 - Certains éléments Dashboard et Inbox proviennent encore du legacy : **un test source seul ne valide pas leur CSS calculé** ; comparer la préversion en utilisant l'opt-in.
 
-## Vérification avant fusion
+## Recette de mise en service visuelle (encore nécessaire après la fusion)
 
 1. CI V1 et Full : tests Vitest dont PR 01–04, lint, TypeScript, Prisma, build. Aucune diminution du nombre de tests métier.
 2. En **Vercel Preview** avec compte de test habilité, cliquer sur `Tester BIOS Glass v3.1`, photographier la version active **et** la version originale, en clair/sombre.
@@ -62,4 +62,4 @@ Références : [référence HTML autonome](./reference.html) · [conflits et con
 
 **Rollback :** désactiver le bouton de prévisualisation BIOS ; cela retire `data-visual-profile` et restaure immédiatement les styles V1. Ne pas déployer de force ce thème en production.
 
-**Dépendance : PR #95 (composants Glass) doit être fusionnée avant cette PR.** PR 05 et lot 07 Full restent en attente.
+**Dépendances satisfaites :** PR03 (#95) est dans `main` ; PR04 et PR05 y ont été apportées ensemble par #97. **Reste à faire :** recette visuelle authentifiée et correctifs PR06 (sans activation automatique de la palette en production). Les fonctionnalités Full du lot 07 restent suspendues.
