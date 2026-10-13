@@ -2,6 +2,7 @@ import { createRequire } from "node:module";
 import { prisma } from "@/lib/db";
 import { readServerEnvironment } from "@/lib/env";
 import { notificationMayBeDelivered } from "@/lib/notification-authorization";
+import { formatPushPresentation } from "@/lib/push-notification-presentation";
 
 const require = createRequire(import.meta.url);
 
@@ -37,10 +38,35 @@ export async function deliverPushNotification(notificationId: string) {
     });
     return { delivered: 0, reason: "NO_ACTIVE_SUBSCRIPTION" as const };
   }
+  // The push remains separate from the in-app notification. Resolve the current
+  // requester only after notificationMayBeDelivered has revalidated access.
+  const ticket = notification.ticketId
+    ? await prisma.ticket.findUnique({
+        where: { id: notification.ticketId },
+        select: {
+          id: true,
+          reference: true,
+          confidential: true,
+          requester: { select: { managedDisplayName: true, name: true } },
+        },
+      })
+    : null;
+  const presentation = formatPushPresentation({
+    type: notification.type,
+    title: notification.title,
+    body: notification.body,
+    actionUrl: notification.actionUrl,
+    ticket: ticket ? {
+      id: ticket.id,
+      reference: ticket.reference,
+      confidential: ticket.confidential,
+      requesterName: ticket.requester.managedDisplayName || ticket.requester.name,
+    } : null,
+  });
   let delivered = 0;
   for (const subscription of notification.recipient.pushSubscriptions) {
     try {
-      await webpush.sendNotification({ endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } }, JSON.stringify({ notificationId: notification.id, title: notification.title, body: notification.body, severity: notification.severity, actionUrl: notification.actionUrl ?? "/notifications" }));
+      await webpush.sendNotification({ endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } }, JSON.stringify({ notificationId: notification.id, title: presentation.title, body: presentation.body, severity: notification.severity, actionUrl: presentation.actionUrl }));
       await prisma.pushSubscription.update({ where: { id: subscription.id }, data: { lastUsedAt: new Date() } });
       delivered += 1;
     } catch (error) {
