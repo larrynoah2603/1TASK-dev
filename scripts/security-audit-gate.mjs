@@ -9,7 +9,8 @@
  * Deadline: 2026-10-27 inclusive. Remove the exception after remediation.
  */
 import { readFileSync, appendFileSync } from "node:fs";
-import { resolve, pathToFileURL } from "node:url";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 export const EXPIRES_AT = "2026-10-28T00:00:00.000Z";
 
