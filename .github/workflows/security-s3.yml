@@ -34,7 +34,9 @@ jobs:
         run: node scripts/security-secret-scan.mjs
 
       - name: Audit production dependency advisories (high and critical)
+        if: always()
         run: npm audit --package-lock-only --omit=dev --audit-level=high --no-fund
 
-      - name: Audit development dependency advisories (critical only)
+      - name: Audit all dependency advisories (critical only)
+        if: always()
         run: npm audit --package-lock-only --audit-level=critical --no-fund
