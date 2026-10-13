@@ -16,6 +16,15 @@
 4. `scripts/security-secret-scan.mjs` : scanner léger de **motifs de secrets à forte confiance**, uniquement dans les fichiers texte suivis par Git ; en cas de détection, n'écrit jamais la valeur, seulement le chemin, la ligne et la catégorie. Les grands fichiers et extensions binaires sont ignorés et signalés. Tests synthétiques `tests/security-s3-secret-scan.test.ts`.
 5. `.github/workflows/security-s3.yml` : audit automatique des vulnérabilités du lockfile via `npm audit`, priorité élevée/critique pour les dépendances de production et critique pour les outils de développement, plus scan des secrets à chaque PR, push `main` et lancement manuel. Ces contrôles sont **supplémentaires**, sans désactiver la CI V1/Full existante.
 
+## Résultat du premier scan automatisé — vulnérabilités réelles
+
+- Le scanner de secrets S3 a analysé **715 chemins suivis par Git sans détection confirmée** après correction de faux positifs sur des noms `1task-...`. Ce scanner ne détecte pas tous les secrets et **n'inspecte pas l'historique**.
+- `npm audit --package-lock-only --omit=dev --audit-level=high` a relevé **4 avis élevés au total dans les chaînes npm** : `deepmerge-ts@7.1.5` via `@prisma/config@6.19.3` / `prisma@6.19.3` et `source-map-js@1.2.1` via la chaîne PostCSS. Le décompte npm comprend les dépendances parentes vulnérables en cascade ; ne pas annoncer quatre exploits indépendants.
+- Avis `deepmerge-ts` : [GHSA-ggr8-5vv4-36mx](https://github.com/advisories/GHSA-ggr8-5vv4-36mx), affecte les versions <8.0.0 et concerne une récursion incontrôlée avec graphes cycliques. L'exposition dans la configuration Prisma peut être distincte d'une requête HTTP : **ne pas prétendre à une exploitabilité distante démontrée**.
+- Avis `source-map-js` : [GHSA-68fv-2mgg-jv7q](https://github.com/advisories/GHSA-68fv-2mgg-jv7q), affecte les versions <1.2.2 et peut bloquer le traitement de source maps spécialement forgées. La version 1.2.2 est corrigée.
+- **Remédiation :** mettre `source-map-js` à 1.2.2 dans le lockfile via une installation contrôlée ; étudier `deepmerge-ts` 8.0.0 en surdéfinition ciblée ou une version Prisma compatible, en exécutant migrations, générateur Prisma, CI V1/Full et parcours Entra. **Ne pas exécuter `npm audit fix --force`**, qui propose un downgrade potentiellement incompatible de Prisma.
+- **Gate non satisfaite :** le workflow Security S3 doit rester rouge tant que le lockfile contient des vulnérabilités HIGH non traitées. Il ne suffit pas d'éteindre `npm audit`. Les outils de développement sont aussi audités pour les failles critiques dans une étape indépendante.
+
 ## Limites, accès nécessaires et prochaines actions
 
 - **Le scanner local ne parcourt pas l'historique Git, les secrets Vercel, les logs, l'historique des PR ni les identifiants Microsoft**. Activer **GitHub Secret Scanning avec push protection** et vérifier son activation dans les paramètres du dépôt ; le connecteur GitHub actuel ne donne pas accès aux alertes privées Dependabot, code scanning et secret scanning. Ne pas supposer qu'elles sont vides.
