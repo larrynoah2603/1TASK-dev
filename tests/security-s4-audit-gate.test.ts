@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+// The runtime gate is a dependency-free Node ESM CLI; its JS implementation
+// is deliberately not included in TypeScript compilation.
+// @ts-ignore -- Node-only .mjs module without TS declaration.
 import { assessAudit, EXPIRES_AT } from "@/scripts/security-audit-gate.mjs";
 import { readFileSync } from "node:fs";
 
@@ -66,7 +69,7 @@ describe("Security S4 — npm audit temporary allowlist", () => {
   it("ne tolère pas le remplacement des versions lockées par d'autres versions vulnérables", () => {
     const changed = structuredClone(lock);
     changed.packages["node_modules/deepmerge-ts"].version = "7.1.4";
-    expect(assessAudit(known, changed, BEFORE_EXPIRY).blocked.some(x => x.name === "deepmerge-ts")).toBe(true);
+    expect(assessAudit(known, changed, BEFORE_EXPIRY).blocked.some((x: { name: string }) => x.name === "deepmerge-ts")).toBe(true);
   });
 
   it("expire impérativement le 28 octobre 2026 à 00:00 UTC", () => {
