@@ -1,5 +1,8 @@
 # PR06 — BIOS Glass v3.1 : finition ciblée, fallbacks et accès au contrôle visuel
 
+> **Actualisation 13/10/2026 :** PR06 (#99) a été fusionnée dans `main`. La production peut maintenant utiliser la variante BIOS, sur décision explicite du propriétaire, grâce à `data-visual-profile` dans `app/layout.tsx`. Retour arrière par `BIOS_GLASS_ENABLED=false` et redéploiement. Ce document conserve l'historique de PR06 ; voir [README](./README.md) pour l'état courant.
+
+
 **Statut : proposition pour review ; opt-in Preview/dev uniquement.** PR06 vient **après** PR01 à PR05, toutes intégrées dans `main` grâce à la fusion de PR #97 pour les lots PR04/PR05. **Aucune activation de BIOS Glass par défaut en production.** Référence : [README](./README.md) · [PR04](./PR04-shell-v1.md) · [PR05](./PR05-v1-pages.md).
 
 ## Diagnostic vérifié dans le code
