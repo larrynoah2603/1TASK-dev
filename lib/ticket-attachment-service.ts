@@ -13,6 +13,7 @@ import {
 } from "@/lib/server-auth";
 import { canPostInternalMessage } from "@/lib/domain";
 import { privateObjectStorage } from "@/lib/private-object-storage";
+import { hasMatchingAttachmentSignature } from "@/lib/attachment-signatures";
 import { delegationAllowsAction } from "@/lib/access-control";
 import { requireProductCapability } from "@/lib/product-policy.server";
 
@@ -65,6 +66,9 @@ export async function uploadTicketAttachment(
   const storageKey = `${ticketId}/${randomUUID()}`;
   const content = Buffer.from(await input.arrayBuffer());
   if (content.length !== input.size) throw new DomainError("La taille réelle de la pièce jointe est invalide.", 422);
+  if (!hasMatchingAttachmentSignature(content, input.type)) {
+    throw new DomainError("Le contenu de la pièce jointe ne correspond pas à son type.", 422);
+  }
   const storage = privateObjectStorage();
   await storage.put(storageKey, content, input.type);
   try {

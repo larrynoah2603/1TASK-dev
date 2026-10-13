@@ -9,7 +9,11 @@ const SAFE_TRACE_ID = /^[a-zA-Z0-9._:-]{8,128}$/;
 const TRACEPARENT = /^[\da-f]{2}-([\da-f]{32})-[\da-f]{16}-[\da-f]{2}$/i;
 
 export function sanitizeTelemetry(value: unknown, key = "", depth = 0): unknown {
-  if (/password|token|secret|authorization|cookie|session/i.test(key)) return "[REDACTED]";
+  // Event names, trace ids and timing are useful; identities, personal data,
+  // private media URLs, free-text descriptions and credentials are not.
+  if (/password|token|secret|authorization|cookie|session|email|phone|ipaddress|filename|filepath|photo|avatar|tickettitle|requestername|recipientname|messagebody|description|endpoint/i.test(key)) {
+    return "[REDACTED]";
+  }
   if (depth > 5) return "[TRUNCATED]";
   if (Array.isArray(value)) return value.slice(0, 50).map((item) => sanitizeTelemetry(item, key, depth + 1));
   if (value && typeof value === "object") {
