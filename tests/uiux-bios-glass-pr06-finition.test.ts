@@ -9,7 +9,7 @@ const pages = read("styles/bios-glass-v31-v1-pages.css");
 const globals = read("app/globals.css");
 const active = /^html\[data-visual-profile="bios-glass-v31"\]/;
 
-describe("BIOS Glass v3.1 — PR06 : finition ciblée, sans activation en production", () => {
+describe("BIOS Glass v3.1 — PR06 : finition ciblée, compatible avec activation contrôlée en production", () => {
   it("conserve les feuilles CSS valides et entièrement limitées au profil opt-in", () => {
     for (const [path, css] of [
       ["styles/bios-glass-v31-shell-v1.css", shell],
