@@ -1,0 +1,279 @@
+/* PR 04/06 — BIOS Glass Corporate : shell et premières pages V1.
+   Cette couche ne s'applique QU'avec l'opt-in PR02 (Vercel Preview/dev).
+   Les règles métiers, l'arborescence et les composants React sont inchangés.
+   Les exceptions !important ci-dessous battent UNIQUEMENT les surfaces
+   ciblées que styles/legacy-bridge.css force encore en fond opaque. */
+
+html[data-visual-profile="bios-glass-v31"] {
+  --kit-sidebar-w: 240px;
+  --kit-sidebar-w-collapsed: 64px;
+  --kit-topbar-h: 56px;
+  --kit-content-max: 1360px;
+  --bios-page-gap: 18px;
+  --bios-page-gutter: 32px;
+}
+
+/* Shell : même navigation/routes, seule la peau change. */
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-app {
+  background:
+    radial-gradient(circle at 94% 5%, color-mix(in srgb, var(--kit-brand) 8%, transparent), transparent 36%),
+    radial-gradient(circle at 8% 96%, color-mix(in srgb, var(--kit-success) 6%, transparent), transparent 40%),
+    var(--kit-bg);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-sidebar {
+  background: var(--bios-glass-menu);
+  border-color: var(--kit-border);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-sidebar-brand {
+  border-color: var(--kit-border);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-brand-mark {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--kit-radius-xl);
+  background: var(--kit-brand);
+  color: var(--kit-on-brand);
+  font-family: var(--kit-font-display);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-brand-name {
+  font-family: var(--kit-font-display);
+  font-weight: 700;
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-nav-item {
+  min-height: 40px;
+  height: auto;
+  border-radius: var(--kit-radius-md);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-nav-item[aria-current="page"] {
+  background: var(--kit-text);
+  color: var(--kit-bg);
+  font-weight: 600;
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-nav-item[aria-current="page"] :is(.kit-nav-icon, .kit-nav-text) {
+  color: inherit;
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-nav-item[aria-current="page"]::before {
+  background: var(--kit-brand);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-nav-item:focus-visible,
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-sidebar-toggle:focus-visible {
+  outline: 2px solid var(--kit-primary);
+  outline-offset: 2px;
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-topbar {
+  background: var(--bios-glass-menu);
+  border-color: var(--kit-border);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-main {
+  min-width: 0;
+  padding: var(--bios-page-gutter);
+}
+
+/* Dashboard : contexte > indicateurs compacts > tâches récentes.
+   Les tailles et chiffres réels restent pilotés par les composants existants. */
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .dashboard-page, .dashboard-reference-page
+) {
+  min-width: 0;
+  gap: var(--bios-page-gap);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .dashboard-reference-header h1,
+  .dashboard-modern-header h1,
+  .inbox-modern-header h1,
+  .page-header h1
+) {
+  font-family: var(--kit-font-display);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--kit-text);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .dashboard-kpi-card,
+  .dashboard-widget,
+  .dashboard-reference-card,
+  .dashboard-enterprise-card,
+  .dashboard-modern-kpi
+) {
+  min-width: 0;
+  border: 1px solid var(--bios-glass-border) !important;
+  border-radius: var(--kit-radius-lg) !important;
+  background: var(--bios-glass-card) !important;
+  box-shadow: var(--bios-glass-inner), var(--bios-glass-shadow) !important;
+  -webkit-backdrop-filter: var(--bios-glass-backdrop);
+  backdrop-filter: var(--bios-glass-backdrop);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .dashboard-kpi-card strong, .dashboard-kpi-value,
+  .dashboard-modern-kpi > strong
+) {
+  font-family: var(--kit-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] .dashboard-kpi-card:hover {
+  border-color: var(--kit-border-strong) !important;
+  box-shadow: var(--bios-glass-inner), var(--bios-glass-shadow) !important;
+}
+
+/* Inbox : garde UNE barre de filtres et l'aperçu inline existants.
+   Pas de changement à la grille principale ni aux rails SLA. */
+html[data-visual-profile="bios-glass-v31"][data-theme] .inbox-operations-industrial {
+  min-width: 0;
+  gap: var(--bios-page-gap);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .inbox-workbench,
+  .inbox-command-surface,
+  .inbox-filter-panel,
+  .inbox-operations-industrial .agent-workspace-rail > section
+) {
+  min-width: 0;
+  border: 1px solid var(--bios-glass-border);
+  border-radius: var(--kit-radius-lg);
+  background: var(--bios-glass-card);
+  -webkit-backdrop-filter: var(--bios-glass-backdrop);
+  backdrop-filter: var(--bios-glass-backdrop);
+  box-shadow: var(--bios-glass-inner), var(--bios-glass-shadow);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .inbox-scope-tabs .is-active,
+  .inbox-layout-switcher .is-active
+) {
+  color: var(--kit-selected-text);
+  border-color: var(--kit-primary);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .inbox-search-box input, .inbox-filter-trigger
+) {
+  border-radius: var(--kit-radius-md);
+  color: var(--kit-text);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .inbox-search-box input, .inbox-filter-trigger,
+  .inbox-scope-tabs a, .inbox-layout-switcher button
+):focus-visible {
+  outline: 2px solid var(--kit-primary);
+  outline-offset: 2px;
+}
+
+/* Formulaire V1 : label > saisie > explication, sans toucher au routage,
+   au workflow en 2 étapes ni au lanceur modal de la topbar. */
+html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-composer {
+  min-width: 0;
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-composer :is(
+  .route-panel, .preview-panel
+) {
+  min-width: 0;
+  border: 1px solid var(--bios-glass-border) !important;
+  border-radius: var(--kit-radius-lg) !important;
+  background: var(--bios-glass-raised) !important;
+  color: var(--kit-text);
+  box-shadow: var(--bios-glass-inner), var(--bios-glass-shadow);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-composer .ticket-form-step-marker {
+  background: var(--kit-primary);
+  color: var(--kit-on-primary);
+  border-radius: var(--kit-radius-md);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-composer .field-control {
+  min-height: 40px;
+  border-radius: var(--kit-radius-md);
+  background: var(--bios-glass-raised);
+  color: var(--kit-text);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-composer .field-control:focus-visible {
+  border-color: var(--kit-primary);
+  outline: 2px solid var(--kit-primary);
+  outline-offset: 2px;
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-composer .form-actions {
+  background: var(--bios-glass-raised);
+  border-color: var(--kit-border);
+}
+
+/* Accessibilité et performance du flou : ne jamais rendre un formulaire
+   transparent si le support CSS est absent ou l'utilisateur le refuse. */
+@supports not ((backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px))) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+    .kit-sidebar, .kit-topbar,
+    .dashboard-kpi-card, .dashboard-widget, .dashboard-reference-card,
+    .dashboard-enterprise-card, .dashboard-modern-kpi,
+    .inbox-workbench, .inbox-command-surface, .inbox-filter-panel
+  ) {
+    background: var(--kit-card) !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+    .kit-sidebar, .kit-topbar,
+    .dashboard-kpi-card, .dashboard-widget, .dashboard-reference-card,
+    .dashboard-enterprise-card, .dashboard-modern-kpi,
+    .inbox-workbench, .inbox-command-surface, .inbox-filter-panel
+  ) {
+    background: var(--kit-card) !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (max-width: 1023px) {
+  /* Sidebar reste off-canvas selon le CSS V1 existant ; aucun rail ajouté. */
+  html[data-visual-profile="bios-glass-v31"][data-theme] .kit-main {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 640px) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] .kit-main {
+    padding: 16px 16px calc(72px + env(safe-area-inset-bottom));
+  }
+  html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+    .dashboard-kpi-card, .dashboard-widget, .dashboard-modern-kpi,
+    .inbox-workbench, .inbox-command-surface, .ticket-composer
+  ) {
+    min-width: 0;
+    max-width: 100%;
+  }
+  html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-composer .form-actions {
+    min-width: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+    .kit-nav-item, .kit-sidebar, .kit-topbar
+  ) {
+    transition: none;
+  }
+}
