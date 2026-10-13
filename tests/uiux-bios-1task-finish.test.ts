@@ -31,7 +31,8 @@ describe("BIOS / 1TASK — finition visuelle transversale, sans régression V1",
     expect(tokens).toContain("--kit-primary: #C4510D;");
     expect(tokens).toContain("--kit-bg: #F8F9FB;");
     expect(tokens).toContain("--kit-font: var(--font-ibm-plex-sans)");
-    expect(layout).toContain("IBM_Plex_Sans");
+    expect(layout).toContain('@fontsource-variable/ibm-plex-sans/wght.css');
+    expect(read("app/globals.css")).toContain('--font-ibm-plex-sans: "IBM Plex Sans Variable";');
     expect(read("styles/bios-1task-finish.css")).not.toMatch(/#[0-9a-f]{3,8}\b/i);
   });
 
