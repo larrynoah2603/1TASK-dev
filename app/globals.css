@@ -29,6 +29,8 @@
 @import "../styles/bios-glass-v31-components.css";
 /* PR 04 : Shell + Dashboard / Inbox / ticket, esthétique opt-in exclusivement. */
 @import "../styles/bios-glass-v31-shell-v1.css";
+/* PR 05 : généralisation BIOS Glass aux vues V1 restantes, toujours opt-in. */
+@import "../styles/bios-glass-v31-v1-pages.css";
 
 /* Compatibility-only contract catalogue. The active palette remains the
    original token palette imported above; these declarations never render. */

@@ -1,0 +1,277 @@
+/* PR 05/06 — BIOS Glass Corporate v3.1 : autres vues V1.
+   Opt-in exclusif de PR02. PR03/04 gardent la définition du Glass et du shell.
+   Aucun composant métier, routage, rôle, filtre ou navigation n'est modifié.
+   Important ciblé contre le bridge legacy qui rend certaines cartes opaques. */
+
+/* En-têtes communs : hiérarchie visuelle BIOS, sans seconde action primaire. */
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .ticket-detail-industrial, .queues-industrial, .admin-industrial,
+  .assets-industrial, .asset-review-page, .asset-self-service-page,
+  .reporting-industrial, .admin-reporting-industrial, .notification-industrial,
+  .profile-industrial
+) :is(.page-header h1, .saas-page-header h1, .admin-page-header h1, .reporting-page-header h1) {
+  color: var(--kit-text);
+  font-family: var(--kit-font-display);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .ticket-detail-industrial, .queues-industrial, .admin-industrial,
+  .assets-industrial, .reporting-industrial, .notification-industrial,
+  .profile-industrial
+) {
+  min-width: 0;
+}
+
+/* Surfaces de lecture et de synthèse : Glass 62% de la PR03.
+   Les fonds forcés du bridge sont surchargés uniquement pour ces vues. */
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .ticket-detail-industrial, .queues-industrial, .admin-industrial,
+  .assets-industrial, .asset-review-page, .asset-self-service-page,
+  .reporting-industrial, .admin-reporting-industrial, .notification-industrial,
+  .profile-industrial
+) :is(
+  .panel, .metric-card, .table-shell, .kit-panel, .kit-ticket-head,
+  .admin-stat, .admin-console-card, .admin-user-card, .admin-role-card,
+  .admin-config-section, .asset-review-card, .personal-asset-card,
+  .reporting-card, .reporting-chart-card, .notification-history-panel
+) {
+  min-width: 0;
+  border: 1px solid var(--bios-glass-border) !important;
+  border-radius: var(--kit-radius-lg) !important;
+  background: var(--bios-glass-card) !important;
+  box-shadow: var(--bios-glass-inner), var(--bios-glass-shadow) !important;
+  -webkit-backdrop-filter: var(--bios-glass-backdrop);
+  backdrop-filter: var(--bios-glass-backdrop);
+}
+
+/* Ticket : conserver le rail de traitement, la discussion et les actions. */
+html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-detail-industrial :is(
+  .ticket-treatment-section, .ticket-detail-main, .ticket-history-pane,
+  .ticket-advanced-tools, .ticket-operational-summary, .ticket-need-panel
+) {
+  min-width: 0;
+  border-radius: var(--kit-radius-lg);
+  background: var(--bios-glass-card);
+  border-color: var(--bios-glass-border);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-detail-industrial .kit-ticket-title {
+  font-family: var(--kit-font-display);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-detail-industrial :is(
+  .kit-ref, .ticket-section-count
+) {
+  font-family: var(--kit-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-detail-industrial :is(
+  .ticket-attention-banner, .kit-need, .ticket-production-summary
+) {
+  border-radius: var(--kit-radius-md);
+}
+
+/* Responsable de file : indicateurs modérés et chiffres alignés. */
+html[data-visual-profile="bios-glass-v31"][data-theme] .queues-industrial :is(
+  .queue-card, .queue-stat
+) {
+  min-width: 0;
+  border-radius: var(--kit-radius-lg);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .queues-industrial .queue-stat {
+  background: var(--bios-glass-raised);
+  border-color: var(--kit-border);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .queues-industrial .queue-stat p:last-child {
+  font-family: var(--kit-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Admin et rôles : cartes transparentes, mais champs et confirmations opaques. */
+html[data-visual-profile="bios-glass-v31"][data-theme] .admin-industrial :is(
+  .admin-stat-value, .admin-console-kpis strong
+) {
+  font-family: var(--kit-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .admin-industrial :is(
+  .admin-permission-matrix, .admin-config-section form,
+  .admin-form-feedback, .admin-notice, .admin-permission-table
+) {
+  border-radius: var(--kit-radius-md);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .admin-industrial :is(
+  .admin-config-section .field-control, .admin-permission-matrix,
+  .admin-form-feedback
+) {
+  background: var(--bios-glass-raised);
+  color: var(--kit-text);
+}
+
+/* Actifs : inventaire, demandes et détail. Pas de modification des tableaux
+   mobiles et de leurs libellés data-label, définis par asset-workspace.css. */
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .assets-industrial, .asset-review-page, .asset-self-service-page
+) :is(.asset-filter-panel, .asset-inventory-panel, .asset-review-card) {
+  min-width: 0;
+  border-radius: var(--kit-radius-lg);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .assets-industrial :is(
+  .asset-summary-grid .metric-card p:nth-child(2),
+  .asset-detail-highlights .metric-card p:nth-child(2),
+  .asset-inventory-count
+) {
+  font-family: var(--kit-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .assets-industrial :is(
+  .asset-filter-panel .field-control, .asset-create-modal,
+  .asset-inventory-table tbody tr
+) {
+  background: var(--bios-glass-raised);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .assets-industrial, .asset-review-page
+) :is(.asset-inventory-scroll, .table-responsive):focus-visible {
+  outline: 2px solid var(--kit-primary);
+  outline-offset: -2px;
+}
+
+/* Reporting : même filtre de période serveur et droits d'export,
+   seule l'enveloppe du rapport change. */
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .reporting-industrial, .admin-reporting-industrial
+) :is(.reporting-dashboard, .reporting-chart-card, .reporting-kpi-grid) {
+  min-width: 0;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .reporting-industrial, .admin-reporting-industrial
+) :is(.reporting-filter-client, .reporting-chart-frame) {
+  border-radius: var(--kit-radius-md);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .reporting-industrial, .admin-reporting-industrial
+) .reporting-filter-client select {
+  background: var(--bios-glass-raised);
+  color: var(--kit-text);
+  border-radius: var(--kit-radius-md);
+}
+
+/* Notifications : une surface groupée lisible, statut non lu préservé.
+   Pas de remplacement des compteurs, chargement, push ou pagination. */
+html[data-visual-profile="bios-glass-v31"][data-theme] .notification-industrial :is(
+  .notification-history-header, .notification-history-panel
+) {
+  border: 1px solid var(--bios-glass-border);
+  border-radius: var(--kit-radius-lg);
+  background: var(--bios-glass-card);
+  -webkit-backdrop-filter: var(--bios-glass-backdrop);
+  backdrop-filter: var(--bios-glass-backdrop);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .notification-industrial .notification-history-heading h1 {
+  font-family: var(--kit-font-display);
+  font-size: 24px;
+  font-weight: 700;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .notification-industrial .notification-history-group-title {
+  color: var(--kit-text-2);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .notification-industrial .notification-history-item.is-unread {
+  background: var(--kit-selected);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .notification-industrial .notification-history-filters :is(button, a):focus-visible {
+  outline: 2px solid var(--kit-primary);
+  outline-offset: 2px;
+}
+
+/* Profil : informations longues, rôles multiples et image non rognés. */
+html[data-visual-profile="bios-glass-v31"][data-theme] .profile-industrial :is(dd, .panel p) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .profile-industrial .panel > div:first-child {
+  border-color: var(--kit-border);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .profile-industrial :is(.panel, .admin-notice) {
+  border-radius: var(--kit-radius-lg);
+}
+
+/* Modales, feedback et surfaces d'édition doivent rester opaques
+   même au-dessus des halos Glass. */
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .admin-industrial, .assets-industrial, .ticket-detail-industrial
+) :is(.modal-panel, .confirm-dialog, .asset-create-modal, .combobox-listbox) {
+  background: var(--bios-glass-raised) !important;
+  border-radius: var(--kit-radius-xl) !important;
+  -webkit-backdrop-filter: var(--bios-glass-backdrop);
+  backdrop-filter: var(--bios-glass-backdrop);
+}
+
+/* Fallback si le flou n'est pas pris en charge / refus de transparence :
+   toujours une surface opaque lisible, sans modifier la mise en page. */
+@supports not ((backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px))) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+    .ticket-detail-industrial, .queues-industrial, .admin-industrial,
+    .assets-industrial, .asset-review-page, .asset-self-service-page,
+    .reporting-industrial, .admin-reporting-industrial, .notification-industrial,
+    .profile-industrial
+  ) :is(.panel, .metric-card, .table-shell, .kit-panel, .kit-ticket-head,
+    .admin-stat, .admin-console-card, .admin-user-card, .admin-role-card,
+    .admin-config-section, .asset-review-card, .personal-asset-card,
+    .reporting-card, .reporting-chart-card, .notification-history-panel) {
+    background: var(--kit-card) !important;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+    .ticket-detail-industrial, .queues-industrial, .admin-industrial,
+    .assets-industrial, .asset-review-page, .asset-self-service-page,
+    .reporting-industrial, .admin-reporting-industrial, .notification-industrial,
+    .profile-industrial
+  ) :is(.panel, .metric-card, .table-shell, .kit-panel, .kit-ticket-head,
+    .admin-stat, .admin-console-card, .admin-user-card, .admin-role-card,
+    .admin-config-section, .asset-review-card, .personal-asset-card,
+    .reporting-card, .reporting-chart-card, .notification-history-panel) {
+    background: var(--kit-card) !important;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  html[data-visual-profile="bios-glass-v31"][data-theme] .notification-industrial :is(
+    .notification-history-header, .notification-history-panel
+  ) {
+    background: var(--kit-card);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+@media (max-width: 768px) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+    .ticket-detail-industrial, .queues-industrial, .admin-industrial,
+    .assets-industrial, .asset-review-page, .asset-self-service-page,
+    .reporting-industrial, .admin-reporting-industrial, .notification-industrial,
+    .profile-industrial
+  ) :is(.panel, .metric-card, .reporting-card) {
+    max-width: 100%;
+  }
+}
+@media (max-width: 390px) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+    .queues-industrial, .admin-industrial, .assets-industrial,
+    .notification-industrial, .profile-industrial
+  ) {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+    .notification-history-item, .queue-card, .asset-inventory-row
+  ) {
+    transition: none;
+  }
+}
