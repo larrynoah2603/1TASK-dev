@@ -94,8 +94,7 @@ export type AccessTicket = {
   serviceCatalogItem?: { code?: string | null; category?: string | null } | null;
 };
 
-export function accessTarget(ticket: AccessTicket) {
-  const now = new Date();
+export function accessTarget(ticket: AccessTicket, now = new Date()) {
   const assignedTo = ticket.assignedTo as {
     teamMemberships?: { teamId: string; isActive: boolean; team: { isActive: boolean } }[];
   } | null | undefined;
