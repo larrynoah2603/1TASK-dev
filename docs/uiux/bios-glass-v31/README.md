@@ -1,10 +1,30 @@
 # 1TASK — BIOS Glass Corporate v3.1 | PR 01 — Référence et garde-fous
 
-> **Statut : spécification préparatoire uniquement.** Le fichier [reference.html](./reference.html) est une maquette HTML autonome et fictive : **pas** une route de 1TASK, pas une capture de production, pas un écran fonctionnel. Les données de démonstration ne sont pas issues du système.
+> **Statut au 13/10/2026 :** la référence HTML demeure une maquette autonome fictive, **mais les couches BIOS Glass PR02, PR03, PR04 et PR05 sont désormais intégrées dans `main`**. Les couches PR04 et PR05 ont été rattrapées ensemble par [PR #97](https://github.com/larrynoah2603/1TASK-dev/pull/97), fusionnée le **13/10/2026 à 09:00:21 UTC** (commit `a9687aa86a7b5e2c77ec110dc3b49f2e460e255e`). Elles sont **inactives par défaut en production**. Le fichier [reference.html](./reference.html) n'est toujours ni une route applicative ni une capture de production. Les données de démonstration sont fictives.
 >
 > Références : `01_BIOS_UIUX_References_Chat.md`, `03_UIUX_Pro_Max_SKILL_et_checklists (1).md` et **BIOS Design Guide — Glass Corporate v3.1 (octobre 2026)** fournis au projet. Le ZIP Claude est documentaire, pas une compétence exécutée.
 >
 > **Décision explicite du 12/10/2026 :** adoption du HTML BIOS **au plus près**, y compris palette, Schibsted Grotesk, IBM Plex Mono, rayons et glassmorphism. Elle **supplante les anciennes décisions visuelles** `#EA7C29` / IBM Plex Sans *pour la cible future*, sans autoriser une modification brutale de l'application ni des workflows V1.
+
+## Situation actuelle et règle d'activation (actualisation du 13/10/2026)
+
+| Lot | Présence dans `main` | Visible sur le site de production |
+|---|---|---|
+| PR01 (#93) | Référence HTML et contrats V1 intégrés | Sans effet visuel applicatif |
+| PR02 (#94) | Palette BIOS et polices de la variante intégrées | Non, profil BIOS désactivé |
+| PR03 (#95) | Composants, rayons et Glass intégrés | Non, profil BIOS désactivé |
+| PR04 (#96) | Styles shell, Dashboard, Inbox et création intégrés via #97 | Non, profil BIOS désactivé |
+| PR05 (#98) | Styles des autres pages V1 intégrés via #97 | Non, profil BIOS désactivé |
+| PR06 (à préparer) | Finition / nettoyage ciblé et recette à définir | **Aucune activation automatique promise** |
+
+- Le site 1TASK en production utilise encore la palette définie par `styles/tokens.css` : marque `#EA7C29`, action `#C4510D`, fond `#F8F9FB`. Cela explique pourquoi une fusion réussie de #97 ne provoque aucune différence visuelle immédiate.
+- Le rendu BIOS est conditionné par `html[data-visual-profile="bios-glass-v31"]`. Le bouton `Tester BIOS Glass v3.1` est monté uniquement si `VERCEL_ENV === "preview"` ou `NODE_ENV === "development"` ; il est absent sur Vercel Production.
+- **Essai du nouveau design :** ouvrir un déploiement `Preview` de la version incluant #97, se connecter avec un compte de test, appuyer sur `Tester BIOS Glass v3.1` en bas à droite, puis comparer les modes clair/sombre et les écrans. Pour revenir au style habituel : `BIOS Glass · Actif — Revenir à 1TASK`.
+- Les tests V1 et Full sur le dernier commit de #97 étaient verts au moment de la fusion (660 tests Full). Cela ne prouve pas le rendu authentifié sur tous les écrans, ni le contraste calculé, la performance du flou ou les parcours de notification.
+- **PR06 :** prévue pour la recette visuelle, les correctifs de lisibilité et responsive, et le nettoyage CSS sélectif prouvé. L'activation générale de BIOS en production exige **une décision explicite séparée après validation**, via un mécanisme maîtrisé et réversible, sans modifier les workflows V1 ni la navigation principale. PR06 ne doit pas basculer la production silencieusement.
+- Invariants : **un seul bouton Nouveau** dans la navbar existante, une seule zone de filtres Inbox, rail SLA adaptable, aperçu ticket `colSpan={7}`, Claim visible, rôles cumulables, confidentialité et push/outbox conservés.
+
+Les notes ci-dessous décrivent l'intention **historique de la PR01 lors de sa création**. Pour l'état intégré après #97, se référer à cette section et aux documents [PR04](./PR04-shell-v1.md) et [PR05](./PR05-v1-pages.md).
 
 ## 1. Périmètre exact de cette PR
 
