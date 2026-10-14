@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 
 /** Ferme un popover au clic extérieur et à la touche Échap (logique auparavant dupliquée dans 3 menus). */
 export function useDismissable<T extends HTMLElement>(open: boolean, onClose: () => void) {
@@ -47,7 +47,7 @@ export function Dropdown({
   const panelId = useId();
   const ref = useDismissable<HTMLDivElement>(open, close);
 
-  const handlePanelKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
+  const handlePanelKeyDown = useCallback((event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (event.key !== "Escape") return;
     event.preventDefault();
     event.stopPropagation();
