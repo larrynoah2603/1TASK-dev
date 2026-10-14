@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>UI-05 - scénario purement synthétique</title>
+  <style>
+    html, body { margin: 0; color-scheme: light; background: #ffffff; color: #14201d; font-family: sans-serif; }
+    main { padding: 20px; }
+    .low-contrast { color: #888888; font-size: 16px; }
+    .overflow { width: 900px; height: 18px; background: #ddd; }
+    button { padding: 12px 18px; background: #eeeeee; color: #14201d; border: 1px solid #555; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Page fictive pour tester le collecteur</h1>
+    <p class="low-contrast">Texte volontairement sous le seuil WCAG</p>
+    <button type="button">Action fictive</button>
+    <div class="overflow" aria-hidden="true"></div>
+  </main>
+</body>
+</html>
