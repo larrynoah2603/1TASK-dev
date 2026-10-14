@@ -280,3 +280,87 @@ html[data-visual-profile="bios-glass-v31"][data-theme] :is(
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
+
+
+/* UI-02 — unification des primitives de lecture héritées. Les conteneurs
+   existants restent montés : aucun changement de table, pagination ou
+   interaction. Uniquement le profil BIOS, jamais le thème 1TASK de repli. */
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .ui-data-table,
+  .table-shell
+) {
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid var(--bios-glass-border);
+  border-radius: var(--kit-radius-lg);
+  background: var(--bios-glass-card);
+  box-shadow: var(--bios-glass-inner), var(--bios-glass-shadow);
+  color: var(--kit-text);
+}
+
+/* Keep horizontal scrolling inside data tables rather than the page. */
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .ui-data-table-scroll,
+  .table-shell
+) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+/* Harmonise 44px-ish rows across table implementations without overriding
+   business column widths, responsive data labels or numeric alignment. */
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .ui-data-table table,
+  .table-shell table
+) {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--kit-text);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .ui-data-table th,
+  .table-shell th
+) {
+  padding: 11px 14px;
+  line-height: 22px;
+  color: var(--kit-text-2);
+  background: var(--bios-glass-menu);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .ui-data-table td,
+  .table-shell td
+) {
+  padding: 11px 14px;
+  line-height: 22px;
+  color: var(--kit-text);
+  border-color: var(--kit-border);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .ui-data-table tbody tr,
+  .table-shell tbody tr
+):hover {
+  background: var(--kit-hover);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .ui-data-table-scroll, .table-shell, .ui-data-table-sort,
+  .ui-pagination button, .button-ghost, .button-danger
+):focus-visible {
+  outline: 2px solid var(--kit-primary);
+  outline-offset: 2px;
+}
+
+/* For assistive/low-transparency modes reading surfaces become opaque. */
+@supports not ((backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px))) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] :is(.ui-data-table, .table-shell) {
+    background: var(--kit-card);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] :is(.ui-data-table, .table-shell) {
+    background: var(--kit-card);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
