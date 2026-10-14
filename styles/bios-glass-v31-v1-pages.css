@@ -468,6 +468,9 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .notification-industrial 
 ) {
   overflow-wrap: anywhere;
 }
+html[data-visual-profile="bios-glass-v31"][data-theme] .notification-industrial .notification-history-item-description {
+  color: var(--kit-text-2);
+}
 html[data-visual-profile="bios-glass-v31"][data-theme] .notification-industrial .notification-history-item.is-unread {
   background: var(--kit-selected);
   box-shadow: inset 3px 0 0 var(--kit-primary);
