@@ -94,12 +94,12 @@ function SignInContent() {
           <div className="lg:hidden"><BrandMark /></div>
           <div className="mt-8 lg:mt-0">
             <p className="eyebrow">Accès sécurisé</p>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">Bienvenue sur 1TASK</h1>
-            <p className="mt-3 text-sm leading-6 text-slate-600">Connectez-vous avec votre identité professionnelle pour accéder à votre périmètre de support.</p>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight text-[var(--kit-text)]">Bienvenue sur 1TASK</h1>
+            <p className="mt-3 text-sm leading-6 text-[var(--kit-text-2)]">Connectez-vous avec votre identité professionnelle pour accéder à votre périmètre de support.</p>
           </div>
 
           {errorMessage ? (
-            <div className="mt-6 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm leading-6 text-rose-800">{errorMessage}</div>
+            <div className="mt-6 rounded-lg border border-[var(--kit-danger)] bg-[var(--kit-danger-soft)] p-4 text-sm leading-6 text-[var(--kit-danger-text)]">{errorMessage}</div>
           ) : null}
 
           <button
@@ -112,11 +112,11 @@ function SignInContent() {
             {loading === "microsoft-entra-id" ? "Connexion en cours…" : "Continuer avec Microsoft Entra ID"}
           </button>
 
-          <div className="mt-6 flex items-start gap-3 rounded-lg bg-slate-50 p-4 text-xs leading-5 text-slate-600">
-            <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md bg-indigo-50 font-bold operational-link">✓</span>
+          <div className="mt-6 flex items-start gap-3 rounded-lg bg-[var(--kit-surface-muted)] p-4 text-xs leading-5 text-[var(--kit-text-2)]">
+            <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md bg-[var(--kit-primary-soft)] font-bold operational-link">✓</span>
             <p>Microsoft Entra ID fournit votre identité. Le nom affiché, le département et le manager applicatif sont validés exclusivement par l’administrateur fonctionnel.</p>
           </div>
-          <p className="mt-6 text-center text-[11px] font-medium text-slate-400">1TASK · Service desk interne</p>
+          <p className="mt-6 text-center text-[11px] font-medium text-[var(--kit-secondary)]">1TASK · Service desk interne</p>
         </section>
       </div>
     </main>
