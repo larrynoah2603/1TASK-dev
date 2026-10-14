@@ -73,7 +73,8 @@ export function AgentTicketKanban({ tickets }: { tickets: DashboardTicketRow[] }
   }
 
   return (
-    <div className="agent-kanban" aria-label="Vue Kanban des tickets actifs">
+    <div className="agent-kanban" role="region" tabIndex={0} aria-label="Vue Kanban des tickets actifs, défilement horizontal possible">
+      <p className="agent-kanban-scroll-hint" aria-hidden="true">Défilez horizontalement pour voir les cinq étapes du traitement.</p>
       <div className="agent-kanban-board">
         {TICKET_KANBAN_COLUMNS.map((column) => {
           const columnTickets = ticketsByColumn.get(column.id) ?? [];
