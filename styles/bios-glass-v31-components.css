@@ -296,6 +296,18 @@ html[data-visual-profile="bios-glass-v31"][data-theme] :is(
   background: var(--bios-glass-card);
   box-shadow: var(--bios-glass-inner), var(--bios-glass-shadow);
   color: var(--kit-text);
+  -webkit-backdrop-filter: var(--bios-glass-backdrop);
+  backdrop-filter: var(--bios-glass-backdrop);
+}
+
+/* The legacy bridge still forces .table-shell's original surface via
+   !important. Override only this exact inherited conflict under BIOS,
+   rather than weakening the old V1 theme or globally increasing specificity. */
+html[data-visual-profile="bios-glass-v31"][data-theme] .table-shell {
+  border-color: var(--bios-glass-border) !important;
+  border-radius: var(--kit-radius-lg) !important;
+  background: var(--bios-glass-card) !important;
+  box-shadow: var(--bios-glass-inner), var(--bios-glass-shadow) !important;
 }
 
 /* Keep horizontal scrolling inside data tables rather than the page. */
@@ -354,12 +366,14 @@ html[data-visual-profile="bios-glass-v31"][data-theme] :is(
 /* For assistive/low-transparency modes reading surfaces become opaque. */
 @supports not ((backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px))) {
   html[data-visual-profile="bios-glass-v31"][data-theme] :is(.ui-data-table, .table-shell) {
-    background: var(--kit-card);
+    background: var(--kit-card) !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 }
 @media (prefers-reduced-transparency: reduce) {
   html[data-visual-profile="bios-glass-v31"][data-theme] :is(.ui-data-table, .table-shell) {
-    background: var(--kit-card);
+    background: var(--kit-card) !important;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
