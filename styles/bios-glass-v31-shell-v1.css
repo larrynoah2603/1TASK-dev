@@ -363,8 +363,10 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .inbox-v2 .agent-kanban {
   scrollbar-width: thin;
 }
 html[data-visual-profile="bios-glass-v31"][data-theme] .agent-kanban-scroll-hint {
-  display: none;
-  margin: 0 0 8px;
+  max-height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  margin: 0;
   color: var(--kit-text-2);
   font-size: 13px;
   line-height: 1.4;
@@ -389,7 +391,10 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .agent-kanban-scroll-hint
     scroll-snap-type: x proximity;
   }
   html[data-visual-profile="bios-glass-v31"][data-theme] .agent-kanban-scroll-hint {
-    display: block;
+    max-height: none;
+    overflow: visible;
+    visibility: visible;
+    margin: 0 0 8px;
   }
 }
 @container agent-workbench (min-width: 1250px) {
