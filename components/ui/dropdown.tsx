@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 
 /** Ferme un popover au clic extérieur et à la touche Échap (logique auparavant dupliquée dans 3 menus). */
 export function useDismissable<T extends HTMLElement>(open: boolean, onClose: () => void) {
@@ -43,14 +43,31 @@ export function Dropdown({
 }) {
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelId = useId();
   const ref = useDismissable<HTMLDivElement>(open, close);
+
+  const handlePanelKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "Escape") return;
+    event.preventDefault();
+    event.stopPropagation();
+    close();
+    triggerRef.current?.focus();
+  }, [close]);
   return (
-    <div ref={ref} className="kit-anchor">
-      <button type="button" className={triggerClassName} aria-label={triggerLabel} title={triggerLabel} aria-expanded={open} aria-haspopup={role} onClick={() => setOpen((value) => !value)}>
+    <div
+      ref={ref}
+      className="kit-anchor"
+      onBlurCapture={(event) => {
+        // A menu left by Tab must not remain visually open behind the next control.
+        if (!event.currentTarget.contains(event.relatedTarget)) close();
+      }}
+    >
+      <button ref={triggerRef} type="button" className={triggerClassName} aria-label={triggerLabel} title={triggerLabel} aria-expanded={open} aria-controls={open ? panelId : undefined} aria-haspopup={role} onClick={() => setOpen((value) => !value)}>
         {triggerContent}
       </button>
       {open ? (
-        <div className={`kit-popover${align === "left" ? " kit-popover-left" : ""} ${panelClassName}`.trim()} role={role} aria-label={triggerLabel}>
+        <div id={panelId} className={`kit-popover${align === "left" ? " kit-popover-left" : ""} ${panelClassName}`.trim()} role={role} aria-label={triggerLabel} onKeyDown={handlePanelKeyDown}>
           {typeof children === "function" ? children(close) : children}
         </div>
       ) : null}
