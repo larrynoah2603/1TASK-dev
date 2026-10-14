@@ -1,5 +1,7 @@
 # BIOS Glass Corporate v3.1 — PR 02 : Palette et typographies en prévisualisation isolée
 
+> **Arbitrage explicite du 14/10/2026 (UI-07, proposition en PR distincte) :** le guide BIOS prévaut désormais pour la typographie du **texte et des titres**. Le profil `bios-glass-v31` utilise Schibsted Grotesk via `--kit-font` et `--kit-font-display` ; IBM Plex Mono reste destiné aux nombres. Les paragraphes historiques ci-dessous décrivent l'ancienne décision de conserver IBM Plex Sans pour le corps et sont remplacés uniquement si UI-07 est fusionnée. Hors profil BIOS, `styles/tokens.css` conserve IBM Plex Sans.
+
 > **Actualisation 13/10/2026 :** le présent texte décrit l'ancienne configuration Preview de PR02. Sur demande du propriétaire, BIOS Glass est désormais actif par défaut en Vercel Production via `app/layout.tsx` sauf si `BIOS_GLASS_ENABLED=false` (suivi d'un redéploiement). Le toggle reste réservé à Preview/développement. Les valeurs historiques de `styles/tokens.css` sont conservées pour rollback. Voir [README](./README.md).
 
 
