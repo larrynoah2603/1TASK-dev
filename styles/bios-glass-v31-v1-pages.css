@@ -392,3 +392,155 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .pending-assignment-page 
     max-width: 100%;
   }
 }
+
+
+/* UI-04 — harmonisation ciblée des vues administratives et personnelles.
+   Ne touche ni aux routes, ni aux contrôles ni aux variantes hors profil BIOS. */
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .admin-dashboard-industrial, .admin-console-page,
+  .admin-reporting-industrial, .asset-review-page,
+  .assets-industrial, .asset-self-service-page,
+  .notification-industrial, .profile-industrial
+) {
+  min-width: 0;
+  max-width: 100%;
+  color: var(--kit-text);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .admin-dashboard-industrial, .admin-console-page,
+  .admin-reporting-industrial
+) :is(.admin-page-header, .admin-console-header) {
+  min-width: 0;
+  gap: 16px;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .admin-dashboard-industrial, .admin-console-page,
+  .admin-reporting-industrial
+) :is(.admin-stat, .admin-console-card, .metric-card) {
+  min-width: 0;
+  border-radius: var(--kit-radius-lg);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .admin-dashboard-industrial, .admin-console-page,
+  .admin-reporting-industrial
+) :is(.admin-stat-value, .admin-console-kpis strong, .metric-card strong) {
+  font-family: var(--kit-font-mono);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .admin-reporting-industrial :is(
+  .reporting-distribution-panel, .reporting-status-track
+) {
+  min-width: 0;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .admin-reporting-industrial .reporting-status-track {
+  background: var(--kit-surface-muted);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .admin-reporting-industrial .reporting-status-bar {
+  background: var(--kit-primary);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .assets-industrial, .asset-review-page, .asset-self-service-page
+) :is(.asset-summary-grid, .asset-filter-controls, .asset-inventory-scroll, .table-responsive) {
+  min-width: 0;
+  max-width: 100%;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .assets-industrial :is(
+  .asset-inventory-count, .asset-summary-grid .metric-card p:nth-child(2)
+) {
+  font-family: var(--kit-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .asset-review-page .review-actions :is(
+  select, button
+) {
+  max-width: 100%;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .notification-industrial :is(
+  .notification-history-page, .notification-history-header,
+  .notification-history-actions, .notification-history-item-body
+) {
+  min-width: 0;
+  max-width: 100%;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .notification-industrial :is(
+  .notification-history-item-description, .notification-history-item-heading strong
+) {
+  overflow-wrap: anywhere;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .notification-industrial .notification-history-item-description {
+  color: var(--kit-text-2);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .notification-industrial .notification-history-item.is-unread {
+  background: var(--kit-selected);
+  box-shadow: inset 3px 0 0 var(--kit-primary);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .profile-industrial :is(
+  .page-header, dl, dt, dd
+) {
+  min-width: 0;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .profile-industrial dd {
+  overflow-wrap: anywhere;
+  color: var(--kit-text);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .signin-shell, .pending-assignment-page
+) :is(h1, h2) {
+  font-family: var(--kit-font-display);
+  color: var(--kit-text);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .signin-shell, .pending-assignment-page
+) :is(p, small, strong) {
+  overflow-wrap: anywhere;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .pending-assignment-page > section {
+  min-width: 0;
+  border: 1px solid var(--bios-glass-border);
+  border-radius: var(--kit-radius-lg);
+  background: var(--bios-glass-raised);
+  color: var(--kit-text);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .admin-dashboard-industrial, .admin-console-page, .admin-reporting-industrial,
+  .assets-industrial, .asset-review-page, .asset-self-service-page,
+  .notification-industrial, .profile-industrial,
+  .signin-shell, .pending-assignment-page
+) :is(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--kit-primary);
+  outline-offset: 2px;
+}
+@media (max-width: 640px) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+    .admin-dashboard-industrial, .admin-console-page,
+    .admin-reporting-industrial
+  ) :is(.admin-page-header, .admin-console-header) {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  html[data-visual-profile="bios-glass-v31"][data-theme] .admin-reporting-industrial .reporting-distribution-panel .flex.items-center {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  html[data-visual-profile="bios-glass-v31"][data-theme] .admin-reporting-industrial .reporting-distribution-panel .w-48 {
+    width: auto;
+    flex: 1 1 auto;
+  }
+  html[data-visual-profile="bios-glass-v31"][data-theme] .admin-reporting-industrial .reporting-distribution-panel .reporting-status-track {
+    flex: 1 1 100%;
+    order: 2;
+  }
+  html[data-visual-profile="bios-glass-v31"][data-theme] .notification-industrial .notification-history-actions {
+    flex-wrap: wrap;
+  }
+  html[data-visual-profile="bios-glass-v31"][data-theme] .profile-industrial .page-header {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+    .signin-shell, .pending-assignment-page
+  ) {
+    overflow-wrap: anywhere;
+  }
+}
