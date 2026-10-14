@@ -282,6 +282,19 @@ html[data-visual-profile="bios-glass-v31"][data-theme] :is(
 }
 
 
+/* UI-06 — Popovers existants : limite de hauteur pour les écrans courts.
+   Aucun changement de navigation, d'action ou de contenu du menu. */
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-popover-menu {
+  max-height: calc(100vh - var(--kit-topbar-h) - 24px);
+  max-height: calc(100dvh - var(--kit-topbar-h) - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-popover-menu .kit-menu-head-name {
+  overflow-wrap: anywhere;
+}
+
 /* UI-02 — unification des primitives de lecture héritées. Les conteneurs
    existants restent montés : aucun changement de table, pagination ou
    interaction. Uniquement le profil BIOS, jamais le thème 1TASK de repli. */
