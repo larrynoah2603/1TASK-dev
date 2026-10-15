@@ -10,7 +10,7 @@ html[data-visual-profile="bios-glass-v31"][data-theme] :is(
   .reporting-industrial, .admin-reporting-industrial, .notification-industrial,
   .profile-industrial
 ) :is(.page-header h1, .saas-page-header h1, .admin-page-header h1, .reporting-page-header h1) {
-  color: var(--kit-text);
+  color: var(--bios-page-title);
   font-family: var(--kit-font-display);
   font-size: 24px;
   font-weight: 700;
