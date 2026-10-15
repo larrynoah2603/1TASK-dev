@@ -190,7 +190,7 @@ html[data-visual-profile="bios-glass-v31"][data-theme="light"] {
   --kit-topbar-h: 44px;
   --bios-page-gutter: 24px;
   --bios-page-gap: 14px;
-  --bios-canvas: #eef1ed;
+  --bios-canvas: rgb(238 241 237);
   --bios-grid-line: rgb(26 56 50 / 7%);
 }
 
@@ -245,7 +245,7 @@ html[data-visual-profile="bios-glass-v31"][data-theme] :is(
   .inbox-modern-header h1,
   .page-header h1
 ) {
-  color: #203d67;
+  color: rgb(32 61 103);
   letter-spacing: -0.02em;
 }
 
@@ -255,8 +255,8 @@ html[data-visual-profile="bios-glass-v31"][data-theme] :is(
   .asset-request-launcher
 ) {
   border-radius: 6px;
-  background: #ef6c22;
-  color: #fffaf4;
+  background: rgb(239 108 34);
+  color: rgb(255 250 244);
   box-shadow: 0 4px 10px rgb(205 82 23 / 22%);
 }
 
