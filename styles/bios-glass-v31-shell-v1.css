@@ -183,6 +183,83 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .inbox-filter-panel {
   backdrop-filter: none;
 }
 
+/* Harmonisation finale avec les écrans de référence : rail clair compact,
+   barre d'outils légère et surfaces calmes sur le canevas quadrillé. */
+html[data-visual-profile="bios-glass-v31"][data-theme="light"] {
+  --kit-sidebar-w: 180px;
+  --kit-topbar-h: 44px;
+  --bios-page-gutter: 24px;
+  --bios-page-gap: 14px;
+  --bios-canvas: rgb(238 241 237);
+  --bios-grid-line: rgb(26 56 50 / 7%);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-app {
+  background-image:
+    radial-gradient(ellipse 520px 360px at 96% 2%, rgb(241 143 77 / 23%), transparent 72%),
+    radial-gradient(ellipse 560px 420px at 8% 100%, rgb(77 171 156 / 16%), transparent 72%),
+    linear-gradient(var(--bios-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bios-grid-line) 1px, transparent 1px);
+  background-size: auto, auto, 42px 42px, 42px 42px;
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-sidebar {
+  background: rgb(248 250 247 / 82%);
+  border-right-color: rgb(30 55 48 / 12%);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-topbar {
+  min-height: var(--kit-topbar-h);
+  background: rgb(250 248 243 / 78%);
+  border-bottom-color: rgb(30 55 48 / 12%);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-main {
+  padding: 24px;
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .dashboard-reference-card,
+  .dashboard-kpi-card,
+  .dashboard-widget,
+  .dashboard-enterprise-card,
+  .dashboard-modern-kpi,
+  .inbox-workbench,
+  .inbox-command-surface,
+  .portfolio-table-surface,
+  .knowledge-article-card,
+  .assets-register-panel,
+  .admin-notice
+) {
+  border-color: rgb(30 55 48 / 18%) !important;
+  border-radius: 9px !important;
+  background: rgb(250 251 249 / 78%) !important;
+  box-shadow: 0 8px 22px rgb(26 50 44 / 7%), inset 0 1px rgb(255 255 255 / 80%) !important;
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .dashboard-reference-header h1,
+  .dashboard-modern-header h1,
+  .inbox-modern-header h1,
+  .page-header h1
+) {
+  color: rgb(32 61 103);
+  letter-spacing: -0.02em;
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .kit-button-primary,
+  .new-ticket-launcher,
+  .asset-request-launcher
+) {
+  border-radius: 6px;
+  background: rgb(239 108 34);
+  color: rgb(255 250 244);
+  box-shadow: 0 4px 10px rgb(205 82 23 / 22%);
+}
+
 html[data-visual-profile="bios-glass-v31"][data-theme] :is(
   .inbox-scope-tabs .is-active,
   .inbox-layout-switcher .is-active
