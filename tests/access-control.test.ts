@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { RoleCode, ScopeType } from "@prisma/client";
 import { canClaimTicket, canReadReporting, canViewTicket } from "@/lib/access-control";
+import { accessTarget } from "@/lib/ticket-access";
 
 const target = { requesterId: "requester", assignedToId: "agent", queueId: "queue-network", departmentId: "dsi", confidential: false };
 
@@ -49,6 +50,41 @@ describe("cloisonnement", () => {
     expect(canViewTicket({ ...invited, id: "unrelated" }, crossQueue)).toBe(false);
     expect(canViewTicket({ ...invited, id: "unrelated", roles: [{ code: RoleCode.FUNCTIONAL_ADMIN }] }, crossQueue)).toBe(false);
     expect(canViewTicket(invited, { ...crossQueue, authorizedUserIds: [] })).toBe(false);
+  });
+
+  it("ignore les délégations révoquées ou expirées avant l'évaluation de la fiche", () => {
+    const now = new Date("2026-10-15T13:00:00Z");
+    const makeEntry = (userId: string, endsAt: Date | null, revokedAt: Date | null) => ({
+      userId,
+      delegationId: "delegation-" + userId,
+      delegation: {
+        substituteId: userId,
+        startsAt: new Date("2026-10-01T00:00:00Z"),
+        endsAt,
+        revokedAt,
+        actions: ["VIEW"],
+      },
+    });
+    const target = accessTarget({
+      requesterId: "owner",
+      assignedToId: null,
+      queueId: "queue-network",
+      confidential: true,
+      queue: { departmentId: "dsi", teams: [] },
+      accessList: [
+        { userId: "permanent", delegationId: null },
+        makeEntry("active", new Date("2026-10-16T00:00:00Z"), null),
+        makeEntry("expired", new Date("2026-10-14T00:00:00Z"), null),
+        makeEntry("revoked", null, new Date("2026-10-14T00:00:00Z")),
+      ],
+    }, now);
+    expect(target.authorizedUserIds).toEqual(["permanent", "active"]);
+    for (const id of ["permanent", "active"]) {
+      expect(canViewTicket({ id, authorizedQueueId: "another-queue", roles: [] }, target)).toBe(true);
+    }
+    for (const id of ["expired", "revoked", "outsider"]) {
+      expect(canViewTicket({ id, roles: [{ code: RoleCode.FUNCTIONAL_ADMIN }] }, target)).toBe(false);
+    }
   });
 
   it("ne transforme jamais une affectation en droit confidentiel permanent", () => {
