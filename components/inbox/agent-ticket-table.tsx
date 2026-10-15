@@ -16,6 +16,13 @@ const formatActivity = (value: Date) =>
     minute: "2-digit",
   }).format(value);
 
+function TicketActivity({ value, full = false }: { value: Date; full?: boolean }) {
+  const label = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeStyle: "short" }).format(value);
+  return <time className="agent-ticket-activity" dateTime={value.toISOString()} title={label} aria-label={label}>
+    {full ? label : formatActivity(value)}
+  </time>;
+}
+
 function ExpandedTicketDetails({
   ticket,
   claimable,
@@ -37,7 +44,7 @@ function ExpandedTicketDetails({
             <PriorityBadge priority={ticket.priority} />
             <StatusBadge status={ticket.status} />
           </div>
-          <h3 className="mt-1 truncate text-sm font-semibold text-[var(--kit-text)]">
+          <h3 className="mt-1 break-words text-sm font-semibold text-[var(--kit-text)]">
             {ticket.reference} · {ticket.title}
           </h3>
 
@@ -64,9 +71,10 @@ function ExpandedTicketDetails({
             </div>
           </dl>
 
-          <div className="mt-3 flex items-center gap-2 text-xs text-[var(--kit-text-2)]">
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[var(--kit-text-2)]">
             <span className="font-semibold">SLA</span>
             <SlaBadge state={ticket.slaState} dueAt={ticket.slaDueAt} />
+            <span>Dernière activité : <TicketActivity value={ticket.updatedAt} full /></span>
           </div>
         </div>
 
@@ -111,13 +119,13 @@ export function AgentTicketTable({
               <caption className="ui-sr-only">Mes tickets agent</caption>
               <thead>
                 <tr>
-                  <th className="agent-ticket-col-wide" scope="col">Référence</th>
-                  <th className="agent-ticket-col-wide" scope="col">Sujet</th>
-                  <th className="agent-ticket-col-wide" scope="col">Priorité</th>
-                  <th className="agent-ticket-col-wide" scope="col">Statut</th>
-                  <th className="agent-ticket-col-wide" scope="col">Demandeur</th>
-                  <th className="agent-ticket-col-wide" scope="col">SLA</th>
-                  <th className="agent-ticket-col-wide" scope="col">Dernière activité</th>
+                  <th className="agent-ticket-col-wide agent-ticket-col-reference" scope="col">Référence</th>
+                  <th className="agent-ticket-col-wide agent-ticket-col-subject" scope="col">Sujet</th>
+                  <th className="agent-ticket-col-wide agent-ticket-col-priority" scope="col">Priorité</th>
+                  <th className="agent-ticket-col-wide agent-ticket-col-status" scope="col">Statut</th>
+                  <th className="agent-ticket-col-wide agent-ticket-col-requester" scope="col">Demandeur</th>
+                  <th className="agent-ticket-col-wide agent-ticket-col-sla-wide" scope="col">SLA</th>
+                  <th className="agent-ticket-col-wide agent-ticket-col-date" scope="col">Dernière activité</th>
 
                   <th className="agent-ticket-col-condensed agent-ticket-col-ticket" scope="col">Ticket</th>
                   <th className="agent-ticket-col-condensed agent-ticket-col-treatment" scope="col">Traitement</th>
@@ -147,17 +155,17 @@ export function AgentTicketTable({
                           }
                         }}
                       >
-                        <td className="agent-ticket-col-wide"><span className="agent-ticket-reference">{ticket.reference}</span></td>
+                        <td className="agent-ticket-col-wide"><span className="agent-ticket-reference" title={ticket.reference}>{ticket.reference}</span></td>
                         <td className="agent-ticket-col-wide"><span className="agent-ticket-title">{ticket.title}</span></td>
                         <td className="agent-ticket-col-wide"><PriorityBadge priority={ticket.priority} /></td>
                         <td className="agent-ticket-col-wide"><StatusBadge status={ticket.status} /></td>
                         <td className="agent-ticket-col-wide">{ticket.requester.name}</td>
                         <td className="agent-ticket-col-wide"><SlaBadge state={ticket.slaState} dueAt={ticket.slaDueAt} compact /></td>
-                        <td className="agent-ticket-col-wide">{formatActivity(ticket.updatedAt)}</td>
+                        <td className="agent-ticket-col-wide"><TicketActivity value={ticket.updatedAt} /></td>
 
                         <td className="agent-ticket-col-condensed agent-ticket-col-ticket">
                           <div className="agent-ticket-cell-stack">
-                            <span className="agent-ticket-reference">{ticket.reference}</span>
+                            <span className="agent-ticket-reference" title={ticket.reference}>{ticket.reference}</span>
                             <span className="agent-ticket-title">{ticket.title}</span>
                             <small>{ticket.requester.name} · {ticket.queue.name}</small>
                           </div>
@@ -172,7 +180,7 @@ export function AgentTicketTable({
                         <td className="agent-ticket-col-condensed agent-ticket-col-sla">
                           <SlaBadge state={ticket.slaState} dueAt={ticket.slaDueAt} compact />
                         </td>
-                        <td className="agent-ticket-col-condensed agent-ticket-col-activity">{formatActivity(ticket.updatedAt)}</td>
+                        <td className="agent-ticket-col-condensed agent-ticket-col-activity"><TicketActivity value={ticket.updatedAt} /></td>
                       </tr>
 
                       {expanded ? (
@@ -206,7 +214,7 @@ export function AgentTicketTable({
           return (
             <article key={ticket.id} className="agent-ticket-mobile-card">
               <div className="agent-ticket-mobile-topline">
-                <span className="agent-ticket-reference">{ticket.reference}</span>
+                <span className="agent-ticket-reference" title={ticket.reference}>{ticket.reference}</span>
                 <SlaBadge state={ticket.slaState} dueAt={ticket.slaDueAt} compact />
               </div>
 
@@ -225,7 +233,7 @@ export function AgentTicketTable({
                 </div>
                 <div>
                   <dt>Dernière activité</dt>
-                  <dd>{formatActivity(ticket.updatedAt)}</dd>
+                  <dd><TicketActivity value={ticket.updatedAt} /></dd>
                 </div>
               </dl>
 

@@ -157,10 +157,23 @@ html[data-visual-profile="bios-glass-v31"][data-theme] :is(
 
 /* Preserve semantic badge tones; keep status meaning in the text and icons. */
 html[data-visual-profile="bios-glass-v31"][data-theme] .kit-badge {
+  width: fit-content;
+  max-width: 100%;
+  justify-self: start;
+  align-self: start;
+  white-space: nowrap;
   min-height: 24px;
   border-radius: var(--kit-radius-pill);
   font-size: var(--kit-text-xs);
   font-weight: 600;
+}
+
+/* Explicit presentation variants: identical in cells, cards and quick details,
+   whether the status is before, after, elsewhere or absent. */
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-badge-priority {
+  background: transparent;
+  border: 1px solid currentColor;
+  box-shadow: none;
 }
 
 html[data-visual-profile="bios-glass-v31"][data-theme] :is(

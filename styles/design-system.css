@@ -1932,7 +1932,7 @@ html[data-theme] .agent-ticket-cell-stack small {
 
 @container agent-ticket-list (min-width: 1100px) {
   html[data-theme] .agent-ticket-responsive-table {
-    table-layout: auto;
+    table-layout: fixed;
   }
 
   html[data-theme] th.agent-ticket-col-wide,
@@ -2557,6 +2557,15 @@ html[data-theme] .inbox-workbench .agent-ticket-responsive-table {
   border-spacing: 0 6px;
 }
 
+/* Reserve predictable space for metadata; the subject receives the remainder.
+   Hidden wide headers do not affect the existing condensed/card modes. */
+html[data-theme] .agent-ticket-responsive-table th.agent-ticket-col-reference { width: 12rem; }
+html[data-theme] .agent-ticket-responsive-table th.agent-ticket-col-priority { width: 6rem; }
+html[data-theme] .agent-ticket-responsive-table th.agent-ticket-col-status { width: 12rem; }
+html[data-theme] .agent-ticket-responsive-table th.agent-ticket-col-requester { width: 8rem; }
+html[data-theme] .agent-ticket-responsive-table th.agent-ticket-col-sla-wide { width: 8.5rem; }
+html[data-theme] .agent-ticket-responsive-table th.agent-ticket-col-date { width: 8rem; }
+
 html[data-theme] .inbox-workbench .agent-ticket-responsive-table thead th {
   padding: 6px 12px;
   border: 0;
@@ -2604,20 +2613,51 @@ html[data-theme] .inbox-workbench .agent-ticket-row > td.agent-ticket-col-wide:n
 }
 
 html[data-theme] .inbox-workbench .agent-ticket-reference {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  text-overflow: ellipsis;
   color: var(--kit-primary-text);
-  font-size: 11px;
+  font-size: var(--kit-text-xs);
   font-weight: 750;
   letter-spacing: .02em;
 }
 
 html[data-theme] .inbox-workbench .agent-ticket-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  line-height: 1.5;
   color: var(--kit-text);
   font-size: var(--kit-text-sm);
   font-weight: 650;
 }
 
+/* A persistent edge distinguishes expansion from a transient hover. */
+html[data-theme] .inbox-workbench .agent-ticket-row.is-expanded > :is(td:first-child, .agent-ticket-col-ticket) {
+  box-shadow: inset 3px 0 var(--kit-primary);
+}
+
+html[data-theme] .inbox-workbench .agent-ticket-activity {
+  font-variant-numeric: tabular-nums;
+}
+
 html[data-theme] .inbox-workbench .agent-ticket-cell-stack {
   gap: 3px;
+}
+
+html[data-theme] .inbox-workbench .agent-ticket-col-treatment .agent-ticket-cell-stack {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+}
+
+html[data-theme] .inbox-workbench .agent-ticket-col-treatment .agent-ticket-cell-stack > small {
+  flex-basis: 100%;
 }
 
 html[data-theme] .inbox-workbench .agent-ticket-cell-stack small {
@@ -2696,7 +2736,8 @@ html[data-theme] .inbox-workbench .agent-ticket-mobile-card {
     display: table-cell !important;
   }
 
-  html[data-theme] .inbox-v2 .agent-ticket-col-condensed {
+  html[data-theme] .inbox-v2 th.agent-ticket-col-condensed,
+  html[data-theme] .inbox-v2 td.agent-ticket-col-condensed {
     display: none !important;
   }
 }

@@ -1,0 +1,523 @@
+/* ==========================================================================
+   1TASK — Refonte UI/UX Pro Max (couche finale, CSS uniquement)
+   Référence : design-system/1task/MASTER.md
+   - Aucune logique modifiée : uniquement présentation.
+   - Portée : profil BIOS Glass (production). Exception : tokens --chart-*,
+     indéfinis jusqu'ici dans les deux profils (graphiques rendus en noir).
+   - Retour arrière : retirer l'import dans app/globals.css.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   0. Tokens graphiques (bug commun : var(--chart-N) n'existait pas)
+   -------------------------------------------------------------------------- */
+:root {
+  --chart-1: var(--kit-info, #1F5FAE);
+  --chart-2: var(--kit-success, #1F7A55);
+  --chart-3: var(--kit-warning, #93590A);
+  --chart-4: var(--kit-secondary, #5E6B67);
+  --chart-5: var(--kit-danger, #B42323);
+}
+
+html[data-visual-profile="bios-glass-v31"] {
+  /* Échelle de mouvement unique */
+  --uupm-fast: 120ms;
+  --uupm-base: 180ms;
+  --uupm-ease: cubic-bezier(0.2, 0, 0, 1);
+  /* Rayons BIOS */
+  --uupm-radius-control: 6px;
+  --uupm-radius-card: 10px;
+  /* Surface opaque pour l'édition et la lecture continue */
+  --uupm-solid: var(--kit-surface);
+  --uupm-solid-muted: var(--kit-surface-muted);
+  --uupm-focus: var(--kit-primary);
+}
+
+/* --------------------------------------------------------------------------
+   1. Accessibilité — focus visible, mouvement réduit, cibles
+   -------------------------------------------------------------------------- */
+html[data-visual-profile="bios-glass-v31"] :is(
+  a, button, input, select, textarea, summary,
+  [role="button"], [role="tab"], [role="menuitem"], [tabindex]:not([tabindex="-1"])
+):focus-visible {
+  outline: 2px solid var(--uupm-focus) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--uupm-focus) 22%, transparent) !important;
+}
+
+html[data-visual-profile="bios-glass-v31"] :is(button, [role="button"], summary, select, a.button-primary, a.button-secondary) {
+  touch-action: manipulation;
+}
+html[data-visual-profile="bios-glass-v31"] :is(button, [role="button"], summary, select):not(:disabled) {
+  cursor: pointer;
+}
+html[data-visual-profile="bios-glass-v31"] :is(button, input, select, textarea):disabled {
+  cursor: not-allowed;
+}
+
+/* Bouton loupe mobile de la topbar : 18 px → 40 px de zone cliquable */
+html[data-visual-profile="bios-glass-v31"] .kit-topbar :is(button[aria-label="Ouvrir la recherche"]) {
+  min-width: 40px;
+  min-height: 40px;
+  display: inline-grid;
+  place-items: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-visual-profile="bios-glass-v31"] *,
+  html[data-visual-profile="bios-glass-v31"] *::before,
+  html[data-visual-profile="bios-glass-v31"] *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   2. Typographie — hiérarchie et lisibilité
+   -------------------------------------------------------------------------- */
+/* Sur-titres : l'orange 500 (2,9:1) devient l'orange texte accessible */
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(.eyebrow, .ds-eyebrow, .kit-eyebrow) {
+  color: var(--kit-primary-text) !important;
+  font-size: 12px !important;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* Liens d'action de widget (« Voir tous les tickets », « Tout afficher ») */
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(.dashboard-widget-link, .dashboard-ticket-reference, .ticket-reference-link) {
+  color: var(--kit-primary-text) !important;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .dashboard-widget-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  gap: 4px;
+  font-size: 13px !important;
+  font-weight: 600;
+}
+
+/* Titres de cartes codés en dur (#241B35) : invisibles en mode sombre */
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .dashboard-card-header h2, .dashboard-kpi-card strong, .reporting-card-header h2,
+  .admin-console-card h2, .admin-console-card h3
+) {
+  color: var(--kit-text) !important;
+}
+
+/* Corps de texte : jamais sous 12 px (reporting et tableaux de bord) */
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .dashboard-escalation-badge, .dashboard-sla-note strong, .dashboard-sla-note small,
+  .reporting-data-note, .recharts-cartesian-axis-tick-value, .recharts-legend-item-text
+) {
+  font-size: 12px;
+}
+
+/* Références et chiffres en mono ; libellés en sans-serif */
+html[data-visual-profile="bios-glass-v31"] :is(.agent-ticket-reference, .ticket-reference, .kit-ref) {
+  font-family: var(--kit-font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+/* Titres courts : retour à la ligne équilibré */
+html[data-visual-profile="bios-glass-v31"] :is(h1, h2, h3) {
+  text-wrap: balance;
+}
+/* Références longues et e-mails : jamais de débordement */
+html[data-visual-profile="bios-glass-v31"] :is(dd, td, .agent-ticket-title, .kit-ref) {
+  overflow-wrap: anywhere;
+}
+
+/* --------------------------------------------------------------------------
+   3. Composants partagés — pastilles, segments, boutons
+   -------------------------------------------------------------------------- */
+/* Badge sizing and explicit status/priority variants are owned by
+   bios-glass-v31-components.css; no sibling-dependent override here. */
+
+/* Sélecteurs de vue (Tous / Non affectés / …) : contraste 3,4 → AA */
+html[data-visual-profile="bios-glass-v31"][data-theme] .view-switcher-link {
+  color: var(--kit-text-2) !important;
+  font-size: 13px !important;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .view-switcher-link:is(.is-active, [aria-current="page"]) {
+  color: var(--kit-selected-text) !important;
+}
+
+/* Onglets de vue de l'espace agent : contrôle segmenté lisible, sans majuscules forcées */
+html[data-visual-profile="bios-glass-v31"][data-theme] .dashboard-view-tabs {
+  display: inline-flex;
+  max-width: 100%;
+  gap: 4px;
+  padding: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border: 1px solid var(--kit-border);
+  border-radius: var(--uupm-radius-card);
+  background: var(--uupm-solid-muted);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .dashboard-view-tab {
+  flex: 0 0 auto;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--uupm-radius-control);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--kit-text-2);
+  white-space: nowrap;
+  transition: background-color var(--uupm-fast) var(--uupm-ease), color var(--uupm-fast) var(--uupm-ease);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .dashboard-view-tab:hover {
+  background: var(--kit-hover);
+  color: var(--kit-text);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .dashboard-view-tab:is(.is-active, [aria-current="page"]) {
+  background: var(--uupm-solid);
+  color: var(--kit-text);
+  box-shadow: var(--kit-shadow-xs);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .dashboard-view-tab::after {
+  display: none;
+}
+
+/* Boutons : retour visuel de pression sans décalage de mise en page */
+html[data-visual-profile="bios-glass-v31"] :is(.button-primary, .button-secondary, .ui-button, .kit-btn):not(:disabled):active {
+  transform: scale(0.98);
+}
+html[data-visual-profile="bios-glass-v31"] :is(.button-primary, .button-secondary, .ui-button, .kit-btn) {
+  transition: background-color var(--uupm-fast) var(--uupm-ease), border-color var(--uupm-fast) var(--uupm-ease),
+    color var(--uupm-fast) var(--uupm-ease), transform var(--uupm-fast) var(--uupm-ease);
+}
+
+/* --------------------------------------------------------------------------
+   4. Boîte agent — moins de cadres imbriqués, lecture plus rapide
+   -------------------------------------------------------------------------- */
+/* Fond blanc parasite derrière les onglets et l'en-tête */
+html[data-visual-profile="bios-glass-v31"][data-theme] .agent-workspace.inbox-operations-industrial {
+  background: transparent !important;
+}
+/* La barre de commande et le tableau vivent DANS la carte « Tickets » :
+   on retire leurs cadres propres (carte → carte → carte) */
+html[data-visual-profile="bios-glass-v31"][data-theme] .inbox-workbench .inbox-command-surface {
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .inbox-workbench .ui-data-table {
+  border-left: 0 !important;
+  border-right: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+/* Tableau = surface de lecture continue : opaque */
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(.ui-data-table, .kit-table-wrap) {
+  background: var(--uupm-solid) !important;
+}
+/* Lignes : survol discret + transition */
+html[data-visual-profile="bios-glass-v31"][data-theme] .agent-ticket-row {
+  transition: background-color var(--uupm-fast) var(--uupm-ease);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .agent-ticket-row:hover > td {
+  background: color-mix(in srgb, var(--kit-primary) 5%, var(--uupm-solid)) !important;
+}
+/* Cartes latérales (Alertes SLA / Mises à jour) : pas d'étirement vide */
+html[data-visual-profile="bios-glass-v31"][data-theme] .agent-workspace-rail {
+  align-items: start;
+}
+
+/* Puces de compteurs (« 1 SLA à risque ») : jamais tronquées */
+html[data-visual-profile="bios-glass-v31"][data-theme] .inbox-summary-inline {
+  flex-wrap: wrap;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .inbox-summary-inline > * {
+  max-width: none;
+  white-space: nowrap;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .inbox-summary-inline > * * {
+  overflow: visible;
+  text-overflow: clip;
+}
+
+/* --------------------------------------------------------------------------
+   5. Création de ticket — mode sombre et mobile
+   -------------------------------------------------------------------------- */
+/* En-tête : fond blanc codé en dur → texte clair invisible en sombre */
+html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-wizard-intro {
+  border: 1px solid var(--bios-glass-border, var(--kit-border));
+  border-radius: var(--uupm-radius-card);
+  background: var(--bios-glass-card, var(--kit-card));
+  box-shadow: var(--bios-glass-inner, none), var(--kit-shadow-sm);
+  color: var(--kit-text);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-wizard-intro :is(p, small, span, strong) {
+  color: inherit;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-wizard-intro p:not(.eyebrow) {
+  color: var(--kit-text-2);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-wizard-stepper :is(strong, small, span) {
+  color: var(--kit-text-2);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-wizard-stepper .is-active :is(strong) {
+  color: var(--kit-text);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-wizard-stepper small {
+  font-size: 12px;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-wizard-step-number {
+  font-size: 12px;
+  color: var(--kit-text);
+  border-color: var(--kit-border-strong);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-wizard-stepper .is-active .ticket-wizard-step-number {
+  background: var(--kit-primary);
+  border-color: var(--kit-primary);
+  color: var(--kit-on-primary);
+}
+
+/* Panneau d'aide : surface opaque, texte lisible dans les deux thèmes */
+html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-wizard-summary {
+  border: 1px solid var(--kit-border);
+  border-radius: var(--uupm-radius-card);
+  background: var(--uupm-solid-muted);
+  color: var(--kit-text);
+  box-shadow: none;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-wizard-summary :is(h2, h3, strong, li, p, span) {
+  color: var(--kit-text);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-wizard-summary :is(small, p:not(.eyebrow)) {
+  color: var(--kit-text-2);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-wizard-summary .eyebrow {
+  color: var(--kit-primary-text);
+}
+
+/* Mobile : l'étape 3 débordait (scroll horizontal de 18 px à 390 px) */
+@media (max-width: 640px) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-wizard-stepper {
+    width: 100%;
+    min-width: 0;
+    gap: 12px;
+  }
+  html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-wizard-stepper li {
+    min-width: 0;
+    flex: 0 0 auto;
+  }
+  /* Étape courante en toutes lettres ; les autres réduites à leur numéro
+     (libellé conservé pour les lecteurs d'écran, sans troncature). */
+  html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-wizard-stepper li.is-active {
+    flex: 1 1 auto;
+  }
+  html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-wizard-stepper li:not(.is-active) > span:not(.ticket-wizard-step-number) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-wizard-stepper {
+    justify-content: flex-start;
+  }
+  html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-wizard-stepper li:not(:last-child)::after {
+    display: none;
+  }
+  html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-wizard-stepper li > span:not(.ticket-wizard-step-number) {
+    min-width: 0;
+    overflow: hidden;
+  }
+  html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-wizard-stepper strong {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+  }
+  html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-wizard-intro {
+    overflow: hidden;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   6. Profil — en-tête noir illisible et mise en page cassée
+   -------------------------------------------------------------------------- */
+html[data-visual-profile="bios-glass-v31"][data-theme] .profile-page-shell > .page-header {
+  display: flex !important;
+  grid-template-columns: none !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 20px !important;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .profile-page-shell > .page-header > :first-child {
+  background: var(--kit-selected) !important;
+  color: var(--kit-selected-text) !important;
+  border-radius: 14px !important;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .profile-page-shell .panel > div:first-child {
+  background: var(--uupm-solid-muted) !important;
+  border-color: var(--kit-border) !important;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .profile-page-shell :is(dt, .panel > div:first-child > p) {
+  color: var(--kit-text-2) !important;
+}
+
+/* --------------------------------------------------------------------------
+   7. Reporting et administration — graphiques et chiffres
+   -------------------------------------------------------------------------- */
+/* Graphiques Recharts : axes, grille et info-bulles suivent le thème */
+html[data-visual-profile="bios-glass-v31"] .recharts-cartesian-axis-tick-value {
+  fill: var(--kit-text-2);
+}
+html[data-visual-profile="bios-glass-v31"] :is(.recharts-cartesian-axis-line, .recharts-cartesian-axis-tick-line) {
+  stroke: var(--kit-border-strong);
+}
+html[data-visual-profile="bios-glass-v31"] .recharts-cartesian-grid line {
+  stroke: var(--kit-border);
+}
+html[data-visual-profile="bios-glass-v31"] .recharts-default-tooltip {
+  border: 1px solid var(--kit-border);
+  border-radius: var(--uupm-radius-control);
+  background: var(--uupm-solid);
+  color: var(--kit-text);
+  box-shadow: var(--kit-shadow-md);
+}
+html[data-visual-profile="bios-glass-v31"] .recharts-tooltip-cursor {
+  fill: var(--kit-hover);
+}
+
+/* Chiffres des cartes admin : orange 500 (2,9:1) → orange texte accessible */
+html[data-visual-profile="bios-glass-v31"][data-theme] .admin-stat-value {
+  color: var(--kit-primary-text) !important;
+}
+/* Libellés « Inventaire / Demandes d'actifs » : corps de texte, pas de mono */
+html[data-visual-profile="bios-glass-v31"][data-theme] .admin-console-page :is(h3, strong):not(.admin-stat-value) {
+  font-family: var(--kit-font-display);
+}
+
+/* Note SLA : vert #43AD73 (2,7:1) → vert sémantique accessible */
+html[data-visual-profile="bios-glass-v31"][data-theme] .dashboard-sla-note {
+  color: var(--kit-success-text) !important;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .dashboard-sla-note-icon {
+  width: 18px !important;
+  height: 18px !important;
+  font-size: 11px !important;
+  color: var(--kit-success-text) !important;
+  background: var(--kit-success-soft) !important;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .dashboard-sla-note small {
+  color: var(--kit-text-2) !important;
+}
+/* Pastilles d'escalade : lisibles (≥ 12 px, contraste AA) */
+html[data-visual-profile="bios-glass-v31"][data-theme] .dashboard-escalation-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  background: transparent;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .dashboard-escalation-high { color: var(--kit-warning-text); }
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(.dashboard-escalation-critical, .dashboard-escalation-urgent) { color: var(--kit-danger-text); }
+/* Glyphe « ♧ » utilisé comme icône d'équipe : remplacé visuellement par un repère neutre */
+html[data-visual-profile="bios-glass-v31"][data-theme] .dashboard-team-icon {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--kit-primary);
+  color: transparent;
+  font-size: 0;
+}
+
+/* Panneau d'aide de création : termes et définitions */
+html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-wizard-summary dt {
+  color: var(--kit-primary-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-wizard-summary dd {
+  color: var(--kit-text);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-wizard-summary :is(dl > div, li) {
+  border-color: var(--kit-border);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-wizard-step-number {
+  background: var(--uupm-solid);
+}
+
+/* Tableau de bord : le tableau n'a pas besoin d'un second cadre dans sa carte */
+html[data-visual-profile="bios-glass-v31"][data-theme] .dashboard-reference-card > .kit-table-wrap {
+  margin: 0 !important;
+  border: 0 !important;
+  border-top: 1px solid var(--kit-border) !important;
+  border-radius: 0 0 var(--uupm-radius-card) var(--uupm-radius-card) !important;
+  box-shadow: none !important;
+}
+/* Panneau d'aide de création : titre au style des titres de section */
+html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-wizard-summary h2 {
+  font-family: var(--kit-font-display);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+/* Une seule couleur d'action : le jaune hérité (#E6B31E, legacy.css) des boutons
+   primaires du contenu devient l'orange BIOS, comme le CTA « Nouveau ticket ». */
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(.shell-industrial, .admin-industrial) :is(.button-primary, a.button-primary) {
+  background: var(--kit-primary) !important;
+  border-color: var(--kit-primary) !important;
+  color: var(--kit-on-primary) !important;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(.shell-industrial, .admin-industrial) :is(.button-primary, a.button-primary):hover:not(:disabled) {
+  background: var(--kit-primary-hover) !important;
+  border-color: var(--kit-primary-hover) !important;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(.shell-industrial, .admin-industrial) .button-primary:disabled {
+  opacity: 0.5;
+}
+
+/* Étapes du formulaire (mobile) : pastilles numérotées toujours rondes */
+html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-wizard-step-number {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+}
+
+/* Onglets de vue sur mobile : tiennent dans la largeur, sans défilement caché */
+@media (max-width: 640px) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] .dashboard-view-tabs {
+    display: flex;
+    width: 100%;
+  }
+  html[data-visual-profile="bios-glass-v31"][data-theme] .dashboard-view-tab {
+    flex: 1 1 0;
+    justify-content: center;
+    padding: 0 6px;
+    font-size: 13px;
+    text-align: center;
+    white-space: normal;
+    line-height: 1.2;
+  }
+}
+
+/* Boutons de tri des en-têtes de tableau : cible ≥ 24 px (WCAG 2.2 AA) */
+html[data-visual-profile="bios-glass-v31"][data-theme] th button {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}

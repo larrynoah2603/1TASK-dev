@@ -60,20 +60,24 @@ node scripts/ui05-browser-audit.mjs \
 
 Le fichier d'essai a **intentionnellement** une ligne trop large et un texte de contraste insuffisant. Le test Vitest exécute le vrai navigateur lorsque Chrome est installé pour vérifier ces deux détections. Cela **ne constitue pas** une mesure de production.
 
-## 3. Matrice de recette par famille d'écrans
+## 3. Matrice de recette par famille d’écrans
 
 | Série | Vue / profil / état | Mesure et preuve attendues | Verdict |
 |---|---|---|---|
-| A | Dashboard demandeur, agent, responsable | 4 KPI lisibles et compacts, cartes sans surcharge, sidebar ouverte/fermée | **EN ATTENTE** |
-| B | Inbox Liste, agent et responsable | **1 barre de filtres**, bouton Claim et aperçu `colSpan={7}` visibles selon droits | **EN ATTENTE** |
-| C | Inbox Kanban et rail SLA | 5 colonnes métier + cas « Autres », scroll local, accès clavier, aucun chevauchement | **EN ATTENTE** |
-| D | Tickets (nouveau, détails, conversation) | un seul bouton Nouveau **dans la navbar** ; formulaire, pièces, actions, confidentialité inchangés | **EN ATTENTE** |
-| E | Files, Reporting, Notifications | tableaux/graphes lisibles, légende statuts, non-lu identifiable autrement que par la couleur | **EN ATTENTE** |
-| F | Mes actifs et demandes d'actifs | cellules `data-label` mobiles, actions valider/refuser inchangées, modales dans le viewport | **EN ATTENTE** |
-| G | Administration (rôles, utilisateurs, départements, files, catalogue, SLA, audit, reporting) | droits testés, focus, affichage long, hauteur des lignes, aucune action perdue | **EN ATTENTE** |
-| H | Connexion, en attente, profil | Entra, erreurs, avatar, rôles cumulés, contrastes clair/sombre, responsive | **EN ATTENTE** |
-| I | Shell applicatif et admin | sidebar/topbar intactes, bouton Nouveau unique, navigation mobile, menus | **EN ATTENTE** |
-| J | États transversaux | erreur, chargement, succès, toast, modal, scrollbar, zoom 200 %, réduction de mouvement/transparence | **EN ATTENTE** |
+| A | Dashboard demandeur, agent, responsable | 4 KPI lisibles et compacts, cartes sans surcharge, sidebar ouverte/fermée | **PARTIEL — onglets réels isolés ; dashboards authentifiés non testés** |
+| B | Inbox Liste, agent et responsable | **1 barre de filtres**, bouton Claim et aperçu `colSpan={7}` visibles selon droits | **PARTIEL — table/cartes, détails et confirmation isolés vérifiés ; parcours authentifié non testé** |
+| C | Inbox Kanban et rail SLA | 5 colonnes métier + cas « Autres », scroll local, accès clavier, aucun chevauchement | **NON TESTÉ en navigateur — contrôle statique uniquement** |
+| D | Tickets (nouveau, détails, conversation) | un seul bouton Nouveau **dans la navbar** ; formulaire, pièces, actions, confidentialité inchangés | **PARTIEL — étapes et résumé isolés ; formulaire et conversation non testés** |
+| E | Files, Reporting, Notifications | tableaux/graphes lisibles, légende statuts, non-lu identifiable autrement que par la couleur | **NON TESTÉ en navigateur — inventaire V1 et tests statiques** |
+| F | Mes actifs et demandes d'actifs | cellules `data-label` mobiles, actions valider/refuser inchangées, modales dans le viewport | **NON TESTÉ en navigateur — inventaire V1 et tests statiques** |
+| G | Administration (rôles, utilisateurs, départements, files, catalogue, SLA, audit, reporting) | droits testés, focus, affichage long, hauteur des lignes, aucune action perdue | **NON TESTÉ en navigateur — gardes et redirections V1 relevées** |
+| H | Connexion, en attente, profil | Entra, erreurs, avatar, rôles cumulés, contrastes clair/sombre, responsive | **PARTIEL — connexion et AccessDenied vérifiés ; attente/profil non testés** |
+| I | Shell applicatif et admin | sidebar/topbar intactes, bouton Nouveau unique, navigation mobile, menus | **NON TESTÉ en session — contrats navbar et filtre passés** |
+| J | États transversaux | erreur, chargement, succès, toast, modal, scrollbar, zoom 200 %, réduction de mouvement/transparence | **PARTIEL — Échap, focus, confirmation et mouvement réduit ; autres états non certifiés** |
+
+Mise à jour de cette matrice après la recette ciblée du 14/10/2026 : résultats,
+captures et limites détaillés dans [UI-06](UI-06-corrections-validation.md).
+La certification des parcours authentifiés reste non validée.
 
 ## 4. Seuils / preuve de contraste
 

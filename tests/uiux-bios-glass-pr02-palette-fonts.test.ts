@@ -30,7 +30,7 @@ function hex(source: string, token: string) {
 }
 const darkAt = 'html[data-visual-profile="bios-glass-v31"][data-theme="dark"]';
 const light = css.slice(0, css.indexOf(darkAt));
-const dark = css.slice(css.indexOf(darkAt), css.indexOf("/* Le corps garde"));
+const dark = css.slice(css.indexOf(darkAt), css.indexOf("/* Le profil BIOS applique"));
 
 describe("BIOS Glass v3.1 — PR 02 : couleurs, fontes et activation isolée", () => {
   it("préserve les tokens historiques et les contrats CSS consommés par V1", () => {
@@ -61,13 +61,15 @@ describe("BIOS Glass v3.1 — PR 02 : couleurs, fontes et activation isolée", (
     expect(toggle).not.toContain("fetch(");
   });
 
-  it("prévisualise les fontes du guide sans supprimer IBM Plex Sans du corps", () => {
+  it("applique les fontes du guide au corps BIOS et conserve le repli historique", () => {
     expect(layout).toContain('@fontsource-variable/schibsted-grotesk/wght.css');
     expect(layout).toContain('@fontsource/ibm-plex-mono/latin-700.css');
     expect(layout).toContain('@fontsource-variable/ibm-plex-sans/wght.css');
     expect(globals).toContain('--font-schibsted-grotesk: "Schibsted Grotesk Variable";');
     expect(globals).toContain('--font-ibm-plex-mono: "IBM Plex Mono";');
     expect(css).toContain("--kit-font-display: var(--font-schibsted-grotesk)");
+    expect(light).toContain("--kit-font: var(--font-schibsted-grotesk)");
+    expect(legacy).toContain("--kit-font: var(--font-ibm-plex-sans)");
     expect(css).toContain("--kit-font-mono: var(--font-ibm-plex-mono)");
     expect(css).toContain("font-family: var(--kit-font-display)");
     expect(css).toContain("font-family: var(--kit-font-mono)");

@@ -25,9 +25,9 @@ const PRIORITY_TONE: Record<string, Tone> = {
 };
 
 export function StatusBadge({ status }: { status: TicketStatus }) {
-  return <span className={`kit-badge kit-badge-${STATUS_TONE[status] ?? "neutral"}`}><span aria-hidden="true" className="kit-badge-dot" />{STATUS_LABELS[status]}</span>;
+  return <span className={`kit-badge kit-badge-status kit-badge-${STATUS_TONE[status] ?? "neutral"}`}><span aria-hidden="true" className="kit-badge-dot" />{STATUS_LABELS[status]}</span>;
 }
 
 export function PriorityBadge({ priority }: { priority: Priority }) {
-  return <span className={`kit-badge kit-badge-${PRIORITY_TONE[priority] ?? "neutral"}`}>{PRIORITY_LABELS[priority]}</span>;
+  return <span className={`kit-badge kit-badge-priority kit-badge-${PRIORITY_TONE[priority] ?? "neutral"}`}>{PRIORITY_LABELS[priority]}</span>;
 }

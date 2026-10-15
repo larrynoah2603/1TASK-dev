@@ -41,7 +41,7 @@ body {
   margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--kit-font);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -1543,7 +1543,7 @@ body {
 .global-search-form,
 .notification-popover,
 .new-ticket-launcher,
-.sidebar-nav .nav-link { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.sidebar-nav .nav-link { font-family: var(--kit-font); }
 
 .sidebar-collapse-rail {
   left: 100%;
@@ -1604,7 +1604,7 @@ html[data-theme="dark"] .combobox-listbox { border-color: #3b4350; }
 
 /* Professional control system: compact Linear-like typography and restrained action colors. */
 :root {
-  --control-font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --control-font: var(--kit-font);
   --button-primary-bg: #4f46d8;
   --button-primary-bg-hover: #4338b9;
   --button-primary-border: #4f46d8;
@@ -2742,7 +2742,7 @@ html[data-theme="dark"] {
 }
 
 html, body { background: var(--background); color: var(--foreground); }
-body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: -0.008em; }
+body { font-family: var(--kit-font); letter-spacing: -0.008em; }
 
 .panel,
 .metric-card,
@@ -3758,7 +3758,7 @@ html[data-theme="light"] {
 .shell-industrial {
   background: var(--industrial-black);
   color: var(--industrial-ink);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--kit-font);
 }
 
 .shell-industrial .shell-sidebar-industrial {
@@ -3788,13 +3788,13 @@ html[data-theme="light"] {
   border-radius: 0;
   background: transparent;
   color: var(--industrial-gold);
-  font-family: "Arial Narrow", Inter, sans-serif;
+  font-family: var(--kit-font-display, var(--kit-font));
   font-weight: 900;
 }
 
 .shell-industrial .sidebar-brand-wordmark {
   color: var(--industrial-ink);
-  font-family: "Arial Narrow", Inter, sans-serif;
+  font-family: var(--kit-font-display, var(--kit-font));
   font-size: 0.94rem;
   font-weight: 900;
   letter-spacing: 0.16em;
@@ -3810,7 +3810,7 @@ html[data-theme="light"] {
 
 .shell-industrial .sidebar-label {
   color: #7f796f;
-  font-family: "Arial Narrow", Inter, sans-serif;
+  font-family: var(--kit-font-display, var(--kit-font));
   font-size: 0.59rem;
   font-weight: 800;
   letter-spacing: 0.18em;
@@ -3871,7 +3871,7 @@ html[data-theme="light"] {
   border-radius: 0;
   background: var(--industrial-red);
   color: #fff8f4;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--kit-font-mono);
   font-size: 0.62rem;
   line-height: 1.1rem;
 }
@@ -3919,7 +3919,7 @@ html[data-theme="light"] {
 
 .shell-industrial .topbar-context-icon { border-radius: 0; color: var(--industrial-muted); }
 .shell-industrial .topbar-context-icon:hover { color: var(--industrial-gold); }
-.shell-industrial .topbar-context-label { color: var(--industrial-ink); font-family: "Arial Narrow", Inter, sans-serif; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+.shell-industrial .topbar-context-label { color: var(--industrial-ink); font-family: var(--kit-font-display, var(--kit-font)); font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
 .shell-industrial .topbar-context-separator { color: var(--industrial-red); }
 
 .shell-industrial .global-search-industrial .global-search-form {
@@ -4000,7 +4000,7 @@ html[data-theme="light"] {
   border-radius: 0;
   border-bottom: 2px solid transparent;
   color: var(--industrial-muted);
-  font-family: "Arial Narrow", Inter, sans-serif;
+  font-family: var(--kit-font-display, var(--kit-font));
   font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.09em;
@@ -4028,7 +4028,7 @@ html[data-theme="light"] {
 .shell-industrial .ticket-create-industrial h1,
 .shell-industrial .ticket-detail-industrial .ticket-detail-heading h1 {
   color: var(--industrial-ink);
-  font-family: "Arial Narrow", Inter, sans-serif;
+  font-family: var(--kit-font-display, var(--kit-font));
   font-weight: 900;
   letter-spacing: -0.035em;
 }
@@ -4048,7 +4048,7 @@ html[data-theme="light"] {
   border-radius: 0;
   background: transparent;
   color: var(--industrial-gold);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--kit-font-mono);
 }
 
 .shell-industrial .inbox-operations-industrial .dashboard-kpi-card {
@@ -4069,7 +4069,7 @@ html[data-theme="light"] {
 .shell-industrial .inbox-operations-industrial .dashboard-kpi-note,
 .shell-industrial .inbox-operations-industrial .dashboard-muted { color: var(--industrial-muted); }
 
-.shell-industrial .inbox-operations-industrial .dashboard-kpi-value { color: var(--industrial-ink); font-family: "Arial Narrow", Inter, sans-serif; font-weight: 900; }
+.shell-industrial .inbox-operations-industrial .dashboard-kpi-value { color: var(--industrial-ink); font-family: var(--kit-font-display, var(--kit-font)); font-weight: 900; }
 .shell-industrial .inbox-operations-industrial .dashboard-kpi-value-brand { color: var(--industrial-gold); }
 .shell-industrial .inbox-operations-industrial .dashboard-kpi-value-info,
 .shell-industrial .inbox-operations-industrial .dashboard-kpi-value-success { color: #9ed7b9; }
@@ -4091,7 +4091,7 @@ html[data-theme="light"] {
 }
 
 .shell-industrial .inbox-operations-industrial .dashboard-widget h2,
-.shell-industrial .inbox-operations-industrial .dashboard-watch-panel h2 { color: var(--industrial-ink); font-family: "Arial Narrow", Inter, sans-serif; font-weight: 900; }
+.shell-industrial .inbox-operations-industrial .dashboard-watch-panel h2 { color: var(--industrial-ink); font-family: var(--kit-font-display, var(--kit-font)); font-weight: 900; }
 .shell-industrial .inbox-operations-industrial .dashboard-widget-total,
 .shell-industrial .inbox-operations-industrial .dashboard-watch-count { border-radius: 0; background: #25231e; color: var(--industrial-gold); }
 
@@ -4128,12 +4128,12 @@ html[data-theme="light"] {
 .shell-industrial .ticket-detail-industrial .field-control:focus { border-color: var(--industrial-gold); box-shadow: 0 0 0 2px color-mix(in srgb, var(--industrial-gold) 24%, transparent); }
 
 .shell-industrial .inbox-operations-industrial .dashboard-operation-table-wrap { border-top-color: var(--industrial-line); }
-.shell-industrial .inbox-operations-industrial .dashboard-operation-table th { background: #0c0c0b; color: #817a70; font-family: "Arial Narrow", Inter, sans-serif; font-weight: 800; letter-spacing: 0.1em; }
+.shell-industrial .inbox-operations-industrial .dashboard-operation-table th { background: #0c0c0b; color: #817a70; font-family: var(--kit-font-display, var(--kit-font)); font-weight: 800; letter-spacing: 0.1em; }
 .shell-industrial .inbox-operations-industrial .dashboard-operation-table th,
 .shell-industrial .inbox-operations-industrial .dashboard-operation-table td { border-bottom-color: var(--industrial-line); }
 .shell-industrial .inbox-operations-industrial .dashboard-operation-table td { color: var(--industrial-muted); }
 .shell-industrial .inbox-operations-industrial .dashboard-operation-table tbody tr:hover { background: #1a1916; box-shadow: inset 3px 0 0 var(--industrial-red); }
-.shell-industrial .inbox-operations-industrial .dashboard-ticket-reference { color: var(--industrial-gold); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.shell-industrial .inbox-operations-industrial .dashboard-ticket-reference { color: var(--industrial-gold); font-family: var(--kit-font-mono); }
 .shell-industrial .inbox-operations-industrial .dashboard-ticket-title { color: var(--industrial-ink); }
 .shell-industrial .inbox-operations-industrial .dashboard-row-action { border-radius: 0; color: var(--industrial-gold); }
 .shell-industrial .inbox-operations-industrial .dashboard-avatar { border-radius: 0; border-color: var(--industrial-line); }
@@ -4168,7 +4168,7 @@ html[data-theme="light"] {
 .shell-industrial .ticket-create-industrial .surface-grid { background-image: none; }
 .shell-industrial .ticket-create-industrial .ticket-create-hero > p:last-of-type { color: var(--industrial-muted); }
 .shell-industrial .ticket-create-industrial .ticket-create-steps { border-top: 1px solid var(--industrial-line); padding-top: 0.75rem; }
-.shell-industrial .ticket-create-industrial .ticket-create-step { border: 1px solid var(--industrial-line); border-radius: 0; background: #0c0c0b; color: var(--industrial-muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.shell-industrial .ticket-create-industrial .ticket-create-step { border: 1px solid var(--industrial-line); border-radius: 0; background: #0c0c0b; color: var(--industrial-muted); font-family: var(--kit-font-mono); }
 .shell-industrial .ticket-create-industrial .ticket-create-step-active { border-color: var(--industrial-gold); color: var(--industrial-gold); }
 
 .shell-industrial .ticket-create-industrial .ticket-composer-industrial {
@@ -4280,7 +4280,7 @@ html[data-theme="light"] {
 
 .shell-industrial .ticket-detail-industrial .ticket-section-heading { border-bottom: 1px solid var(--industrial-line); padding-bottom: 0.75rem; }
 .shell-industrial .ticket-detail-industrial .ticket-section-heading h2,
-.shell-industrial .ticket-detail-industrial .ticket-side-panel-title { color: var(--industrial-ink); font-family: "Arial Narrow", Inter, sans-serif; font-weight: 900; }
+.shell-industrial .ticket-detail-industrial .ticket-side-panel-title { color: var(--industrial-ink); font-family: var(--kit-font-display, var(--kit-font)); font-weight: 900; }
 .shell-industrial .ticket-detail-industrial .ticket-section-heading p:last-child,
 .shell-industrial .ticket-detail-industrial .ticket-side-panel-subtitle,
 .shell-industrial .ticket-detail-industrial .ticket-comment-helper,
@@ -4372,7 +4372,7 @@ html[data-theme="light"] {
 .shell-industrial .portfolio-industrial .portfolio-record-header > header { margin-top: 0.75rem; }
 .shell-industrial .portfolio-industrial .page-header h1,
 .shell-industrial .portfolio-industrial .portfolio-record-header h1,
-.shell-industrial .portfolio-industrial h2 { color: var(--industrial-ink); font-family: "Arial Narrow", Inter, sans-serif; font-weight: 900; letter-spacing: -0.035em; }
+.shell-industrial .portfolio-industrial h2 { color: var(--industrial-ink); font-family: var(--kit-font-display, var(--kit-font)); font-weight: 900; letter-spacing: -0.035em; }
 .shell-industrial .portfolio-industrial .eyebrow { color: var(--industrial-gold); }
 .shell-industrial .portfolio-industrial .page-header-description { color: var(--industrial-muted); }
 .shell-industrial .portfolio-industrial a { color: var(--industrial-gold); }
@@ -4412,7 +4412,7 @@ html[data-theme="light"] {
   padding: 1.05rem 1.15rem;
 }
 .shell-industrial .queues-industrial .page-header h1,
-.shell-industrial .queues-industrial h2 { color: var(--industrial-ink); font-family: "Arial Narrow", Inter, sans-serif; font-weight: 900; letter-spacing: -0.035em; }
+.shell-industrial .queues-industrial h2 { color: var(--industrial-ink); font-family: var(--kit-font-display, var(--kit-font)); font-weight: 900; letter-spacing: -0.035em; }
 .shell-industrial .queues-industrial .eyebrow { color: var(--industrial-gold); }
 .shell-industrial .queues-industrial .page-header-description { color: var(--industrial-muted); }
 .shell-industrial .queues-industrial a { color: var(--industrial-gold); }
@@ -4487,7 +4487,7 @@ html[data-theme="light"] {
 .shell-industrial .portfolio-industrial .portfolio-table-surface > div:first-child,
 .shell-industrial .portfolio-industrial .portfolio-detail-grid > section > div:first-child { border-bottom-color: var(--industrial-line) !important; background: #10100f; }
 .shell-industrial .portfolio-industrial .data-table { color: var(--industrial-muted); }
-.shell-industrial .portfolio-industrial .data-table th { border-bottom-color: var(--industrial-line); background: #0c0c0b; color: #817a70; font-family: "Arial Narrow", Inter, sans-serif; font-weight: 800; letter-spacing: 0.1em; }
+.shell-industrial .portfolio-industrial .data-table th { border-bottom-color: var(--industrial-line); background: #0c0c0b; color: #817a70; font-family: var(--kit-font-display, var(--kit-font)); font-weight: 800; letter-spacing: 0.1em; }
 .shell-industrial .portfolio-industrial .data-table th,
 .shell-industrial .portfolio-industrial .data-table td { border-bottom-color: var(--industrial-line); }
 .shell-industrial .portfolio-industrial .data-table td { color: var(--industrial-muted); }
@@ -4543,7 +4543,7 @@ html[data-theme="light"] {
   padding: 1.05rem 1.15rem;
 }
 
-.shell-industrial .identity-industrial .page-header h1 { color: var(--industrial-ink); font-family: "Arial Narrow", Inter, sans-serif; font-weight: 900; letter-spacing: -0.035em; }
+.shell-industrial .identity-industrial .page-header h1 { color: var(--industrial-ink); font-family: var(--kit-font-display, var(--kit-font)); font-weight: 900; letter-spacing: -0.035em; }
 .shell-industrial .identity-industrial .eyebrow { color: var(--industrial-gold); }
 .shell-industrial .identity-industrial .page-header-description { color: var(--industrial-muted); }
 
@@ -4687,7 +4687,7 @@ html[data-theme="light"] {
   padding: 1.05rem 1.15rem;
 }
 .shell-industrial .knowledge-industrial .page-header h1,
-.shell-industrial .knowledge-industrial h2 { color: var(--industrial-ink); font-family: "Arial Narrow", Inter, sans-serif; font-weight: 900; letter-spacing: -0.035em; }
+.shell-industrial .knowledge-industrial h2 { color: var(--industrial-ink); font-family: var(--kit-font-display, var(--kit-font)); font-weight: 900; letter-spacing: -0.035em; }
 .shell-industrial .knowledge-industrial .eyebrow { color: var(--industrial-gold); }
 .shell-industrial .knowledge-industrial .page-header-description { color: var(--industrial-muted); }
 
@@ -4769,7 +4769,7 @@ html[data-theme="light"] {
 }
 .shell-industrial .assets-industrial .page-header h1,
 .shell-industrial .assets-industrial.assets-detail-page-shell > div:first-child h1,
-.shell-industrial .assets-industrial h2 { color: var(--industrial-ink); font-family: "Arial Narrow", Inter, sans-serif; font-weight: 900; letter-spacing: -0.035em; }
+.shell-industrial .assets-industrial h2 { color: var(--industrial-ink); font-family: var(--kit-font-display, var(--kit-font)); font-weight: 900; letter-spacing: -0.035em; }
 .shell-industrial .assets-industrial .eyebrow { color: var(--industrial-gold); }
 .shell-industrial .assets-industrial .page-header-description { color: var(--industrial-muted); }
 .shell-industrial .assets-industrial.assets-detail-page-shell > div:first-child > a { color: var(--industrial-gold) !important; }
@@ -4849,7 +4849,7 @@ html[data-theme="light"] {
   padding: 1.05rem 1.15rem;
 }
 .shell-industrial .sla-reporting-industrial .page-header h1,
-.shell-industrial .sla-reporting-industrial h2 { color: var(--industrial-ink); font-family: "Arial Narrow", Inter, sans-serif; font-weight: 900; letter-spacing: -0.035em; }
+.shell-industrial .sla-reporting-industrial h2 { color: var(--industrial-ink); font-family: var(--kit-font-display, var(--kit-font)); font-weight: 900; letter-spacing: -0.035em; }
 .shell-industrial .sla-reporting-industrial .eyebrow { color: var(--industrial-gold); }
 .shell-industrial .sla-reporting-industrial .page-header-description { color: var(--industrial-muted); }
 .shell-industrial .reporting-industrial .reporting-access-chip { border-color: var(--industrial-line); border-radius: 0; background: #10100f; color: var(--industrial-gold); }
@@ -4951,7 +4951,7 @@ html[data-theme="light"] {
   padding: 1.05rem 1.15rem;
 }
 .admin-industrial .page-header h1,
-.admin-industrial h2 { color: var(--industrial-ink); font-family: "Arial Narrow", Inter, sans-serif; font-weight: 900; letter-spacing: -0.035em; }
+.admin-industrial h2 { color: var(--industrial-ink); font-family: var(--kit-font-display, var(--kit-font)); font-weight: 900; letter-spacing: -0.035em; }
 .admin-industrial .eyebrow { color: var(--industrial-gold); }
 .admin-industrial .page-header-description { color: var(--industrial-muted); }
 .admin-industrial .admin-dashboard-industrial > .grid:first-of-type { border-bottom: 1px solid var(--industrial-line); padding-bottom: 1.1rem; }
