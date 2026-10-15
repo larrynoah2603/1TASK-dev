@@ -11,7 +11,7 @@ html[data-visual-profile="bios-glass-v31"] {
   --kit-content-max: 1360px;
   --bios-page-gap: 18px;
   --bios-page-gutter: 32px;
-  --bios-canvas: #EEF0EC;
+  --bios-canvas: rgb(238 240 236);
   --bios-grid-line: rgb(20 32 29 / 3.5%);
 }
 
@@ -577,10 +577,10 @@ html[data-visual-profile="bios-glass-v31"][data-theme] :is(
   .profile-page-shell > section
 ) {
   min-width: 0;
-  border: 1px solid var(--bios-glass-border) !important;
-  border-radius: var(--kit-radius-lg) !important;
-  background: var(--bios-glass-card) !important;
-  box-shadow: var(--bios-glass-inner), var(--bios-glass-shadow) !important;
+  border: 1px solid var(--bios-glass-border);
+  border-radius: var(--kit-radius-lg);
+  background: var(--bios-glass-card);
+  box-shadow: var(--bios-glass-inner), var(--bios-glass-shadow);
   -webkit-backdrop-filter: var(--bios-glass-backdrop);
   backdrop-filter: var(--bios-glass-backdrop);
 }
@@ -590,7 +590,7 @@ html[data-visual-profile="bios-glass-v31"][data-theme] :is(
   .queue-card:hover,
   .panel:has(a:hover)
 ) {
-  border-color: var(--kit-border-strong) !important;
+  border-color: var(--kit-border-strong);
 }
 
 html[data-visual-profile="bios-glass-v31"][data-theme] :is(
@@ -649,9 +649,10 @@ html[data-visual-profile="bios-glass-v31"][data-theme] :is(
 @media (prefers-reduced-transparency: reduce) {
   html[data-visual-profile="bios-glass-v31"][data-theme] :is(
     .panel, .metric-card, .reporting-card, .admin-stat,
-    .table-shell, .ui-data-table, .queues-grid > a, .profile-page-shell > section
+    .table-shell, .ui-data-table, .queues-grid > a, .profile-page-shell > section,
+    .inbox-operations-industrial .agent-workspace-rail > section
   ) {
-    background: var(--kit-card) !important;
+    background: var(--kit-card);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
