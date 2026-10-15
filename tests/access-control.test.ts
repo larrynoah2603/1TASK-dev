@@ -28,7 +28,8 @@ describe("cloisonnement", () => {
     // Status is not an access boundary; mutations require permissions and
     // must still be denied for a viewer without a relevant role.
     for (const status of ["IN_PROGRESS", "RESOLUTION_PENDING", "CLOSED", "CANCELLED"] as const) {
-      expect(canViewTicket(viewer, { ...base, status })).toBe(true);
+      const snapshot = { ...base, status };
+      expect(canViewTicket(viewer, snapshot)).toBe(true);
     }
     expect(canViewTicket({ id: "requester", roles: [] }, { ...base, requesterId: "requester", authorizedUserIds: [] })).toBe(true);
     expect(canViewTicket({ id: "unrelated", roles: [] }, { ...base, authorizedUserIds: [] })).toBe(false);
