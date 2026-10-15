@@ -9,6 +9,30 @@ describe("cloisonnement", () => {
     expect(canViewTicket({ id: "other", departmentId: "compta", roles: [{ code: RoleCode.AGENT, scope: { type: ScopeType.QUEUE, queueId: "queue-other" } }] }, target)).toBe(false);
   });
 
+  it("ouvre un ticket ordinaire figurant dans la vue autorisée par une concession nominative", () => {
+    const granted = { ...target, assignedToId: null, authorizedUserIds: ["invited-user"] };
+    const invited = { id: "invited-user", roles: [] };
+    expect(canViewTicket(invited, granted)).toBe(true);
+    // The named entry is personal: the other authorized operational queue is
+    // not itself a role-based grant and must not hide this exact ticket.
+    expect(canViewTicket({ ...invited, authorizedQueueId: "queue-other" }, granted)).toBe(true);
+    expect(canViewTicket({ id: "other", roles: [] }, granted)).toBe(false);
+    expect(canViewTicket(invited, { ...granted, authorizedUserIds: [] })).toBe(false);
+    expect(canViewTicket(invited, { ...granted, authorizedUserIds: [], confidential: true })).toBe(false);
+  });
+
+  it("préserve la lecture après proposition de résolution puis clôture", () => {
+    const viewer = { id: "invited-user", roles: [] };
+    const base = { ...target, requesterId: "another-requester", assignedToId: null, authorizedUserIds: ["invited-user"] };
+    // Status is not an access boundary; mutations require permissions and
+    // must still be denied for a viewer without a relevant role.
+    for (const status of ["IN_PROGRESS", "RESOLUTION_PENDING", "CLOSED", "CANCELLED"] as const) {
+      expect(canViewTicket(viewer, { ...base, status })).toBe(true);
+    }
+    expect(canViewTicket({ id: "requester", roles: [] }, { ...base, requesterId: "requester", authorizedUserIds: [] })).toBe(true);
+    expect(canViewTicket({ id: "unrelated", roles: [] }, { ...base, authorizedUserIds: [] })).toBe(false);
+  });
+
   it("limite un dossier confidentiel aux personnes nominatives", () => {
     const confidential = { ...target, confidential: true, authorizedUserIds: ["authorized"] };
     expect(canViewTicket({ id: "authorized", roles: [] }, confidential)).toBe(true);
