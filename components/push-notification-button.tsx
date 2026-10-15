@@ -39,7 +39,7 @@ async function getPushServerConfig(): Promise<PushServerConfig> {
 
 // A rotated VAPID key invalidates subscriptions created under the old key.
 // Compare only public key bytes; do not read or expose device auth secrets.
-function usesCurrentPushKey(subscription: PushSubscription, publicKey: string) {
+export function usesCurrentPushKey(subscription: Pick<PushSubscription, "options">, publicKey: string) {
   const previous = subscription.options.applicationServerKey;
   if (!previous) return true; // Older browsers may not expose the key.
   const expected = decodeKey(publicKey);
