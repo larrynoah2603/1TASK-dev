@@ -66,6 +66,16 @@ describe("BIOS 1Time-inspired shell / preferences, without V1 changes", () => {
     expect(() => postcss.parse(css)).not.toThrow();
     expect(css).toContain('html[data-visual-profile="bios-glass-v31"][data-theme] .kit-popover');
     expect(css).toContain("background: var(--bios-glass-menu);");
+    // An earlier !important on .kit-popover-menu previously forced a 96% opaque
+    // edit surface; the 82% menu token must be free to win.
+    const importantMenuBackgrounds: string[] = [];
+    postcss.parse(css).walkRules((rule) => {
+      if (!rule.selector.includes(".kit-popover-menu")) return;
+      rule.walkDecls("background", (decl) => {
+        if (decl.important) importantMenuBackgrounds.push(decl.value);
+      });
+    });
+    expect(importantMenuBackgrounds).toHaveLength(0);
     expect(css).toContain('data-density="compact"');
     expect(css).toContain("padding-block: 8px;");
     expect(css).toContain("background: var(--kit-card);");
