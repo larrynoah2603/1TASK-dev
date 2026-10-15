@@ -42,16 +42,19 @@ describe("BIOS 1Time-inspired shell / preferences, without V1 changes", () => {
     const sheet = postcss.parse(shell);
     const target: Record<string, string> = {};
     sheet.walkRules((rule) => {
-      if (rule.selector.includes(".kit-sidebar-toggle") && rule.parent?.type === "atrule"
+      if (rule.selector.endsWith(" .kit-sidebar-toggle")
+          && !rule.selector.includes('data-sidebar-collapsed="true"')
+          && rule.parent?.type === "atrule"
           && "params" in rule.parent && rule.parent.params.includes("min-width: 1024px")) {
         rule.walkDecls((declaration) => { target[declaration.prop] = declaration.value; });
       }
     });
-    expect(target.top).toBe("50%");
-    expect(target.right).toBe("-16px");
+    expect(target.top).toBe("calc(var(--kit-topbar-h) / 2)");
+    expect(target.right).toBe("12px");
     expect(target.transform).toBe("translateY(-50%)");
-    expect(target.width).toBe("32px");
-    expect(target.height).toBe("32px");
+    expect(target.width).toBe("28px");
+    expect(target.height).toBe("28px");
+    expect(shell).toContain('[data-sidebar-collapsed="true"] .kit-sidebar-toggle {');
     expect(shell).toContain("--kit-sidebar-w: 240px;");
     expect(shell).toContain("--kit-sidebar-w-collapsed: 64px;");
     expect(shell).toContain("--kit-topbar-h: 56px;");
