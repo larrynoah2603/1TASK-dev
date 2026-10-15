@@ -37,15 +37,18 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .kit-sidebar-brand {
   border-color: var(--kit-border);
 }
 
-/* 1Time reference: a single collapse affordance on the physical edge of
-   the sidebar, vertically centred in both expanded and collapsed states.
-   Keep the existing mobile drawer close button and shell dimensions. */
+/* 1Time reference: chevron vertically aligned with the brand in the
+   sidebar header, not centred on the entire navigation height. It moves to
+   the rail edge when collapsed, without covering the logo or Admin chip. */
 @media (min-width: 1024px) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] .kit-app:not([data-sidebar-collapsed="true"]) .kit-sidebar-brand {
+    padding-right: 44px;
+  }
   html[data-visual-profile="bios-glass-v31"][data-theme] .kit-sidebar-toggle {
-    top: 50%;
-    right: -16px;
-    width: 32px;
-    height: 32px;
+    top: calc(var(--kit-topbar-h) / 2);
+    right: 12px;
+    width: 28px;
+    height: 28px;
     transform: translateY(-50%);
     border: 1px solid var(--bios-glass-border);
     border-radius: var(--kit-radius-md);
@@ -54,6 +57,9 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .kit-sidebar-brand {
     box-shadow: var(--bios-glass-inner), var(--bios-glass-shadow);
     -webkit-backdrop-filter: var(--bios-glass-backdrop);
     backdrop-filter: var(--bios-glass-backdrop);
+  }
+  html[data-visual-profile="bios-glass-v31"][data-theme] .kit-app[data-sidebar-collapsed="true"] .kit-sidebar-toggle {
+    right: -14px;
   }
   html[data-visual-profile="bios-glass-v31"][data-theme] .kit-sidebar-toggle:hover {
     background: var(--bios-glass-raised);
