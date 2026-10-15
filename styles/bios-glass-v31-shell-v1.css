@@ -11,21 +11,15 @@ html[data-visual-profile="bios-glass-v31"] {
   --kit-content-max: 1360px;
   --bios-page-gap: 18px;
   --bios-page-gutter: 32px;
-  --bios-canvas: rgb(238 240 236);
-  --bios-grid-line: rgb(20 32 29 / 3.5%);
-}
-
-html[data-visual-profile="bios-glass-v31"][data-theme="light"] {
-  --kit-bg: var(--bios-canvas);
 }
 
 /* Shell : même navigation/routes, seule la peau change. */
 html[data-visual-profile="bios-glass-v31"][data-theme] .kit-app {
   background-color: var(--kit-bg);
   background-image:
-    radial-gradient(ellipse 620px 460px at 94% 5%, rgb(232 112 42 / 24%), transparent 72%),
-    radial-gradient(ellipse 560px 430px at 8% 96%, rgb(20 160 143 / 14%), transparent 72%),
-    radial-gradient(ellipse 640px 420px at 52% 110%, rgb(61 140 239 / 10%), transparent 74%),
+    radial-gradient(ellipse 620px 460px at 94% 5%, var(--bios-halo-orange), transparent 72%),
+    radial-gradient(ellipse 560px 430px at 8% 96%, var(--bios-halo-turquoise), transparent 72%),
+    radial-gradient(ellipse 640px 420px at 52% 110%, var(--bios-halo-blue), transparent 74%),
     linear-gradient(var(--bios-grid-line) 1px, transparent 1px),
     linear-gradient(90deg, var(--bios-grid-line) 1px, transparent 1px);
   background-size: auto, auto, auto, 56px 56px, 56px 56px;
@@ -33,10 +27,10 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .kit-app {
 }
 
 html[data-visual-profile="bios-glass-v31"][data-theme] .kit-sidebar {
-  background: rgb(255 255 255 / 45%);
+  background: var(--bios-sidebar-surface);
   border-color: var(--kit-border);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  backdrop-filter: blur(20px) saturate(150%);
 }
 
 html[data-visual-profile="bios-glass-v31"][data-theme] .kit-sidebar-brand {
@@ -84,10 +78,10 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .kit-sidebar-toggle:focus
 }
 
 html[data-visual-profile="bios-glass-v31"][data-theme] .kit-topbar {
-  background: rgb(255 255 255 / 35%);
+  background: var(--bios-topbar-surface);
   border-color: var(--kit-border);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  backdrop-filter: blur(20px) saturate(150%);
 }
 
 html[data-visual-profile="bios-glass-v31"][data-theme] .kit-main {
@@ -114,7 +108,7 @@ html[data-visual-profile="bios-glass-v31"][data-theme] :is(
   font-size: 24px;
   font-weight: 700;
   line-height: 1.25;
-  color: var(--kit-text);
+  color: var(--bios-page-title);
 }
 
 html[data-visual-profile="bios-glass-v31"][data-theme] :is(
@@ -183,82 +177,9 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .inbox-filter-panel {
   backdrop-filter: none;
 }
 
-/* Harmonisation finale avec les écrans de référence : rail clair compact,
-   barre d'outils légère et surfaces calmes sur le canevas quadrillé. */
-html[data-visual-profile="bios-glass-v31"][data-theme="light"] {
-  --kit-sidebar-w: 180px;
-  --kit-topbar-h: 44px;
-  --bios-page-gutter: 24px;
-  --bios-page-gap: 14px;
-  --bios-canvas: rgb(238 241 237);
-  --bios-grid-line: rgb(26 56 50 / 7%);
-}
-
-html[data-visual-profile="bios-glass-v31"][data-theme] .kit-app {
-  background-image:
-    radial-gradient(ellipse 520px 360px at 96% 2%, rgb(241 143 77 / 23%), transparent 72%),
-    radial-gradient(ellipse 560px 420px at 8% 100%, rgb(77 171 156 / 16%), transparent 72%),
-    linear-gradient(var(--bios-grid-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--bios-grid-line) 1px, transparent 1px);
-  background-size: auto, auto, 42px 42px, 42px 42px;
-}
-
-html[data-visual-profile="bios-glass-v31"][data-theme] .kit-sidebar {
-  background: rgb(248 250 247 / 82%);
-  border-right-color: rgb(30 55 48 / 12%);
-  -webkit-backdrop-filter: blur(18px);
-  backdrop-filter: blur(18px);
-}
-
-html[data-visual-profile="bios-glass-v31"][data-theme] .kit-topbar {
-  min-height: var(--kit-topbar-h);
-  background: rgb(250 248 243 / 78%);
-  border-bottom-color: rgb(30 55 48 / 12%);
-}
-
-html[data-visual-profile="bios-glass-v31"][data-theme] .kit-main {
-  padding: 24px;
-}
-
-html[data-visual-profile="bios-glass-v31"][data-theme] :is(
-  .dashboard-reference-card,
-  .dashboard-kpi-card,
-  .dashboard-widget,
-  .dashboard-enterprise-card,
-  .dashboard-modern-kpi,
-  .inbox-workbench,
-  .inbox-command-surface,
-  .portfolio-table-surface,
-  .knowledge-article-card,
-  .assets-register-panel,
-  .admin-notice
-) {
-  border-color: rgb(30 55 48 / 18%) !important;
-  border-radius: 9px !important;
-  background: rgb(250 251 249 / 78%) !important;
-  box-shadow: 0 8px 22px rgb(26 50 44 / 7%), inset 0 1px rgb(255 255 255 / 80%) !important;
-}
-
-html[data-visual-profile="bios-glass-v31"][data-theme] :is(
-  .dashboard-reference-header h1,
-  .dashboard-modern-header h1,
-  .inbox-modern-header h1,
-  .page-header h1
-) {
-  color: rgb(32 61 103);
-  letter-spacing: -0.02em;
-}
-
-html[data-visual-profile="bios-glass-v31"][data-theme] :is(
-  .kit-button-primary,
-  .new-ticket-launcher,
-  .asset-request-launcher
-) {
-  border-radius: 6px;
-  background: rgb(239 108 34);
-  color: rgb(255 250 244);
-  box-shadow: 0 4px 10px rgb(205 82 23 / 22%);
-}
+/* Les écarts introduits par l’ancienne harmonisation ont été fusionnés
+   dans les tokens light/dark (preview), les surfaces (components) et ce shell.
+   Aucune variation géométrique entre thèmes. */
 
 html[data-visual-profile="bios-glass-v31"][data-theme] :is(
   .inbox-scope-tabs .is-active,
@@ -515,7 +436,8 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .dashboard-reference-page
 html[data-visual-profile="bios-glass-v31"][data-theme] .dashboard-reference-page .dashboard-kpi-card strong {
   color: var(--kit-text);
   font-family: var(--kit-font-mono);
-  font-size: 24px;
+  font-size: 28px;
+  font-weight: 500;
   line-height: 1.15;
   font-variant-numeric: tabular-nums;
 }
@@ -527,11 +449,11 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .dashboard-reference-page
 }
 html[data-visual-profile="bios-glass-v31"][data-theme] .dashboard-reference-page .dashboard-kpi-card small {
   color: var(--kit-text-2);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.4;
 }
 @container bios-dashboard (min-width: 760px) {
-  html[data-visual-profile="bios-glass-v31"][data-theme] .dashboard-kpi-grid {
+  html[data-visual-profile="bios-glass-v31"][data-theme] .dashboard-reference-page .dashboard-kpi-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
@@ -623,7 +545,7 @@ html[data-visual-profile="bios-glass-v31"][data-theme] :is(
   .admin-page-shell h1
 ) {
   margin: 0;
-  color: var(--kit-text);
+  color: var(--bios-page-title);
   font-family: var(--kit-font-display);
   font-size: 24px;
   font-weight: 700;

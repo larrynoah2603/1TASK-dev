@@ -35,6 +35,14 @@ html[data-visual-profile="bios-glass-v31"] {
   --kit-info-text: #1F5FAE;
   --kit-on-success: #FFFFFF;
   --kit-glass: rgb(255 255 255 / 82%);
+  /* Palette des surfaces du shell, séparée de sa géométrie partagée. */
+  --bios-sidebar-surface: rgb(255 255 255 / 45%);
+  --bios-topbar-surface: rgb(255 255 255 / 35%);
+  --bios-grid-line: rgb(20 32 29 / 3.5%);
+  --bios-halo-orange: rgb(232 112 42 / 24%);
+  --bios-halo-turquoise: rgb(20 160 143 / 14%);
+  --bios-halo-blue: rgb(61 140 239 / 10%);
+  --bios-page-title: #193357;
   /* Guide v3.1: one sans-serif family for body text, controls and titles.
      The historical profile keeps its original token in tokens.css. */
   --kit-font: var(--font-schibsted-grotesk), "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
@@ -73,6 +81,14 @@ html[data-visual-profile="bios-glass-v31"][data-theme="dark"] {
   --kit-info-text: #A0C8F1;
   --kit-on-success: #14201D;
   --kit-glass: rgb(25 43 35 / 94%);
+  /* Même shell qu’en clair : seules ses surfaces et ses lumières changent. */
+  --bios-sidebar-surface: rgb(25 43 35 / 85%);
+  --bios-topbar-surface: rgb(25 43 35 / 88%);
+  --bios-grid-line: rgb(242 247 243 / 3%);
+  --bios-halo-orange: rgb(232 112 42 / 10%);
+  --bios-halo-turquoise: rgb(20 160 143 / 7%);
+  --bios-halo-blue: rgb(61 140 239 / 5%);
+  --bios-page-title: var(--kit-text);
 }
 
 /* Le profil BIOS applique Schibsted Grotesk au corps et aux titres ;

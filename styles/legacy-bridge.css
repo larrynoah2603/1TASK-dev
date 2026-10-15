@@ -228,7 +228,8 @@ html[data-theme] .dashboard-kpi-value-danger { color: var(--kit-danger-text) !im
    The rendered KpiGrid uses dashboard-kpi-{tone} on the card itself, not
    dashboard-kpi-value-* on the numeric <strong>. */
 html[data-theme] .dashboard-reference-header h1 {
-  color: var(--kit-text) !important;
+  /* Requis contre les titres hérités à couleur forcée ; aucun changement hors BIOS. */
+  color: var(--bios-page-title, var(--kit-text)) !important;
 }
 html[data-theme] .dashboard-reference-header .page-header-description,
 html[data-theme] .dashboard-kpi-heading,

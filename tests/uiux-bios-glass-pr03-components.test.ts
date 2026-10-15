@@ -46,7 +46,7 @@ describe("BIOS Glass v3.1 — PR 03 : composants partagés, opt-in et lisibilit�
     expect(css).toContain("--kit-radius-xl: 12px;");
     expect(css).toContain("--bios-glass-card: rgb(255 255 255 / 62%);");
     expect(css).toContain("--bios-glass-menu: rgb(255 255 255 / 82%);");
-    expect(css).toContain("--bios-glass-backdrop: blur(20px);");
+    expect(css).toContain("--bios-glass-backdrop: blur(20px) saturate(150%);");
     expect(css).toContain("backdrop-filter: var(--bios-glass-backdrop);");
     expect(css).toContain(".kit-card,");
     expect(css).toContain(".ds-kpi-card,");

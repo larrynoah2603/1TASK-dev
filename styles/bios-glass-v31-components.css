@@ -15,7 +15,7 @@ html[data-visual-profile="bios-glass-v31"] {
   --bios-glass-border: rgb(20 32 29 / 14%);
   --bios-glass-inner: inset 0 1px 0 rgb(255 255 255 / 48%);
   --bios-glass-shadow: 0 8px 24px rgb(20 32 29 / 6%);
-  --bios-glass-backdrop: blur(20px);
+  --bios-glass-backdrop: blur(20px) saturate(150%);
 }
 
 html[data-visual-profile="bios-glass-v31"][data-theme="dark"] {
