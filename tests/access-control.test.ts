@@ -39,6 +39,18 @@ describe("cloisonnement", () => {
     expect(canViewTicket({ id: "other", roles: [{ code: RoleCode.FUNCTIONAL_ADMIN }] }, confidential)).toBe(false);
   });
 
+  it("honore un accès confidentiel nominatif inter-files sans pouvoir implicite", () => {
+    const crossQueue = {
+      ...target, confidential: true,
+      authorizedUserIds: ["recipient"],
+    };
+    const invited = { id: "recipient", authorizedQueueId: "queue-other", roles: [{ code: RoleCode.REQUESTER }] };
+    expect(canViewTicket(invited, crossQueue)).toBe(true);
+    expect(canViewTicket({ ...invited, id: "unrelated" }, crossQueue)).toBe(false);
+    expect(canViewTicket({ ...invited, id: "unrelated", roles: [{ code: RoleCode.FUNCTIONAL_ADMIN }] }, crossQueue)).toBe(false);
+    expect(canViewTicket(invited, { ...crossQueue, authorizedUserIds: [] })).toBe(false);
+  });
+
   it("ne transforme jamais une affectation en droit confidentiel permanent", () => {
     const confidential = { ...target, confidential: true, authorizedUserIds: [] };
     expect(canViewTicket({ id: "agent", roles: [{ code: RoleCode.AGENT }] }, confidential)).toBe(false);
