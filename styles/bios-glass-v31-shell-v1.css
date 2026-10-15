@@ -37,6 +37,43 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .kit-sidebar-brand {
   border-color: var(--kit-border);
 }
 
+/* 1Time reference: chevron vertically aligned with the brand in the
+   sidebar header, not centred on the entire navigation height. It moves to
+   the rail edge when collapsed, without covering the logo or Admin chip. */
+@media (min-width: 1024px) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] .kit-app:not([data-sidebar-collapsed="true"]) .kit-sidebar-brand {
+    padding-right: 44px;
+  }
+  html[data-visual-profile="bios-glass-v31"][data-theme] .kit-sidebar-toggle {
+    top: calc(var(--kit-topbar-h) / 2);
+    right: 12px;
+    width: 28px;
+    height: 28px;
+    transform: translateY(-50%);
+    border: 1px solid var(--bios-glass-border);
+    border-radius: var(--kit-radius-md);
+    background: var(--bios-glass-menu);
+    color: var(--kit-text);
+    box-shadow: var(--bios-glass-inner), var(--bios-glass-shadow);
+    -webkit-backdrop-filter: var(--bios-glass-backdrop);
+    backdrop-filter: var(--bios-glass-backdrop);
+  }
+  html[data-visual-profile="bios-glass-v31"][data-theme] .kit-app[data-sidebar-collapsed="true"] .kit-sidebar-toggle {
+    right: -14px;
+  }
+  html[data-visual-profile="bios-glass-v31"][data-theme] .kit-sidebar-toggle:hover {
+    background: var(--bios-glass-raised);
+    border-color: var(--kit-border-strong);
+  }
+}
+
+/* Functional density preference: only the page rhythm changes.
+   Theme switching never alters the navigation dimensions or breakpoints. */
+html[data-visual-profile="bios-glass-v31"][data-density="compact"] {
+  --bios-page-gap: 12px;
+  --bios-page-gutter: 24px;
+}
+
 html[data-visual-profile="bios-glass-v31"][data-theme] .kit-brand-mark {
   width: 36px;
   height: 36px;
@@ -249,7 +286,7 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-composer .form-ac
    transparent si le support CSS est absent ou l'utilisateur le refuse. */
 @supports not ((backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px))) {
   html[data-visual-profile="bios-glass-v31"][data-theme] :is(
-    .kit-sidebar, .kit-topbar,
+    .kit-sidebar, .kit-topbar, .kit-sidebar-toggle,
     .dashboard-kpi-card, .dashboard-widget, .dashboard-reference-card,
     .dashboard-enterprise-card, .dashboard-modern-kpi,
     .inbox-workbench, .inbox-command-surface, .inbox-filter-panel,
@@ -261,7 +298,7 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-composer .form-ac
 
 @media (prefers-reduced-transparency: reduce) {
   html[data-visual-profile="bios-glass-v31"][data-theme] :is(
-    .kit-sidebar, .kit-topbar,
+    .kit-sidebar, .kit-topbar, .kit-sidebar-toggle,
     .dashboard-kpi-card, .dashboard-widget, .dashboard-reference-card,
     .dashboard-enterprise-card, .dashboard-modern-kpi,
     .inbox-workbench, .inbox-command-surface, .inbox-filter-panel,
@@ -655,5 +692,14 @@ html[data-visual-profile="bios-glass-v31"][data-theme] :is(
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
+}
+
+
+/* Compact only: density is an actual reading-density choice, not a zoom hack.
+   It never changes the 240/64/56px geometry. */
+html[data-visual-profile="bios-glass-v31"][data-theme][data-density="compact"] .dashboard-reference-page .dashboard-kpi-card {
+  min-height: 80px;
+  padding: 10px 12px;
+  gap: 4px;
 }
 

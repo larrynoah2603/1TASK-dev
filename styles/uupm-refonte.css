@@ -223,6 +223,22 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .inbox-workbench .ui-data
 html[data-visual-profile="bios-glass-v31"][data-theme] :is(.ui-data-table, .kit-table-wrap) {
   background: transparent !important;
 }
+
+/* Preserve transparent wrappers in normal Glass mode. In accessibility
+   fallback modes the final !important declaration above must not cancel
+   the opaque surfaces from bios-glass-v31-components.css. */
+@supports not ((backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px))) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] :is(.ui-data-table, .kit-table-wrap) {
+    background: var(--kit-card) !important;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] :is(.ui-data-table, .kit-table-wrap) {
+    background: var(--kit-card) !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
 /* Lignes : survol discret + transition */
 html[data-visual-profile="bios-glass-v31"][data-theme] .agent-ticket-row {
   transition: background-color var(--uupm-fast) var(--uupm-ease);
