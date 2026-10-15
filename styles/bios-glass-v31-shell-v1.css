@@ -180,8 +180,7 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .inbox-filter-panel {
   box-shadow: var(--kit-shadow-lg);
   color: var(--kit-text);
   -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
+  backdrop-filter: none;
 }
 
 /* Harmonisation finale avec les écrans de référence : rail clair compact,
