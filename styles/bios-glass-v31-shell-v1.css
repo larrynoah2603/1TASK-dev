@@ -37,6 +37,37 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .kit-sidebar-brand {
   border-color: var(--kit-border);
 }
 
+/* 1Time reference: a single collapse affordance on the physical edge of
+   the sidebar, vertically centred in both expanded and collapsed states.
+   Keep the existing mobile drawer close button and shell dimensions. */
+@media (min-width: 1024px) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] .kit-sidebar-toggle {
+    top: 50%;
+    right: -16px;
+    width: 32px;
+    height: 32px;
+    transform: translateY(-50%);
+    border: 1px solid var(--bios-glass-border);
+    border-radius: var(--kit-radius-md);
+    background: var(--bios-glass-menu);
+    color: var(--kit-text);
+    box-shadow: var(--bios-glass-inner), var(--bios-glass-shadow);
+    -webkit-backdrop-filter: var(--bios-glass-backdrop);
+    backdrop-filter: var(--bios-glass-backdrop);
+  }
+  html[data-visual-profile="bios-glass-v31"][data-theme] .kit-sidebar-toggle:hover {
+    background: var(--bios-glass-raised);
+    border-color: var(--kit-border-strong);
+  }
+}
+
+/* Functional density preference: only the page rhythm changes.
+   Theme switching never alters the navigation dimensions or breakpoints. */
+html[data-visual-profile="bios-glass-v31"][data-density="compact"] {
+  --bios-page-gap: 12px;
+  --bios-page-gutter: 24px;
+}
+
 html[data-visual-profile="bios-glass-v31"][data-theme] .kit-brand-mark {
   width: 36px;
   height: 36px;
@@ -657,3 +688,24 @@ html[data-visual-profile="bios-glass-v31"][data-theme] :is(
   }
 }
 
+
+/* Compact only: density is an actual reading-density choice, not a zoom hack.
+   It never changes the 240/64/56px geometry. */
+html[data-visual-profile="bios-glass-v31"][data-theme][data-density="compact"] .dashboard-reference-page .dashboard-kpi-card {
+  min-height: 80px;
+  padding: 10px 12px;
+  gap: 4px;
+}
+
+@supports not ((backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px))) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] .kit-sidebar-toggle {
+    background: var(--kit-card);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] .kit-sidebar-toggle {
+    background: var(--kit-card);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
