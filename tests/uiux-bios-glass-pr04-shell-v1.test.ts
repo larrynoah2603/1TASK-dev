@@ -37,7 +37,7 @@ describe("BIOS Glass v3.1 — PR04 Shell & premiers écrans V1", () => {
     expect(css).toContain('.kit-nav-item[aria-current="page"]');
     expect(css).toContain("background: var(--kit-text);");
     expect(css).toContain("color: var(--kit-bg);");
-    expect(css).toContain("backdrop-filter: blur(20px);");
+    expect(css).toContain("backdrop-filter: blur(20px) saturate(150%);");
     expect(css).toContain("font-family: var(--kit-font-display);");
     const prod = read("styles/tokens.css");
     expect(prod).toContain("--kit-sidebar-w-collapsed: 68px;");
