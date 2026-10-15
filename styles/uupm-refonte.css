@@ -218,9 +218,10 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .inbox-workbench .ui-data
   border-radius: 0 !important;
   box-shadow: none !important;
 }
-/* Tableau = surface de lecture continue : opaque */
+/* Tables stay in the shared BIOS glass language; cells provide row clarity
+   without masking the canvas or stacking opaque frames. */
 html[data-visual-profile="bios-glass-v31"][data-theme] :is(.ui-data-table, .kit-table-wrap) {
-  background: var(--uupm-solid) !important;
+  background: transparent !important;
 }
 /* Lignes : survol discret + transition */
 html[data-visual-profile="bios-glass-v31"][data-theme] .agent-ticket-row {
