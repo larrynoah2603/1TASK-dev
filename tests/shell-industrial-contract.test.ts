@@ -40,7 +40,10 @@ describe("industrial shell visual contract", () => {
   it("applies the saved theme before hydration and defaults safely to dark", () => {
     const layout = source("app/layout.tsx");
 
-    expect(layout).toContain("localStorage.getItem('1task-theme') === 'light' ? 'light' : 'dark'");
+    expect(layout).toContain("localStorage.getItem('1task-theme')");
+    expect(layout).toContain("p==='auto'");
+    expect(layout).toContain("p==='light'?'light':'dark'");
+    expect(layout).toContain("document.documentElement.dataset.theme");
     expect(layout).toContain("suppressHydrationWarning");
   });
 });
