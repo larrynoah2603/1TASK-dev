@@ -96,15 +96,20 @@ export function canViewTicket(subject: AccessSubject, target: TicketAccessTarget
   // losing access. Ordinary tickets retain the historical assignee rule.
   if (!target.confidential && subject.id === target.assignedToId) return true;
 
+  // TicketAccess grants appear in list queries as a personal visibility
+  // clause. Honor those SAME active, named grants in the detail view for both
+  // ordinary and confidential tickets, even across an operational queue
+  // boundary. The grant is ticket-specific and adds no workflow permission.
+  // Revoked/expired delegations are excluded by accessTarget(), not here.
+  if (target.authorizedUserIds?.includes(subject.id)) return true;
+
   // An administrator-assigned queue is an additional operational boundary for
   // every non-personal ticket action, not only for AGENT rows.
   if (subject.authorizedQueueId && subject.authorizedQueueId !== target.queueId) return false;
 
   // A broad operational role never grants implicit access to a confidential
-  // ticket. Such a ticket needs an explicit named authorization.
-  if (target.confidential) {
-    return target.authorizedUserIds?.includes(subject.id) ?? false;
-  }
+  // ticket. Only the requester or an explicit active grant can pass above.
+  if (target.confidential) return false;
 
   // Queue managers explicitly attached to a queue have the same operational
   // visibility in ticket details as in ticket lists.
