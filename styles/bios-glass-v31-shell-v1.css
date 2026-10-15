@@ -517,3 +517,143 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-detail-workspace-
     scroll-behavior: auto;
   }
 }
+
+/* Surfaces internes : même rythme BIOS pour les pages métier, administration,
+   inventaire, reporting et profil, sans modifier leur contenu ni leur workflow. */
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .page-header,
+  .reporting-page-shell,
+  .portfolio-industrial,
+  .identity-industrial,
+  .profile-page-shell,
+  .queues-page-shell,
+  .knowledge-page-shell,
+  .assets-page-shell,
+  .missions-page-shell,
+  .clients-page-shell,
+  .dossiers-page-shell,
+  .notifications-page-shell,
+  .admin-page-shell
+) {
+  min-width: 0;
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .page-header h1,
+  .reporting-page-shell h1,
+  .portfolio-industrial h1,
+  .identity-industrial h1,
+  .admin-page-shell h1
+) {
+  margin: 0;
+  color: var(--kit-text);
+  font-family: var(--kit-font-display);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .page-header-description,
+  .page-header > p:not(.eyebrow),
+  .reporting-page-shell > p,
+  .portfolio-industrial > p
+) {
+  max-width: 72ch;
+  color: var(--kit-text-2);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .panel,
+  .metric-card,
+  .reporting-card,
+  .admin-stat,
+  .table-shell,
+  .ui-data-table,
+  .queues-grid > a,
+  .profile-page-shell > section
+) {
+  min-width: 0;
+  border: 1px solid var(--bios-glass-border) !important;
+  border-radius: var(--kit-radius-lg) !important;
+  background: var(--bios-glass-card) !important;
+  box-shadow: var(--bios-glass-inner), var(--bios-glass-shadow) !important;
+  -webkit-backdrop-filter: var(--bios-glass-backdrop);
+  backdrop-filter: var(--bios-glass-backdrop);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .metric-card:hover,
+  .queue-card:hover,
+  .panel:has(a:hover)
+) {
+  border-color: var(--kit-border-strong) !important;
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .page-header,
+  .reporting-page-shell,
+  .portfolio-industrial,
+  .identity-industrial,
+  .profile-page-shell,
+  .queues-page-shell,
+  .knowledge-page-shell,
+  .assets-page-shell,
+  .missions-page-shell,
+  .clients-page-shell,
+  .dossiers-page-shell,
+  .notifications-page-shell,
+  .admin-page-shell
+) {
+  gap: var(--bios-page-gap);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .panel input,
+  .panel select,
+  .panel textarea,
+  .field-control,
+  .combobox-trigger
+) {
+  border-color: var(--kit-border-strong);
+  border-radius: var(--kit-radius-md);
+  background: var(--bios-glass-raised);
+  color: var(--kit-text);
+}
+
+@media (max-width: 640px) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+    .page-header h1,
+    .reporting-page-shell h1,
+    .portfolio-industrial h1,
+    .identity-industrial h1,
+    .admin-page-shell h1
+  ) {
+    font-size: 20px;
+  }
+  html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+    .panel,
+    .metric-card,
+    .reporting-card,
+    .admin-stat,
+    .table-shell,
+    .ui-data-table
+  ) {
+    max-width: 100%;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+    .panel, .metric-card, .reporting-card, .admin-stat,
+    .table-shell, .ui-data-table, .queues-grid > a, .profile-page-shell > section
+  ) {
+    background: var(--kit-card) !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
