@@ -391,3 +391,131 @@ html[data-visual-profile="bios-glass-v31"][data-theme] :is(
     backdrop-filter: none;
   }
 }
+
+/* 1Time-inspired account controls: current application behaviour, not a
+   translation/density mock. The menu is a dialog because it contains buttons. */
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-popover {
+  background: var(--bios-glass-menu);
+  border-color: var(--bios-glass-border);
+  color: var(--kit-text);
+  box-shadow: var(--bios-glass-inner), var(--kit-shadow-md);
+  -webkit-backdrop-filter: var(--bios-glass-backdrop);
+  backdrop-filter: var(--bios-glass-backdrop);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-profile-popover {
+  width: min(336px, calc(100vw - 24px));
+  max-height: min(72dvh, 540px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: var(--kit-radius-lg);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-profile-popover .kit-menu-head {
+  padding: 14px 16px 12px;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-profile-popover .kit-menu {
+  gap: 4px;
+  padding: 8px;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-profile-preferences {
+  display: grid;
+  gap: 8px;
+  padding: 4px 8px;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-profile-preference-row {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-profile-preference-label {
+  color: var(--kit-text-2);
+  font-size: 13px;
+  font-weight: 500;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-preference-segments {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--kit-border);
+  border-radius: var(--kit-radius-md);
+  background: var(--kit-surface-muted);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-preference-option {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 30px;
+  padding: 4px 5px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--kit-text-2);
+  font: 500 12px/1.2 var(--kit-font);
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-preference-option[aria-pressed="true"] {
+  background: var(--bios-glass-raised);
+  color: var(--kit-text);
+  font-weight: 650;
+  box-shadow: var(--kit-shadow-xs);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-preference-option:hover:not([aria-pressed="true"]) {
+  background: var(--kit-hover);
+  color: var(--kit-text);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-preference-option:focus-visible {
+  outline: 2px solid var(--kit-primary-text);
+  outline-offset: 1px;
+}
+
+/* Compact density changes actual table, list, navigation and card rhythm;
+   normal is the unchanged V1 default. Values are shared by light and dark. */
+html[data-visual-profile="bios-glass-v31"][data-theme][data-density="compact"] .kit-nav-item {
+  min-height: 36px;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme][data-density="compact"] :is(
+  .kit-table th, .kit-table td, .ui-data-table th, .ui-data-table td,
+  .table-shell th, .table-shell td
+) {
+  padding-block: 8px;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme][data-density="compact"] :is(
+  .kit-card, .metric-card, .reporting-card
+) {
+  --kit-space-5: 18px;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme][data-density="compact"] :is(
+  .kit-input, .ds-input, .field-control, .combobox-trigger
+) {
+  min-height: 36px;
+}
+
+@media (max-width: 767px) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] .kit-profile-popover {
+    width: auto;
+    max-height: calc(100dvh - var(--kit-topbar-h) - 24px);
+  }
+  html[data-visual-profile="bios-glass-v31"][data-theme] .kit-preference-option {
+    min-height: 36px;
+  }
+}
+/* Keep the glass fallback genuinely opaque for readable menus, including
+   the profile settings and search/notification overlays. */
+@supports not ((backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px))) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] .kit-popover {
+    background: var(--kit-card);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] .kit-popover {
+    background: var(--kit-card);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
