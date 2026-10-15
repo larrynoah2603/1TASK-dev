@@ -139,7 +139,7 @@ export function PushNotificationButton() {
         applicationServerKey: decodeKey(config.publicKey),
       });
       await syncSubscription(subscription);
-      if (stale && existing) {
+      if (stale && existing && existing.endpoint !== subscription.endpoint) {
         // The new subscription is persisted before retiring the old endpoint.
         // An unreachable server cleanup does not invalidate the new device.
         void fetch("/api/notifications/push-subscriptions", {
