@@ -282,7 +282,7 @@ html[data-visual-profile="bios-glass-v31"][data-theme] :is(
   border-color: var(--kit-border-strong);
 }
 html[data-visual-profile="bios-glass-v31"][data-theme] :is(
-  .field-control, .combobox-trigger, .combobox-search, .kit-popover-menu,
+  .field-control, .combobox-trigger, .combobox-search,
   .combobox-listbox, .modal-panel, .confirm-dialog
 ) {
   background: var(--bios-glass-raised) !important;
