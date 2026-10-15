@@ -43,10 +43,17 @@ export function Dropdown({
 }) {
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const ref = useDismissable<HTMLDivElement>(open, close);
   return (
-    <div ref={ref} className="kit-anchor">
-      <button type="button" className={triggerClassName} aria-label={triggerLabel} title={triggerLabel} aria-expanded={open} aria-haspopup={role} onClick={() => setOpen((value) => !value)}>
+    <div ref={ref} className="kit-anchor" onKeyDown={(event) => {
+      if (event.key === "Escape" && open) {
+        event.stopPropagation();
+        close();
+        triggerRef.current?.focus();
+      }
+    }}>
+      <button ref={triggerRef} type="button" className={triggerClassName} aria-label={triggerLabel} title={triggerLabel} aria-expanded={open} aria-haspopup={role} onClick={() => setOpen((value) => !value)}>
         {triggerContent}
       </button>
       {open ? (
