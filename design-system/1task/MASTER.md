@@ -29,8 +29,10 @@ quotidien, échelle 8–32 px).
 1. **Structure** : sidebar + topbar inchangées ; contenu = en-tête de page →
    indicateurs → zone de travail. Une seule action primaire par vue (« Nouveau ticket »).
 2. **Style** : BIOS Glass discipliné. Le verre (translucide + flou) est réservé aux
-   surfaces de structure ; **tout ce qui s'édite ou se lit en continu (tableaux,
-   formulaires, panneaux d'aide) est opaque**. Pas de cadre dans un cadre.
+   surfaces de structure ; les cartes de lecture restent translucides, tandis que les
+   formulaires, dialogues et menus renforcent leur surface quand la lisibilité le
+   nécessite. Les tableaux gardent le verre BIOS avec des cellules et séparateurs fins,
+   sans cadres empilés.
 3. **Couleurs** (tokens `--kit-*` existants, valeurs BIOS) :
    - action `--kit-primary` #E8702A avec texte Ink (jamais de blanc sur l'orange) ;
    - texte orange = `--kit-primary-text` (#A6450A clair / #FFB57D sombre), jamais l'orange 500 ;

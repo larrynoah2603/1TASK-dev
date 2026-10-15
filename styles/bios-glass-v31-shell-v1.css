@@ -11,18 +11,29 @@ html[data-visual-profile="bios-glass-v31"] {
   --kit-content-max: 1360px;
   --bios-page-gap: 18px;
   --bios-page-gutter: 32px;
+  --bios-canvas: #EEF0EC;
+  --bios-grid-line: rgb(20 32 29 / 3.5%);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme="light"] {
+  --kit-bg: var(--bios-canvas);
 }
 
 /* Shell : même navigation/routes, seule la peau change. */
 html[data-visual-profile="bios-glass-v31"][data-theme] .kit-app {
-  background:
-    radial-gradient(circle at 94% 5%, color-mix(in srgb, var(--kit-brand) 8%, transparent), transparent 36%),
-    radial-gradient(circle at 8% 96%, color-mix(in srgb, var(--kit-success) 6%, transparent), transparent 40%),
-    var(--kit-bg);
+  background-color: var(--kit-bg);
+  background-image:
+    radial-gradient(ellipse 620px 460px at 94% 5%, rgb(232 112 42 / 24%), transparent 72%),
+    radial-gradient(ellipse 560px 430px at 8% 96%, rgb(20 160 143 / 14%), transparent 72%),
+    radial-gradient(ellipse 640px 420px at 52% 110%, rgb(61 140 239 / 10%), transparent 74%),
+    linear-gradient(var(--bios-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bios-grid-line) 1px, transparent 1px);
+  background-size: auto, auto, auto, 56px 56px, 56px 56px;
+  background-position: center, center, center, 0 0, 0 0;
 }
 
 html[data-visual-profile="bios-glass-v31"][data-theme] .kit-sidebar {
-  background: var(--bios-glass-menu);
+  background: rgb(255 255 255 / 45%);
   border-color: var(--kit-border);
   -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
@@ -73,7 +84,7 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .kit-sidebar-toggle:focus
 }
 
 html[data-visual-profile="bios-glass-v31"][data-theme] .kit-topbar {
-  background: var(--bios-glass-menu);
+  background: rgb(255 255 255 / 35%);
   border-color: var(--kit-border);
   -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
