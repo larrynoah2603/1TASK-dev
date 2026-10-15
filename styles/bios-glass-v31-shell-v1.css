@@ -280,7 +280,7 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-composer .form-ac
    transparent si le support CSS est absent ou l'utilisateur le refuse. */
 @supports not ((backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px))) {
   html[data-visual-profile="bios-glass-v31"][data-theme] :is(
-    .kit-sidebar, .kit-topbar,
+    .kit-sidebar, .kit-topbar, .kit-sidebar-toggle,
     .dashboard-kpi-card, .dashboard-widget, .dashboard-reference-card,
     .dashboard-enterprise-card, .dashboard-modern-kpi,
     .inbox-workbench, .inbox-command-surface, .inbox-filter-panel,
@@ -292,7 +292,7 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .ticket-composer .form-ac
 
 @media (prefers-reduced-transparency: reduce) {
   html[data-visual-profile="bios-glass-v31"][data-theme] :is(
-    .kit-sidebar, .kit-topbar,
+    .kit-sidebar, .kit-topbar, .kit-sidebar-toggle,
     .dashboard-kpi-card, .dashboard-widget, .dashboard-reference-card,
     .dashboard-enterprise-card, .dashboard-modern-kpi,
     .inbox-workbench, .inbox-command-surface, .inbox-filter-panel,
@@ -697,15 +697,3 @@ html[data-visual-profile="bios-glass-v31"][data-theme][data-density="compact"] .
   gap: 4px;
 }
 
-@supports not ((backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px))) {
-  html[data-visual-profile="bios-glass-v31"][data-theme] .kit-sidebar-toggle {
-    background: var(--kit-card);
-  }
-}
-@media (prefers-reduced-transparency: reduce) {
-  html[data-visual-profile="bios-glass-v31"][data-theme] .kit-sidebar-toggle {
-    background: var(--kit-card);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-}
