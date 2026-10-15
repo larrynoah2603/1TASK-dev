@@ -1,4 +1,6 @@
 const DEFAULT_PUSH_ICON = "/push-icon.svg";
+// Avatar is optional; never let a slow private endpoint indefinitely delay a push.
+const REQUESTER_ICON_TIMEOUT_MS = 1200;
 
 async function resolveRequesterIcon(photoUrl) {
   // Only the protected same-origin endpoint may supply an avatar.
@@ -6,10 +8,13 @@ async function resolveRequesterIcon(photoUrl) {
       !/^\/api\/notifications\/push-photo\/[A-Za-z0-9_-]+$/.test(photoUrl)) {
     return DEFAULT_PUSH_ICON;
   }
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUESTER_ICON_TIMEOUT_MS);
   try {
     const response = await fetch(photoUrl, {
       credentials: "include",
       cache: "no-store",
+      signal: controller.signal,
     });
     if (!response.ok) return DEFAULT_PUSH_ICON;
     const mime = response.headers.get("content-type")?.split(";")[0]?.toLowerCase();
@@ -20,6 +25,8 @@ async function resolveRequesterIcon(photoUrl) {
     return photoUrl;
   } catch {
     return DEFAULT_PUSH_ICON;
+  } finally {
+    clearTimeout(timeout);
   }
 }
 

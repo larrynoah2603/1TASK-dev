@@ -13,7 +13,18 @@ export async function GET() {
   try {
     requireProductCapability("pushNotifications");
     await requireSessionUserContext();
-    return NextResponse.json({ publicKey: readServerEnvironment().WEB_PUSH_PUBLIC_KEY ?? null });
+    const environment = readServerEnvironment();
+    // A saved browser subscription is not evidence that Vercel can send Web
+    // Push. Expose only the boolean configuration state, never the private key.
+    const configured = Boolean(
+      environment.WEB_PUSH_PUBLIC_KEY &&
+      environment.WEB_PUSH_PRIVATE_KEY &&
+      environment.WEB_PUSH_SUBJECT,
+    );
+    return NextResponse.json({
+      publicKey: configured ? environment.WEB_PUSH_PUBLIC_KEY : null,
+      configured,
+    });
   } catch (error) { return errorResponse(error); }
 }
 

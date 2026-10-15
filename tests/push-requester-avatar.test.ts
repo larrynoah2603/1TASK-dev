@@ -118,6 +118,9 @@ describe("Service worker — icône du demandeur et repli 1TASK", () => {
       self: { addEventListener: (name: string, callback: (event: unknown) => void) => { listeners[name] = callback; },
         registration: { showNotification }, location: { origin: "https://1task.test" } },
       fetch: fetchPhoto,
+      AbortController,
+      setTimeout,
+      clearTimeout,
       URL,
       clients: {},
     });
@@ -143,7 +146,11 @@ describe("Service worker — icône du demandeur et repli 1TASK", () => {
     expect(details.badge).toBe("/push-icon.svg");
     expect(details.data.actionUrl).toBe("/tickets/ticket123");
     expect(fetchPhoto).toHaveBeenCalledOnce();
-    expect(fetchPhoto.mock.calls[0][1]).toEqual({ credentials: "include", cache: "no-store" });
+    expect(fetchPhoto.mock.calls[0][1]).toEqual(expect.objectContaining({
+      credentials: "include",
+      cache: "no-store",
+      signal: expect.any(AbortSignal),
+    }));
   });
 
   it("revient au logo 1TASK en l'absence d'avatar ou d'autorisation", async () => {
