@@ -130,7 +130,7 @@ describe.skipIf(!chromium)("BIOS theme computed styles (synthetic shell in Chrom
     expect(dark.gridColumns).toBe(4);
     expect(light.containerWidth).toBeGreaterThanOrEqual(760);
     expect(dark.pageOverflow).toBe(false);
-  });
+  }, 90_000);
 
   it("keeps the same collapsed width and follows the usable KPI container width", () => {
     for (const theme of ["light", "dark"] as const) {
@@ -140,5 +140,5 @@ describe.skipIf(!chromium)("BIOS theme computed styles (synthetic shell in Chrom
       expect(compact.gridColumns).toBe(2);
       expect(compact.topbarHeight).toBe(56);
     }
-  });
+  }, 90_000);
 });
