@@ -54,6 +54,8 @@ html[data-visual-profile="bios-glass-v31"][data-theme] {
 
   --bios-sidebar-surface: rgba(255, 255, 255, 0.45);
   --bios-topbar-surface: rgba(255, 255, 255, 0.35);
+  --bios-sidebar-border: rgba(255, 255, 255, 0.85);
+  --bios-topbar-border: rgba(20, 32, 29, 0.08);
   --bios-glass-menu: rgba(255, 255, 255, 0.70);
   --bios-glass-raised: rgba(255, 255, 255, 0.85);
   --bios-glass-border: rgba(255, 255, 255, 0.90);
@@ -65,13 +67,20 @@ html[data-visual-profile="bios-glass-v31"][data-theme] {
   --bios-glass-backdrop: blur(20px) saturate(150%);
   --uupm-solid: #FFFFFF;
   --uupm-solid-muted: #F6F7F3;
+  --bios-secondary-surface: rgba(255, 255, 255, 0.85);
+  --bios-control-border: rgba(20, 32, 29, 0.12);
+  --bios-status-success-bg: #E6F3EC;
+  --bios-status-danger-bg: #FBEAEA;
+  --bios-status-warning-bg: #FBF1DF;
+  --bios-status-neutral-bg: rgba(20, 32, 29, 0.06);
+  --bios-status-info-bg: #EAF1FC;
 }
 
 /* Canvas identique sur toutes les routes : protégées, admin et publiques.
    La trame est peinte au-dessus de la couleur de base et sous les cartes. */
 html[data-visual-profile="bios-glass-v31"][data-theme],
 html[data-visual-profile="bios-glass-v31"][data-theme] :is(body, .kit-app, .signin-shell, .pending-assignment-page) {
-  background-color: #EEF0EC !important;
+  background-color: var(--kit-bg) !important;
   background-image:
     radial-gradient(900px 600px at 90% 0%, rgba(232, 112, 42, 0.24), transparent 60%),
     radial-gradient(800px 600px at 0% 100%, rgba(20, 160, 143, 0.14), transparent 60%),
@@ -93,29 +102,29 @@ html[data-visual-profile="bios-glass-v31"][data-theme] body {
 
 /* Shell : garder les zones existantes, y compris mobile et sidebar repliée. */
 html[data-visual-profile="bios-glass-v31"][data-theme] .kit-sidebar {
-  background: rgba(255, 255, 255, 0.45) !important;
-  border-right: 1px solid rgba(255, 255, 255, 0.85) !important;
+  background: var(--bios-sidebar-surface) !important;
+  border-right: 1px solid var(--bios-sidebar-border) !important;
   -webkit-backdrop-filter: blur(24px) saturate(150%);
   backdrop-filter: blur(24px) saturate(150%);
 }
 html[data-visual-profile="bios-glass-v31"][data-theme] .kit-topbar {
   height: 56px;
-  background: rgba(255, 255, 255, 0.35) !important;
-  border-bottom: 1px solid rgba(20, 32, 29, 0.08) !important;
+  background: var(--bios-topbar-surface) !important;
+  border-bottom: 1px solid var(--bios-topbar-border) !important;
   -webkit-backdrop-filter: blur(20px) saturate(150%);
   backdrop-filter: blur(20px) saturate(150%);
 }
 html[data-visual-profile="bios-glass-v31"][data-theme] .kit-nav-item {
   border-radius: 8px;
-  color: #3A4744;
+  color: var(--kit-text-2);
   font-weight: 400;
 }
 html[data-visual-profile="bios-glass-v31"][data-theme] .kit-nav-item:not([aria-current="page"]) .kit-nav-icon {
-  color: #5E6B67;
+  color: var(--kit-secondary);
 }
 html[data-visual-profile="bios-glass-v31"][data-theme] .kit-nav-item[aria-current="page"] {
   background: #14201D !important;
-  color: #FFFFFF !important;
+  color: var(--kit-on-primary) !important;
   font-weight: 600;
 }
 html[data-visual-profile="bios-glass-v31"][data-theme] .kit-nav-item[aria-current="page"] .kit-nav-text {
@@ -128,8 +137,8 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .kit-nav-item[aria-curren
   display: none;
 }
 html[data-visual-profile="bios-glass-v31"][data-theme] .kit-bell-badge {
-  background: #E8702A;
-  color: #14201D;
+  background: var(--kit-brand);
+  color: var(--kit-on-brand);
   border-radius: 8px;
 }
 /* Les compteurs de notifications et noms d'utilisateurs sont dynamiques :
@@ -137,7 +146,7 @@ html[data-visual-profile="bios-glass-v31"][data-theme] .kit-bell-badge {
 html[data-visual-profile="bios-glass-v31"][data-theme] .kit-kbd {
   border-radius: 6px;
   color: var(--kit-text-2);
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--bios-secondary-surface);
 }
 
 /* Fontes : hiérarchie du texte sans toucher aux valeurs rendues. */
@@ -151,13 +160,13 @@ html[data-visual-profile="bios-glass-v31"][data-theme] :is(
   h1, h2, .kit-page-title, .ds-page-header h1, .page-header h1,
   .admin-console-heading, .dashboard-reference-header h1
 ) {
-  color: #193357 !important;
+  color: var(--bios-page-title) !important;
   font-weight: 700;
 }
 html[data-visual-profile="bios-glass-v31"][data-theme] :is(
   h3, .ds-section-heading h2, .kit-panel-title, .ds-panel-header h2
 ) {
-  color: #14201D;
+  color: var(--kit-text);
   font-weight: 600;
 }
 html[data-visual-profile="bios-glass-v31"][data-theme] :is(
@@ -226,14 +235,14 @@ html[data-visual-profile="bios-glass-v31"][data-theme] :is(
 html[data-visual-profile="bios-glass-v31"][data-theme] :is(
   .kit-table th, .ui-data-table th, .table-shell th
 ) {
-  color: #3A4744;
-  background: rgba(255, 255, 255, 0.35);
+  color: var(--kit-text-2);
+  background: var(--bios-topbar-surface);
 }
 html[data-visual-profile="bios-glass-v31"][data-theme] :is(
   .kit-table td, .ui-data-table td, .table-shell td
 ) {
-  color: #14201D;
-  border-color: rgba(20, 32, 29, 0.08);
+  color: var(--kit-text);
+  border-color: var(--bios-topbar-border);
 }
 
 /* Overlays : verre lisible, surface élevée pour les contrôles d'édition. */
@@ -244,7 +253,7 @@ html[data-visual-profile="bios-glass-v31"][data-theme] :is(
 ) {
   border: 1px solid var(--bios-glass-border) !important;
   border-radius: 10px !important;
-  background: rgba(255, 255, 255, 0.75) !important;
+  background: var(--bios-glass-menu) !important;
   box-shadow: var(--bios-glass-inner), var(--bios-glass-shadow) !important;
   -webkit-backdrop-filter: var(--bios-glass-backdrop);
   backdrop-filter: var(--bios-glass-backdrop);
@@ -277,24 +286,24 @@ html[data-visual-profile="bios-glass-v31"][data-theme] :is(
   .ui-button-primary, .kit-new-ticket.new-ticket-launcher
 ):hover:not(:disabled) {
   background: linear-gradient(180deg, #e87838, #cf5815) !important;
-  color: #FFFFFF !important;
+  color: var(--kit-on-primary) !important;
 }
 html[data-visual-profile="bios-glass-v31"][data-theme] :is(
   .kit-btn-secondary, .ds-button-secondary, .button-secondary,
   .ui-button-secondary
 ) {
-  background: rgba(255, 255, 255, 0.85) !important;
-  border: 1px solid rgba(20, 32, 29, 0.12) !important;
-  color: #14201D !important;
+  background: var(--bios-secondary-surface) !important;
+  border: 1px solid var(--bios-control-border) !important;
+  color: var(--kit-text) !important;
 }
 html[data-visual-profile="bios-glass-v31"][data-theme] :is(
   .kit-input, .ds-input, .field-control, .combobox-trigger,
   .combobox-search, input:not([type="checkbox"]):not([type="radio"]),
   select, textarea
 ) {
-  background-color: rgba(255, 255, 255, 0.85);
-  border-color: rgba(20, 32, 29, 0.12);
-  color: #14201D;
+  background-color: var(--bios-secondary-surface);
+  border-color: var(--bios-control-border);
+  color: var(--kit-text);
 }
 
 /* Badges et pastilles sémantiques ; ne pas déduire un statut depuis du texte. */
@@ -308,38 +317,38 @@ html[data-visual-profile="bios-glass-v31"][data-theme] :is(
   .kit-badge-success, .ds-badge-success, .ui-badge-success,
   .status-chip-completed
 ) {
-  background: #E6F3EC !important;
-  color: #1F7A55 !important;
+  background: var(--bios-status-success-bg) !important;
+  color: var(--kit-success-text) !important;
   border-color: transparent;
 }
 html[data-visual-profile="bios-glass-v31"][data-theme] :is(
   .kit-badge-danger, .ds-badge-danger, .ui-badge-danger,
   .kit-badge-error
 ) {
-  background: #FBEAEA !important;
-  color: #B42323 !important;
+  background: var(--bios-status-danger-bg) !important;
+  color: var(--kit-danger-text) !important;
   border-color: transparent;
 }
 html[data-visual-profile="bios-glass-v31"][data-theme] :is(
   .kit-badge-warning, .ds-badge-warning, .ui-badge-warning
 ) {
-  background: #FBF1DF !important;
-  color: #93590A !important;
+  background: var(--bios-status-warning-bg) !important;
+  color: var(--kit-warning-text) !important;
   border-color: transparent;
 }
 html[data-visual-profile="bios-glass-v31"][data-theme] :is(
   .kit-badge-neutral, .ds-badge-neutral, .ui-badge-neutral
 ) {
-  background: rgba(20, 32, 29, 0.06) !important;
-  color: #3A4744 !important;
+  background: var(--bios-status-neutral-bg) !important;
+  color: var(--kit-text-2) !important;
   border-color: transparent;
 }
 /* La variante info existante garde son sens sur les statuts en cours. */
 html[data-visual-profile="bios-glass-v31"][data-theme] :is(
   .kit-badge-info, .ds-badge-info, .ui-badge-info
 ) {
-  background: #EAF1FC !important;
-  color: #1F5FAE !important;
+  background: var(--bios-status-info-bg) !important;
+  color: var(--kit-info-text) !important;
   border-color: transparent;
 }
 
@@ -351,7 +360,7 @@ html[data-visual-profile="bios-glass-v31"][data-theme] :is(
     .kit-table-wrap, .ui-data-table, .table-shell, .kit-popover,
     .kit-modal, .signin-card
   ) {
-    background: #FFFFFF !important;
+    background: var(--kit-card) !important;
   }
 }
 @media (prefers-reduced-transparency: reduce) {
@@ -363,5 +372,118 @@ html[data-visual-profile="bios-glass-v31"][data-theme] :is(
     background: #FFFFFF !important;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
+  }
+}
+
+
+/* Brand and collapse affordance: no changes to routing, persisted collapse or drawer. */
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-sidebar-brand {
+  gap: 8px;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-brand-subtitle {
+  color: var(--kit-secondary);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-app-switch {
+  border: 1px solid var(--bios-control-border);
+  border-radius: 6px;
+  background: var(--bios-secondary-surface);
+  color: var(--kit-secondary);
+}
+@media (min-width: 1024px) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] .kit-app:not([data-sidebar-collapsed="true"]) .kit-sidebar-brand {
+    padding-right: 12px;
+  }
+  html[data-visual-profile="bios-glass-v31"][data-theme] .kit-sidebar-toggle,
+  html[data-visual-profile="bios-glass-v31"][data-theme] .kit-app[data-sidebar-collapsed="true"] .kit-sidebar-toggle {
+    top: 50%;
+    right: -14px;
+    width: 28px;
+    height: 28px;
+    transform: translateY(-50%);
+    border-radius: 50%;
+    z-index: 3;
+  }
+}
+
+/* Dark BIOS palette: light glass must never bleed into dark preferences. */
+html[data-visual-profile="bios-glass-v31"][data-theme="dark"] {
+  color-scheme: dark;
+  --kit-bg: #101B18;
+  --kit-surface: #192B23;
+  --kit-card: #192B23;
+  --kit-surface-muted: #21372C;
+  --kit-border: #40544B;
+  --kit-border-strong: #62796B;
+  --kit-text: #F2F7F3;
+  --kit-text-2: #CEDBD3;
+  --kit-secondary: #B8C8C0;
+  --kit-primary-text: #FFB57D;
+  --kit-on-primary: #14201D;
+  --kit-on-brand: #14201D;
+  --kit-selected: #35271E;
+  --kit-selected-text: #FFB57D;
+  --kit-success: #76D5A6;
+  --kit-success-text: #76D5A6;
+  --kit-danger: #FF928A;
+  --kit-danger-text: #FF928A;
+  --kit-warning: #F0BC73;
+  --kit-warning-text: #F0BC73;
+  --kit-info: #A0C8F1;
+  --kit-info-text: #A0C8F1;
+  --kit-glass: rgba(25, 43, 35, 0.88);
+  --bios-page-title: var(--kit-text);
+  --bios-grid-line: rgba(242, 247, 243, 0.075);
+  --bios-halo-orange: rgba(232, 112, 42, 0.13);
+  --bios-halo-turquoise: rgba(20, 160, 143, 0.09);
+  --bios-halo-blue: rgba(61, 140, 239, 0.07);
+  --bios-sidebar-surface: rgba(25, 43, 35, 0.82);
+  --bios-sidebar-border: rgba(242, 247, 243, 0.15);
+  --bios-topbar-surface: rgba(25, 43, 35, 0.74);
+  --bios-topbar-border: rgba(242, 247, 243, 0.10);
+  --bios-glass-menu: rgba(25, 43, 35, 0.84);
+  --bios-glass-raised: rgba(25, 43, 35, 0.97);
+  --bios-glass-border: rgba(242, 247, 243, 0.20);
+  --bios-glass-inner: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --bios-glass-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.12),
+    0 1px 2px rgba(0, 0, 0, 0.15),
+    0 12px 32px -12px rgba(0, 0, 0, 0.45);
+  --bios-secondary-surface: rgba(33, 55, 44, 0.92);
+  --bios-control-border: rgba(242, 247, 243, 0.21);
+  --bios-status-success-bg: #193B2D;
+  --bios-status-danger-bg: #49272A;
+  --bios-status-warning-bg: #443522;
+  --bios-status-neutral-bg: rgba(242, 247, 243, 0.11);
+  --bios-status-info-bg: #223B50;
+  --uupm-solid: #192B23;
+  --uupm-solid-muted: #21372C;
+}
+
+/* Keep the same grid geometry, but use lower-intensity halos in dark mode. */
+html[data-visual-profile="bios-glass-v31"][data-theme="dark"],
+html[data-visual-profile="bios-glass-v31"][data-theme="dark"] :is(body, .kit-app, .signin-shell, .pending-assignment-page) {
+  background-color: var(--kit-bg) !important;
+  background-image:
+    radial-gradient(900px 600px at 90% 0%, var(--bios-halo-orange), transparent 60%),
+    radial-gradient(800px 600px at 0% 100%, var(--bios-halo-turquoise), transparent 60%),
+    radial-gradient(700px 500px at 60% 100%, var(--bios-halo-blue), transparent 60%),
+    linear-gradient(to right, var(--bios-grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--bios-grid-line) 1px, transparent 1px) !important;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme="dark"] .kit-nav-item[aria-current="page"] {
+  border: 1px solid rgba(242, 247, 243, 0.20);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme="dark"] .kit-nav-item[aria-current="page"] .kit-nav-icon {
+  color: #E8702A !important;
+}
+
+/* Keep the accessible fallback theme-specific when glass is unavailable. */
+@supports not ((-webkit-backdrop-filter: blur(20px)) or (backdrop-filter: blur(20px))) {
+  html[data-visual-profile="bios-glass-v31"][data-theme="dark"] :is(
+    .kit-card, .ds-panel, .panel, .ui-card, .dashboard-kpi-card,
+    .kit-table-wrap, .ui-data-table, .table-shell, .kit-popover,
+    .kit-modal, .signin-card
+  ) {
+    background: var(--kit-card) !important;
   }
 }
