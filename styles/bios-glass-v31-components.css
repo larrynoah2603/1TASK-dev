@@ -10,7 +10,7 @@ html[data-visual-profile="bios-glass-v31"] {
   --kit-radius-xl: 12px;
 
   /* Surface translucide : le quadrillage du canvas reste lisible dans les cartes. */
-  --bios-glass-card: rgb(255 255 255 / 62%);
+  --bios-glass-card: rgb(255 255 255 / 72%);
   --bios-glass-menu: rgb(255 255 255 / 78%);
   --bios-glass-raised: rgb(255 255 255 / 96%);
   --bios-glass-border: rgb(20 32 29 / 14%);
@@ -21,12 +21,23 @@ html[data-visual-profile="bios-glass-v31"] {
 
 html[data-visual-profile="bios-glass-v31"][data-theme="dark"] {
   /* Le fond sombre reste translucide afin que la trame du canvas traverse les cartes. */
-  --bios-glass-card: rgb(25 43 35 / 85%);
+  --bios-glass-card: rgb(25 43 35 / 72%);
   --bios-glass-menu: rgb(25 43 35 / 76%);
   --bios-glass-raised: rgb(25 43 35 / 97%);
   --bios-glass-border: rgb(242 247 243 / 20%);
   --bios-glass-inner: inset 0 1px 0 rgb(255 255 255 / 8%);
   --bios-glass-shadow: 0 10px 32px rgb(0 0 0 / 22%);
+}
+
+/* Corporate glass contract. The historical v3.1 72% defaults above remain
+   available to older consumers; these subsequent profile-scoped declarations
+   set the final rendering to 62% in light and 85% in dark mode. */
+html[data-visual-profile="bios-glass-v31"] {
+  --bios-glass-card: rgb(255 255 255 / 62%);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme="dark"] {
+  --bios-glass-card: rgb(25 43 35 / 85%);
 }
 
 /* 62% glass belongs on reading cards, not on editable form controls.
