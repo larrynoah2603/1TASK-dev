@@ -39,11 +39,11 @@ html[data-visual-profile="bios-glass-v31"] {
   --bios-sidebar-surface: rgb(255 255 255 / 55%);
   --bios-topbar-surface: rgb(255 255 255 / 45%);
   /* Le quadrillage reste perceptible sous les surfaces sans devenir décoratif. */
-  --bios-grid-line: rgb(20 32 29 / 5%);
-  /* Halo plus doux : l'orange s'efface progressivement au lieu de former un bord marqué. */
-  --bios-halo-orange: rgb(232 112 42 / 14%);
-  --bios-halo-turquoise: rgb(20 160 143 / 14%);
-  --bios-halo-blue: rgb(61 140 239 / 10%);
+  --bios-grid-line: rgb(20 32 29 / 8%);
+  /* Le canvas reste coloré sous les surfaces, sans créer de bord orange dur. */
+  --bios-halo-orange: rgb(232 112 42 / 20%);
+  --bios-halo-turquoise: rgb(20 160 143 / 18%);
+  --bios-halo-blue: rgb(61 140 239 / 14%);
   --bios-page-title: #193357;
   /* Guide v3.1: one sans-serif family for body text, controls and titles.
      The historical profile keeps its original token in tokens.css. */
@@ -87,10 +87,10 @@ html[data-visual-profile="bios-glass-v31"][data-theme="dark"] {
   --bios-sidebar-surface: rgb(25 43 35 / 74%);
   --bios-topbar-surface: rgb(25 43 35 / 76%);
   /* Contraste renforcé sur le fond sombre pour conserver le quadrillage sous les blocs. */
-  --bios-grid-line: rgb(242 247 243 / 9%);
-  --bios-halo-orange: rgb(232 112 42 / 10%);
-  --bios-halo-turquoise: rgb(20 160 143 / 7%);
-  --bios-halo-blue: rgb(61 140 239 / 5%);
+  --bios-grid-line: rgb(242 247 243 / 12%);
+  --bios-halo-orange: rgb(232 112 42 / 18%);
+  --bios-halo-turquoise: rgb(20 160 143 / 12%);
+  --bios-halo-blue: rgb(61 140 239 / 9%);
   --bios-page-title: var(--kit-text);
 }
 
