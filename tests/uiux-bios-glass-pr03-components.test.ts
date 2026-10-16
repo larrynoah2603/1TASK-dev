@@ -39,29 +39,29 @@ describe("BIOS Glass v3.1 — PR 03 : composants partagés, opt-in et lisibilit�
     expect(css).not.toContain(":root {");
   });
 
-  it("applique rayons 6/10/12px et cartes verre 62% + blur 20px exclusivement en opt-in", () => {
+  it("applique rayons 6/10/12px et cartes verre translucides + blur 20px exclusivement en opt-in", () => {
     expect(css).toContain("--kit-radius-sm: 6px;");
     expect(css).toContain("--kit-radius-md: 6px;");
     expect(css).toContain("--kit-radius-lg: 10px;");
     expect(css).toContain("--kit-radius-xl: 12px;");
-    expect(css).toContain("--bios-glass-card: rgb(255 255 255 / 62%);");
-    expect(css).toContain("--bios-glass-menu: rgb(255 255 255 / 82%);");
+    expect(css).toContain("--bios-glass-card: rgb(255 255 255 / 72%);");
+    expect(css).toContain("--bios-glass-menu: rgb(255 255 255 / 78%);");
     expect(css).toContain("--bios-glass-backdrop: blur(20px) saturate(150%);");
     expect(css).toContain("backdrop-filter: var(--bios-glass-backdrop);");
     expect(css).toContain(".kit-card,");
     expect(css).toContain(".ds-kpi-card,");
     expect(css).toContain(".kit-table-wrap,");
     expect(css).toContain(".kit-modal {");
-    expect(css).toContain("--bios-glass-card: rgb(25 43 35 / 85%);");
+    expect(css).toContain("--bios-glass-card: rgb(25 43 35 / 72%);");
     expect(tokens).toContain("--kit-radius-lg: 16px;");
     expect(tokens).toContain("--kit-primary: #C4510D;");
     expect(palette).toContain("--kit-primary: #E8702A;");
   });
 
   it("ne sacrifie pas la lisibilité à la transparence ni aux halos du canvas", () => {
-    const onLight = composite("#FFFFFF", "#EEF0EC", 0.62);
-    const warmHalo = composite("#FFFFFF", "#E9E6DE", 0.62);
-    const onDark = composite("#192B23", "#101B18", 0.85);
+    const onLight = composite("#FFFFFF", "#EEF0EC", 0.72);
+    const warmHalo = composite("#FFFFFF", "#E9E6DE", 0.72);
+    const onDark = composite("#192B23", "#101B18", 0.72);
     for (const surface of [onLight, warmHalo]) {
       expect(ratio("#14201D", surface)).toBeGreaterThanOrEqual(4.5);
       expect(ratio("#3A4744", surface)).toBeGreaterThanOrEqual(4.5);
