@@ -10,10 +10,10 @@ import { NewTicketLauncher } from "@/components/new-ticket-launcher";
 import { NotificationCenter } from "@/components/notification-center";
 import { NotificationProvider } from "@/components/notification-state";
 import { ProfileMenu } from "@/components/profile-menu";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { ShellNavLink } from "@/components/shell-nav-link";
 import { TopbarContext } from "@/components/topbar-context";
 import { AppSidebar } from "@/components/layout/app-sidebar";
+import { SidebarBrand } from "@/components/layout/sidebar-brand";
 import { TopHeader } from "@/components/layout/top-header";
 import { MobileNavigation } from "@/components/layout/mobile-navigation";
 import { Avatar } from "@/components/ui/avatar";
@@ -48,15 +48,6 @@ const links: AppLink[] = [
   { href: "/profile", label: "Paramètres", icon: "sliders", group: "account" },
   { href: "/notifications", label: "Notifications", icon: "bell", group: "mobile" },
 ];
-
-function SidebarBrand() {
-  return (
-    <Link href="/dashboard" className="kit-sidebar-brand-link" aria-label="1TASK — accueil">
-      <span className="kit-brand-mark" aria-hidden="true">1T</span>
-      <span className="kit-brand-name">1TASK</span>
-    </Link>
-  );
-}
 
 export async function AppShell({ user, children }: { user: UserContext; children: React.ReactNode }) {
   const capabilities = getProductCapabilities();
@@ -112,7 +103,7 @@ export async function AppShell({ user, children }: { user: UserContext; children
     </nav>}
     user={<Link href="/profile" className="kit-user-card sidebar-user-block-industrial" title={user.name}><Avatar name={user.name} image={user.image} status /><span className="kit-user-card-text"><p className="kit-user-card-name">{user.name}</p><p className="kit-user-card-sub">{department}</p></span></Link>}
   />;
-  const topbar = <TopHeader context={<TopbarContext />} search={<span className="topbar-layout-industrial"><GlobalSearch /></span>} actions={<>{canCreate ? <NewTicketLauncher simplified={!capabilities.confidentialTicketCreation && !capabilities.productionPortfolio} /> : null}<NotificationCenter /><span className="kit-hide-mobile"><HelpMenu /></span><span className="kit-hide-mobile"><ThemeToggle /></span><span className="kit-topbar-divider" aria-hidden="true" /><ProfileMenu name={user.name} email={user.email} image={user.image} department={user.department?.name ?? "Département non renseigné"} roles={roleLabel} admin={isAdmin} /></>} />;
+  const topbar = <TopHeader context={<TopbarContext />} search={<span className="topbar-layout-industrial"><GlobalSearch /></span>} actions={<>{canCreate ? <NewTicketLauncher simplified={!capabilities.confidentialTicketCreation && !capabilities.productionPortfolio} /> : null}<NotificationCenter /><span className="kit-hide-mobile"><HelpMenu /></span><span className="kit-topbar-divider" aria-hidden="true" /><ProfileMenu name={user.name} email={user.email} image={user.image} department={user.department?.name ?? "Département non renseigné"} roles={roleLabel} admin={isAdmin} /></>} />;
   const mobileNavigation = <MobileNavigation links={visibleLinks.map((link) => ({
     href: link.href,
     label: link.label,
