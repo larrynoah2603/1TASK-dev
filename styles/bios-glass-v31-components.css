@@ -20,8 +20,9 @@ html[data-visual-profile="bios-glass-v31"] {
 }
 
 html[data-visual-profile="bios-glass-v31"][data-theme="dark"] {
-  --bios-glass-card: rgb(25 43 35 / 85%);
-  --bios-glass-menu: rgb(25 43 35 / 94%);
+  /* Le fond sombre reste translucide afin que la trame du canvas traverse les cartes. */
+  --bios-glass-card: rgb(25 43 35 / 70%);
+  --bios-glass-menu: rgb(25 43 35 / 82%);
   --bios-glass-raised: rgb(25 43 35 / 97%);
   --bios-glass-border: rgb(242 247 243 / 20%);
   --bios-glass-inner: inset 0 1px 0 rgb(255 255 255 / 8%);
