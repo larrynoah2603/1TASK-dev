@@ -10,7 +10,7 @@ html[data-visual-profile="bios-glass-v31"] {
   --kit-radius-xl: 12px;
 
   /* Surface translucide : le quadrillage du canvas reste lisible dans les cartes. */
-  --bios-glass-card: rgb(255 255 255 / 54%);
+  --bios-glass-card: rgb(255 255 255 / 62%);
   --bios-glass-menu: rgb(255 255 255 / 82%);
   --bios-glass-raised: rgb(255 255 255 / 96%);
   --bios-glass-border: rgb(20 32 29 / 14%);
@@ -21,8 +21,8 @@ html[data-visual-profile="bios-glass-v31"] {
 
 html[data-visual-profile="bios-glass-v31"][data-theme="dark"] {
   /* Le fond sombre reste translucide afin que la trame du canvas traverse les cartes. */
-  --bios-glass-card: rgb(25 43 35 / 70%);
-  --bios-glass-menu: rgb(25 43 35 / 82%);
+  --bios-glass-card: rgb(25 43 35 / 85%);
+  --bios-glass-menu: rgb(25 43 35 / 85%);
   --bios-glass-raised: rgb(25 43 35 / 97%);
   --bios-glass-border: rgb(242 247 243 / 20%);
   --bios-glass-inner: inset 0 1px 0 rgb(255 255 255 / 8%);
