@@ -1,0 +1,367 @@
+/*
+ * 1TASK — BIOS Glass Corporate, contrat visuel transversal.
+ *
+ * Couche CSS uniquement : aucune donnée, route, permission, interaction,
+ * colonne, composant React ou état métier n'est modifié.
+ * Portée volontaire : profil BIOS existant (production, aperçu opt-in).
+ * Chargée avant la couche de finition UUPM, qui reste dernière dans la cascade.
+ * Les contenus dynamiques (notification count, avatar, référence, KPI)
+ * restent intégralement contrôlés par les composants existants.
+ */
+
+html[data-visual-profile="bios-glass-v31"][data-theme] {
+  color-scheme: light;
+  --kit-bg: #EEF0EC;
+  --kit-surface: #FFFFFF;
+  --kit-card: #FFFFFF;
+  --kit-surface-muted: #F6F7F3;
+  --kit-border: #E2E5E2;
+  --kit-border-strong: #BCC7BD;
+  --kit-text: #14201D;
+  --kit-text-2: #3A4744;
+  --kit-secondary: #5E6B67;
+  --kit-brand: #E8702A;
+  --kit-primary: #E8702A;
+  --kit-primary-hover: #D86620;
+  --kit-primary-text: #A6450A;
+  --kit-on-primary: #FFFFFF;
+  --kit-on-brand: #14201D;
+  --kit-selected: #FDF0E7;
+  --kit-selected-text: #A6450A;
+  --kit-success: #1F7A55;
+  --kit-success-text: #1F7A55;
+  --kit-danger: #B42323;
+  --kit-danger-text: #B42323;
+  --kit-warning: #93590A;
+  --kit-warning-text: #93590A;
+  --kit-info: #1F5FAE;
+  --kit-info-text: #1F5FAE;
+  --kit-font: var(--font-schibsted-grotesk), "Schibsted Grotesk", sans-serif;
+  --kit-font-display: var(--font-schibsted-grotesk), "Schibsted Grotesk", sans-serif;
+  --kit-font-mono: var(--font-ibm-plex-mono), "IBM Plex Mono", monospace;
+  --kit-radius-sm: 6px;
+  --kit-radius-md: 6px;
+  --kit-radius-lg: 10px;
+  --kit-radius-xl: 10px;
+  --kit-radius-pill: 8px;
+  --kit-topbar-h: 56px;
+  --bios-page-title: #193357;
+
+  --bios-grid-line: rgba(20, 32, 29, 0.035);
+  --bios-halo-orange: rgba(232, 112, 42, 0.24);
+  --bios-halo-turquoise: rgba(20, 160, 143, 0.14);
+  --bios-halo-blue: rgba(61, 140, 239, 0.10);
+
+  --bios-sidebar-surface: rgba(255, 255, 255, 0.45);
+  --bios-topbar-surface: rgba(255, 255, 255, 0.35);
+  --bios-glass-menu: rgba(255, 255, 255, 0.70);
+  --bios-glass-raised: rgba(255, 255, 255, 0.85);
+  --bios-glass-border: rgba(255, 255, 255, 0.90);
+  --bios-glass-inner: inset 0 1px 0 #FFFFFF;
+  --bios-glass-shadow:
+    0 0 0 1px rgba(20, 32, 29, 0.06),
+    0 1px 2px rgba(20, 32, 29, 0.04),
+    0 12px 32px -12px rgba(20, 32, 29, 0.16);
+  --bios-glass-backdrop: blur(20px) saturate(150%);
+  --uupm-solid: #FFFFFF;
+  --uupm-solid-muted: #F6F7F3;
+}
+
+/* Canvas identique sur toutes les routes : protégées, admin et publiques.
+   La trame est peinte au-dessus de la couleur de base et sous les cartes. */
+html[data-visual-profile="bios-glass-v31"][data-theme],
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(body, .kit-app, .signin-shell, .pending-assignment-page) {
+  background-color: #EEF0EC !important;
+  background-image:
+    radial-gradient(900px 600px at 90% 0%, rgba(232, 112, 42, 0.24), transparent 60%),
+    radial-gradient(800px 600px at 0% 100%, rgba(20, 160, 143, 0.14), transparent 60%),
+    radial-gradient(700px 500px at 60% 100%, rgba(61, 140, 239, 0.10), transparent 60%),
+    linear-gradient(to right, rgba(20, 32, 29, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(20, 32, 29, 0.035) 1px, transparent 1px) !important;
+  background-size: auto, auto, auto, 56px 56px, 56px 56px !important;
+  background-attachment: fixed !important;
+  background-position: 0 0 !important;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(.kit-content, .kit-main, .shell-industrial, .admin-industrial, .admin-dashboard-industrial) {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] body {
+  color: var(--kit-text);
+  font-family: var(--kit-font);
+}
+
+/* Shell : garder les zones existantes, y compris mobile et sidebar repliée. */
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-sidebar {
+  background: rgba(255, 255, 255, 0.45) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.85) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  backdrop-filter: blur(24px) saturate(150%);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-topbar {
+  height: 56px;
+  background: rgba(255, 255, 255, 0.35) !important;
+  border-bottom: 1px solid rgba(20, 32, 29, 0.08) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  backdrop-filter: blur(20px) saturate(150%);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-nav-item {
+  border-radius: 8px;
+  color: #3A4744;
+  font-weight: 400;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-nav-item:not([aria-current="page"]) .kit-nav-icon {
+  color: #5E6B67;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-nav-item[aria-current="page"] {
+  background: #14201D !important;
+  color: #FFFFFF !important;
+  font-weight: 600;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-nav-item[aria-current="page"] .kit-nav-text {
+  color: #FFFFFF !important;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-nav-item[aria-current="page"] .kit-nav-icon {
+  color: #E8702A !important;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-nav-item[aria-current="page"]::before {
+  display: none;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-bell-badge {
+  background: #E8702A;
+  color: #14201D;
+  border-radius: 8px;
+}
+/* Les compteurs de notifications et noms d'utilisateurs sont dynamiques :
+   aucune valeur « 12 », « TK » ou identité de démonstration n'est injectée. */
+html[data-visual-profile="bios-glass-v31"][data-theme] .kit-kbd {
+  border-radius: 6px;
+  color: var(--kit-text-2);
+  background: rgba(255, 255, 255, 0.85);
+}
+
+/* Fontes : hiérarchie du texte sans toucher aux valeurs rendues. */
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  h1, h2, h3, .kit-page-title, .ds-page-header h1,
+  .ds-section-heading h2, .admin-console-heading, .kit-nav-text
+) {
+  font-family: var(--kit-font-display);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  h1, h2, .kit-page-title, .ds-page-header h1, .page-header h1,
+  .admin-console-heading, .dashboard-reference-header h1
+) {
+  color: #193357 !important;
+  font-weight: 700;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  h3, .ds-section-heading h2, .kit-panel-title, .ds-panel-header h2
+) {
+  color: #14201D;
+  font-weight: 600;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  time, [datetime], .kit-ref, .kit-search-ref, .search-result-reference,
+  .ticket-reference, .ticket-reference-link, .ticket-reference-id,
+  .agent-ticket-reference, .dashboard-ticket-reference,
+  .ticket-id, .ticket-serial, .asset-serial, .asset-inventory-count,
+  .ticket-section-count, .ticket-sla-time, .ds-sla-label strong,
+  .reporting-status-value, .kit-timeline-meta, .notification-item-meta
+) {
+  font-family: var(--kit-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .ds-kpi-card > strong, .ds-stat-card-value, .stat-number,
+  .metric-value, .admin-stat-value, .dashboard-kpi-card > strong,
+  .dashboard-kpi-value, .dashboard-modern-kpi > strong,
+  .dashboard-ledger-value, .queue-stat p:last-child,
+  .reporting-kpi-value, .agent-kpi-value
+) {
+  font-family: var(--kit-font-mono);
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Cartes de toutes les familles existantes, sans créer de nouveaux wrappers. */
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .kit-card, .ds-panel, .ds-kpi-card, .ds-stat-card, .ds-chart-card,
+  .metric-card, .panel, .ui-card, .dashboard-kpi-card,
+  .dashboard-widget, .dashboard-reference-card, .dashboard-enterprise-card,
+  .dashboard-modern-kpi, .reporting-card, .reporting-chart-card,
+  .admin-stat, .admin-console-card, .admin-user-card, .admin-role-card,
+  .admin-config-section, .asset-review-card, .personal-asset-card,
+  .notification-history-panel, .notification-history-header,
+  .kit-ticket-head, .ticket-detail-main, .ticket-history-pane,
+  .ticket-treatment-section, .ticket-advanced-tools,
+  .agent-kanban-card, .agent-kanban-column, .agent-workspace-rail > section,
+  .queue-card, .queue-stat, .inbox-workbench, .inbox-command-surface,
+  .signin-card, .pending-assignment-page > section,
+  .signin-shell .rounded-xl.border
+) {
+  min-width: 0;
+  border: 1px solid var(--bios-glass-border) !important;
+  border-radius: 10px !important;
+  background: var(--bios-glass-card) !important;
+  box-shadow: var(--bios-glass-inner), var(--bios-glass-shadow) !important;
+  -webkit-backdrop-filter: var(--bios-glass-backdrop);
+  backdrop-filter: var(--bios-glass-backdrop);
+}
+/* Table wrapping elements — never change column widths, markup or scrolling. */
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .kit-table-wrap, .ds-data-table-shell, .ui-data-table,
+  .table-shell, .asset-inventory-panel, .reporting-distribution-panel
+) {
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid var(--bios-glass-border) !important;
+  border-radius: 10px !important;
+  background: var(--bios-glass-card) !important;
+  box-shadow: var(--bios-glass-inner), var(--bios-glass-shadow) !important;
+  -webkit-backdrop-filter: var(--bios-glass-backdrop);
+  backdrop-filter: var(--bios-glass-backdrop);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .kit-table th, .ui-data-table th, .table-shell th
+) {
+  color: #3A4744;
+  background: rgba(255, 255, 255, 0.35);
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .kit-table td, .ui-data-table td, .table-shell td
+) {
+  color: #14201D;
+  border-color: rgba(20, 32, 29, 0.08);
+}
+
+/* Overlays : verre lisible, surface élevée pour les contrôles d'édition. */
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .kit-modal, .modal-panel, .confirm-dialog, .kit-popover,
+  .kit-popover-menu, .combobox-listbox, .inbox-filter-panel,
+  .asset-create-modal, .admin-notice, .kit-profile-popover
+) {
+  border: 1px solid var(--bios-glass-border) !important;
+  border-radius: 10px !important;
+  background: rgba(255, 255, 255, 0.75) !important;
+  box-shadow: var(--bios-glass-inner), var(--bios-glass-shadow) !important;
+  -webkit-backdrop-filter: var(--bios-glass-backdrop);
+  backdrop-filter: var(--bios-glass-backdrop);
+  color: var(--kit-text);
+}
+
+/* Boutons : respecter les variants actuels, sans attribuer un nouveau rôle. */
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .kit-btn, .ds-button, .ui-button, .button-primary,
+  .button-secondary, .button-ghost, .button-danger,
+  .field-control, .combobox-trigger, .kit-input, .ds-input,
+  input, textarea, select
+) {
+  border-radius: 6px;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .kit-btn-primary, .ds-button-primary, .button-primary,
+  .ui-button-primary, .kit-new-ticket.new-ticket-launcher
+) {
+  background: linear-gradient(180deg, #ef8445, #e2661f) !important;
+  border-color: rgba(226, 102, 31, 0.50) !important;
+  color: #FFFFFF !important;
+  font-weight: 600;
+  box-shadow:
+    0 4px 10px -3px rgba(232, 112, 42, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .kit-btn-primary, .ds-button-primary, .button-primary,
+  .ui-button-primary, .kit-new-ticket.new-ticket-launcher
+):hover:not(:disabled) {
+  background: linear-gradient(180deg, #e87838, #cf5815) !important;
+  color: #FFFFFF !important;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .kit-btn-secondary, .ds-button-secondary, .button-secondary,
+  .ui-button-secondary
+) {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border: 1px solid rgba(20, 32, 29, 0.12) !important;
+  color: #14201D !important;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .kit-input, .ds-input, .field-control, .combobox-trigger,
+  .combobox-search, input:not([type="checkbox"]):not([type="radio"]),
+  select, textarea
+) {
+  background-color: rgba(255, 255, 255, 0.85);
+  border-color: rgba(20, 32, 29, 0.12);
+  color: #14201D;
+}
+
+/* Badges et pastilles sémantiques ; ne pas déduire un statut depuis du texte. */
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .kit-badge, .ds-badge, .ui-badge, .kit-bell-badge
+) {
+  border-radius: 8px !important;
+  font-weight: 600;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .kit-badge-success, .ds-badge-success, .ui-badge-success,
+  .status-chip-completed
+) {
+  background: #E6F3EC !important;
+  color: #1F7A55 !important;
+  border-color: transparent;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .kit-badge-danger, .ds-badge-danger, .ui-badge-danger,
+  .kit-badge-error
+) {
+  background: #FBEAEA !important;
+  color: #B42323 !important;
+  border-color: transparent;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .kit-badge-warning, .ds-badge-warning, .ui-badge-warning
+) {
+  background: #FBF1DF !important;
+  color: #93590A !important;
+  border-color: transparent;
+}
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .kit-badge-neutral, .ds-badge-neutral, .ui-badge-neutral
+) {
+  background: rgba(20, 32, 29, 0.06) !important;
+  color: #3A4744 !important;
+  border-color: transparent;
+}
+/* La variante info existante garde son sens sur les statuts en cours. */
+html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+  .kit-badge-info, .ds-badge-info, .ui-badge-info
+) {
+  background: #EAF1FC !important;
+  color: #1F5FAE !important;
+  border-color: transparent;
+}
+
+/* Lecture / accessibilité : une alternative opaque pour transparence réduite
+   et navigateurs qui ne prennent pas en charge backdrop-filter. */
+@supports not ((-webkit-backdrop-filter: blur(20px)) or (backdrop-filter: blur(20px))) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+    .kit-card, .ds-panel, .panel, .ui-card, .dashboard-kpi-card,
+    .kit-table-wrap, .ui-data-table, .table-shell, .kit-popover,
+    .kit-modal, .signin-card
+  ) {
+    background: #FFFFFF !important;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  html[data-visual-profile="bios-glass-v31"][data-theme] :is(
+    .kit-card, .ds-panel, .panel, .ui-card, .dashboard-kpi-card,
+    .kit-table-wrap, .ui-data-table, .table-shell, .kit-popover,
+    .kit-modal, .signin-card
+  ) {
+    background: #FFFFFF !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}

@@ -29,6 +29,17 @@ html[data-visual-profile="bios-glass-v31"][data-theme="dark"] {
   --bios-glass-shadow: 0 10px 32px rgb(0 0 0 / 22%);
 }
 
+/* Corporate glass contract. The historical v3.1 72% defaults above remain
+   available to older consumers; these subsequent profile-scoped declarations
+   set the final rendering to 62% in light and 85% in dark mode. */
+html[data-visual-profile="bios-glass-v31"] {
+  --bios-glass-card: rgb(255 255 255 / 62%);
+}
+
+html[data-visual-profile="bios-glass-v31"][data-theme="dark"] {
+  --bios-glass-card: rgb(25 43 35 / 85%);
+}
+
 /* 62% glass belongs on reading cards, not on editable form controls.
    Two attributes + a component class beat the current html[data-theme]
    visual layers, without increasing specificity for the normal 1TASK theme. */
