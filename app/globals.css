@@ -31,10 +31,10 @@
 @import "../styles/bios-glass-v31-shell-v1.css";
 /* PR 05 : généralisation BIOS Glass aux vues V1 restantes, toujours opt-in. */
 @import "../styles/bios-glass-v31-v1-pages.css";
+/* BIOS Glass Corporate : skinning transversal strict 1:1, avant la finition UUPM. */
+@import "../styles/bios-glass-corporate-unified.css";
 /* Refonte UI/UX Pro Max : couche finale CSS uniquement (design-system/1task/MASTER.md). */
 @import "../styles/uupm-refonte.css";
-/* BIOS Glass Corporate : skinning transversal strict 1:1, dernier dans la cascade. */
-@import "../styles/bios-glass-corporate-unified.css";
 
 /* Fontsource bundles these fonts locally; preserve existing --kit-* tokens. */
 :root {
