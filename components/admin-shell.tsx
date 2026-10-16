@@ -9,10 +9,10 @@ import { NotificationCenter } from "@/components/notification-center";
 import { TopbarContext } from "@/components/topbar-context";
 import { TopHeader } from "@/components/layout/top-header";
 import { AppSidebar } from "@/components/layout/app-sidebar";
+import { SidebarBrand } from "@/components/layout/sidebar-brand";
 import { Icon, type IconName } from "@/components/ui/icons";
 import { NotificationProvider } from "@/components/notification-state";
 import { ProfileMenu } from "@/components/profile-menu";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { ShellNavLink } from "@/components/shell-nav-link";
 import { NewTicketLauncher } from "@/components/new-ticket-launcher";
 import { permissionCodes, roleCodes, toAccessSubject, type UserContext } from "@/lib/server-auth";
@@ -62,13 +62,7 @@ export async function AdminShell({ user, children }: { user: UserContext; childr
   const sidebar = (
     <AppSidebar
       brand={
-        <>
-          <Link href="/admin" className="kit-sidebar-brand-link" aria-label="Console d’administration 1TASK">
-            <span className="kit-brand-mark" aria-hidden="true">1T</span>
-            <span className="kit-brand-name">1TASK</span>
-          </Link>
-          <span className="kit-brand-chip">Admin</span>
-        </>
+        <SidebarBrand admin />
       }
       navigation={
         <nav aria-label="Navigation administration">
@@ -100,7 +94,6 @@ export async function AdminShell({ user, children }: { user: UserContext; childr
           <NewTicketLauncher simplified={!capabilities.confidentialTicketCreation && !capabilities.productionPortfolio} />
           <NotificationCenter />
           <span className="kit-hide-mobile"><HelpMenu /></span>
-          <span className="kit-hide-mobile"><ThemeToggle /></span>
           <Link href="/dashboard" className="kit-btn kit-btn-secondary kit-btn-sm kit-hide-mobile">Espace normal</Link>
           <span className="kit-topbar-divider" aria-hidden="true" />
           <ProfileMenu name={user.name} email={user.email} image={user.image} department="Console d’administration" roles={roleLabel} admin />
