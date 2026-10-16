@@ -4,7 +4,7 @@
  * Couche CSS uniquement : aucune donnée, route, permission, interaction,
  * colonne, composant React ou état métier n'est modifié.
  * Portée volontaire : profil BIOS existant (production, aperçu opt-in).
- * Dernier import afin de gagner sur les anciennes couches CSS.
+ * Chargée avant la couche de finition UUPM, qui reste dernière dans la cascade.
  * Les contenus dynamiques (notification count, avatar, référence, KPI)
  * restent intégralement contrôlés par les composants existants.
  */
@@ -54,7 +54,6 @@ html[data-visual-profile="bios-glass-v31"][data-theme] {
 
   --bios-sidebar-surface: rgba(255, 255, 255, 0.45);
   --bios-topbar-surface: rgba(255, 255, 255, 0.35);
-  --bios-glass-card: rgba(255, 255, 255, 0.70);
   --bios-glass-menu: rgba(255, 255, 255, 0.70);
   --bios-glass-raised: rgba(255, 255, 255, 0.85);
   --bios-glass-border: rgba(255, 255, 255, 0.90);
