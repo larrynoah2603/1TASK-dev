@@ -86,7 +86,8 @@ html[data-visual-profile="bios-glass-v31"][data-theme="dark"] {
   /* Même shell qu’en clair : seules ses surfaces et ses lumières changent. */
   --bios-sidebar-surface: rgb(25 43 35 / 85%);
   --bios-topbar-surface: rgb(25 43 35 / 88%);
-  --bios-grid-line: rgb(242 247 243 / 3%);
+  /* Contraste renforcé sur le fond sombre pour conserver le quadrillage sous les blocs. */
+  --bios-grid-line: rgb(242 247 243 / 9%);
   --bios-halo-orange: rgb(232 112 42 / 10%);
   --bios-halo-turquoise: rgb(20 160 143 / 7%);
   --bios-halo-blue: rgb(61 140 239 / 5%);
