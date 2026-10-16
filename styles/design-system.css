@@ -860,6 +860,32 @@ html[data-theme] .assets-industrial .asset-inventory-table td {
 @media (max-width: 767px) { .kit-popover-menu { width: auto; } }
 .kit-sidebar-brand-link { display: flex; align-items: center; gap: var(--kit-space-3); min-width: 0; }
 
+/* Suite branding: visual header only. Keep brand navigation and compact rail. */
+.kit-sidebar-brand-link { flex: 1 1 auto; overflow: hidden; }
+.kit-brand-copy { display: flex; min-width: 0; flex-direction: column; gap: 1px; }
+.kit-brand-heading { display: flex; align-items: center; min-width: 0; gap: 6px; }
+.kit-brand-heading .kit-brand-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.kit-brand-heading .kit-brand-chip { margin-left: 0; flex: none; padding-inline: 5px; }
+.kit-brand-subtitle { color: var(--kit-secondary); font-size: 11px; line-height: 1.2; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.kit-app-switch {
+  display: grid; place-items: center; flex: none;
+  width: 28px; height: 28px; margin-left: auto; padding: 0;
+  border: 1px solid var(--kit-border); border-radius: var(--kit-radius-md);
+  background: var(--kit-surface-muted); color: var(--kit-secondary);
+}
+.kit-app-switch:disabled { opacity: 1; cursor: not-allowed; }
+.kit-app-switch .kit-icon { width: 14px; height: 14px; }
+@media (min-width: 1024px) {
+  .kit-app[data-sidebar-collapsed="true"] .kit-brand-copy,
+  .kit-app[data-sidebar-collapsed="true"] .kit-app-switch { display: none; }
+  .kit-app[data-sidebar-collapsed="true"] .kit-sidebar-brand-link { flex: 0 0 auto; }
+}
+@media (max-width: 1023px) {
+  /* The drawer close button occupies the same top-right space on mobile. */
+  .kit-app-switch { display: none; }
+}
+
+
 /* --------------------------------------------------------------------------
    11. DÉTAIL TICKET — intégration des blocs métier existants
    -------------------------------------------------------------------------- */
