@@ -38,8 +38,10 @@ html[data-visual-profile="bios-glass-v31"] {
   /* Palette des surfaces du shell, séparée de sa géométrie partagée. */
   --bios-sidebar-surface: rgb(255 255 255 / 45%);
   --bios-topbar-surface: rgb(255 255 255 / 35%);
-  --bios-grid-line: rgb(20 32 29 / 3.5%);
-  --bios-halo-orange: rgb(232 112 42 / 24%);
+  /* Le quadrillage reste perceptible sous les surfaces sans devenir décoratif. */
+  --bios-grid-line: rgb(20 32 29 / 5%);
+  /* Halo plus doux : l'orange s'efface progressivement au lieu de former un bord marqué. */
+  --bios-halo-orange: rgb(232 112 42 / 14%);
   --bios-halo-turquoise: rgb(20 160 143 / 14%);
   --bios-halo-blue: rgb(61 140 239 / 10%);
   --bios-page-title: #193357;

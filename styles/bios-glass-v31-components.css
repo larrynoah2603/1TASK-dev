@@ -9,7 +9,8 @@ html[data-visual-profile="bios-glass-v31"] {
   --kit-radius-lg: 10px;
   --kit-radius-xl: 12px;
 
-  --bios-glass-card: rgb(255 255 255 / 62%);
+  /* Surface translucide : le quadrillage du canvas reste lisible dans les cartes. */
+  --bios-glass-card: rgb(255 255 255 / 54%);
   --bios-glass-menu: rgb(255 255 255 / 82%);
   --bios-glass-raised: rgb(255 255 255 / 96%);
   --bios-glass-border: rgb(20 32 29 / 14%);
