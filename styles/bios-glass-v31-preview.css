@@ -36,8 +36,8 @@ html[data-visual-profile="bios-glass-v31"] {
   --kit-on-success: #FFFFFF;
   --kit-glass: rgb(255 255 255 / 82%);
   /* Palette des surfaces du shell, séparée de sa géométrie partagée. */
-  --bios-sidebar-surface: rgb(255 255 255 / 45%);
-  --bios-topbar-surface: rgb(255 255 255 / 35%);
+  --bios-sidebar-surface: rgb(255 255 255 / 55%);
+  --bios-topbar-surface: rgb(255 255 255 / 45%);
   /* Le quadrillage reste perceptible sous les surfaces sans devenir décoratif. */
   --bios-grid-line: rgb(20 32 29 / 5%);
   /* Halo plus doux : l'orange s'efface progressivement au lieu de former un bord marqué. */
@@ -84,8 +84,8 @@ html[data-visual-profile="bios-glass-v31"][data-theme="dark"] {
   --kit-on-success: #14201D;
   --kit-glass: rgb(25 43 35 / 94%);
   /* Même shell qu’en clair : seules ses surfaces et ses lumières changent. */
-  --bios-sidebar-surface: rgb(25 43 35 / 85%);
-  --bios-topbar-surface: rgb(25 43 35 / 88%);
+  --bios-sidebar-surface: rgb(25 43 35 / 74%);
+  --bios-topbar-surface: rgb(25 43 35 / 76%);
   /* Contraste renforcé sur le fond sombre pour conserver le quadrillage sous les blocs. */
   --bios-grid-line: rgb(242 247 243 / 9%);
   --bios-halo-orange: rgb(232 112 42 / 10%);
